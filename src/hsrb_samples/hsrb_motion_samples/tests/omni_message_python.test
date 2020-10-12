@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<launch>
+  <include file="$(find hsrb_motion_samples)/tests/common.launch" />
+  <node name="publisher" pkg="hsrb_motion_samples" type="omni_message.py" respawn="true" />
+  <test test-name="test_omni_message_python" pkg="hsrb_motion_samples" type="check_odom.py" time-limit="60.0" args="x:1.0 y:1.0" />
+</launch>

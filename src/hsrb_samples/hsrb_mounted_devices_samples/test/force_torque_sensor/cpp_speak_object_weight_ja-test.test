@@ -1,0 +1,11 @@
+<launch>
+  <env name="LANG" value="ja_JP.UTF-8" />
+  <node pkg="hsrb_mounted_devices_samples"
+        type="hsrb_speak_object_weight"
+        name="hsrb_speak_object_weight" />
+
+  <test test-name="cpp_speak_object_weight"
+        pkg="hsrb_mounted_devices_samples"
+        type="speak_object_weight_ja_test"
+        time-limit="30.0" />
+</launch>

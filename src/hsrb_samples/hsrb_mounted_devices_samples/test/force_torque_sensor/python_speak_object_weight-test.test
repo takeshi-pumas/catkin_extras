@@ -1,0 +1,5 @@
+<launch>
+<test test-name="test_speak_object_weight"
+      pkg="hsrb_mounted_devices_samples"
+      type="test_speak_object_weight.py" />
+</launch>

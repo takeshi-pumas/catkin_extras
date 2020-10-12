@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<launch>
+  <include file="$(find hsrb_motion_samples)/tests/common.launch" />
+  <node name="publisher" pkg="hsrb_motion_samples" type="gripper_message" respawn="true" />
+  <test test-name="test_gripper_message" pkg="hsrb_motion_samples" type="check_pose.py" time-limit="60.0" args="hand_motor_joint:0.5" />
+</launch>

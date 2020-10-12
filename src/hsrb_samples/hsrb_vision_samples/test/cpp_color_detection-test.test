@@ -1,0 +1,5 @@
+<launch>
+<test test-name="cpp_test_color_detection"
+      pkg="hsrb_vision_samples"
+      type="color_detection_test" />
+</launch>

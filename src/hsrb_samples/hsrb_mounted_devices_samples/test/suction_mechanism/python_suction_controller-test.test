@@ -1,0 +1,9 @@
+<launch>
+  <node pkg="hsrb_mounted_devices_samples"
+        type="suction_action_server_stub.py"
+        name="suction_action_server_stub" />
+
+  <test test-name="test_suction_controller"
+        type="test_suction_controller.py"
+        pkg="hsrb_mounted_devices_samples" />
+</launch>

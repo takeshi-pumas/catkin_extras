@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<launch>
+  <include file="$(find hsrb_motion_samples)/tests/common.launch" />
+  <node name="publisher" pkg="hsrb_motion_samples" type="head_actionlib.py" respawn="true" />
+  <test test-name="test_head_action_python" pkg="hsrb_motion_samples" type="check_pose.py" time-limit="60.0" args="head_pan_joint:0.5 head_tilt_joint:0.5" />
+</launch>

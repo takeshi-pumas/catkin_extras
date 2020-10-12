@@ -1,0 +1,9 @@
+<launch>
+  <node pkg="hsrb_mounted_devices_samples"
+        type="change_led_color.py"
+        name="change_led_color_node" />
+
+  <test test-name="test_change_led_color"
+        type="test_change_led_color.py"
+        pkg="hsrb_mounted_devices_samples" />
+</launch>

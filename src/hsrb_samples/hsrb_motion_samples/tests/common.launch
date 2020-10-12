@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<launch>
+  <!--
+  <include file="$(find hsrb_gazebo)/launch/hsrb_empty_world.launch">
+    <arg name="paused" value="false" />
+  </include>
+  -->
+  <include file="$(find hsrb_rviz_simulator)/launch/hsrb_rviz_simulator.launch">
+  </include>
+</launch>

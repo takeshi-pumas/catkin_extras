@@ -1,0 +1,5 @@
+<launch>
+<test test-name="test_color_detection"
+      pkg="hsrb_vision_samples"
+      type="test_color_detection.py" />
+</launch>

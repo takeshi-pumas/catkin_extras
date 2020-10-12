@@ -1,0 +1,19 @@
+<package>
+  <name>hsrb_samples</name>
+  <version>0.4.1</version>
+  <description>Packages related hsr sample programs.</description>
+  <maintainer email="yuka_hashiguchi@mail.toyota.co.jp">Yuka Hashiguchi</maintainer>
+  <license>TMC</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <run_depend>hsrb_motion_samples</run_depend>
+  <run_depend>hsrb_mounted_devices_samples</run_depend>
+  <run_depend>hsrb_vision_samples</run_depend>
+
+
+  <export>
+    <metapackage/>
+  </export>
+
+</package>
