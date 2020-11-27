@@ -9,7 +9,7 @@
   <!-- By default, we are not in debug mode -->
   <arg name="debug" default="false" />
 
-  <arg name="robot_name" default="hsrb" />
+  <arg name="robot_name" default="/hsrb" />
 
   <!-- By default we do not overwrite the URDF. Change the following to true to change the default behavior -->
   <arg name="load_robot_description" default="false"/>

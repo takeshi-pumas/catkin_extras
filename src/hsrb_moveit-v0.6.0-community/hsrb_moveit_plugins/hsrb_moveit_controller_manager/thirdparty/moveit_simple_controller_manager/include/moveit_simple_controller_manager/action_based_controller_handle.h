@@ -73,7 +73,7 @@ public:
   {
     controller_action_client_.reset(new actionlib::SimpleActionClient<T>(getActionName(), true));
     unsigned int attempts = 0;
-    while (ros::ok() && !controller_action_client_->waitForServer(ros::Duration(5.0)) && ++attempts < 3)
+    while (ros::ok() && !controller_action_client_->waitForServer(ros::Duration(25.0)) && ++attempts < 3)
       ROS_INFO_STREAM("MoveItSimpleControllerManager: Waiting for " << getActionName() << " to come up");
 
     if (!controller_action_client_->isServerConnected())

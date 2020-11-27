@@ -58,10 +58,10 @@ class MoveItObstaclesDemo(object):
         
 
         print("Move it groups disabled ... UNSTABLE AS F")
-        #arm = moveit_commander.MoveGroupCommander("arm")
-        #base = moveit_commander.MoveGroupCommander("base")
-        #head = moveit_commander.MoveGroupCommander("head")
-        #whole_body = moveit_commander.MoveGroupCommander("whole_body")
+        arm = moveit_commander.MoveGroupCommander("arm")
+        base = moveit_commander.MoveGroupCommander("base")
+        head = moveit_commander.MoveGroupCommander("head")
+        whole_body = moveit_commander.MoveGroupCommander("whole_body")
         #whole_body.set_workspace([-0.5, -1.0, 0.5, 1.0])
 
         # remove all objects
