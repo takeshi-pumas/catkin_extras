@@ -1,0 +1,3 @@
+[submodule "src/takeshi_notebooks"]
+	path = src/takeshi_notebooks
+	url = https://github.com/chillvamp/takeshi_notebooks.git
