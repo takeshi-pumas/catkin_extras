@@ -57,7 +57,7 @@ class MoveItObstaclesDemo(object):
         bridge = CvBridge()
         
 
-        print("Move it groups disabled ... UNSTABLE AS F")
+        
         arm = moveit_commander.MoveGroupCommander("arm")
         base = moveit_commander.MoveGroupCommander("base")
         head = moveit_commander.MoveGroupCommander("head")
