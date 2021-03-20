@@ -16,6 +16,7 @@
       </inertial>
       <visual name='ycb_077_rubiks_cube_visual'>
         <pose>0 0 0 0 0 0</pose>
+
         <geometry>
           <mesh>
             <uri>model://ycb_077_rubiks_cube/meshes/textured.dae</uri>
@@ -32,5 +33,6 @@
         <max_contacts>10</max_contacts>
       </collision>
     </link>
+   <static>1</static>
   </model>
 </sdf>
