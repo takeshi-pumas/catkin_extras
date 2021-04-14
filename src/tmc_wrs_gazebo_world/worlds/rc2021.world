@@ -14,7 +14,8 @@
       <direction>-0.5 0.1 -0.9</direction>
     </light>
     <light name='light_source_nor' type='spot'>
-        <pose frame=''>-0.5 0 0.1 0 -1.57 0</pose>
+        <pose frame=''>-0.5 0 0.15 0 -1.57 0</pose>
+        <diffuse>0.8 0.8 0.8 1</diffuse>
         <attenuation>
       <constant>0.7</constant>
       <linear>0.1</linear>
@@ -22,7 +23,8 @@
     </attenuation>          
     </light>
     <light name='light_source_der' type='spot'>
-      <pose frame=''>0 0.5 0.1 0 -1.57 -1.57</pose>
+      <pose frame=''>0 0.5 0.15 0 -1.57 -1.57</pose>
+      <diffuse>0.8 0.8 0.8 1</diffuse>
         <attenuation>
       <constant>0.7</constant>
       <linear>0.1</linear>
@@ -30,7 +32,8 @@
     </attenuation>
     </light>
     <light name='light_source_izq' type='spot'>
-      <pose frame=''>0.5 0 0.1 0 -1.57 -3.14</pose>
+      <pose frame=''>0.5 0 0.15 0 -1.57 -3.14</pose>
+      <diffuse>0.8 0.8 0.8 1</diffuse>
         <attenuation>
       <constant>0.7</constant>
       <linear>0.1</linear>
@@ -38,7 +41,8 @@
     </attenuation>      
     </light>
     <light name='light_source_sur' type='spot'>
-      <pose frame=''>0 -0.5 0.1 0 -1.57 -4.71</pose>
+      <pose frame=''>0 -0.5 0.15 0 -1.57 -4.71</pose>
+      <diffuse>0.8 0.8 0.8 1</diffuse>
         <attenuation>
       <constant>0.7</constant>
       <linear>0.1</linear>
@@ -103,7 +107,7 @@
       <real_time_update_rate>1000</real_time_update_rate>
     </physics>
     <scene>
-      <ambient>0 0.7 0 1</ambient>
+      <ambient>0 0 0 1</ambient>
       <background>0 0.7 0 1</background>
       <shadows>0</shadows>
     </scene>
@@ -157,8 +161,8 @@
             </save>
             <horizontal_fov>1.047</horizontal_fov>
             <image>
-              <width>1920</width>
-              <height>1080</height>
+              <width>1280</width>
+              <height>720</height>
             </image>
             <clip>
               <near>0.1</near>
@@ -183,7 +187,7 @@
         </plugin>s
         </sensor>
       </link>
-      <!--script>
+        <script>
           <loop>true</loop>
           <delay_start>0.000000</delay_start>
           <auto_start>true</auto_start>
@@ -193,47 +197,20 @@
                 <pose>-0.4 0 0.1 0 0 0</pose>
              </waypoint>
              <waypoint>
-                <time>2</time>
-                <pose>0 0.4 0.1 0 0 -1.57</pose>
-             </waypoint>
-             <waypoint>
-                <time>4.0</time>
-                <pose>0.4 0 0.1 0 0 -3.14</pose>
-             </waypoint>
-             <waypoint>
-                <time>6.0</time>
-                <pose>0 -0.4 0.1 0 0 -4.71</pose>
-             </waypoint>
-             <waypoint>
-                <time>8.0</time>
-                <pose>-0.4 0 0.1 0 0 -6.2</pose>
-             </waypoint>
-          </trajectory>
-        </script-->
-        <script>
-          <loop>true</loop>
-          <delay_start>0.000000</delay_start>
-          <auto_start>true</auto_start>
-          <trajectory id="0" type="circle">
-             <waypoint>
-                <time>0.0</time>
-                <pose>-0.25 0 0.1 0 0 0</pose>
-             </waypoint>
-             <waypoint>
                 <time>3</time>
-                <pose>0 0 0.25 0 1.57 0</pose>
+                <pose>0 0 0.4 0 1.57 0</pose>
              </waypoint>
              <waypoint>
                 <time>6.0</time>
-                <pose>0.25 0 0.1 0 3.14 0</pose>
+                <pose>0.4 0 0.1 0 3.14 0</pose>
              </waypoint>
              <waypoint>
                 <time>9.0</time>
-                <pose>0 0 0.25 0 1.57 0</pose>
+                <pose>0 0 0.4 0 1.57 0</pose>
              </waypoint>
              <waypoint>
                 <time>12.0</time>
-                <pose>-0.25 0 0.1 0  0 0</pose>
+                <pose>-0.4 0 0.1 0  0 0</pose>
              </waypoint>
           </trajectory>
         </script>
