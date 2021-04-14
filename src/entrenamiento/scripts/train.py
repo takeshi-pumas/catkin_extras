@@ -8,9 +8,16 @@ from geometry_msgs.msg import Pose, Quaternion
 import tf
 import subprocess
 import os
-global save_frame,rgb_mat,_path_model
+global save_frame,rgb_mat,_path_model,output_dir,name_output_dir
 
+#####
+#Directory that contains all directories of the models
 _path_model = '/home/takeshi/prubas_noobies/catkin_tutorials/src/tmc_wrs_gazebo_world/models/'
+############
+# Parent directory of the desire path for the data set
+output_dir="/home/takeshi/Pictures"
+#name of the directory for the data set
+name_output_dir="dataset_ycb"
 
 rgb_mat=[]
 save_frame=False
@@ -51,14 +58,12 @@ def delete_object(name):
 def callback_image(msg):
 	global save_frame,rgb_mat
 	bridge = CvBridge()
-	rgb_mat=bridge.imgmsg_to_cv2(msg,msg.encoding)
-	rgb_mat=cv2.cvtColor(rgb_mat,cv2.COLOR_BGRA2RGB)
+	aux=bridge.imgmsg_to_cv2(msg,msg.encoding)
+	rgb_mat=cv2.cvtColor(aux,cv2.COLOR_BGRA2RGB)
 
 
 def main():
-	global rgb_mat, _path_model
-	output_dir=""
-	name_output_dir="dataset_ycb"
+	global rgb_mat, _path_model, output_dir,name_output_dir
 	topic='/camera/image_raw'
 	rospy.init_node('trainer', anonymous=True)
 	subCamera = rospy.Subscriber(topic, Image, callback_image)
@@ -89,9 +94,11 @@ def main():
 		pass
 
 
+	##########
+	#write item by item for the list
+	#model_list=model_list[0:3]
+	##########
 
-
-	model_list=model_list[0:3]
 	state="SMSpaw"
 	model=0
 	frames=0

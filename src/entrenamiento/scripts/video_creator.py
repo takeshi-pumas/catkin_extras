@@ -1,7 +1,7 @@
 import cv2
 import os
-
-path_dataset="/home/takeshi/prubas_noobies/catkin_tutorials/dataset_ycb"
+# Parent directory of the desire path for the vido directory
+path_dataset="/home/takeshi/Pictures/dataset_ycb"
 
 def fun_sort(element):
 	return int(element[:-4])
@@ -35,7 +35,7 @@ for model in model_list:
 	print("creating video: "+model)
 	for i in frames:
 		img=cv2.imread(model_dir+"/"+i)
-		img=cv2.cvtColor(img,cv2.COLOR_BGRA2RGB)
+		#img=cv2.cvtColor(img,cv2.COLOR_BGRA2RGB)
 		frame_array.append(img)
 		#print(img.shape)
 
