@@ -49,6 +49,15 @@
       <quadratic>0.00</quadratic>
     </attenuation>
     </light>
+    <light name='light_source_bottom' type='spot'>
+      <pose frame=''>0 0 -0.5 0 -3.14 -4.71</pose>
+      <diffuse>0.8 0.8 0.8 1</diffuse>
+        <attenuation>
+      <constant>0.7</constant>
+      <linear>0.1</linear>
+      <quadratic>0.00</quadratic>
+    </attenuation>
+    </light>
 
     <model name='ground_plane'>
       <static>1</static>
@@ -157,7 +166,7 @@
         <sensor name='my_camera' type='camera'>
           <camera>
             <save enabled="false">
-              <path>/home/anie/tutorials/catkin_tutorials/src/tmc_wrs_gazebo_world/worlds/Video/strawberry_rot/</path>
+              <path>/home/anie/tutorials/catkin_tutorials/src/tmc_wrs_gazebo_world/worlds/Video/Practice</path>
             </save>
             <horizontal_fov>1.047</horizontal_fov>
             <image>
@@ -206,11 +215,11 @@
              </waypoint>
              <waypoint>
                 <time>9.0</time>
-                <pose>0 0 0.4 0 1.57 0</pose>
+                <pose>0 0 -0.4 0 4.71 0</pose>
              </waypoint>
              <waypoint>
                 <time>12.0</time>
-                <pose>-0.4 0 0.1 0  0 0</pose>
+                <pose>-0.4 0 0.1 0 6.2 0</pose>
              </waypoint>
           </trajectory>
         </script>
