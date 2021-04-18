@@ -17,7 +17,7 @@ _path_model = '/home/takeshi/prubas_noobies/catkin_tutorials/src/tmc_wrs_gazebo_
 # Parent directory of the desire path for the data set
 output_dir="/home/takeshi/Pictures"
 #name of the directory for the data set
-name_output_dir="dataset_ycb"
+name_output_dir="dataset_ycb/pequeno"
 
 rgb_mat=[]
 save_frame=False
@@ -96,7 +96,7 @@ def main():
 
 	##########
 	#write item by item for the list
-	#model_list=model_list[0:3]
+	model_list=model_list[0:3]
 	##########
 
 	state="SMSpaw"
@@ -119,13 +119,12 @@ def main():
 			if new_model:
 				new_model=False
 				aux_dir= os.path.join(base_path, model_list[model])
-				aux_name=aux_dir+model_list[model]
 				try:
-					os.mkdir(aux_name)
+					os.mkdir(aux_dir)
 				except:
 					pass
 
-			cv2.imwrite(aux_name+"/"+str(frames)+".png",rgb_mat)
+			cv2.imwrite(aux_dir+"/"+str(frames)+".png",rgb_mat)
 			if frames>1100:
 				state="SMDelete"
 				frames=0
