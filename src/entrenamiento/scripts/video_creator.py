@@ -25,9 +25,7 @@ try:
 except:
 	pass
 
-#for i in range(len(model_list)):
-#	model_list[i]=model_list[i].replace("ycb",'')
-#
+
 for model in model_list:
 	aux_name=model.split("_")
 	aux_name[0]="_"
@@ -37,12 +35,11 @@ for model in model_list:
 	video = cv2.VideoWriter(video_name+'_.mp4',cv2.VideoWriter_fourcc(*'mp4v'), 30, (1280, 720))
 	frame_array=[]
 	model_dir=os.path.join(path_dataset, model)
-	frames=os.listdir("ycb"+model_dir)
+	frames=os.listdir(model_dir)
 	frames.sort(key=fun_sort)
 	print("creating video: "+model)
 	for i in frames:
 		img=cv2.imread(model_dir+"/"+i)
-		#img=cv2.cvtColor(img,cv2.COLOR_BGRA2RGB)
 		frame_array.append(img)
 		#print(img.shape)
 
