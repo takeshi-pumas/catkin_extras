@@ -32,7 +32,7 @@ for model in model_list:
 	aux_name="".join(aux_name)
 	video_name=video_path+"/green"+aux_name+"_"
 	print(video_name)
-	video = cv2.VideoWriter(video_name+'_.mp4',cv2.VideoWriter_fourcc(*'mp4v'), 30, (1280, 720))
+	video = cv2.VideoWriter(video_name+'.mp4',cv2.VideoWriter_fourcc(*'mp4v'), 30, (1280, 720))
 	frame_array=[]
 	model_dir=os.path.join(path_dataset, model)
 	frames=os.listdir(model_dir)
