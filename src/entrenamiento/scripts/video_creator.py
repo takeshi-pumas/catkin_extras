@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import cv2
 import os
 # Parent directory of the desire path for the vido directory

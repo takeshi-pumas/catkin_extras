@@ -96,7 +96,7 @@ def main():
 
 	##########
 	#write item by item for the list
-	model_list=model_list[0:3]
+	#model_list=model_list[0:3]
 	##########
 
 	state="SMSpaw"
@@ -107,7 +107,7 @@ def main():
 	while not rospy.is_shutdown() and not finish:
 
 		if state=="SMSpaw":
-			spawn_object(model_list[model], model_list[model], 0,  0,  .2, 0 )
+			spawn_object(model_list[model], model_list[model], 0,  0,  .08, 0 )
 			state="SMWait"
 
 		elif state=="SMWait":
