@@ -2,7 +2,7 @@
 import cv2
 import os
 # Parent directory of the desire path for the vido directory
-path_dataset="/home/takeshi/Pictures/dataset_ycb"
+path_dataset="/home/anie/takeshi/Pictures/dataset_ycb"
 
 def fun_sort(element):
 	return int(element[:-4])

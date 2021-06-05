@@ -12,12 +12,12 @@ global save_frame,rgb_mat,_path_model,output_dir,name_output_dir
 
 #####
 #Directory that contains all directories of the models
-_path_model = '/home/takeshi/prubas_noobies/catkin_tutorials/src/tmc_wrs_gazebo_world/models/'
+_path_model = '/home/anie/tutorials/catkin_tutorials/src/tmc_wrs_gazebo_world/models/'
 ############
 # Parent directory of the desire path for the data set
-output_dir="/home/takeshi/Pictures"
+output_dir="/home/anie/takeshi/Pictures"
 #name of the directory for the data set
-name_output_dir="dataset_ycb/pequeno"
+name_output_dir="dataset_ycb/"
 
 rgb_mat=[]
 save_frame=False
@@ -107,11 +107,11 @@ def main():
 	while not rospy.is_shutdown() and not finish:
 
 		if state=="SMSpaw":
-			spawn_object(model_list[model], model_list[model], 0,  0,  .08, 0 )
+			spawn_object(model_list[model], model_list[model], 0.0,  0.0,  0.0, 0 )
 			state="SMWait"
 
 		elif state=="SMWait":
-			rospy.sleep(5.)
+			rospy.sleep(3.)
 			state="SMFrames"
 
 		elif state=="SMFrames":
@@ -125,7 +125,7 @@ def main():
 					pass
 
 			cv2.imwrite(aux_dir+"/"+str(frames)+".png",rgb_mat)
-			if frames>1100:
+			if frames>2000:
 				state="SMDelete"
 				frames=0
 				new_model=True
