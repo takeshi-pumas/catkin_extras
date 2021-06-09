@@ -14,47 +14,38 @@
       <direction>-0.2 0.1 -0.9</direction>
     </light>
     <light name='light_source_nor' type='spot'>
-        <pose frame=''>-0.5 0 0.13 0 -1.57 0</pose>
+        <pose frame=''>-0.7 0 0.13 0 -1.57 0</pose>
         <diffuse>0.8 0.8 0.8 1</diffuse>
         <attenuation>
-      <constant>0.7</constant>
-      <linear>0.1</linear>
-      <quadratic>0.00</quadratic>
-    </attenuation>          
+      		<constant>0.7</constant>
+      		<linear>0.8</linear>
+      		<quadratic>0.00</quadratic>
+    	</attenuation>          
     </light>
     <light name='light_source_der' type='spot'>
-      <pose frame=''>0 0.5 0.13 0 -1.57 -1.57</pose>
+      <pose frame=''>0 0.7 0.13 0 -1.57 -1.57</pose>
       <diffuse>0.8 0.8 0.8 1</diffuse>
         <attenuation>
       <constant>0.7</constant>
-      <linear>0.1</linear>
+      <linear>0.5</linear>
       <quadratic>0.00</quadratic>
     </attenuation>
     </light>
     <light name='light_source_izq' type='spot'>
-      <pose frame=''>0.5 0 0.13 0 -1.57 -3.14</pose>
+      <pose frame=''>0.7 0 0.13 0 -1.57 -3.14</pose>
       <diffuse>0.8 0.8 0.8 1</diffuse>
         <attenuation>
       <constant>0.7</constant>
-      <linear>0.1</linear>
+      <linear>0.8</linear>
       <quadratic>0.00</quadratic>
     </attenuation>      
     </light>
     <light name='light_source_sur' type='spot'>
-      <pose frame=''>0 -0.5 0.13 0 -1.57 -4.71</pose>
+      <pose frame=''>0 -0.7 0.13 0 -1.57 -4.71</pose>
       <diffuse>0.8 0.8 0.8 1</diffuse>
         <attenuation>
       <constant>0.7</constant>
-      <linear>0.1</linear>
-      <quadratic>0.00</quadratic>
-    </attenuation>
-    </light>
-    <light name='light_source_bottom' type='spot'>
-      <pose frame=''>0 0 -0.5 0 -3.14 -4.71</pose>
-      <diffuse>0.8 0.8 0.8 1</diffuse>
-        <attenuation>
-      <constant>0.7</constant>
-      <linear>0.1</linear>
+      <linear>0.8</linear>
       <quadratic>0.00</quadratic>
     </attenuation>
     </light>
@@ -88,7 +79,7 @@
         </collision>
         <visual name='visual'>
           <cast_shadows>0</cast_shadows>
-          <transparency>0.8</transparency>
+          <transparency>1</transparency>
           <geometry>
             <plane>
               <normal>0 0 1</normal>
@@ -119,6 +110,8 @@
       <ambient>0 0 0 1</ambient>
       <background>0 1 0 1</background>
       <shadows>0</shadows>
+      <grid>0</grid>
+      <origin_visual>0</origin_visual>
     </scene>
     <wind/>
     <spherical_coordinates>
