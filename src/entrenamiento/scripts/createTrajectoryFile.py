@@ -5,6 +5,8 @@ import sys
 #paths
 worldTemplateFile = sys.argv[1]
 newWorldFile = sys.argv[2]
+#Altura del objeto
+objectHeight = float(sys.argv[3])
 
 with open(worldTemplateFile, 'r') as file :
   filedata = file.read()
@@ -12,11 +14,9 @@ with open(worldTemplateFile, 'r') as file :
 #Tiempo de duracion de la trayectoria
 trajectoryTime = 30
 #Radio de la trayectoria
-radius = 0.55
+radius = 0.5
 #Altura del objeto
-objectHeight = 0.1
-
-
+#objectHeight = 0.1
 
 verticalSteps = 8
 horizontalSteps = 8
