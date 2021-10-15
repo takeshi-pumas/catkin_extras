@@ -39,6 +39,5 @@ $ roslaunch  hsrb_moveit_config  hsrb_demo_with_controller.launch
 At this point 2 rviz are open, a general HSR  and a Moveit.
 
 Check 
-https://youtu.be/Lnd6WNHi7qY
-
+https://youtu.be/kE-TehNK540
 
