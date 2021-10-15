@@ -12,6 +12,7 @@ navigate to the folder you just created.
 $ cd catkin_tutorials
 
 "build the catkin space containing Moveit, and the wrs arenas"
+
 $ catkin_make
 
 Source this new catkin space on top of Takeshi and/or tmc packages.
