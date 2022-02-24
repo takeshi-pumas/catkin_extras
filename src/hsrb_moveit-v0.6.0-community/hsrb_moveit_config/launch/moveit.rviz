@@ -13,6 +13,8 @@ Panels:
         - /TF1
         - /TF1/Frames1
         - /MarkerArray3
+        - /TF2
+        - /TF2/Frames1
       Splitter Ratio: 0.7425600290298462
     Tree Height: 180
   - Class: rviz/Help
@@ -55,7 +57,6 @@ Visualization Manager:
       MoveIt_Allow_External_Program: false
       MoveIt_Allow_Replanning: false
       MoveIt_Allow_Sensor_Positioning: false
-      MoveIt_Goal_Tolerance: 0
       MoveIt_Planning_Attempts: 10
       MoveIt_Planning_Time: 5
       MoveIt_Use_Cartesian_Path: false
@@ -849,6 +850,206 @@ Visualization Manager:
         {}
       Queue Size: 100
       Value: true
+    - Class: rviz/TF
+      Enabled: true
+      Frame Timeout: 15
+      Frames:
+        All Enabled: false
+        arm_flex_link:
+          Value: false
+        arm_lift_link:
+          Value: false
+        arm_roll_link:
+          Value: false
+        base_b_bumper_link:
+          Value: false
+        base_f_bumper_link:
+          Value: false
+        base_footprint:
+          Value: false
+        base_footprint_wheel:
+          Value: false
+        base_imu_frame:
+          Value: false
+        base_l_drive_wheel_link:
+          Value: false
+        base_l_passive_wheel_x_frame:
+          Value: false
+        base_l_passive_wheel_y_frame:
+          Value: false
+        base_l_passive_wheel_z_link:
+          Value: false
+        base_link:
+          Value: false
+        base_r_drive_wheel_link:
+          Value: false
+        base_r_passive_wheel_x_frame:
+          Value: false
+        base_r_passive_wheel_y_frame:
+          Value: false
+        base_r_passive_wheel_z_link:
+          Value: false
+        base_range_sensor_link:
+          Value: false
+        base_roll_link:
+          Value: false
+        hand_camera_frame:
+          Value: false
+        hand_camera_gazebo_frame:
+          Value: false
+        hand_l_distal_link:
+          Value: false
+        hand_l_finger_tip_frame:
+          Value: false
+        hand_l_finger_vacuum_frame:
+          Value: false
+        hand_l_mimic_distal_link:
+          Value: false
+        hand_l_proximal_link:
+          Value: false
+        hand_l_spring_proximal_link:
+          Value: false
+        hand_motor_dummy_link:
+          Value: false
+        hand_palm_link:
+          Value: true
+        hand_r_distal_link:
+          Value: false
+        hand_r_finger_tip_frame:
+          Value: false
+        hand_r_mimic_distal_link:
+          Value: false
+        hand_r_proximal_link:
+          Value: false
+        hand_r_spring_proximal_link:
+          Value: false
+        head_center_camera_frame:
+          Value: false
+        head_center_camera_gazebo_frame:
+          Value: false
+        head_l_stereo_camera_frame:
+          Value: false
+        head_l_stereo_camera_gazebo_frame:
+          Value: false
+        head_l_stereo_camera_link:
+          Value: false
+        head_pan_link:
+          Value: false
+        head_r_stereo_camera_frame:
+          Value: false
+        head_r_stereo_camera_gazebo_frame:
+          Value: false
+        head_r_stereo_camera_link:
+          Value: false
+        head_rgbd_sensor_depth_frame:
+          Value: false
+        head_rgbd_sensor_gazebo_frame:
+          Value: false
+        head_rgbd_sensor_link:
+          Value: false
+        head_rgbd_sensor_rgb_frame:
+          Value: false
+        head_tilt_link:
+          Value: false
+        map:
+          Value: false
+        odom:
+          Value: false
+        torso_lift_link:
+          Value: false
+        wrist_flex_link:
+          Value: false
+        wrist_ft_sensor_frame:
+          Value: false
+        wrist_ft_sensor_mount_link:
+          Value: false
+        wrist_roll_link:
+          Value: false
+      Marker Scale: 1
+      Name: TF
+      Show Arrows: true
+      Show Axes: true
+      Show Names: true
+      Tree:
+        map:
+          odom:
+            base_footprint:
+              base_link:
+                arm_lift_link:
+                  arm_flex_link:
+                    arm_roll_link:
+                      wrist_flex_link:
+                        wrist_ft_sensor_mount_link:
+                          wrist_ft_sensor_frame:
+                            wrist_roll_link:
+                              hand_palm_link:
+                                hand_camera_frame:
+                                  hand_camera_gazebo_frame:
+                                    {}
+                                hand_l_proximal_link:
+                                  hand_l_spring_proximal_link:
+                                    hand_l_mimic_distal_link:
+                                      hand_l_distal_link:
+                                        hand_l_finger_tip_frame:
+                                          {}
+                                        hand_l_finger_vacuum_frame:
+                                          {}
+                                hand_motor_dummy_link:
+                                  {}
+                                hand_r_proximal_link:
+                                  hand_r_spring_proximal_link:
+                                    hand_r_mimic_distal_link:
+                                      hand_r_distal_link:
+                                        hand_r_finger_tip_frame:
+                                          {}
+                base_b_bumper_link:
+                  {}
+                base_f_bumper_link:
+                  {}
+                base_imu_frame:
+                  {}
+                base_range_sensor_link:
+                  {}
+                base_roll_link:
+                  base_l_drive_wheel_link:
+                    {}
+                  base_l_passive_wheel_x_frame:
+                    base_l_passive_wheel_y_frame:
+                      base_l_passive_wheel_z_link:
+                        {}
+                  base_r_drive_wheel_link:
+                    {}
+                  base_r_passive_wheel_x_frame:
+                    base_r_passive_wheel_y_frame:
+                      base_r_passive_wheel_z_link:
+                        {}
+                torso_lift_link:
+                  head_pan_link:
+                    head_tilt_link:
+                      head_center_camera_frame:
+                        head_center_camera_gazebo_frame:
+                          {}
+                      head_l_stereo_camera_link:
+                        head_l_stereo_camera_frame:
+                          {}
+                        head_l_stereo_camera_gazebo_frame:
+                          {}
+                      head_r_stereo_camera_link:
+                        head_r_stereo_camera_frame:
+                          {}
+                        head_r_stereo_camera_gazebo_frame:
+                          {}
+                      head_rgbd_sensor_link:
+                        head_rgbd_sensor_depth_frame:
+                          {}
+                        head_rgbd_sensor_gazebo_frame:
+                          {}
+                        head_rgbd_sensor_rgb_frame:
+                          {}
+            base_footprint_wheel:
+              {}
+      Update Interval: 0
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -865,25 +1066,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 8.313048362731934
+      Distance: 2.4917283058166504
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.10045096278190613
-        Y: -0.2647913992404938
-        Z: -1.341098823104403e-7
+        X: -0.11843037605285645
+        Y: -0.14945143461227417
+        Z: 1.9222502487536985e-6
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.3197963237762451
+      Pitch: 1.0847978591918945
       Target Frame: base_footprint
       Value: XYOrbit (rviz)
-      Yaw: 3.587219715118408
+      Yaw: 5.605385780334473
     Saved: ~
 Window Geometry:
   Displays:
@@ -897,9 +1098,9 @@ Window Geometry:
     collapsed: false
   MotionPlanning - Trajectory Slider:
     collapsed: false
-  QMainWindow State: 000000ff00000000fd0000000100000000000002a20000029dfc0200000007fb000000100044006900730070006c006100790073010000003d000000f1000000c900fffffffb0000000800480065006c00700000000342000000bb0000006e00fffffffb0000000a0056006900650077007300000003b0000000b0000000a400fffffffb0000000c00430061006d00650072006100000002ff000001610000000000000000fb0000001e004d006f00740069006f006e00200050006c0061006e006e0069006e00670100000374000001890000000000000000fb00000044004d006f00740069006f006e0050006c0061006e006e0069006e00670020002d0020005400720061006a006500630074006f0072007900200053006c00690064006500720000000000ffffffff0000004100fffffffb0000001c004d006f00740069006f006e0050006c0061006e006e0069006e00670100000134000001a60000018900ffffff000002c50000029d00000001000000020000000100000002fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd0000000100000000000002a20000029dfc0200000007fb000000100044006900730070006c006100790073010000003d000000f1000000c900fffffffb0000000800480065006c00700000000342000000bb0000006e00fffffffb0000000a0056006900650077007300000003b0000000b0000000a400fffffffb0000000c00430061006d00650072006100000002ff000001610000000000000000fb0000001e004d006f00740069006f006e00200050006c0061006e006e0069006e00670100000374000001890000000000000000fb00000044004d006f00740069006f006e0050006c0061006e006e0069006e00670020002d0020005400720061006a006500630074006f0072007900200053006c00690064006500720000000000ffffffff0000004100fffffffb0000001c004d006f00740069006f006e0050006c0061006e006e0069006e00670100000134000001a60000017d00ffffff000002c50000029d00000001000000020000000100000002fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Views:
     collapsed: false
   Width: 1389
-  X: 2336
-  Y: 261
+  X: 93
+  Y: 350
