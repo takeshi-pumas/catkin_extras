@@ -11,53 +11,54 @@
         <linear>0.01</linear>
         <quadratic>0.001</quadratic>
       </attenuation>
-      <direction>-0.5 0.1 -0.9</direction>
+      <direction>-0.2 0.1 -0.9</direction>
     </light>
-    <light name='light_source_cam' type='spot'>
-      	<pose frame=''>-0.5 0 0.1 0 -1.57 0</pose>
-      	<attenuation>
-			<constant>0.7</constant>
-			<linear>0.1</linear>
-			<quadratic>0.00</quadratic>
-		</attenuation>      		
+    <light name='light_source_nor' type='spot'>
+        <pose frame=''>-0.5 0 0.13 0 -1.57 0</pose>
+        <diffuse>0.8 0.8 0.8 1</diffuse>
+        <attenuation>
+      <constant>0.7</constant>
+      <linear>0.1</linear>
+      <quadratic>0.00</quadratic>
+    </attenuation>          
     </light>
     <light name='light_source_der' type='spot'>
-    	<pose frame=''>0 0.5 0.1 0 -1.57 -1.57</pose>
-      	<attenuation>
-			<constant>0.7</constant>
-			<linear>0.1</linear>
-			<quadratic>0.00</quadratic>
-		</attenuation>
+      <pose frame=''>0 0.5 0.13 0 -1.57 -1.57</pose>
+      <diffuse>0.8 0.8 0.8 1</diffuse>
+        <attenuation>
+      <constant>0.7</constant>
+      <linear>0.1</linear>
+      <quadratic>0.00</quadratic>
+    </attenuation>
     </light>
     <light name='light_source_izq' type='spot'>
-    	<pose frame=''>0.5 0 0.1 0 -1.57 -3.14</pose>
-      	<attenuation>
-			<constant>0.7</constant>
-			<linear>0.1</linear>
-			<quadratic>0.00</quadratic>
-		</attenuation>    	
+      <pose frame=''>0.5 0 0.13 0 -1.57 -3.14</pose>
+      <diffuse>0.8 0.8 0.8 1</diffuse>
+        <attenuation>
+      <constant>0.7</constant>
+      <linear>0.1</linear>
+      <quadratic>0.00</quadratic>
+    </attenuation>      
     </light>
     <light name='light_source_sur' type='spot'>
-    	<pose frame=''>0 -0.5 0.1 0 -1.57 -4.71</pose>
-      	<attenuation>
-			<constant>0.7</constant>
-			<linear>0.1</linear>
-			<quadratic>0.00</quadratic>
-		</attenuation>
-    </light>
-    <!--light name='sun_2' type='spot'>
-      <cast_shadows>1</cast_shadows>
-      <pose frame=''>0.5 0 0.21 0 1.57 0</pose>
+      <pose frame=''>0 -0.5 0.13 0 -1.57 -4.71</pose>
       <diffuse>0.8 0.8 0.8 1</diffuse>
-      <specular>0.2 0.2 0.2 1</specular>
-      <attenuation>
-        <range>1000</range>
-        <constant>0</constant>
-        <linear>0.01</linear>
-        <quadratic>0.001</quadratic>
-      </attenuation>
-      <direction>-0.5 0.1 -0.9</direction>
-    </light-->
+        <attenuation>
+      <constant>0.7</constant>
+      <linear>0.1</linear>
+      <quadratic>0.00</quadratic>
+    </attenuation>
+    </light>
+    <light name='light_source_bottom' type='spot'>
+      <pose frame=''>0 0 -0.5 0 -3.14 -4.71</pose>
+      <diffuse>0.8 0.8 0.8 1</diffuse>
+        <attenuation>
+      <constant>0.7</constant>
+      <linear>0.1</linear>
+      <quadratic>0.00</quadratic>
+    </attenuation>
+    </light>
+
     <model name='ground_plane'>
       <static>1</static>
       <link name='link'>
@@ -115,9 +116,9 @@
       <real_time_update_rate>1000</real_time_update_rate>
     </physics>
     <scene>
-      <ambient>0 0.7 0 1</ambient>
-      <background>0 0.7 0 1</background>
-      <shadows>1</shadows>
+      <ambient>0 0 0 1</ambient>
+      <background>0 1 0 1</background>
+      <shadows>0</shadows>
     </scene>
     <wind/>
     <spherical_coordinates>
@@ -152,24 +153,9 @@
     </gui>
     <actor name='camera'>
       <static>true</static>
-      <pose>-1 0 1 0 0.5 0</pose>
+      <pose>-0.7 0 0.1 0 0 0</pose>
       <link name='link'>
-      	<!--light name='light_source_cam' type='directional'>
-      		<pose frame=''>0 0 0.05 0 -1.57 0</pose>
-      		
-    	</light>
-    	<light name='light_source_der' type='directional'>
-      		<pose frame=''>-0.1 -0.7 0.05 0 -1.57 0.88</pose>
-      		<attenuation>
-		        <range>1000</range>
-		        <constant>0.7</constant>
-		        <linear>0.01</linear>
-		        <quadratic>0.001</quadratic>
-		    </attenuation>
-    	</light>
-    	<light name='light_source_izq' type='directional'>
-      		<pose frame=''>-0.1 0.7 0.05 0 -1.57 -0.88</pose>
-    	</light-->
+ 
         <visual name='visual'>
           <geometry>
             <box>
@@ -180,12 +166,12 @@
         <sensor name='my_camera' type='camera'>
           <camera>
             <save enabled="false">
-              <path>/home/anie/tutorials/catkin_tutorials/src/tmc_wrs_gazebo_world/worlds/Video</path>
+              <path>/home/anie/tutorials/catkin_tutorials/src/tmc_wrs_gazebo_world/worlds/Video/Practice</path>
             </save>
             <horizontal_fov>1.047</horizontal_fov>
             <image>
-              <width>1920</width>
-              <height>1080</height>
+              <width>1280</width>
+              <height>720</height>
             </image>
             <clip>
               <near>0.1</near>
@@ -210,33 +196,355 @@
         </plugin>s
         </sensor>
       </link>
-      <script>
+        <script>
           <loop>true</loop>
           <delay_start>0.000000</delay_start>
           <auto_start>true</auto_start>
-          <trajectory id="0" type="circle">
-             <waypoint>
-                <time>0.0</time>
-                <pose>-0.4 0 0.1 0 0 0</pose>
-             </waypoint>
-             <waypoint>
-                <time>2</time>
-                <pose>0 0.4 0.1 0 0 -1.57</pose>
-             </waypoint>
-             <waypoint>
-                <time>4.0</time>
-                <pose>0.4 0 0.1 0 0 -3.14</pose>
-             </waypoint>
-             <waypoint>
-                <time>6.0</time>
-                <pose>0 -0.4 0.1 0 0 -4.71</pose>
-             </waypoint>
-             <waypoint>
-                <time>8.0</time>
-                <pose>-0.4 0 0.1 0 0 -6.2</pose>
-             </waypoint>
-          </trajectory>
+       <trajectory id="0" type="circle">
+	<waypoint>
+		<time>0.0</time>
+		<pose>0.388908729653 0.388908729653 0.106790123457 0.0 0.0193827160494 3.92699081699</pose>
+	</waypoint>
+	<waypoint>
+		<time>0.37037037037</time>
+		<pose>3.32620118287e-17 0.543209876543 0.113580246914 0.0 0.0387654320988 4.71238898038</pose>
+	</waypoint>
+	<waypoint>
+		<time>0.740740740741</time>
+		<pose>-0.37930604497 0.37930604497 0.12037037037 0.0 0.0581481481481 5.49778714378</pose>
+	</waypoint>
+	<waypoint>
+		<time>1.11111111111</time>
+		<pose>-0.52962962963 6.4860923066e-17 0.127160493827 0.0 0.0775308641975 6.28318530718</pose>
+	</waypoint>
+	<waypoint>
+		<time>1.48148148148</time>
+		<pose>-0.369703360287 -0.369703360287 0.133950617284 0.0 0.0969135802469 7.06858347058</pose>
+	</waypoint>
+	<waypoint>
+		<time>1.85185185185</time>
+		<pose>-9.47967337118e-17 -0.516049382716 0.140740740741 0.0 0.116296296296 7.85398163397</pose>
+	</waypoint>
+	<waypoint>
+		<time>2.22222222222</time>
+		<pose>0.360100675604 -0.360100675604 0.147530864198 0.0 0.135679012346 8.63937979737</pose>
+	</waypoint>
+	<waypoint>
+		<time>2.59259259259</time>
+		<pose>0.502469135802 -1.23069443766e-16 0.154320987654 0.0 0.155061728395 9.42477796077</pose>
+	</waypoint>
+	<waypoint>
+		<time>2.96296296296</time>
+		<pose>0.350497990921 0.350497990921 0.161111111111 0.0 0.174444444444 10.2101761242</pose>
+	</waypoint>
+</trajectory>
+<trajectory id="1" type="circle">
+	<waypoint>
+		<time>0.0</time>
+		<pose>0.34569664858 0.34569664858 0.167901234568 0.0 0.193827160494 3.92699081699</pose>
+	</waypoint>
+	<waypoint>
+		<time>0.37037037037</time>
+		<pose>2.9520035498e-17 0.482098765432 0.174691358025 0.0 0.213209876543 4.71238898038</pose>
+	</waypoint>
+	<waypoint>
+		<time>0.740740740741</time>
+		<pose>-0.336093963897 0.336093963897 0.181481481481 0.0 0.232592592593 5.49778714378</pose>
+	</waypoint>
+	<waypoint>
+		<time>1.11111111111</time>
+		<pose>-0.468518518519 5.73769704045e-17 0.188271604938 0.0 0.251975308642 6.28318530718</pose>
+	</waypoint>
+	<waypoint>
+		<time>1.48148148148</time>
+		<pose>-0.326491279215 -0.326491279215 0.195061728395 0.0 0.271358024691 7.06858347058</pose>
+	</waypoint>
+	<waypoint>
+		<time>1.85185185185</time>
+		<pose>-8.35708047196e-17 -0.454938271605 0.201851851852 0.0 0.290740740741 7.85398163397</pose>
+	</waypoint>
+	<waypoint>
+		<time>2.22222222222</time>
+		<pose>0.316888594532 -0.316888594532 0.208641975309 0.0 0.31012345679 8.63937979737</pose>
+	</waypoint>
+	<waypoint>
+		<time>2.59259259259</time>
+		<pose>0.441358024691 -1.08101538443e-16 0.215432098765 0.0 0.32950617284 9.42477796077</pose>
+	</waypoint>
+	<waypoint>
+		<time>2.96296296296</time>
+		<pose>0.307285909849 0.307285909849 0.222222222222 0.0 0.348888888889 10.2101761242</pose>
+	</waypoint>
+</trajectory>
+<trajectory id="2" type="circle">
+	<waypoint>
+		<time>0.0</time>
+		<pose>0.302484567508 0.302484567508 0.229012345679 0.0 0.368271604938 3.92699081699</pose>
+	</waypoint>
+	<waypoint>
+		<time>0.37037037037</time>
+		<pose>2.57780591672e-17 0.420987654321 0.235802469136 0.0 0.387654320988 4.71238898038</pose>
+	</waypoint>
+	<waypoint>
+		<time>0.740740740741</time>
+		<pose>-0.292881882825 0.292881882825 0.242592592593 0.0 0.407037037037 5.49778714378</pose>
+	</waypoint>
+	<waypoint>
+		<time>1.11111111111</time>
+		<pose>-0.407407407407 4.9893017743e-17 0.249382716049 0.0 0.426419753086 6.28318530718</pose>
+	</waypoint>
+	<waypoint>
+		<time>1.48148148148</time>
+		<pose>-0.283279198142 -0.283279198142 0.256172839506 0.0 0.445802469136 7.06858347058</pose>
+	</waypoint>
+	<waypoint>
+		<time>1.85185185185</time>
+		<pose>-7.23448757274e-17 -0.393827160494 0.262962962963 0.0 0.465185185185 7.85398163397</pose>
+	</waypoint>
+	<waypoint>
+		<time>2.22222222222</time>
+		<pose>0.273676513459 -0.273676513459 0.26975308642 0.0 0.484567901235 8.63937979737</pose>
+	</waypoint>
+	<waypoint>
+		<time>2.59259259259</time>
+		<pose>0.38024691358 -9.31336331203e-17 0.276543209877 0.0 0.503950617284 9.42477796077</pose>
+	</waypoint>
+	<waypoint>
+		<time>2.96296296296</time>
+		<pose>0.264073828776 0.264073828776 0.283333333333 0.0 0.523333333333 10.2101761242</pose>
+	</waypoint>
+</trajectory>
+<trajectory id="3" type="circle">
+	<waypoint>
+		<time>0.0</time>
+		<pose>0.259272486435 0.259272486435 0.29012345679 0.0 0.542716049383 3.92699081699</pose>
+	</waypoint>
+	<waypoint>
+		<time>0.37037037037</time>
+		<pose>2.20360828365e-17 0.35987654321 0.296913580247 0.0 0.562098765432 4.71238898038</pose>
+	</waypoint>
+	<waypoint>
+		<time>0.740740740741</time>
+		<pose>-0.249669801752 0.249669801752 0.303703703704 0.0 0.581481481481 5.49778714378</pose>
+	</waypoint>
+	<waypoint>
+		<time>1.11111111111</time>
+		<pose>-0.346296296296 4.24090650816e-17 0.31049382716 0.0 0.600864197531 6.28318530718</pose>
+	</waypoint>
+	<waypoint>
+		<time>1.48148148148</time>
+		<pose>-0.24006711707 -0.24006711707 0.317283950617 0.0 0.62024691358 7.06858347058</pose>
+	</waypoint>
+	<waypoint>
+		<time>1.85185185185</time>
+		<pose>-6.11189467352e-17 -0.332716049383 0.324074074074 0.0 0.63962962963 7.85398163397</pose>
+	</waypoint>
+	<waypoint>
+		<time>2.22222222222</time>
+		<pose>0.230464432387 -0.230464432387 0.330864197531 0.0 0.659012345679 8.63937979737</pose>
+	</waypoint>
+	<waypoint>
+		<time>2.59259259259</time>
+		<pose>0.319135802469 -7.81657277974e-17 0.337654320988 0.0 0.678395061728 9.42477796077</pose>
+	</waypoint>
+	<waypoint>
+		<time>2.96296296296</time>
+		<pose>0.220861747704 0.220861747704 0.344444444444 0.0 0.697777777778 10.2101761242</pose>
+	</waypoint>
+</trajectory>
+<trajectory id="4" type="circle">
+	<waypoint>
+		<time>0.0</time>
+		<pose>0.216060405363 0.216060405363 0.351234567901 0.0 0.717160493827 3.92699081699</pose>
+	</waypoint>
+	<waypoint>
+		<time>0.37037037037</time>
+		<pose>1.82941065058e-17 0.298765432099 0.358024691358 0.0 0.736543209877 4.71238898038</pose>
+	</waypoint>
+	<waypoint>
+		<time>0.740740740741</time>
+		<pose>-0.20645772068 0.20645772068 0.364814814815 0.0 0.755925925926 5.49778714378</pose>
+	</waypoint>
+	<waypoint>
+		<time>1.11111111111</time>
+		<pose>-0.285185185185 3.49251124201e-17 0.371604938272 0.0 0.775308641975 6.28318530718</pose>
+	</waypoint>
+	<waypoint>
+		<time>1.48148148148</time>
+		<pose>-0.196855035997 -0.196855035997 0.378395061728 0.0 0.794691358025 7.06858347058</pose>
+	</waypoint>
+	<waypoint>
+		<time>1.85185185185</time>
+		<pose>-4.9893017743e-17 -0.271604938272 0.385185185185 0.0 0.814074074074 7.85398163397</pose>
+	</waypoint>
+	<waypoint>
+		<time>2.22222222222</time>
+		<pose>0.187252351314 -0.187252351314 0.391975308642 0.0 0.833456790123 8.63937979737</pose>
+	</waypoint>
+	<waypoint>
+		<time>2.59259259259</time>
+		<pose>0.258024691358 -6.31978224745e-17 0.398765432099 0.0 0.852839506173 9.42477796077</pose>
+	</waypoint>
+	<waypoint>
+		<time>2.96296296296</time>
+		<pose>0.177649666631 0.177649666631 0.405555555556 0.0 0.872222222222 10.2101761242</pose>
+	</waypoint>
+</trajectory>
+<trajectory id="5" type="circle">
+	<waypoint>
+		<time>0.0</time>
+		<pose>0.17284832429 0.17284832429 0.412345679012 0.0 0.891604938272 3.92699081699</pose>
+	</waypoint>
+	<waypoint>
+		<time>0.37037037037</time>
+		<pose>1.45521301751e-17 0.237654320988 0.419135802469 0.0 0.910987654321 4.71238898038</pose>
+	</waypoint>
+	<waypoint>
+		<time>0.740740740741</time>
+		<pose>-0.163245639607 0.163245639607 0.425925925926 0.0 0.93037037037 5.49778714378</pose>
+	</waypoint>
+	<waypoint>
+		<time>1.11111111111</time>
+		<pose>-0.224074074074 2.74411597587e-17 0.432716049383 0.0 0.94975308642 6.28318530718</pose>
+	</waypoint>
+	<waypoint>
+		<time>1.48148148148</time>
+		<pose>-0.153642954924 -0.153642954924 0.43950617284 0.0 0.969135802469 7.06858347058</pose>
+	</waypoint>
+	<waypoint>
+		<time>1.85185185185</time>
+		<pose>-3.86670887509e-17 -0.21049382716 0.446296296296 0.0 0.988518518519 7.85398163397</pose>
+	</waypoint>
+	<waypoint>
+		<time>2.22222222222</time>
+		<pose>0.144040270242 -0.144040270242 0.453086419753 0.0 1.00790123457 8.63937979737</pose>
+	</waypoint>
+	<waypoint>
+		<time>2.59259259259</time>
+		<pose>0.196913580247 -4.82299171516e-17 0.45987654321 0.0 1.02728395062 9.42477796077</pose>
+	</waypoint>
+	<waypoint>
+		<time>2.96296296296</time>
+		<pose>0.134437585559 0.134437585559 0.466666666667 0.0 1.04666666667 10.2101761242</pose>
+	</waypoint>
+</trajectory>
+<trajectory id="6" type="circle">
+	<waypoint>
+		<time>0.0</time>
+		<pose>0.129636243218 0.129636243218 0.473456790123 0.0 1.06604938272 3.92699081699</pose>
+	</waypoint>
+	<waypoint>
+		<time>0.37037037037</time>
+		<pose>1.08101538443e-17 0.176543209877 0.48024691358 0.0 1.08543209877 4.71238898038</pose>
+	</waypoint>
+	<waypoint>
+		<time>0.740740740741</time>
+		<pose>-0.120033558535 0.120033558535 0.487037037037 0.0 1.10481481481 5.49778714378</pose>
+	</waypoint>
+	<waypoint>
+		<time>1.11111111111</time>
+		<pose>-0.162962962963 1.99572070972e-17 0.493827160494 0.0 1.12419753086 6.28318530718</pose>
+	</waypoint>
+	<waypoint>
+		<time>1.48148148148</time>
+		<pose>-0.110430873852 -0.110430873852 0.500617283951 0.0 1.14358024691 7.06858347058</pose>
+	</waypoint>
+	<waypoint>
+		<time>1.85185185185</time>
+		<pose>-2.74411597587e-17 -0.149382716049 0.507407407407 0.0 1.16296296296 7.85398163397</pose>
+	</waypoint>
+	<waypoint>
+		<time>2.22222222222</time>
+		<pose>0.100828189169 -0.100828189169 0.514197530864 0.0 1.18234567901 8.63937979737</pose>
+	</waypoint>
+	<waypoint>
+		<time>2.59259259259</time>
+		<pose>0.135802469136 -3.32620118287e-17 0.520987654321 0.0 1.20172839506 9.42477796077</pose>
+	</waypoint>
+	<waypoint>
+		<time>2.96296296296</time>
+		<pose>0.0912255044864 0.0912255044864 0.527777777778 0.0 1.22111111111 10.2101761242</pose>
+	</waypoint>
+</trajectory>
+<trajectory id="7" type="circle">
+	<waypoint>
+		<time>0.0</time>
+		<pose>0.086424162145 0.086424162145 0.534567901235 0.0 1.24049382716 3.92699081699</pose>
+	</waypoint>
+	<waypoint>
+		<time>0.37037037037</time>
+		<pose>7.0681775136e-18 0.115432098765 0.541358024691 0.0 1.25987654321 4.71238898038</pose>
+	</waypoint>
+	<waypoint>
+		<time>0.740740740741</time>
+		<pose>-0.0768214774622 0.0768214774622 0.548148148148 0.0 1.27925925926 5.49778714378</pose>
+	</waypoint>
+	<waypoint>
+		<time>1.11111111111</time>
+		<pose>-0.101851851852 1.24732544358e-17 0.554938271605 0.0 1.29864197531 6.28318530718</pose>
+	</waypoint>
+	<waypoint>
+		<time>1.48148148148</time>
+		<pose>-0.0672187927795 -0.0672187927795 0.561728395062 0.0 1.31802469136 7.06858347058</pose>
+	</waypoint>
+	<waypoint>
+		<time>1.85185185185</time>
+		<pose>-1.62152307665e-17 -0.0882716049383 0.568518518519 0.0 1.33740740741 7.85398163397</pose>
+	</waypoint>
+	<waypoint>
+		<time>2.22222222222</time>
+		<pose>0.0576161080967 -0.0576161080967 0.575308641975 0.0 1.35679012346 8.63937979737</pose>
+	</waypoint>
+	<waypoint>
+		<time>2.59259259259</time>
+		<pose>0.0746913580247 -1.82941065058e-17 0.582098765432 0.0 1.37617283951 9.42477796077</pose>
+	</waypoint>
+	<waypoint>
+		<time>2.96296296296</time>
+		<pose>0.0480134234139 0.0480134234139 0.588888888889 0.0 1.39555555556 10.2101761242</pose>
+	</waypoint>
+</trajectory>
+<trajectory id="8" type="circle">
+	<waypoint>
+		<time>0.0</time>
+		<pose>0.0432120810725 0.0432120810725 0.595679012346 0.0 1.4149382716 3.92699081699</pose>
+	</waypoint>
+	<waypoint>
+		<time>0.37037037037</time>
+		<pose>3.32620118287e-18 0.0543209876543 0.602469135802 0.0 1.43432098765 4.71238898038</pose>
+	</waypoint>
+	<waypoint>
+		<time>0.740740740741</time>
+		<pose>-0.0336093963897 0.0336093963897 0.609259259259 0.0 1.4537037037 5.49778714378</pose>
+	</waypoint>
+	<waypoint>
+		<time>1.11111111111</time>
+		<pose>-0.0407407407407 4.9893017743e-18 0.616049382716 0.0 1.47308641975 6.28318530718</pose>
+	</waypoint>
+	<waypoint>
+		<time>1.48148148148</time>
+		<pose>-0.024006711707 -0.024006711707 0.622839506173 0.0 1.4924691358 7.06858347058</pose>
+	</waypoint>
+	<waypoint>
+		<time>1.85185185185</time>
+		<pose>-4.9893017743e-18 -0.0271604938272 0.62962962963 0.0 1.51185185185 7.85398163397</pose>
+	</waypoint>
+	<waypoint>
+		<time>2.22222222222</time>
+		<pose>0.0144040270242 -0.0144040270242 0.636419753086 0.0 1.5312345679 8.63937979737</pose>
+	</waypoint>
+	<waypoint>
+		<time>2.59259259259</time>
+		<pose>0.0135802469136 -3.32620118287e-18 0.643209876543 0.0 1.55061728395 9.42477796077</pose>
+	</waypoint>
+	<waypoint>
+		<time>2.96296296296</time>
+		<pose>0.00480134234139 0.00480134234139 0.65 0.0 1.57 10.2101761242</pose>
+	</waypoint>
+</trajectory>
+
+
         </script>
-    </actor>
+    </actor> 
   </world>
 </sdf>
