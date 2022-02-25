@@ -849,6 +849,209 @@ Visualization Manager:
         {}
       Queue Size: 100
       Value: true
+<<<<<<< HEAD
+=======
+    - Class: rviz/TF
+      Enabled: true
+      Frame Timeout: 15
+      Frames:
+        All Enabled: false
+        arm_flex_link:
+          Value: false
+        arm_lift_link:
+          Value: false
+        arm_roll_link:
+          Value: false
+        base_b_bumper_link:
+          Value: false
+        base_f_bumper_link:
+          Value: false
+        base_footprint:
+          Value: false
+        base_footprint_wheel:
+          Value: false
+        base_imu_frame:
+          Value: false
+        base_l_drive_wheel_link:
+          Value: false
+        base_l_passive_wheel_x_frame:
+          Value: false
+        base_l_passive_wheel_y_frame:
+          Value: false
+        base_l_passive_wheel_z_link:
+          Value: false
+        base_link:
+          Value: false
+        base_r_drive_wheel_link:
+          Value: false
+        base_r_passive_wheel_x_frame:
+          Value: false
+        base_r_passive_wheel_y_frame:
+          Value: false
+        base_r_passive_wheel_z_link:
+          Value: false
+        base_range_sensor_link:
+          Value: false
+        base_roll_link:
+          Value: false
+        hand_camera_frame:
+          Value: false
+        hand_camera_gazebo_frame:
+          Value: false
+        hand_l_distal_link:
+          Value: false
+        hand_l_finger_tip_frame:
+          Value: false
+        hand_l_finger_vacuum_frame:
+          Value: false
+        hand_l_mimic_distal_link:
+          Value: false
+        hand_l_proximal_link:
+          Value: false
+        hand_l_spring_proximal_link:
+          Value: false
+        hand_motor_dummy_link:
+          Value: false
+        hand_palm_link:
+          Value: true
+        hand_r_distal_link:
+          Value: false
+        hand_r_finger_tip_frame:
+          Value: false
+        hand_r_mimic_distal_link:
+          Value: false
+        hand_r_proximal_link:
+          Value: false
+        hand_r_spring_proximal_link:
+          Value: false
+        head_center_camera_frame:
+          Value: false
+        head_center_camera_gazebo_frame:
+          Value: false
+        head_l_stereo_camera_frame:
+          Value: false
+        head_l_stereo_camera_gazebo_frame:
+          Value: false
+        head_l_stereo_camera_link:
+          Value: false
+        head_pan_link:
+          Value: false
+        head_r_stereo_camera_frame:
+          Value: false
+        head_r_stereo_camera_gazebo_frame:
+          Value: false
+        head_r_stereo_camera_link:
+          Value: false
+        head_rgbd_sensor_depth_frame:
+          Value: false
+        head_rgbd_sensor_gazebo_frame:
+          Value: false
+        head_rgbd_sensor_link:
+          Value: false
+        head_rgbd_sensor_rgb_frame:
+          Value: false
+        head_tilt_link:
+          Value: false
+        map:
+          Value: false
+        odom:
+          Value: false
+        torso_lift_link:
+          Value: false
+        wrist_flex_link:
+          Value: false
+        wrist_ft_sensor_frame:
+          Value: false
+        wrist_ft_sensor_mount_link:
+          Value: false
+        wrist_roll_link:
+          Value: false
+      Marker Scale: 1
+      Name: TF
+      Show Arrows: true
+      Show Axes: true
+      Show Names: true
+      Tree:
+        map:
+          odom:
+            base_footprint:
+              base_link:
+                arm_lift_link:
+                  arm_flex_link:
+                    arm_roll_link:
+                      wrist_flex_link:
+                        wrist_ft_sensor_mount_link:
+                          wrist_ft_sensor_frame:
+                            wrist_roll_link:
+                              hand_palm_link:
+                                hand_camera_frame:
+                                  hand_camera_gazebo_frame:
+                                    {}
+                                hand_l_proximal_link:
+                                  hand_l_spring_proximal_link:
+                                    hand_l_mimic_distal_link:
+                                      hand_l_distal_link:
+                                        hand_l_finger_tip_frame:
+                                          {}
+                                        hand_l_finger_vacuum_frame:
+                                          {}
+                                hand_motor_dummy_link:
+                                  {}
+                                hand_r_proximal_link:
+                                  hand_r_spring_proximal_link:
+                                    hand_r_mimic_distal_link:
+                                      hand_r_distal_link:
+                                        hand_r_finger_tip_frame:
+                                          {}
+                base_b_bumper_link:
+                  {}
+                base_f_bumper_link:
+                  {}
+                base_imu_frame:
+                  {}
+                base_range_sensor_link:
+                  {}
+                base_roll_link:
+                  base_l_drive_wheel_link:
+                    {}
+                  base_l_passive_wheel_x_frame:
+                    base_l_passive_wheel_y_frame:
+                      base_l_passive_wheel_z_link:
+                        {}
+                  base_r_drive_wheel_link:
+                    {}
+                  base_r_passive_wheel_x_frame:
+                    base_r_passive_wheel_y_frame:
+                      base_r_passive_wheel_z_link:
+                        {}
+                torso_lift_link:
+                  head_pan_link:
+                    head_tilt_link:
+                      head_center_camera_frame:
+                        head_center_camera_gazebo_frame:
+                          {}
+                      head_l_stereo_camera_link:
+                        head_l_stereo_camera_frame:
+                          {}
+                        head_l_stereo_camera_gazebo_frame:
+                          {}
+                      head_r_stereo_camera_link:
+                        head_r_stereo_camera_frame:
+                          {}
+                        head_r_stereo_camera_gazebo_frame:
+                          {}
+                      head_rgbd_sensor_link:
+                        head_rgbd_sensor_depth_frame:
+                          {}
+                        head_rgbd_sensor_gazebo_frame:
+                          {}
+                        head_rgbd_sensor_rgb_frame:
+                          {}
+            base_footprint_wheel:
+              {}
+      Update Interval: 0
+      Value: true
+>>>>>>> 87aaf2b234478afe50f83c1e82eb971ec2636012
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -865,25 +1068,42 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
+<<<<<<< HEAD
       Distance: 8.313048362731934
+=======
+      Distance: 3.9207825660705566
+>>>>>>> 87aaf2b234478afe50f83c1e82eb971ec2636012
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
+<<<<<<< HEAD
         X: 0.10045096278190613
         Y: -0.2647913992404938
         Z: -1.341098823104403e-7
+=======
+        X: -0.11843037605285645
+        Y: -0.14945143461227417
+        Z: 1.9222502487536985e-6
+>>>>>>> 87aaf2b234478afe50f83c1e82eb971ec2636012
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
+<<<<<<< HEAD
       Pitch: 1.3197963237762451
       Target Frame: base_footprint
       Value: XYOrbit (rviz)
       Yaw: 3.587219715118408
+=======
+      Pitch: 0.3647964596748352
+      Target Frame: base_footprint
+      Value: XYOrbit (rviz)
+      Yaw: 3.6153857707977295
+>>>>>>> 87aaf2b234478afe50f83c1e82eb971ec2636012
     Saved: ~
 Window Geometry:
   Displays:
@@ -901,5 +1121,10 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1389
+<<<<<<< HEAD
   X: 2336
   Y: 261
+=======
+  X: 93
+  Y: 291
+>>>>>>> 87aaf2b234478afe50f83c1e82eb971ec2636012
