@@ -7,9 +7,14 @@ import numpy as np
 import rospy
 import ros_numpy
 import tf2_ros
+import tf
 import os
 import message_filters
 from sensor_msgs.msg import Image , LaserScan , PointCloud2
+from geometry_msgs.msg import TransformStamped
+from tf2_sensor_msgs.tf2_sensor_msgs import do_transform_cloud
+
+
 from object_classification.srv import *
 from utils_srv import RGBD
 
@@ -28,15 +33,16 @@ from cv_bridge import CvBridge, CvBridgeError
 bridge = CvBridge()
 class_names=['002masterchefcan', '003crackerbox', '004sugarbox', '005tomatosoupcan', '006mustardbottle', '007tunafishcan', '008puddingbox', '009gelatinbox', '010pottedmeatcan', '011banana', '012strawberry', '013apple', '014lemon', '015peach', '016pear', '017orange', '018plum', '019pitcherbase', '021bleachcleanser', '022windexbottle', '024bowl', '025mug', '027skillet', '028skilletlid', '029plate', '030fork', '031spoon', '032knife', '033spatula', '035powerdrill', '036woodblock', '037scissors', '038padlock', '040largemarker', '042adjustablewrench', '043phillipsscrewdriver', '044flatscrewdriver', '048hammer', '050mediumclamp', '051largeclamp', '052extralargeclamp', '053minisoccerball', '054softball', '055baseball', '056tennisball', '057racquetball', '058golfball', '059chain', '061foambrick', '062dice', '063-amarbles', '063-bmarbles', '065-acups', '065-bcups', '065-ccups', '065-dcups', '065-ecups', '065-fcups', '065-gcups', '065-hcups', '065-icups', '065-jcups', '070-acoloredwoodblocks', '070-bcoloredwoodblocks', '071nineholepegtest', '072-atoyairplane', '073-alegoduplo', '073-blegoduplo', '073-clegoduplo', '073-dlegoduplo', '073-elegoduplo', '073-flegoduplo', '073-glegoduplo']
 
-def correct_points(low=.27,high=1000):
+def correct_points(data, tans, rot, low=0.27,high=1000):
 
     # Function that transforms Point Cloud reference frame from  head, to map. (i.e. sensor coords to map coords )
     # low  high params Choose corrected plane to segment  w.r.t. head link 
     # img= correct_points() (Returns rgbd depth corrected image)
 
-    data = rospy.wait_for_message('/hsrb/head_rgbd_sensor/depth_registered/rectified_points', PointCloud2)
+    #data = rospy.wait_for_message('/hsrb/head_rgbd_sensor/depth_registered/rectified_points', PointCloud2)
     np_data=ros_numpy.numpify(data)
-    trans,rot=listener.lookupTransform('/map', '/head_rgbd_sensor_gazebo_frame', rospy.Time(0)) 
+    
+    trans,rot=tf_listener.lookupTransform('/map', '/head_rgbd_sensor_gazebo_frame', rospy.Time(0)) 
     
     eu=np.asarray(tf.transformations.euler_from_quaternion(rot))
     t=TransformStamped()
@@ -57,16 +63,17 @@ def correct_points(low=.27,high=1000):
     img[np.isnan(img)]=2
     img3 = np.where((img>low)&(img< 0.99*(trans[2])),img,255)
     return img3
-def plane_seg_square_imgs(lower=500 ,higher=50000,reg_ly= 30,reg_hy=600,plt_images=True):
+def plane_seg_square_imgs(image,iimmg,points_data,data,trans,rot,lower=500 ,higher=50000,reg_ly= 30,reg_hy=600,plt_images=True):
     
     
     
-    image= rgbd.get_h_image()
-    iimmg= rgbd.get_image()
-    points_data= rgbd.get_points()
+    #image= rgbd.get_h_image()
+    #iimmg= rgbd.get_image()
+    #points_data= rgbd.get_points()
     img=np.copy(image)
-    img3= correct_points()
-
+    print('here')
+    img3= correct_points(data,trans,rot)
+    print(' no here')
 
     _,contours, hierarchy = cv2.findContours(img3.astype('uint8'),cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
     i=0
@@ -122,7 +129,7 @@ def plane_seg_square_imgs(lower=500 ,higher=50000,reg_ly= 30,reg_hy=600,plt_imag
             
                         plt.imshow(image)
                         plt.axis("off")"""
-
+    images.append(img)
     cents=np.asarray(cents)
     ### returns centroids found and a group of 3d coordinates that conform the centroid
     return(cents,np.asarray(points), images)
@@ -206,6 +213,7 @@ def callback(img_msg,points_data):
 
 
     cv2_img = bridge.imgmsg_to_cv2(img_msg)#, "bgr8")
+    #np_data = ros_numpy.numpify(points_data)
     
     
     cv2.imshow('class_server'	, cv2_img)
@@ -219,6 +227,44 @@ def callback(img_msg,points_data):
         key = chr(keystroke).lower()
         print key
         if key =='p':
+            print('Segment plane and classify')
+            image= rgbd.get_h_image()
+            iimmg= rgbd.get_image()
+            points= rgbd.get_points()
+           
+            
+            trans,rot= tf_listener.lookupTransform('/map', '/head_rgbd_sensor_gazebo_frame', rospy.Time(0)) 
+            img3= correct_points(points_data,trans,rot ,.17,100 )
+            cents,xyz, images= plane_seg_square_imgs(image,iimmg,points, points_data,trans,rot,lower=10, higher=5000)
+            resp1 = classify(0)
+            print (len(resp1.out.data))
+            class_resp= np.asarray(resp1.out.data)
+            cont3=0
+            class_labels=[]
+            for cla in class_resp:
+                
+                if cont3==3:
+                    print '-----------------'
+                    cont3=0
+                print (class_names [(int)(cla)])
+                class_labels.append(class_names [(int)(cla)])
+                cont3+=1
+            #print (len(images))
+
+            
+
+            
+            #print (class_labels)
+            
+          
+            
+            #cv2.imshow('segmented image' ,img3.astype('uint8'))
+            cv2.imshow('segmented image' ,images[-1].astype('uint8'))
+            
+            #print(res)
+
+        if key =='s':
+            print('Segment color and classify')
             image= rgbd.get_h_image()
             iimmg= rgbd.get_image()
             points= rgbd.get_points()
@@ -226,7 +272,8 @@ def callback(img_msg,points_data):
             cents,xyz, images= seg_square_imgs(image,iimmg,points)
             
 
-            resp1 = classify(0)
+            resp1 = classify(1)
+            print (len(resp1.out.data))
             class_resp= np.asarray(resp1.out.data)
             cont3=0
             class_labels=[]
@@ -245,8 +292,8 @@ def callback(img_msg,points_data):
             
           
             
-            cv2.imshow('image' ,images[-1].astype('uint8'))
-            print('Segment color and classify')
+            cv2.imshow('classified_image' ,images[-1].astype('uint8'))
+        
             #print(res)
         
         
@@ -265,7 +312,7 @@ def listener():
     # anonymous=True flag means that rospy will choose a uniques
     # name for our 'listener' node so that multiple listeners can
     # run simultaneously.
-    global req,service_client , res , classify ,rgbd
+    global tf_listener,req,service_client , res , classify ,rgbd
     rospy.init_node('listener', anonymous=True)
     rgbd= RGBD()
 
@@ -278,6 +325,7 @@ def listener():
     
     #rospy.Subscriber("/hsrb/head_rgbd_sensor/rgb/image_rect_color", Image, callback)
     #rospy.Subscriber("/hsrb/head_rgbd_sensor/depth_registered/image", Image, callback)
+    tf_listener = tf.TransformListener()
     images= message_filters.Subscriber("/hsrb/head_rgbd_sensor/rgb/image_rect_color",Image)
     points= message_filters.Subscriber("/hsrb/head_rgbd_sensor/depth_registered/rectified_points",PointCloud2)
     #message_filters.Subscriber("/hsrb/head_rgbd_sensor/depth_registered/image"     ,Image)

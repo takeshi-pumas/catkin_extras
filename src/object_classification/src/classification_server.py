@@ -243,7 +243,16 @@ def predict_images(images):
 
 def callback(req):
     flo=Floats()
-    cents,xyz, images=plane_seg_square_imgs(plt_images=True)
+    if req.in_ ==0:
+        cents,xyz, images=plane_seg_square_imgs(plt_images=True)
+    if req.in_ ==1:
+        cents,xyz, images= seg_square_imgs(plt_images=True)
+    else: 
+        print('Usage: 1 for plane segmentation 0 por k means segmentation')
+
+    #cents,xyz, images=seg_square_imgs()
+    print ( 'req',req.in_)
+
     if len (images )== 0:
         flo.data= np.zeros(3)
         return ClassifyResponse(flo)

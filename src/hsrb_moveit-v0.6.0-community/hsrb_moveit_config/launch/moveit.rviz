@@ -13,8 +13,6 @@ Panels:
         - /TF1
         - /TF1/Frames1
         - /MarkerArray3
-        - /TF2
-        - /TF2/Frames1
       Splitter Ratio: 0.7425600290298462
     Tree Height: 180
   - Class: rviz/Help
@@ -53,14 +51,15 @@ Visualization Manager:
       Class: moveit_rviz_plugin/MotionPlanning
       Enabled: true
       Move Group Namespace: ""
-      MoveIt_Allow_Approximate_IK: true
+      MoveIt_Allow_Approximate_IK: false
       MoveIt_Allow_External_Program: false
-      MoveIt_Allow_Replanning: true
+      MoveIt_Allow_Replanning: false
       MoveIt_Allow_Sensor_Positioning: false
+      MoveIt_Goal_Tolerance: 0
       MoveIt_Planning_Attempts: 10
       MoveIt_Planning_Time: 5
       MoveIt_Use_Cartesian_Path: false
-      MoveIt_Use_Constraint_Aware_IK: false
+      MoveIt_Use_Constraint_Aware_IK: true
       MoveIt_Warehouse_Host: 127.0.0.1
       MoveIt_Warehouse_Port: 33829
       MoveIt_Workspace:
@@ -322,7 +321,7 @@ Visualization Manager:
         Interactive Marker Size: 0
         Joint Violation Color: 255; 0; 255
         Planning Group: head
-        Query Goal State: true
+        Query Goal State: false
         Query Start State: false
         Show Workspace: false
         Start State Alpha: 1
@@ -567,104 +566,6 @@ Visualization Manager:
       Value: true
       Velocity_Scaling_Factor: 1
     - Class: rviz/TF
-      Enabled: false
-      Frame Timeout: 15
-      Frames:
-        All Enabled: false
-      Marker Scale: 1
-      Name: TF
-      Show Arrows: true
-      Show Axes: true
-      Show Names: true
-      Tree:
-        {}
-      Update Interval: 0
-      Value: false
-    - Alpha: 1
-      Autocompute Intensity Bounds: true
-      Autocompute Value Bounds:
-        Max Value: 10
-        Min Value: -10
-        Value: true
-      Axis: Z
-      Channel Name: intensity
-      Class: rviz/LaserScan
-      Color: 255; 255; 255
-      Color Transformer: Intensity
-      Decay Time: 0
-      Enabled: true
-      Invert Rainbow: false
-      Max Color: 255; 255; 255
-      Max Intensity: 0
-      Min Color: 0; 0; 0
-      Min Intensity: 0
-      Name: LaserScan
-      Position Transformer: XYZ
-      Queue Size: 10
-      Selectable: true
-      Size (Pixels): 3
-      Size (m): 0.009999999776482582
-      Style: Flat Squares
-      Topic: /hsrb/base_scan
-      Unreliable: false
-      Use Fixed Frame: true
-      Use rainbow: true
-      Value: true
-    - Alpha: 1
-      Class: rviz/PointStamped
-      Color: 204; 41; 204
-      Enabled: true
-      History Length: 1
-      Name: PointStamped
-      Radius: 0.20000000298023224
-      Topic: /aa/Markov_NXT
-      Unreliable: false
-      Value: true
-    - Class: rviz/MarkerArray
-      Enabled: true
-      Marker Topic: /aa/Markov_route
-      Name: MarkerArray
-      Namespaces:
-        {}
-      Queue Size: 100
-      Value: true
-    - Alpha: 1
-      Class: rviz/PointStamped
-      Color: 204; 41; 204
-      Enabled: true
-      History Length: 1
-      Name: PointStamped
-      Radius: 0.20000000298023224
-      Topic: /clicked_point
-      Unreliable: false
-      Value: true
-    - Alpha: 1
-      Class: rviz/PointStamped
-      Color: 204; 41; 204
-      Enabled: true
-      History Length: 1
-      Name: PointStamped
-      Radius: 0.20000000298023224
-      Topic: /aa/Markov_NXT
-      Unreliable: false
-      Value: true
-    - Class: rviz/MarkerArray
-      Enabled: true
-      Marker Topic: /aa/Viterbi
-      Name: MarkerArray
-      Namespaces:
-        {}
-      Queue Size: 100
-      Value: true
-    - Class: rviz/MarkerArray
-      Enabled: true
-      Marker Topic: /aa/HMM_topo
-      Name: MarkerArray
-      Namespaces:
-        {}
-      Queue Size: 100
-      Value: true
-    - Class: rviz/TF
       Enabled: true
       Frame Timeout: 15
       Frames:
@@ -864,7 +765,6 @@ Visualization Manager:
               {}
       Update Interval: 0
       Value: true
-<<<<<<< HEAD
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -949,208 +849,6 @@ Visualization Manager:
         {}
       Queue Size: 100
       Value: true
-    - Class: rviz/TF
-      Enabled: true
-      Frame Timeout: 15
-      Frames:
-        All Enabled: false
-        arm_flex_link:
-          Value: false
-        arm_lift_link:
-          Value: false
-        arm_roll_link:
-          Value: false
-        base_b_bumper_link:
-          Value: false
-        base_f_bumper_link:
-          Value: false
-        base_footprint:
-          Value: false
-        base_footprint_wheel:
-          Value: false
-        base_imu_frame:
-          Value: false
-        base_l_drive_wheel_link:
-          Value: false
-        base_l_passive_wheel_x_frame:
-          Value: false
-        base_l_passive_wheel_y_frame:
-          Value: false
-        base_l_passive_wheel_z_link:
-          Value: false
-        base_link:
-          Value: false
-        base_r_drive_wheel_link:
-          Value: false
-        base_r_passive_wheel_x_frame:
-          Value: false
-        base_r_passive_wheel_y_frame:
-          Value: false
-        base_r_passive_wheel_z_link:
-          Value: false
-        base_range_sensor_link:
-          Value: false
-        base_roll_link:
-          Value: false
-        hand_camera_frame:
-          Value: false
-        hand_camera_gazebo_frame:
-          Value: false
-        hand_l_distal_link:
-          Value: false
-        hand_l_finger_tip_frame:
-          Value: false
-        hand_l_finger_vacuum_frame:
-          Value: false
-        hand_l_mimic_distal_link:
-          Value: false
-        hand_l_proximal_link:
-          Value: false
-        hand_l_spring_proximal_link:
-          Value: false
-        hand_motor_dummy_link:
-          Value: false
-        hand_palm_link:
-          Value: true
-        hand_r_distal_link:
-          Value: false
-        hand_r_finger_tip_frame:
-          Value: false
-        hand_r_mimic_distal_link:
-          Value: false
-        hand_r_proximal_link:
-          Value: false
-        hand_r_spring_proximal_link:
-          Value: false
-        head_center_camera_frame:
-          Value: false
-        head_center_camera_gazebo_frame:
-          Value: false
-        head_l_stereo_camera_frame:
-          Value: false
-        head_l_stereo_camera_gazebo_frame:
-          Value: false
-        head_l_stereo_camera_link:
-          Value: false
-        head_pan_link:
-          Value: false
-        head_r_stereo_camera_frame:
-          Value: false
-        head_r_stereo_camera_gazebo_frame:
-          Value: false
-        head_r_stereo_camera_link:
-          Value: false
-        head_rgbd_sensor_depth_frame:
-          Value: false
-        head_rgbd_sensor_gazebo_frame:
-          Value: false
-        head_rgbd_sensor_link:
-          Value: false
-        head_rgbd_sensor_rgb_frame:
-          Value: false
-        head_tilt_link:
-          Value: false
-        map:
-          Value: false
-        odom:
-          Value: false
-        torso_lift_link:
-          Value: false
-        wrist_flex_link:
-          Value: false
-        wrist_ft_sensor_frame:
-          Value: false
-        wrist_ft_sensor_mount_link:
-          Value: false
-        wrist_roll_link:
-          Value: false
-      Marker Scale: 1
-      Name: TF
-      Show Arrows: true
-      Show Axes: true
-      Show Names: true
-      Tree:
-        map:
-          odom:
-            base_footprint:
-              base_link:
-                arm_lift_link:
-                  arm_flex_link:
-                    arm_roll_link:
-                      wrist_flex_link:
-                        wrist_ft_sensor_mount_link:
-                          wrist_ft_sensor_frame:
-                            wrist_roll_link:
-                              hand_palm_link:
-                                hand_camera_frame:
-                                  hand_camera_gazebo_frame:
-                                    {}
-                                hand_l_proximal_link:
-                                  hand_l_spring_proximal_link:
-                                    hand_l_mimic_distal_link:
-                                      hand_l_distal_link:
-                                        hand_l_finger_tip_frame:
-                                          {}
-                                        hand_l_finger_vacuum_frame:
-                                          {}
-                                hand_motor_dummy_link:
-                                  {}
-                                hand_r_proximal_link:
-                                  hand_r_spring_proximal_link:
-                                    hand_r_mimic_distal_link:
-                                      hand_r_distal_link:
-                                        hand_r_finger_tip_frame:
-                                          {}
-                base_b_bumper_link:
-                  {}
-                base_f_bumper_link:
-                  {}
-                base_imu_frame:
-                  {}
-                base_range_sensor_link:
-                  {}
-                base_roll_link:
-                  base_l_drive_wheel_link:
-                    {}
-                  base_l_passive_wheel_x_frame:
-                    base_l_passive_wheel_y_frame:
-                      base_l_passive_wheel_z_link:
-                        {}
-                  base_r_drive_wheel_link:
-                    {}
-                  base_r_passive_wheel_x_frame:
-                    base_r_passive_wheel_y_frame:
-                      base_r_passive_wheel_z_link:
-                        {}
-                torso_lift_link:
-                  head_pan_link:
-                    head_tilt_link:
-                      head_center_camera_frame:
-                        head_center_camera_gazebo_frame:
-                          {}
-                      head_l_stereo_camera_link:
-                        head_l_stereo_camera_frame:
-                          {}
-                        head_l_stereo_camera_gazebo_frame:
-                          {}
-                      head_r_stereo_camera_link:
-                        head_r_stereo_camera_frame:
-                          {}
-                        head_r_stereo_camera_gazebo_frame:
-                          {}
-                      head_rgbd_sensor_link:
-                        head_rgbd_sensor_depth_frame:
-                          {}
-                        head_rgbd_sensor_gazebo_frame:
-                          {}
-                        head_rgbd_sensor_rgb_frame:
-                          {}
-            base_footprint_wheel:
-              {}
-      Update Interval: 0
-      Value: true
-=======
->>>>>>> 37ea553dbe902d4707f65642f899472e723819ff
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -1167,67 +865,41 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-<<<<<<< HEAD
-      Distance: 2.4917283058166504
-=======
-      Distance: 5.827269554138184
->>>>>>> 37ea553dbe902d4707f65642f899472e723819ff
+      Distance: 8.313048362731934
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-<<<<<<< HEAD
-        X: -0.11843037605285645
-        Y: -0.14945143461227417
-        Z: 1.9222502487536985e-6
-=======
-        X: 1.0510354042053223
-        Y: 1.4690334796905518
-        Z: -1.0952347793136141e-6
->>>>>>> 37ea553dbe902d4707f65642f899472e723819ff
+        X: 0.10045096278190613
+        Y: -0.2647913992404938
+        Z: -1.341098823104403e-7
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-<<<<<<< HEAD
-      Pitch: 1.0847978591918945
+      Pitch: 1.3197963237762451
       Target Frame: base_footprint
       Value: XYOrbit (rviz)
-      Yaw: 5.605385780334473
-=======
-      Pitch: 0.06479664891958237
-      Target Frame: base_footprint
-      Value: XYOrbit (rviz)
-      Yaw: 3.564028739929199
->>>>>>> 37ea553dbe902d4707f65642f899472e723819ff
+      Yaw: 3.587219715118408
     Saved: ~
 Window Geometry:
   Displays:
-    collapsed: true
+    collapsed: false
   Height: 759
   Help:
     collapsed: false
-  Hide Left Dock: true
+  Hide Left Dock: false
   Hide Right Dock: false
   MotionPlanning:
-    collapsed: true
+    collapsed: false
   MotionPlanning - Trajectory Slider:
     collapsed: false
-<<<<<<< HEAD
-  QMainWindow State: 000000ff00000000fd0000000100000000000002a20000029dfc0200000007fb000000100044006900730070006c006100790073010000003d000000f1000000c900fffffffb0000000800480065006c00700000000342000000bb0000006e00fffffffb0000000a0056006900650077007300000003b0000000b0000000a400fffffffb0000000c00430061006d00650072006100000002ff000001610000000000000000fb0000001e004d006f00740069006f006e00200050006c0061006e006e0069006e00670100000374000001890000000000000000fb00000044004d006f00740069006f006e0050006c0061006e006e0069006e00670020002d0020005400720061006a006500630074006f0072007900200053006c00690064006500720000000000ffffffff0000004100fffffffb0000001c004d006f00740069006f006e0050006c0061006e006e0069006e00670100000134000001a60000017d00ffffff000002c50000029d00000001000000020000000100000002fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd0000000100000000000002a20000029dfc0200000007fb000000100044006900730070006c006100790073010000003d000000f1000000c900fffffffb0000000800480065006c00700000000342000000bb0000006e00fffffffb0000000a0056006900650077007300000003b0000000b0000000a400fffffffb0000000c00430061006d00650072006100000002ff000001610000000000000000fb0000001e004d006f00740069006f006e00200050006c0061006e006e0069006e00670100000374000001890000000000000000fb00000044004d006f00740069006f006e0050006c0061006e006e0069006e00670020002d0020005400720061006a006500630074006f0072007900200053006c00690064006500720000000000ffffffff0000004100fffffffb0000001c004d006f00740069006f006e0050006c0061006e006e0069006e00670100000134000001a60000018900ffffff000002c50000029d00000001000000020000000100000002fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Views:
     collapsed: false
   Width: 1389
-  X: 93
-  Y: 350
-=======
-  QMainWindow State: 000000ff00000000fd0000000100000000000002a20000029dfc0200000007fb000000100044006900730070006c006100790073000000003d000000f1000000c900fffffffb0000000800480065006c00700000000342000000bb0000006e00fffffffb0000000a0056006900650077007300000003b0000000b0000000a400fffffffb0000000c00430061006d00650072006100000002ff000001610000000000000000fb0000001e004d006f00740069006f006e00200050006c0061006e006e0069006e00670100000374000001890000000000000000fb00000044004d006f00740069006f006e0050006c0061006e006e0069006e00670020002d0020005400720061006a006500630074006f0072007900200053006c00690064006500720000000000ffffffff0000004100fffffffb0000001c004d006f00740069006f006e0050006c0061006e006e0069006e00670000000134000001a60000018900ffffff000003070000029d00000001000000020000000100000002fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
-  Views:
-    collapsed: false
-  Width: 775
-  X: 83
-  Y: 127
->>>>>>> 37ea553dbe902d4707f65642f899472e723819ff
+  X: 2336
+  Y: 261
