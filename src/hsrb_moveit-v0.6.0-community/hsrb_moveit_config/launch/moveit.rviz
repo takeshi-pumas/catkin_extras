@@ -55,7 +55,6 @@ Visualization Manager:
       MoveIt_Allow_External_Program: false
       MoveIt_Allow_Replanning: false
       MoveIt_Allow_Sensor_Positioning: false
-      MoveIt_Goal_Tolerance: 0
       MoveIt_Planning_Attempts: 10
       MoveIt_Planning_Time: 5
       MoveIt_Use_Cartesian_Path: false
@@ -570,6 +569,34 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: false
+        Object0:
+          Value: true
+        Object1:
+          Value: true
+        Object2:
+          Value: true
+        Object3:
+          Value: true
+        Object4:
+          Value: true
+        Object_0_Floor:
+          Value: true
+        Object_1_Floor:
+          Value: true
+        Object_1_Table_1:
+          Value: true
+        Object_2_Floor:
+          Value: true
+        Object_2_Table_1:
+          Value: true
+        Object_3_Floor:
+          Value: true
+        Object_3_Table_1:
+          Value: true
+        Object_4_Floor:
+          Value: true
+        Object_4_Table_1:
+          Value: true
         arm_flex_link:
           Value: false
         arm_lift_link:
@@ -687,6 +714,24 @@ Visualization Manager:
       Show Names: true
       Tree:
         map:
+          Object_0_Floor:
+            {}
+          Object_1_Floor:
+            {}
+          Object_1_Table_1:
+            {}
+          Object_2_Floor:
+            {}
+          Object_2_Table_1:
+            {}
+          Object_3_Floor:
+            {}
+          Object_3_Table_1:
+            {}
+          Object_4_Floor:
+            {}
+          Object_4_Table_1:
+            {}
           odom:
             base_footprint:
               base_link:
@@ -755,6 +800,16 @@ Visualization Manager:
                         head_r_stereo_camera_gazebo_frame:
                           {}
                       head_rgbd_sensor_link:
+                        Object0:
+                          {}
+                        Object1:
+                          {}
+                        Object2:
+                          {}
+                        Object3:
+                          {}
+                        Object4:
+                          {}
                         head_rgbd_sensor_depth_frame:
                           {}
                         head_rgbd_sensor_gazebo_frame:
@@ -865,25 +920,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 8.313048362731934
+      Distance: 3.3973402976989746
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.10045096278190613
-        Y: -0.2647913992404938
+        X: 0.23735785484313965
+        Y: -0.8553608655929565
         Z: -1.341098823104403e-7
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.3197963237762451
+      Pitch: 0.09979713708162308
       Target Frame: base_footprint
       Value: XYOrbit (rviz)
-      Yaw: 3.587219715118408
+      Yaw: 4.199041843414307
     Saved: ~
 Window Geometry:
   Displays:
@@ -897,9 +952,9 @@ Window Geometry:
     collapsed: false
   MotionPlanning - Trajectory Slider:
     collapsed: false
-  QMainWindow State: 000000ff00000000fd0000000100000000000002a20000029dfc0200000007fb000000100044006900730070006c006100790073010000003d000000f1000000c900fffffffb0000000800480065006c00700000000342000000bb0000006e00fffffffb0000000a0056006900650077007300000003b0000000b0000000a400fffffffb0000000c00430061006d00650072006100000002ff000001610000000000000000fb0000001e004d006f00740069006f006e00200050006c0061006e006e0069006e00670100000374000001890000000000000000fb00000044004d006f00740069006f006e0050006c0061006e006e0069006e00670020002d0020005400720061006a006500630074006f0072007900200053006c00690064006500720000000000ffffffff0000004100fffffffb0000001c004d006f00740069006f006e0050006c0061006e006e0069006e00670100000134000001a60000018900ffffff000002c50000029d00000001000000020000000100000002fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd0000000100000000000002a20000029dfc0200000007fb000000100044006900730070006c006100790073010000003d000000f1000000c900fffffffb0000000800480065006c00700000000342000000bb0000006e00fffffffb0000000a0056006900650077007300000003b0000000b0000000a400fffffffb0000000c00430061006d00650072006100000002ff000001610000000000000000fb0000001e004d006f00740069006f006e00200050006c0061006e006e0069006e00670100000374000001890000000000000000fb00000044004d006f00740069006f006e0050006c0061006e006e0069006e00670020002d0020005400720061006a006500630074006f0072007900200053006c00690064006500720000000000ffffffff0000004100fffffffb0000001c004d006f00740069006f006e0050006c0061006e006e0069006e00670100000134000001a60000017d00ffffff000002c50000029d00000001000000020000000100000002fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Views:
     collapsed: false
   Width: 1389
-  X: 2336
-  Y: 261
+  X: -304
+  Y: 184
