@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from __future__ import print_function
-
+from cv_bridge import CvBridge
 from object_classification.srv import Classify,ClassifyResponse, ClassifyRequest
 from object_classification.msg import Floats  
 from rospy.numpy_msg import numpy_msg
@@ -242,11 +242,20 @@ def predict_images(images):
 
 
 def callback(req):
+    
+    print ('got ',len(req.in_.image_msgs),'images')    
+    #np_images = bridge.imgmsg_to_cv2(req.in_.image_msg)
+    #print (np_images.shape)
     flo=Floats()
-    cents,xyz, images=plane_seg_square_imgs(plt_images=True)
-    if len (images )== 0:
-        flo.data= np.zeros(3)
-        return ClassifyResponse(flo)
+    """cents,xyz, images=plane_seg_square_imgs(plt_images=True)
+                if len (images )== 0:
+                    flo.data= np.zeros(3)
+                    return ClassifyResponse(flo)"""
+    images=[]
+    for i in range(len(req.in_.image_msgs)):
+        images.append(bridge.imgmsg_to_cv2(req.in_.image_msgs[i]))
+
+
     pred=predict_images(images)
     flo.data=(pred.reshape(-1))
     print (flo.data)
@@ -262,9 +271,10 @@ def callback(req):
 
 
 def classify_server():
-    global listener,rgbd
+    global listener,rgbd, bridge
     rospy.init_node('classification_server')
     rgbd= RGBD()
+    bridge = CvBridge()
     listener = tf.TransformListener()
     broadcaster= tf.TransformBroadcaster()
     tf_static_broadcaster= tf2_ros.StaticTransformBroadcaster()
