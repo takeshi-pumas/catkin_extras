@@ -22,12 +22,6 @@ from utils_srv import RGBD
 from std_msgs.msg import String
 
 
-"""
-import sys
-print (sys.path)
-sys.path.remove('/opt/ros/melodic/lib/python2.7/dist-packages')
-"""
-
 import cv2
 from cv_bridge import CvBridge, CvBridgeError
 bridge = CvBridge()
@@ -129,10 +123,10 @@ def plane_seg_square_imgs(image,iimmg,points_data,data,trans,rot,lower=500 ,high
             
                         plt.imshow(image)
                         plt.axis("off")"""
-    images.append(img)
+    
     cents=np.asarray(cents)
     ### returns centroids found and a group of 3d coordinates that conform the centroid
-    return(cents,np.asarray(points), images)
+    return(cents,np.asarray(points), images,img)
 def seg_square_imgs(image, iimmg,points_data,lower=2000,higher=50000,reg_ly=0,reg_hy=1000,reg_lx=0,reg_hx=1000,plt_images=False): 
 
     # Segment image using color and K means  ()
@@ -204,8 +198,8 @@ def seg_square_imgs(image, iimmg,points_data,lower=2000,higher=50000,reg_ly=0,re
                 images.pop()
    
     cents=np.asarray(cents)
-    images.append(img)
-    return(cents,np.asarray(points), images)
+    
+    return(cents,np.asarray(points), images,img)
 
 
 ##############################################################################################################################################################################################################################################################################################################################
@@ -235,8 +229,17 @@ def callback(img_msg,points_data):
             
             trans,rot= tf_listener.lookupTransform('/map', '/head_rgbd_sensor_gazebo_frame', rospy.Time(0)) 
             img3= correct_points(points_data,trans,rot ,.17,100 )
-            cents,xyz, images= plane_seg_square_imgs(image,iimmg,points, points_data,trans,rot,lower=10, higher=5000)
-            resp1 = classify(0)
+            cents,xyz, images, img= plane_seg_square_imgs(image,iimmg,points, points_data,trans,rot,lower=10, higher=5000)
+            cv2.imshow('segmented image' ,img.astype('uint8'))
+            req=classify.request_class()
+
+
+            for image in images:
+                img_msg=bridge.cv2_to_imgmsg(image)
+                req.in_.image_msgs.append(img_msg)
+
+
+            resp1 = classify(req)
             print (len(resp1.out.data))
             class_resp= np.asarray(resp1.out.data)
             cont3=0
@@ -259,7 +262,6 @@ def callback(img_msg,points_data):
           
             
             #cv2.imshow('segmented image' ,img3.astype('uint8'))
-            cv2.imshow('segmented image' ,images[-1].astype('uint8'))
             
             #print(res)
 
@@ -269,10 +271,19 @@ def callback(img_msg,points_data):
             iimmg= rgbd.get_image()
             points= rgbd.get_points()
 
-            cents,xyz, images= seg_square_imgs(image,iimmg,points)
+            cents,xyz, images, img= seg_square_imgs(image,iimmg,points)
             
 
-            resp1 = classify(1)
+            print(len (images))
+            req=classify.request_class()
+
+
+            for image in images:
+                img_msg=bridge.cv2_to_imgmsg(image)
+                req.in_.image_msgs.append(img_msg)
+
+
+            resp1 = classify(req)
             print (len(resp1.out.data))
             class_resp= np.asarray(resp1.out.data)
             cont3=0
@@ -292,7 +303,7 @@ def callback(img_msg,points_data):
             
           
             
-            cv2.imshow('classified_image' ,images[-1].astype('uint8'))
+            cv2.imshow('classified_image' ,img.astype('uint8'))
         
             #print(res)
         

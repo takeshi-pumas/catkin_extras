@@ -53,9 +53,9 @@ Visualization Manager:
       Move Group Namespace: ""
       MoveIt_Allow_Approximate_IK: true
       MoveIt_Allow_External_Program: false
-      MoveIt_Allow_Replanning: true
-      MoveIt_Allow_Sensor_Positioning: true
-      MoveIt_Planning_Attempts: 10
+      MoveIt_Allow_Replanning: false
+      MoveIt_Allow_Sensor_Positioning: false
+      MoveIt_Planning_Attempts: 2
       MoveIt_Planning_Time: 11
       MoveIt_Use_Cartesian_Path: false
       MoveIt_Use_Constraint_Aware_IK: false
@@ -319,7 +319,7 @@ Visualization Manager:
         Goal State Color: 250; 128; 0
         Interactive Marker Size: 0
         Joint Violation Color: 255; 0; 255
-        Planning Group: head
+        Planning Group: arm
         Query Goal State: false
         Query Start State: false
         Show Workspace: false
@@ -569,28 +569,6 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: false
-        D_from_object:
-          Value: true
-        Floor_Grasp:
-          Value: true
-        Floor_Pre:
-          Value: true
-        Grasp:
-          Value: true
-        Object0:
-          Value: true
-        Object1:
-          Value: true
-        Object2:
-          Value: true
-        Object_0_Floor:
-          Value: true
-        Object_1_Floor:
-          Value: true
-        Object_2_Floor:
-          Value: true
-        Pre_grasp:
-          Value: true
         arm_flex_link:
           Value: false
         arm_lift_link:
@@ -708,25 +686,9 @@ Visualization Manager:
       Show Names: true
       Tree:
         map:
-          D_from_object:
-            {}
-          Object_0_Floor:
-            {}
-          Object_1_Floor:
-            {}
-          Object_2_Floor:
-            {}
           odom:
             base_footprint:
               base_link:
-                Floor_Grasp:
-                  {}
-                Floor_Pre:
-                  {}
-                Grasp:
-                  {}
-                Pre_grasp:
-                  {}
                 arm_lift_link:
                   arm_flex_link:
                     arm_roll_link:
@@ -792,12 +754,6 @@ Visualization Manager:
                         head_r_stereo_camera_gazebo_frame:
                           {}
                       head_rgbd_sensor_link:
-                        Object0:
-                          {}
-                        Object1:
-                          {}
-                        Object2:
-                          {}
                         head_rgbd_sensor_depth_frame:
                           {}
                         head_rgbd_sensor_gazebo_frame:
@@ -945,4 +901,4 @@ Window Geometry:
     collapsed: false
   Width: 1389
   X: 67
-  Y: 154
+  Y: 124

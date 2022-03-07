@@ -80,7 +80,7 @@
       <profile_COMMON>
         <newparam sid="moon_horizon_2_jpeg-surface">
           <surface type="2D">
-            <init_from>moon_horizon_2_jpeg</init_from>
+            <init_from>../materials/textures/moon_horizon_2.jpeg</init_from>
           </surface>
         </newparam>
         <newparam sid="moon_horizon_2_jpeg-sampler">

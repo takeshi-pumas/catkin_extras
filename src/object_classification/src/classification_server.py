@@ -38,7 +38,9 @@ model = Sequential([
 model.compile(optimizer='adam',
               loss=tensorflow.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
               metrics=['accuracy'])
-model.load_weights('/home/roboworks/Codes/TensorFLow/weights_ycb_resized')
+#model.load_weights('/home/roboworks/Codes/TensorFLow/weights_ycb')
+model.load_weights('/home/roboworks/Codes/catkin_mio/src/object_classification/src/weights/weights_ycb')
+
 
 import rospy
 import numpy as np
@@ -77,7 +79,7 @@ def plane_seg_square_imgs(lower=500 ,higher=50000,reg_ly= 30,reg_hy=600,plt_imag
     image= rgbd.get_h_image()
     iimmg= rgbd.get_image()
     points_data= rgbd.get_points()
-    img=np.copy(image)
+    img=np.copy(iimmg)
     img3= correct_points()
 
 
@@ -258,8 +260,8 @@ def callback(req):
 
     pred=predict_images(images)
     flo.data=(pred.reshape(-1))
-    print (flo.data)
-    
+    print ('Predictions (top 3 for each class)',flo.data)
+
     return ClassifyResponse(flo)
 
         
