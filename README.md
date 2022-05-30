@@ -5,11 +5,11 @@ Catkin Must run on top of takeshi catkin
 
 clone this git 
 
-$  git clone https://github.com/takeshi-pumas/catkin_tutorials.git
+$  git clone https://github.com/takeshi-pumas/catkin_extras.git
 
 navigate to the folder you just created.
 
-$ cd catkin_tutorials
+$ cd catkin_extras
 
 "build the catkin space containing Moveit, and the wrs arenas"
 
@@ -27,7 +27,7 @@ Try typing
 
 $  roslaunch hsrb_wrs_gazebo_launch
 
-then hit tab for autocomplete you shoudl be able to launch 
+then hit tab for autocomplete you should be able to launch 
 
 or just
 $ roslaunch hsrb_wrs_gazebo_launch wrs_practice0_easy_tmc.launch
