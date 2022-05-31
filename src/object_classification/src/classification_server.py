@@ -1,6 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
-from __future__ import print_function
+
 from cv_bridge import CvBridge
 from object_classification.srv import Classify,ClassifyResponse, ClassifyRequest
 from object_classification.msg import Floats  
@@ -8,12 +8,25 @@ from rospy.numpy_msg import numpy_msg
 import tensorflow
 import matplotlib.pyplot as plt
 from tensorflow.keras import layers , Sequential
+from tensorflow.keras.applications.vgg19 import VGG19
+#num_classes = 30
 num_classes = 73
 batch_size=128
 img_width=300
 img_height=300
 
 #####################################################################
+#vgg19_model = VGG19(weights="imagenet", include_top=False, input_shape=(img_height,img_width,3))
+#vgg19_model.trainable = False ## Not trainable weights
+#model = Sequential([
+#    vgg19_model,
+#    layers.Flatten(),
+#    layers.Dense(128, activation='relu'),
+#    layers.Dense(128, activation='relu'),
+#    layers.Dense(num_classes)
+#  
+#])
+#
 model = Sequential([
   
   layers.Conv2D(16, 3, padding='same', activation='relu' , input_shape=(img_height, img_width,3)),
@@ -35,11 +48,14 @@ model = Sequential([
   layers.Dense(128, activation='relu'),
   layers.Dense(num_classes)
 ])
+
 model.compile(optimizer='adam',
               loss=tensorflow.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
               metrics=['accuracy'])
-#model.load_weights('/home/roboworks/Codes/TensorFLow/weights_ycb')
-model.load_weights('/home/roboworks/Codes/catkin_mio/src/object_classification/src/weights/weights_ycb')
+model.load_weights('/home/roboworks/catkin_extras/src/object_classification/src/weights/weights_ycb')
+#model.load_weights('/workspace/src/object_classification/src/weights/weights_ycb')
+#model.load_weights('/workspace/src/object_classification/src/weights/weights_ycb_vgg19')
+#model.load_weights('/workspace/src/object_classification/src/weights/weights_ycb_small2') OSCAR II WEIGHTS 
 
 
 import rospy

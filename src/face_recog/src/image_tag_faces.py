@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
-
-
-#!/usr/bin/env python
+#!/usr/bin/env python3
     
 import numpy as np
 import rospy
@@ -15,8 +13,9 @@ from geometry_msgs.msg import TransformStamped
 from tf2_sensor_msgs.tf2_sensor_msgs import do_transform_cloud
 
 
-from object_classification.srv import *
-from utils_srv import RGBD
+from face_recog .srv import *
+
+
 
 
 from std_msgs.msg import String
@@ -219,7 +218,7 @@ def callback(img_msg,points_data):
     keystroke = cv2.waitKey(0)
     if 32 <= keystroke and keystroke < 128:
         key = chr(keystroke).lower()
-        print (key)
+        print key
         if key =='p':
             print('Segment plane and classify')
             image= rgbd.get_h_image()
@@ -247,7 +246,7 @@ def callback(img_msg,points_data):
             for cla in class_resp:
                 
                 if cont3==3:
-                    print ('-----------------')
+                    print '-----------------'
                     cont3=0
                 print (class_names [(int)(cla)])
                 class_labels.append(class_names [(int)(cla)])
@@ -291,7 +290,7 @@ def callback(img_msg,points_data):
             for cla in class_resp:
                 
                 if cont3==3:
-                    print ('-----------------')
+                    print '-----------------'
                     cont3=0
                 print (class_names [(int)(cla)])
                 class_labels.append(class_names [(int)(cla)])
@@ -337,13 +336,15 @@ def listener():
     #rospy.Subscriber("/hsrb/head_rgbd_sensor/rgb/image_rect_color", Image, callback)
     #rospy.Subscriber("/hsrb/head_rgbd_sensor/depth_registered/image", Image, callback)
     tf_listener = tf.TransformListener()
-    #images= message_filters.Subscriber("/hsrb/head_rgbd_sensor/rgb/image_rect_color",Image)
-    images= message_filters.Subscriber("/usb_cam/image_raw",Image)
-    points= message_filters.Subscriber("/hsrb/head_rgbd_sensor/depth_registered/rectified_points",PointCloud2)
+    #data = rospy.wait_for_message("/usb_cam/image_raw",Image)
+    
+
+    images= rospy.Subscriber("/usb_cam/image_raw",Image,callback)
+    #points= message_filters.Subscriber("/hsrb/head_rgbd_sensor/depth_registered/rectified_points",PointCloud2)
     #message_filters.Subscriber("/hsrb/head_rgbd_sensor/depth_registered/image"     ,Image)
     #ats= message_filters.ApproximateTimeSynchronizer([symbol,odom,twist],queue_size=5,slop=.1,allow_headerless=True)
-    ats= message_filters.ApproximateTimeSynchronizer([images,points],queue_size=5,slop=.1,allow_headerless=True)
-    ats.registerCallback(callback)
+    #ats= message_filters.ApproximateTimeSynchronizer([images,points],queue_size=5,slop=.1,allow_headerless=True)
+    #ats.registerCallback(callback)
         
     #rospy.Subscriber("/hsrb/base_scan", LaserScan, callback)
 

@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
-
-
-#!/usr/bin/env python
+#!/usr/bin/env python3
     
 import numpy as np
 import rospy
@@ -15,8 +13,9 @@ from geometry_msgs.msg import TransformStamped
 from tf2_sensor_msgs.tf2_sensor_msgs import do_transform_cloud
 
 
-from object_classification.srv import *
-from utils_srv import RGBD
+from face_recog .srv import *
+
+
 
 
 from std_msgs.msg import String
@@ -220,93 +219,14 @@ def callback(img_msg,points_data):
     if 32 <= keystroke and keystroke < 128:
         key = chr(keystroke).lower()
         print (key)
-        if key =='p':
-            print('Segment plane and classify')
-            image= rgbd.get_h_image()
-            iimmg= rgbd.get_image()
-            points= rgbd.get_points()
-           
-            
-            trans,rot= tf_listener.lookupTransform('/map', '/head_rgbd_sensor_gazebo_frame', rospy.Time(0)) 
-            img3= correct_points(points_data,trans,rot ,.17,100 )
-            cents,xyz, images, img= plane_seg_square_imgs(image,iimmg,points, points_data,trans,rot,lower=10, higher=5000)
-            cv2.imshow('segmented image' ,img.astype('uint8'))
-            req=classify.request_class()
-
-
-            for image in images:
-                img_msg=bridge.cv2_to_imgmsg(image)
-                req.in_.image_msgs.append(img_msg)
-
-
-            resp1 = classify(req)
-            print (len(resp1.out.data))
-            class_resp= np.asarray(resp1.out.data)
-            cont3=0
-            class_labels=[]
-            for cla in class_resp:
-                
-                if cont3==3:
-                    print ('-----------------')
-                    cont3=0
-                print (class_names [(int)(cla)])
-                class_labels.append(class_names [(int)(cla)])
-                cont3+=1
-            #print (len(images))
-
-            
-
-            
-            #print (class_labels)
-            
-          
-            
-            #cv2.imshow('segmented image' ,img3.astype('uint8'))
-            
-            #print(res)
-
-        if key =='s':
-            print('Segment color and classify')
-            image= rgbd.get_h_image()
-            iimmg= rgbd.get_image()
-            points= rgbd.get_points()
-
-            cents,xyz, images, img= seg_square_imgs(image,iimmg,points)
-            
-
-            print(len (images))
-            req=classify.request_class()
-
-
-            for image in images:
-                img_msg=bridge.cv2_to_imgmsg(image)
-                req.in_.image_msgs.append(img_msg)
-
-
-            resp1 = classify(req)
-            print (len(resp1.out.data))
-            class_resp= np.asarray(resp1.out.data)
-            cont3=0
-            class_labels=[]
-            for cla in class_resp:
-                
-                if cont3==3:
-                    print ('-----------------')
-                    cont3=0
-                print (class_names [(int)(cla)])
-                class_labels.append(class_names [(int)(cla)])
-                cont3+=1
-
-
-            
-            #print (class_labels)
-            
-          
-            
-            cv2.imshow('classified_image' ,img.astype('uint8'))
         
-            #print(res)
-        
+        #    print('Find Faces')            
+        #    req=recognize.request_class()
+        #    for image in images:
+        #        img_msg=bridge.cv2_to_imgmsg(image)
+        #        req.in_.image_msgs.append(img_msg)
+        #    resp1 = recognize(req)
+        #    print (len(resp1.out.data))            
         
         if key=='q':
             rospy.signal_shutdown("User hit q key to quit.")
@@ -323,13 +243,13 @@ def listener():
     # anonymous=True flag means that rospy will choose a uniques
     # name for our 'listener' node so that multiple listeners can
     # run simultaneously.
-    global tf_listener,req,service_client , res , classify ,rgbd
+    global tf_listener,req,service_client , res , recognize
     rospy.init_node('listener', anonymous=True)
-    rgbd= RGBD()
+    
 
-    rospy.wait_for_service('classify')
+    rospy.wait_for_service('recognize_face')
     try:
-        classify = rospy.ServiceProxy('/classify', Classify)    
+        recognize = rospy.ServiceProxy('/recognize_face', RecognizeFace)    
     
     except rospy.ServiceException as e:
         print("Service call failed: %s"%e)
@@ -337,7 +257,9 @@ def listener():
     #rospy.Subscriber("/hsrb/head_rgbd_sensor/rgb/image_rect_color", Image, callback)
     #rospy.Subscriber("/hsrb/head_rgbd_sensor/depth_registered/image", Image, callback)
     tf_listener = tf.TransformListener()
-    #images= message_filters.Subscriber("/hsrb/head_rgbd_sensor/rgb/image_rect_color",Image)
+    #data = rospy.wait_for_message("/usb_cam/image_raw",Image)
+    
+
     images= message_filters.Subscriber("/usb_cam/image_raw",Image)
     points= message_filters.Subscriber("/hsrb/head_rgbd_sensor/depth_registered/rectified_points",PointCloud2)
     #message_filters.Subscriber("/hsrb/head_rgbd_sensor/depth_registered/image"     ,Image)
