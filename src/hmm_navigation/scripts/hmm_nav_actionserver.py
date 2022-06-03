@@ -41,8 +41,9 @@ class HMM_navServer():
         pub_goal.publish(goal_pnt)
 
         
-        
+        i=0
         while timeout >= rospy.Time.now().to_sec():     
+            i+=1
             
             
             try:
@@ -55,8 +56,25 @@ class HMM_navServer():
 
             feed = pose2feedback(pose_robot,quat_robot)
             self.hmm_nav_server.publish_feedback(feed.feedback)
+        
+            euclD=   np.linalg.norm(np.asarray((x,y))- pose_robot[:2])
+            if euclD<=0.2:
+                print ('Close Enough')  
+                result.result.success=1  
+                break
+            if i ==10000:
+                print (euclD)
+                i=0
             
-        print('is over')
+        goal_pnt.point.x , goal_pnt.point.y  =0,0
+        pub_goal.publish(goal_pnt)
+
+            
+        
+        if result.result.success!=1:
+            print('time is over')
+            result.result.success=2
+            #print (result)
         self.hmm_nav_server.set_succeeded(result.result)
 
             

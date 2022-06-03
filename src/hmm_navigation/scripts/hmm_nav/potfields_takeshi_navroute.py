@@ -18,6 +18,7 @@ import numpy as np
 import pandas as pd
 
 
+
 def list_2_markers_array(path, ccxyth, deleteall=False):
         
     xythpath=[]
@@ -185,193 +186,201 @@ def readSensor(data):
     
      global graphe , markerstopub
      global x,y,th,A,ccxyth,xyth,xythcuant,path
-     markerstopub=MarkerArray()
-     
-     
-     #markerstopub= MarkerArray()
-     lec=np.asarray(data.ranges)
-     lec[np.isinf(lec)]=13.5
-     ccxyth=np.load('ccxyth.npy')
-     A=np.load('A.npy')
-     graphe= Markov_A_2_grafo(A,ccxyth)        
-     xyth= np.asarray((x,y,th)) 
-     _,xythcuant= quantized(xyth,ccxyth)
-     
-     """if (graphe.conec[xythcuant,path[0]] == np.inf):
-         print("Recalculating Dijsktra")
-         path=dijkstra(xythcuant,xythclcuant,graphe)
-     """
-     
-     
-     
-         
-     Fx, Fy,Fth = 0.001,0.001,0
-     deltaang=4.7124/len(data.ranges)
-     laserdegs=  np.arange(-2.3562,2.3562,deltaang)
-     Fx=0
-     Fy = 0.001
-     for i,deg in enumerate(laserdegs):
-         if (lec[i] <2.61):
-             Fx = Fx + (1/lec[i])**2 * np.cos(deg)
-             Fy = Fy + (1/lec[i])**2 * np.sin(deg)
-     Fth= np.arctan2(Fy,(Fx+.000000000001))+np.pi
-     Fmag= np.linalg.norm((Fx,Fy))
-     
-  
-     xyth_nxt=np.asarray((xcl,ycl,0))
-     x_nxt,y_nxt= xcl,ycl
-     euclD=np.linalg.norm(xyth[:2]-xyth_nxt[:2])
-     
-     if (len (path)>0):
-        
-       
-        markerstopub= list_2_markers_array(path,ccxyth) 
-       
-        pub3.publish(markerstopub)
-        x_nxt,y_nxt,th_nxt= ccxyth[path[0]]
-        xyth_nxt=np.array((x_nxt,y_nxt,th_nxt))
-        _,xyth_nxt_cuant= quantized(xyth_nxt,ccxyth)
-        euclD=np.linalg.norm(xyth[:2]-xyth_nxt[:2])
-        print ("path",path)
-        print('im in ' ,xyth ,xythcuant)
-        print('nx to',x_nxt,y_nxt, xyth_nxt_cuant)
-        print( 'EuclD to dest.',euclD )
-       
-    #     
-        if (xythcuant in path[1:]):
-            killix= path.index(xythcuant)
-            print ('SHortuct DETECTED',killix)
-            del path[:path.index(xythcuant)]
-           
-        if (xythcuant==xyth_nxt_cuant or  euclD <=.3):
-            print('path node chekced ')
-            markerstopub= list_2_markers_array(path,ccxyth,True) 
-            pub3.publish(markerstopub)
-            path.pop(0)
-            if (len (path)==0):
-                print('PATH LEN 0 WTF ******* ')
-                x_nxt,y_nxt=xcl,ycl
-            else:
-                nxt_pnt.point.x=ccxyth[np.int(path[0]),0]
-                nxt_pnt.point.y=ccxyth[np.int(path[0]),1]
-                print('Nxt X, NXt Y',nxt_pnt.point.x,nxt_pnt.point.y)
-            
-         
-    
-     
-   
-     
-     
-         
-  
-         
-         
-         
-     Fatrx = ( -x + x_nxt)/euclD**2
-     Fatry = ( -y + y_nxt)/euclD**2
-     Fatrth=np.arctan2(Fatry, Fatrx)
-     Fatrth=Fatrth-th
-     Fmagat= np.linalg.norm((Fatrx,Fatry))
-     #print ('Fatx, Fatry, Fatrth',Fatrx,Fatry,(Fatrth)*180/np.pi )
-     Ftotx= Fmag*np.cos(Fth)*.013   +  20 * Fmagat*np.cos(Fatrth)
-     Ftoty= Fmag*np.sin(Fth)*.013    + 20 * Fmagat*np.sin(Fatrth)
-     Ftotth=np.arctan2(Ftoty,Ftotx)
-     
-     print ('Ftotx,Ftoty,Ftotth',Ftotx,Ftoty,Ftotth*180/3.141)
-     
-     if ( Ftotth> np.pi ):
-         Ftotth=       -np.pi-    (Ftotth-np.pi)
-    
-     if (Ftotth < -np.pi):
-         Ftotth= (Ftotth     +2 *np.pi)
-     
-             
-     #print('Ftotxy',Ftotx,Ftoty,Ftotth*180/np.pi)
-     Fatmag=np.linalg.norm((Fatrx,Fatry))
-     Fmag=np.linalg.norm((Fx,Fy))
-     """print ("theta robot",th*180/3.1416,'---------------------------')
-     print ('fasorFatrth',np.linalg.norm((Fatrx,Fatry)),(Fatrth)*180/3.1416 )
-     print ("FXATR,FYATR",Fatrx,Fatry)
-     print ('fasorFrepth',np.linalg.norm((Fx,Fy)),Fth*180/3.1416)
-     print ("Frepx,Frepy",Fx,Fy)"""
-     
-        
-     """Fx,Fy= Fmag*np.cos(Fth) , Fmag*np.sin(Fth)   
-     Fatrx,Fatry= Fatmag*np.cos(Fatrth) , Fatmag*np.sin(Fatrth) """
-    
-    
-     
-     if( abs(Ftotth) < .2) :#or (np.linalg.norm((Fx,Fy)) < 100):
-        ### LINEAR
-         speed.linear.x=5
-         print('lin')
-         speed.angular.z=0
-     
-     else:
-         
-        
-        if (Ftotth <-.2):
-            speed.linear.x=0.5
-            speed.angular.z=-1
 
 
-        if Ftotth < -.4:
-            if ( Ftotth  < np.pi/2):
-                print('open curve')
-                print('Vang-')
-                speed.linear.x=0
-                speed.angular.z=-1
-            if Ftotth < -1.57:
-                print('ang--')
-                speed.linear.x=-0.3
-                speed.angular.z=-0.7 
-        
-
-
-        if Ftotth > 0.2:
-            speed.linear.x=0.5
-            speed.angular.z=1
-
-
-
-        if Ftotth > 0.4:
-            if ( Ftotth  < np.pi/2):
-                print('open curve')
-                print('Vang+')
-                speed.linear.x=0
-                speed.angular.z=1
-            if Ftotth > 1.57:
-            
-                print('ang++')
-                speed.linear.x=-0.1
-                speed.angular.z=0.75
-            
-            
-        
-     
-        
-     
-     if (len(path)>0):
-         if (graphe.conec[xythcuant,path[0]] == np.inf):
-             print('Route lost Recalculate Dijsktra#####################################3', )
-             print('im in ' ,xyth , 'cc', xythcuant)
-             print('going to',x_nxt,y_nxt,'xythcuant###########################3', xyth_nxt_cuant)
-       
-     if (np.linalg.norm(np.array((xcl,ycl))-np.array((x,y))) <.1):
-         print( "sucess")
-         path=[]
-         x_nxt,ynxt = xcl,ycl
-         print("######################")
-         print("######################")
-         print("######################")
-         print("######################")
-         print("######################")
-         print("######################")
-         print("######################")
-         print("######################")
-         #rospy.sleep(3)  
+     if (xcl==0) and ycl==0: 
          speed.linear.x=0
          succ= True
+     
+     
+     else:
+         markerstopub=MarkerArray()
+         
+         
+         #markerstopub= MarkerArray()
+         lec=np.asarray(data.ranges)
+         lec[np.isinf(lec)]=13.5
+         ccxyth=np.load('ccxyth.npy')
+         A=np.load('A.npy')
+         graphe= Markov_A_2_grafo(A,ccxyth)        
+         xyth= np.asarray((x,y,th)) 
+         _,xythcuant= quantized(xyth,ccxyth)
+         
+         """if (graphe.conec[xythcuant,path[0]] == np.inf):
+             print("Recalculating Dijsktra")
+             path=dijkstra(xythcuant,xythclcuant,graphe)
+
+         """
+     
+     
+         
+         Fx, Fy,Fth = 0.001,0.001,0
+         deltaang=4.7124/len(data.ranges)
+         laserdegs=  np.arange(-2.3562,2.3562,deltaang)
+         Fx=0
+         Fy = 0.001
+         for i,deg in enumerate(laserdegs):
+             if (lec[i] <2.61):
+                 Fx = Fx + (1/lec[i])**2 * np.cos(deg)
+                 Fy = Fy + (1/lec[i])**2 * np.sin(deg)
+         Fth= np.arctan2(Fy,(Fx+.000000000001))+np.pi
+         Fmag= np.linalg.norm((Fx,Fy))
+         
+      
+         xyth_nxt=np.asarray((xcl,ycl,0))
+         x_nxt,y_nxt= xcl,ycl
+         euclD=np.linalg.norm(xyth[:2]-xyth_nxt[:2])
+         
+         if (len (path)>0):
+            
+           
+            markerstopub= list_2_markers_array(path,ccxyth) 
+           
+            pub3.publish(markerstopub)
+            x_nxt,y_nxt,th_nxt= ccxyth[path[0]]
+            xyth_nxt=np.array((x_nxt,y_nxt,th_nxt))
+            _,xyth_nxt_cuant= quantized(xyth_nxt,ccxyth)
+            euclD=np.linalg.norm(xyth[:2]-xyth_nxt[:2])
+            print ("path",path)
+            print('im in ' ,xyth ,xythcuant)
+            print('nx to',x_nxt,y_nxt, xyth_nxt_cuant)
+            print( 'EuclD to dest.',euclD )
+           
+        #     
+            if (xythcuant in path[1:]):
+                killix= path.index(xythcuant)
+                print ('SHortuct DETECTED',killix)
+                del path[:path.index(xythcuant)]
+               
+            if (xythcuant==xyth_nxt_cuant or  euclD <=.3):
+                print('path node chekced ')
+                markerstopub= list_2_markers_array(path,ccxyth,True) 
+                pub3.publish(markerstopub)
+                path.pop(0)
+                if (len (path)==0):
+                    print('PATH LEN 0 WTF ******* ')
+                    x_nxt,y_nxt=xcl,ycl
+                else:
+                    nxt_pnt.point.x=ccxyth[np.int(path[0]),0]
+                    nxt_pnt.point.y=ccxyth[np.int(path[0]),1]
+                    print('Nxt X, NXt Y',nxt_pnt.point.x,nxt_pnt.point.y)
+                
+             
+        
+         
+       
+         
+         
+             
+      
+             
+             
+             
+         Fatrx = ( -x + x_nxt)/euclD**2
+         Fatry = ( -y + y_nxt)/euclD**2
+         Fatrth=np.arctan2(Fatry, Fatrx)
+         Fatrth=Fatrth-th
+         Fmagat= np.linalg.norm((Fatrx,Fatry))
+         #print ('Fatx, Fatry, Fatrth',Fatrx,Fatry,(Fatrth)*180/np.pi )
+         Ftotx= Fmag*np.cos(Fth)*.013   +  20 * Fmagat*np.cos(Fatrth)
+         Ftoty= Fmag*np.sin(Fth)*.013    + 20 * Fmagat*np.sin(Fatrth)
+         Ftotth=np.arctan2(Ftoty,Ftotx)
+         
+         print ('Ftotx,Ftoty,Ftotth',Ftotx,Ftoty,Ftotth*180/3.141)
+         
+         if ( Ftotth> np.pi ):
+             Ftotth=       -np.pi-    (Ftotth-np.pi)
+        
+         if (Ftotth < -np.pi):
+             Ftotth= (Ftotth     +2 *np.pi)
+         
+                 
+         #print('Ftotxy',Ftotx,Ftoty,Ftotth*180/np.pi)
+         Fatmag=np.linalg.norm((Fatrx,Fatry))
+         Fmag=np.linalg.norm((Fx,Fy))
+         """print ("theta robot",th*180/3.1416,'---------------------------')
+         print ('fasorFatrth',np.linalg.norm((Fatrx,Fatry)),(Fatrth)*180/3.1416 )
+         print ("FXATR,FYATR",Fatrx,Fatry)
+         print ('fasorFrepth',np.linalg.norm((Fx,Fy)),Fth*180/3.1416)
+         print ("Frepx,Frepy",Fx,Fy)"""
+         
+            
+         """Fx,Fy= Fmag*np.cos(Fth) , Fmag*np.sin(Fth)   
+         Fatrx,Fatry= Fatmag*np.cos(Fatrth) , Fatmag*np.sin(Fatrth) """
+        
+        
+     
+         if( abs(Ftotth) < .2) :#or (np.linalg.norm((Fx,Fy)) < 100):
+            ### LINEAR
+             speed.linear.x=5
+             print('lin')
+             speed.angular.z=0
+         
+         else:
+             
+            
+            if (Ftotth <-.2):
+                speed.linear.x=0.5
+                speed.angular.z=-1
+
+
+            if Ftotth < -.4:
+                if ( Ftotth  < np.pi/2):
+                    print('open curve')
+                    print('Vang-')
+                    speed.linear.x=0
+                    speed.angular.z=-1
+                if Ftotth < -1.57:
+                    print('ang--')
+                    speed.linear.x=-0.3
+                    speed.angular.z=-0.7 
+            
+
+
+            if Ftotth > 0.2:
+                speed.linear.x=0.5
+                speed.angular.z=1
+
+
+
+            if Ftotth > 0.4:
+                if ( Ftotth  < np.pi/2):
+                    print('open curve')
+                    print('Vang+')
+                    speed.linear.x=0
+                    speed.angular.z=1
+                if Ftotth > 1.57:
+                
+                    print('ang++')
+                    speed.linear.x=-0.1
+                    speed.angular.z=0.75
+                
+                
+            
+         
+            
+         
+         if (len(path)>0):
+             if (graphe.conec[xythcuant,path[0]] == np.inf):
+                 print('Route lost Recalculate Dijsktra#####################################3', )
+                 print('im in ' ,xyth , 'cc', xythcuant)
+                 print('going to',x_nxt,y_nxt,'xythcuant###########################3', xyth_nxt_cuant)
+           
+         if (np.linalg.norm(np.array((xcl,ycl))-np.array((x,y))) <.1):
+             print( "sucess")
+             path=[]
+             x_nxt,ynxt = xcl,ycl
+             print("######################")
+             print("######################")
+             print("######################")
+             print("######################")
+             print("######################")
+             print("######################")
+             print("######################")
+             print("######################")
+             #rospy.sleep(3)  
+             speed.linear.x=0
+             succ= True
                
        
            
@@ -387,8 +396,7 @@ speed=Twist()
 nxt_pnt=PointStamped()
 speed.angular.z=0
 def inoutinout():
-    global pub3 , succ
-  
+    global pub3 
     sub= rospy.Subscriber("/hsrb/odom",Odometry,newOdom)#/hsrb/odom
     #sub= rospy.Subscriber("/hsrb/wheel_odom",Odometry,newOdom)#/hsrb/odom
     sub2=rospy.Subscriber("/hsrb/base_scan",LaserScan,readSensor)
@@ -398,13 +406,13 @@ def inoutinout():
     pub3= rospy.Publisher('aa/Markov_route',MarkerArray,queue_size=1)
     rospy.init_node('talker_cmdvel', anonymous=True)
     rate = rospy.Rate(15) # 10hz
-    succ = False
+    
     
     while not rospy.is_shutdown():
         hello_str = "Time %s" % rospy.get_time()
         #print("odom",x,y,th)
   #    
-        if succ!=True:pub.publish(speed)
+        if succ!=True and xcl!=0 and ycl!=0:pub.publish(speed)
         pub2.publish(nxt_pnt)
         
         #print ("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$",markerstopub)
@@ -415,9 +423,10 @@ def inoutinout():
 
 if __name__ == '__main__':
     try:
-        global path
+        global path,xcl,ycl, succ 
+        succ=False
         path=[]
-        
+        ycl,xcl=0,0
         inoutinout()
     except rospy.ROSInterruptException:
         pass
