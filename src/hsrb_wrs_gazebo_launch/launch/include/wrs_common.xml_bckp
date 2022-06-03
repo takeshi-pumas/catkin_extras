@@ -70,6 +70,11 @@
       <arg name="robot_name" value="$(arg robot_name)" />
     </include>
 
+    <!-- moveit-->
+    <include file="$(find hsrb_moveit_config)/launch/hsrb_demo_with_controller.launch">
+      <arg name="use_gui" value="false"/>
+      <arg name="load_robot_description" value="false"/>
+    </include>
 
     <!-- rosnav -->
     <include file="$(find hsrb_rosnav_config)/launch/hsrb_nav.launch">
@@ -83,11 +88,6 @@
           args="/hsrb/wheel_odom /hsrb/odom" unless="$(arg use_laser_odom)" />
   </group>
 
-    <!-- moveit-->
-    <include file="$(find hsrb_moveit_config)/launch/hsrb_demo_with_controller.launch">
-      <arg name="use_gui" value="true"/>
-      <arg name="load_robot_description" value="false"/>
-    </include>
   <!-- spawn objects to the world -->
   <node pkg="tmc_wrs_gazebo_worlds" type="spawn_objects" name="spawn_objects" args="--seed $(arg seed) --percategory $(arg per_category) --obstacles $(arg obstacles) --perrow $(arg per_row)" output="screen" />
 

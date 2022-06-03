@@ -19,8 +19,8 @@
   <arg name="seed" default="2" />
 
   <include file="$(find hsrb_wrs_gazebo_launch)/launch/include/wrs_common.xml" pass_all_args="true" >
-    <arg name="per_category" value="6" />
-    <arg name="obstacles" value="4" />
-    <arg name="per_row" value="6" />
+    <arg name="per_category" value="1" />
+    <arg name="obstacles" value="1" />
+    <arg name="per_row" value="1" />
   </include>
 </launch>
