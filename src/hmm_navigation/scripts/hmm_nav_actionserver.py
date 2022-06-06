@@ -60,7 +60,8 @@ class HMM_navServer():
             euclD=   np.linalg.norm(np.asarray((x,y))- pose_robot[:2])
             if euclD<=0.2:
                 print ('Close Enough')  
-                result.result.success=1  
+                result.result.success=1
+                self.hmm_nav_server.set_succeeded(result.result)  
                 break
             if i ==10000:
                 print (euclD)
