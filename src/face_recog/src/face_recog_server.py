@@ -69,7 +69,49 @@ def sph2rect(sphrcoords):
     return rectcoords
 
 
+def callback_2(req):
+    global path_for_faces , encodings , ids
+    
+    
+    print ('got ',len(req.in_.image_msgs),'images Train New ID ') 
+    print ('got ', len (req.Ids.ids),'names') 
+    
 
+
+
+    images=[]
+    new_names=[]
+    for i in range(len(req.in_.image_msgs)):
+        images.append(bridge.imgmsg_to_cv2(req.in_.image_msgs[i]))
+        print (req.Ids.ids[i].data)
+        if req.Ids.ids[i].data in os.listdir(path_for_faces):print('ID ALREADY ASSIGNED , please choose another name')
+        else:
+            os.mkdir(path_for_faces+'/'+req.Ids.ids[i].data)
+            image= cv2.cvtColor(bridge.imgmsg_to_cv2(req.in_.image_msgs[i]), cv2.COLOR_BGR2RGB)
+            cv2.imwrite(path_for_faces+'/'+req.Ids.ids[i].data+'/'+req.Ids.ids[i].data+'.jpg',image)
+
+
+
+        
+
+
+    
+
+
+
+
+    ############Write Response message
+    Ds, Rots=Floats(),Floats()
+    strings=Strings()
+
+    string_msg= String()
+    string_msg.data='trained new id'+'_'+req.Ids.ids[i].data
+    strings.ids.append(string_msg)
+    Ds.data=[0.0,0.0]
+    Rots.data=[1,1]
+    #print ('Predictions (top 3 for each class)',flo.data)
+
+    return RecognizeFaceResponse(Ds,Rots,strings)          
 
 def callback(req):
     global path_for_faces , encodings , ids
@@ -192,6 +234,7 @@ def classify_server():
     tf_static_broadcaster= tf2_ros.StaticTransformBroadcaster()
     rospy.loginfo("Face Recognition service available")                    # initialize a ROS node
     s = rospy.Service('recognize_face', RecognizeFace, callback) 
+    s2 = rospy.Service('new_face', RecognizeFace, callback_2) 
     
    
 
