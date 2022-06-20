@@ -45,10 +45,12 @@ $ roslaunch hsrb_wrs_gazebo_launch wrs_practice0_easy_tmc.launch
 
 Gazebo (paused) is launched, hit play  and open a new terminal ( remeber sourcing )
 
-$ roslaunch  hsrb_moveit_config  hsrb_demo_with_controller.launch
+MOVEIT IS NOW INLCUDED IN LAUNCH;
 
-At this point 2 rviz are open, a general HSR  and a Moveit.
+$ python3 /src/smaches/ANY SMACH.py
+
+
 
 Check 
-https://youtu.be/kE-TehNK540
+
 
