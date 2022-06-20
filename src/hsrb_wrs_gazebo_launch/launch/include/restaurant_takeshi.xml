@@ -103,7 +103,7 @@
     
 
     <!--HMM NAV-->
-    <!--node pkg="hmm_navigation"  name="Pot_fields_nav" type="potfields_takeshi_navroute.py"/-->
+    <node pkg="hmm_navigation"  name="Pot_fields_nav" type="potfields_takeshi.py"/>
 
     <!--node pkg="hmm_navigation"  name="hmm_nav_actionserver" type="hmm_nav_actionserver.py"/-->
 
