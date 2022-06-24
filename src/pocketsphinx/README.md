@@ -1,3 +1,8 @@
+#####UPDATE... PLEASE BUILD FROM HERE: ( BETA TEST FOR INSTALLATION README)
+https://github.com/cmusphinx/pocketsphinx
+
+
+
 # Modified ROS wrapper for pocketsphinx  
 
 The following repositories were used in our wrapper, but are not required for installation:
