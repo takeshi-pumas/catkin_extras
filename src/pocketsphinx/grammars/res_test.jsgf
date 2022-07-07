@@ -1,0 +1,9 @@
+#JSGF V1.0;
+grammar res_test;
+public <command> = (<wantvoc> | <wantcon> | <wantthe> |<confirmation> );
+<wantvoc> = <rob>* I WANT AN (ORANGE | APPLE);
+<wantcon> = <rob>* I WANT A (BANANA | STRAWBERRY | LEMON | PEACH | PEAR | PLUM | COOKIES | PUDDING | GELATIN | MEAT CAN | COFFEE | SOUP | TUNA CAN);
+<wantthe> = <rob>* I WANT THE (SUGAR | MUSTARD | CHIPS);
+<confirmation> =  (YES | NO);
+<rob> = (ROBOT | TAKESHI);
+
