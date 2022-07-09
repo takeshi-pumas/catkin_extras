@@ -1,3 +1,4 @@
+<?xml version="1.0"?>
 <launch>
 	<!-- pocketsphinx-->
 	<arg name="_lm" value="_lm:=/usr/local/share/pocketsphinx/model/en-us/en-us"/>

@@ -4,16 +4,29 @@ import smach
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 from geometry_msgs.msg import PoseStamped, Point , Quaternion
 from actionlib_msgs.msg import GoalStatus
+from tmc_msgs.msg import Voice
 import moveit_commander
 import moveit_msgs.msg
 import tf2_ros
 from tf2_sensor_msgs.tf2_sensor_msgs import do_transform_cloud
 from object_classification.srv import *
+from hsrb_interface import Robot
+import cv2  # New
+import rospy # New
+import face_recognition #New
 
 from cv_bridge import CvBridge, CvBridgeError
 
 from utils_notebooks import *
 from utils_takeshi import *
+from utils_srv import *   #New
+from sensor_msgs.msg import Image , LaserScan , PointCloud2
+
+
+
+from hri_msgs.msg import RecognizedSpeech
+
+
 
 
 ########## Functions for takeshi states ##########
@@ -275,18 +288,8 @@ def gaze_point(x,y,z):
     
     trans , rot = listener.lookupTransform('/map', '/head_rgbd_sensor_gazebo_frame', rospy.Time(0)) #
     
-  #  arm_pose=arm.get_current_joint_values()
-  #  arm_pose[0]=.1
-  #  arm_pose[1]= -0.3
-  #  arm.set_joint_value_target(arm_pose)
-  #  arm.go()
-    
     e =tf.transformations.euler_from_quaternion(rot)
-    #print('i am at',trans,np.rad2deg(e)[2])
-    #print('gaze goal',x,y,z)
-    #tf.transformations.euler_from_quaternion(rot)
-
-
+    
     x_rob,y_rob,z_rob,th_rob= trans[0], trans[1] ,trans[2] ,  e[2]
 
 
@@ -432,8 +435,10 @@ class Initial(smach.State):
     def execute(self,userdata):
 
         
-        rospy.loginfo('STATE : robot neutral pose')
-        print('Try',self.tries,'of 5 attepmpts') 
+        rospy.loginfo('STATE : INITIAL')
+        print('robot neutral pose')
+
+        print('Try',self.tries,'of 5 attempts') 
         self.tries+=1
         if self.tries==6:
             return 'tries'
@@ -445,34 +450,40 @@ class Initial(smach.State):
         arm.set_named_target('go')
         arm.go()
         head.set_named_target('neutral')
-        succ = head.go()             
+        succ = head.go() 
+        #succ = True        
         if succ:
             return 'succ'
         else:
             return 'failed'
 
-class Scan_space(smach.State):
+class Mapping(smach.State):
     def __init__(self):
         smach.State.__init__(self,outcomes=['succ','failed','tries'])
         self.tries=0
     def execute(self,userdata):
 
-        rospy.loginfo('State : Scan Space ')
+        rospy.loginfo('State : MAPPING')
         head.set_named_target('neutral')
         head.go() 
-
-        #rotate base to pan restaurant
-        for i in range(5):
-            move_base(0,0,0.3*i)
-            #Wave detector Service on each movement
-
-        succ = True
+        print('360 Deg turn to Map')
+        steps = 8
+        for i in range(steps):
+            print('Iteration', i)
+            ang = np.pi/steps
+            #move_base(0,0,ang*i)
+            print('Moving Base ang = ', ang*i)
+            head.set_named_target('neutral')    
+            head.go() 
+            cents = correct_points()
+            if i == 4: succ = True
+        print(cents)
         
         if succ:
-            print('Takeshi found a Waving Person')
+            print('Takeshi Mapped')
             return 'succ'
         else:
-            print('Clear space, Takeshi does not found a Waving Person')
+            print('Panning for Map incomplete')
             return 'failed'
 
 
@@ -483,6 +494,127 @@ class Scan_space(smach.State):
         else:
             return 'failed'
 
+
+class Scan_restaurant(smach.State):
+    def __init__(self):
+        smach.State.__init__(self,outcomes=['succ','failed','tries'])
+        self.tries=0
+    def execute(self,userdata):
+
+        rospy.loginfo('State : SCAN_RESTAURANT')
+        head.set_named_target('neutral')
+        head.go() 
+        
+        #Remove with LoreIntegration
+
+        WaveReq = False
+
+        print('Looking for Waving Person - IN FRONT')
+        for i in range(3):
+            print('Pose: ',i)
+            head_goal = head.get_current_joint_values()
+            head_goal[0] = np.deg2rad(90*(i-1))
+            head_goal[1] = np.deg2rad(0)
+            head.set_joint_value_target(head_goal)
+            head.go()
+            
+            #Request LoreService
+            rospy.sleep(0.5)
+            rospy.wait_for_service('/detect_waving')
+            req= TriggerRequest()
+            try:
+                
+                res=detect_waving_client.call(req)
+                WaveReq = res.success 
+                print('WaveReq=', res.success)
+            except:  
+                WaveReq = False
+                print('Service call failed')  
+
+
+            if WaveReq == True:
+                if 'nan' in res.message:
+                    succ = False
+                else:
+                    print('Takeshi found a Waving Person')
+                    x_wrt_robot,y_wrt_robot,z_wrt_robot = res.message[1:-1].split(', ')[0:3] #RESPUESTA : sucess, false, ( waving human found with face 3d coords  wrt robot
+                    print(res.message)
+                    print(x_wrt_robot,y_wrt_robot,z_wrt_robot )
+                    trans , rot = listener.lookupTransform('/map', '/head_rgbd_sensor_gazebo_frame', rospy.Time(0))
+                    #coordenadas  el robot respecto al mapa
+                    broadcaster.sendTransform((x_wrt_robot,y_wrt_robot,z_wrt_robot),rot, rospy.Time.now(), 'Human_'+str(res.success)+'_waving',"head_rgbd_sensor_link")
+                    # Coordenadas rostro humano detectado respecto al robot
+                    rospy.sleep(0.3)
+                    # Coordenadas rostro humano detectado respecto al mapa trans_map
+                    trans_map , rot_map = listener.lookupTransform('/map', 'Human_'+str(res.success)+'_waving', rospy.Time(0))
+                    succ = True
+                    break
+            else: print('Clear space, Takeshi did not find a Waving Person in iteration', i)
+
+
+        if WaveReq == False:
+            print('Looking for Waving Person - BEHIND')
+            #move_base(0,0,np.pi)
+            print('Moving Base ang = ',np.pi)
+            rospy.sleep(0.5)
+
+            for i in range(3):
+                print('Pose: ',i)
+                head_goal[0] = np.deg2rad(90*(i-1))
+                head_goal[1] = np.deg2rad(0)
+                head.set_joint_value_target(head_goal)
+                head.go()
+                #Request LoreService
+
+                try:
+                    res=detect_waving_client.call(req)
+                    WaveReq = res.success
+                except:
+                    WaveReq = False
+                    print('Service call failed') 
+
+
+
+
+                if WaveReq == True:
+                    if 'nan' in res.message:
+                        succ = False
+                    else:
+                        print('Takeshi found a Waving Person')
+                        x_wrt_robot,y_wrt_robot,z_wrt_robot=res.message[1:-1].split(', ')[0:3] #RESPUESTA : sucess, false, ( waving human found with face 3d coords  wrt robot
+                        trans , rot = listener.lookupTransform('/map', '/head_rgbd_sensor_gazebo_frame', rospy.Time(0))
+                        #coordenadas  el robot respecto al mapa
+                        broadcaster.sendTransform((x_wrt_robot,y_wrt_robot,z_wrt_robot),rot, rospy.Time.now(), 'Human_'+str(res.success)+'_waving',"head_rgbd_sensor_link")
+                        # Coordenadas rostro humano detectado respecto al robot
+                        rospy.sleep(0.3)
+                        # Coordenadas rostro humano detectado respecto al mapa trans_map
+                        trans_map , rot_map = listener.lookupTransform('/map', 'Human_'+str(res.success)+'_waving', rospy.Time(0))
+                        succ = True
+                        break
+                else: 
+                    print('Clear space, Takeshi did not find a Waving Person, trying again')
+                    succ = False
+                    
+
+        rospy.sleep(1)
+
+        #succ = True
+        #Remove with LoreIntegration
+        
+        if succ:
+            return 'succ'
+        else:
+            return 'failed'
+
+
+        self.tries+=1
+        if self.tries==3:
+            self.tries=0 
+            return'tries'
+        else:
+            return 'failed'
+
+
 class Goto_table(smach.State):
     def __init__(self):
         smach.State.__init__(self,outcomes=['succ','failed','tries','end'])
@@ -492,6 +624,8 @@ class Goto_table(smach.State):
         
         global cents, rot, trans
 
+        rospy.loginfo('State : GOTO_TABLE')
+
         #LOCATION GIVEN BY WAVE DETECTOR USING GOALS FOR EASE
 
         goal_x = 0.3 + 0.051*self.tries
@@ -499,9 +633,9 @@ class Goto_table(smach.State):
         goal_yaw = 1.57
         goal_xyz=np.asarray((goal_x,goal_y,goal_yaw))
                 
-        succ=move_base(goal_x+.25*self.tries, goal_y , goal_yaw)      
+        #succ = move_base(goal_x+.25*self.tries, goal_y , goal_yaw)   
         xyz=whole_body.get_current_joint_values()[:3]
-
+        succ = True
         print ('Goal is table',goal_xyz,'current',xyz)
         print ('Distance is ' ,np.linalg.norm(xyz-goal_xyz))
         if (np.linalg.norm(xyz-goal_xyz)  < .3):
@@ -523,18 +657,98 @@ class Hri_take_order(smach.State):
         self.tries=0
     def execute(self,userdata):
         self.tries+=1
-        
-        global cents, rot, trans
+        global cents, rot, trans, order
+        rospy.loginfo('State : HRI_TAKE_ORDER')
+
+        #Gaze point = face
+
+        voice_message=Voice()
+
+        voice_message.sentence = 'Hi, can I take your order'
+        voice_message.queueing = False
+        voice_message.language = 1
+        voice_message.interrupting = False
+
+        takeshi_talk_pub.publish(voice_message)
+        rospy.sleep(.2)
+
+
+
+        rospy.sleep(5)
+
+
+        print ("-------------------------------") 
+        print ("Please please please roslaunch restaurant.launch") 
+        data = rospy.wait_for_message('/recognizedSpeech', RecognizedSpeech)
+
+        d = str(data)
+        wordlist = d.split()
+        wordlist.pop()
+        wordlist.remove('hypothesis:')
+        wordlist.remove('-')
+        wordlist.remove('confidences:')
+        order = " "
+        for word in wordlist:
+            if word in ["apple", "orange", "banana", "strawberry", "lemon", "peach", "pear", "plum", "cookies", "pudding", "gelatin", "meat can", "coffee", "soup", "tuna can", "sugar", "mustard", "chips"]:
+                order =  word
+                print('Order: ', order)
+                succ = True 
+            else: 
+                succ = False
+        print ("-------------------------------")
+
+        rospy.sleep(0.5)
 
         rospy.sleep(2)
 
-        #Recieve Message from Pocket Sphinx
-        # Do I have a message
-        order = 'Beer'
-
-        succ = True
-        print ('Order: ',order)
+        if succ:
+            return 'succ'
         
+        if self.tries==5:
+            self.tries=0 
+            return'tries'
+
+        else:
+            return'failed'
+
+class Hri_confirm_order(smach.State):
+    def __init__(self):
+        smach.State.__init__(self,outcomes=['succ','failed','tries'])
+        self.tries=0
+    def execute(self,userdata):
+        self.tries+=1
+        global cents, rot, trans, order
+        rospy.loginfo('State : HRI_CONFIRM_ORDER')
+
+        #Gaze point = face
+        rospy.sleep(2)
+        voice_message2=Voice()
+        voice_message2.sentence = 'Please confirm your order. Do you want a '+ order
+        takeshi_talk_pub.publish(voice_message2)
+        rospy.sleep(0.3)
+
+        
+        print('Please confirm your order. Do you want a '+ order)
+
+
+        rospy.sleep(2)
+
+        print ("-------------------------------") 
+        data_conf = rospy.wait_for_message('/recognizedSpeech', RecognizedSpeech)
+
+        wordlist = data_conf.hypothesis
+        confirmation = " "
+        for word in wordlist:
+            print('I heard ',word)
+            confirmation = word
+            if confirmation == 'yes':
+                print('Confirmation, I heard ',confirmation)
+                succ = True
+            if confirmation == 'no':
+                print('Confirmation, Mistaken Order, I heard ',confirmation)
+                succ = False
+        print ("-------------------------------")
+
         if succ:
             return 'succ'
         
@@ -553,17 +767,19 @@ class Goto_bar(smach.State):
         self.tries+=1
         
         global cents, rot, trans
+        rospy.loginfo('State : GOTO_BAR')
 
         #Navigation with HectorMapping/cartographer
+        #save location 
 
         goal_x = 1.98
         goal_y = 0.128
         goal_yaw = -1.57
         goal_xyz=np.asarray((goal_x,goal_y,goal_yaw))
                 
-        succ=move_base(goal_x, goal_y, goal_yaw)      
+        #succ=move_base(goal_x, goal_y, goal_yaw)      
         xyz=whole_body.get_current_joint_values()[:3]
-
+        succ = True
         print ('Goal is bar',goal_xyz,'current',xyz)
         print ('Distance is ' ,np.linalg.norm(xyz-goal_xyz))
         if (np.linalg.norm(xyz-goal_xyz)  < .3):
@@ -589,6 +805,7 @@ class Scan_bar(smach.State):
             self.tries=0 
             return'tries'
         global cents, rot, trans
+        rospy.loginfo('State : SCAN_BAR')
 
         #getting point cloud and tf from table, tray or can
         
@@ -652,6 +869,8 @@ class Pre_grasp_bar(smach.State):
 
         arm_grasp_table=[0.31349380130577407, -1.671584191489468,-0.02774372779356371,0.0,0.22362492457833927,0.0]
         succ = arm.go(arm_grasp_table)
+
+        #TAMAGAWA graspeo
         
         if self.tries==3:
             self.tries=0 
@@ -677,7 +896,7 @@ class Grasp_bar(smach.State):
         goal_yaw = -1.57
         goal_xyz=np.asarray((goal_x,goal_y,goal_yaw))
                 
-        move_base(goal_x, goal_y, goal_yaw)
+        #move_base(goal_x, goal_y, goal_yaw)
 
         close_gripper()
 
@@ -685,6 +904,8 @@ class Grasp_bar(smach.State):
         arm.go()
         head.set_named_target('neutral')
         succ = head.go() 
+
+        #TAMAGAWA graspeo
 
         self.tries+=1
         if self.tries==3:
@@ -696,6 +917,38 @@ class Grasp_bar(smach.State):
             return 'failed'
 
 
+class Goto_del_goal(smach.State):
+    def __init__(self):
+        smach.State.__init__(self,outcomes=['succ','failed','tries'])
+        self.tries=0
+    def execute(self,userdata):
+        self.tries+=1
+        if self.tries==4:
+            self.tries=0 
+            return'tries'
+        rospy.loginfo('State : GOTO_DEL_GOAL')
+
+        goal_x = 0.3 + 0.051*self.tries
+        goal_y = 1.2
+        goal_yaw = 1.57
+        goal_xyz=np.asarray((goal_x,goal_y,goal_yaw))
+                
+        #move_base(goal_x, goal_y, goal_yaw)      
+        xyz=whole_body.get_current_joint_values()[:3]
+
+        print ('Goal is bar',goal_xyz,'current',xyz)
+        print ('Distance is ' ,np.linalg.norm(xyz-goal_xyz))
+        if (np.linalg.norm(xyz-goal_xyz)  < .3):
+            rospy.loginfo("Navigation Close Enough.")
+
+        head.set_named_target('neutral')
+        succ = head.go()
+        
+        if succ:
+            return 'succ'
+        else:
+            return'failed'
+
 class Delivery(smach.State):
     def __init__(self):
         smach.State.__init__(self,outcomes=['succ','failed','tries'])
@@ -705,21 +958,9 @@ class Delivery(smach.State):
         if self.tries==4:
             self.tries=0 
             return'tries'
+        rospy.loginfo('State : DELIVERY')
 
-        goal_x = 0
-        goal_y = 1.2
-        goal_yaw = 1.57
-        goal_xyz=np.asarray((goal_x,goal_y,goal_yaw))
-                
-        move_base(goal_x, goal_y, goal_yaw)      
-        xyz=whole_body.get_current_joint_values()[:3]
-
-        print ('Goal is bar',goal_xyz,'current',xyz)
-        print ('Distance is ' ,np.linalg.norm(xyz-goal_xyz))
-        if (np.linalg.norm(xyz-goal_xyz)  < .3):
-            rospy.loginfo("Navigation Close Enough.")
-
-        arm_deliver_table=[0.41349380130577407, -1.671584191489468,-0.02774372779356371,0.0,0.22362492457833927,0.0]
+        arm_deliver_table=[0.31349380130577407, -1.671584191489468,-0.02774372779356371,0.0,0.22362492457833927,0.0]
         arm.go(arm_deliver_table)
         open_gripper()
 
@@ -730,14 +971,13 @@ class Delivery(smach.State):
         arm.set_named_target('neutral')
         succ = arm.go()
 
-
         if succ:
             return 'succ'
         else:
             return'failed'
 
 def init(node_name):
-    global listener, broadcaster, tfBuffer, tf_static_broadcaster, scene, rgbd  , head,whole_body,arm,gripper  ,goal,navclient,clear_octo_client , classify_client , class_names , bridge , base_vel_pub
+    global listener, broadcaster, tfBuffer, tf_static_broadcaster, scene, rgbd  , head,whole_body,arm,gripper  ,goal,navclient,clear_octo_client , classify_client , detect_waving_client, class_names , bridge , base_vel_pub,takeshi_talk_pub, order
     rospy.init_node(node_name)
     head = moveit_commander.MoveGroupCommander('head')
     gripper =  moveit_commander.MoveGroupCommander('gripper')
@@ -756,14 +996,9 @@ def init(node_name):
     bridge = CvBridge()
     class_names=['002masterchefcan', '003crackerbox', '004sugarbox', '005tomatosoupcan', '006mustardbottle', '007tunafishcan', '008puddingbox', '009gelatinbox', '010pottedmeatcan', '011banana', '012strawberry', '013apple', '014lemon', '015peach', '016pear', '017orange', '018plum', '019pitcherbase', '021bleachcleanser', '022windexbottle', '024bowl', '025mug', '027skillet', '028skilletlid', '029plate', '030fork', '031spoon', '032knife', '033spatula', '035powerdrill', '036woodblock', '037scissors', '038padlock', '040largemarker', '042adjustablewrench', '043phillipsscrewdriver', '044flatscrewdriver', '048hammer', '050mediumclamp', '051largeclamp', '052extralargeclamp', '053minisoccerball', '054softball', '055baseball', '056tennisball', '057racquetball', '058golfball', '059chain', '061foambrick', '062dice', '063-amarbles', '063-bmarbles', '065-acups', '065-bcups', '065-ccups', '065-dcups', '065-ecups', '065-fcups', '065-gcups', '065-hcups', '065-icups', '065-jcups', '070-acoloredwoodblocks', '070-bcoloredwoodblocks', '071nineholepegtest', '072-atoyairplane', '073-alegoduplo', '073-blegoduplo', '073-clegoduplo', '073-dlegoduplo', '073-elegoduplo', '073-flegoduplo', '073-glegoduplo']
     classify_client = rospy.ServiceProxy('/classify', Classify)
+    detect_waving_client = rospy.ServiceProxy('/detect_waving', Trigger) #New
     base_vel_pub = rospy.Publisher('/hsrb/command_velocity', Twist, queue_size=10)
-    #service_client = rospy.ServiceProxy('/segment_2_tf', Trigger)
-    #service_client.wait_for_service(timeout=1.0)
-   
-
-    
-    
-  
+    takeshi_talk_pub = rospy.Publisher('/talk_request', Voice, queue_size=10)
 
 #Entry point    
 if __name__== '__main__':
@@ -775,15 +1010,18 @@ if __name__== '__main__':
 
     with sm:
         #State machine for Restaurant
-        smach.StateMachine.add("INITIAL",           Initial(),          transitions = {'failed':'INITIAL',          'succ':'SCAN_SPACE',        'tries':'END'}) 
-        smach.StateMachine.add("SCAN_SPACE",        Scan_space(),       transitions = {'failed':'INITIAL',          'succ':'GOTO_TABLE',        'tries':'INITIAL'}) 
-        smach.StateMachine.add("GOTO_TABLE",        Goto_table(),       transitions = {'failed':'GOTO_TABLE',       'succ':'HRI_TAKE_ORDER',    'tries':'INITIAL', 'end':'INITIAL'}) 
-        smach.StateMachine.add("HRI_TAKE_ORDER",    Hri_take_order(),   transitions = {'failed':'HRI_TAKE_ORDER',   'succ':'GOTO_BAR',          'tries':'INITIAL'}) 
+        smach.StateMachine.add("INITIAL",           Initial(),          transitions = {'failed':'INITIAL',          'succ':'HRI_TAKE_ORDER',           'tries':'END'}) 
+        smach.StateMachine.add("MAPPING",           Mapping(),          transitions = {'failed':'INITIAL',          'succ':'SCAN_RESTAURANT',        'tries':'END'}) 
+        smach.StateMachine.add("SCAN_RESTAURANT",   Scan_restaurant(),  transitions = {'failed':'SCAN_RESTAURANT',  'succ':'GOTO_TABLE',        'tries':'INITIAL'}) 
+        smach.StateMachine.add("GOTO_TABLE",        Goto_table(),       transitions = {'failed':'GOTO_TABLE',       'succ':'HRI_TAKE_ORDER',    'tries':'GOTO_TABLE', 'end':'INITIAL'}) 
+        smach.StateMachine.add("HRI_TAKE_ORDER",    Hri_take_order(),   transitions = {'failed':'HRI_TAKE_ORDER',   'succ':'HRI_CONFIRM_ORDER', 'tries':'INITIAL'}) 
+        smach.StateMachine.add("HRI_CONFIRM_ORDER", Hri_confirm_order(),transitions = {'failed':'HRI_TAKE_ORDER',   'succ':'GOTO_BAR',          'tries':'INITIAL'}) 
         smach.StateMachine.add("GOTO_BAR",          Goto_bar(),         transitions = {'failed':'GOTO_BAR',         'succ':'SCAN_BAR',          'tries':'END'}) 
-        smach.StateMachine.add("SCAN_BAR",          Scan_bar(),         transitions = {'failed':'SCAN_BAR',         'succ':'PRE_GRASP_BAR',     'tries':'GOTO_BAR'})
-        smach.StateMachine.add("PRE_GRASP_BAR",     Pre_grasp_bar(),    transitions = {'failed':'SCAN_BAR',         'succ':'GRASP_BAR',         'tries':'SCAN_BAR'})
-        smach.StateMachine.add("GRASP_BAR",         Grasp_bar(),        transitions = {'failed':'PRE_GRASP_BAR',    'succ':'DELIVERY',          'tries':'SCAN_BAR'})
-        smach.StateMachine.add("DELIVERY",          Delivery() ,        transitions = {'failed':'DELIVERY',         'succ':'END',           'tries':'END'})       
+        smach.StateMachine.add("SCAN_BAR",          Scan_bar(),         transitions = {'failed':'GOTO_BAR',         'succ':'PRE_GRASP_BAR',     'tries':'GOTO_BAR'})
+        smach.StateMachine.add("PRE_GRASP_BAR",     Pre_grasp_bar(),    transitions = {'failed':'SCAN_BAR',         'succ':'GRASP_BAR',         'tries':'GOTO_BAR'})
+        smach.StateMachine.add("GRASP_BAR",         Grasp_bar(),        transitions = {'failed':'GOTO_BAR',         'succ':'GOTO_DEL_GOAL',     'tries':'SCAN_BAR'})
+        smach.StateMachine.add("GOTO_DEL_GOAL",     Goto_del_goal() ,   transitions = {'failed':'GOTO_DEL_GOAL',    'succ':'DELIVERY',          'tries':'GOTO_DEL_GOAL'})       
+        smach.StateMachine.add("DELIVERY",          Delivery() ,        transitions = {'failed':'DELIVERY',         'succ':'END',               'tries':'END'})       
 
     outcome = sm.execute()
 
