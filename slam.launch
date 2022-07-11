@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <launch>
-    <remap from="/map" to="/static_obstacle_map_ref"/>
+    <!--remap from="/map" to="/static_obstacle_map_ref"/-->
     <node name="hector_mapping" pkg="hector_mapping" type="hector_mapping" output="screen">
         <param name="map_size"                   value="2048" />
         <param name="map_resolution"             value="0.05" />
