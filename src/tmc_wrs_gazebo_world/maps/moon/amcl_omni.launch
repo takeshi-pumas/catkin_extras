@@ -5,9 +5,9 @@
 <node pkg="amcl" type="amcl" name="amcl" args="scan:=/hsrb/base_scan static_map:=/map">
   <!-- Publish scans from best pose at a max of 10 Hz -->
 
-  <param name="initial_pose_x" value="-1.297 "/>
-  <param name="initial_pose_y" value="-1.932 "/>
-  <param name="initial_pose_a" value=" 0"/>
+  <param name="initial_pose_x" value="0"/>
+  <param name="initial_pose_y" value="0 "/>
+  <param name="initial_pose_a" value="0"/>
 
   <param name="odom_model_type" value="omni"/>
   <param name="odom_alpha5" value="0.1"/>

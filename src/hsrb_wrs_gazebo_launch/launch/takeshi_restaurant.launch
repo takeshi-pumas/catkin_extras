@@ -19,8 +19,6 @@
   <arg name="seed" default="1" />
 
   <include file="$(find hsrb_wrs_gazebo_launch)/launch/include/restaurant_takeshi.xml" pass_all_args="true" >
-    <arg name="per_category" value="6" />
-    <arg name="obstacles" value="4" />
-    <arg name="per_row" value="6" />
+    
   </include>
 </launch>

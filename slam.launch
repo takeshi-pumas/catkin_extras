@@ -15,7 +15,7 @@
         <param name="base_frame"                 value="base_link" />
     </node>
     <node name="killer_node" pkg="killer_node" type="killer_node.py" output="screen"/>
-    <node name="fake_global_pose" pkg="killer_node" type="fake_global_pose.py" output="screen"/>
+    <!--node name="fake_global_pose" pkg="killer_node" type="fake_global_pose.py" output="screen"/-->
 
 
 </launch>
