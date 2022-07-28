@@ -9,8 +9,8 @@
 
 
   <include file="$(find hsrb_gazebo_launch)/launch/include/hsrb_gazebo_common.xml" pass_all_args="true" >
-    <!--arg name="map" value="$(find tmc_wrs_gazebo_worlds)/maps/moon/map.yaml" /-->
-    <arg name="map" value="$(find tmc_potential_maps)/maps/white_space/map.yaml" />
+    <arg name="map" value="$(find tmc_wrs_gazebo_worlds)/maps/moon/map.yaml" />
+    <!--arg name="map" value="$(find tmc_potential_maps)/maps/white_space/map.yaml" /-->
     
     <arg name="world_name" value="$(find tmc_wrs_gazebo_worlds)/worlds/moon.world "  />
  
@@ -19,8 +19,8 @@
   </include>
 
 
-  <include file="$(find tmc_wrs_gazebo_worlds)/maps/moon/amcl_omni.launch">
-    </include>
+  <!--include file="$(find tmc_wrs_gazebo_worlds)/maps/moon/amcl_omni.launch"-->
+    
 
 </launch>
 
