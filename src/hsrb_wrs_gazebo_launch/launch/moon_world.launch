@@ -15,7 +15,7 @@
     <arg name="world_name" value="$(find tmc_wrs_gazebo_worlds)/worlds/moon.world "  />
  
 	<arg name="robot_pos" value="-x 0 -y 0 -z 0 -Y 0" />
-    <arg name="use_laser_odom" value="true" />
+    <arg name="use_laser_odom" value="false" />
   </include>
 
 
