@@ -7,19 +7,6 @@ clone this git
 
 $  git clone https://github.com/takeshi-pumas/catkin_extras.git
 
-############USE NOETIC BRANCH
-###########################
-#########USE NOETIC 
-######
-##IM NOT KIDDING; USE NOETIC BRANCH
-
-
-
-$ git checkout noetic
-
-navigate to the folder you just created.
-
-
 $ cd catkin_extras
 
 "build the catkin space containing Moveit, and the wrs arenas"
@@ -49,7 +36,7 @@ MOVEIT IS NOW INLCUDED IN LAUNCH;
 
 $ python3 /src/smaches/ANY SMACH.py
 
-
+PUMAS NAVIGATION IS NOW AVAILABL
 
 Check 
 
