@@ -89,14 +89,15 @@ def readSensor(data):
          Ftotth= (Ftotth     +2 *np.pi)
      
              
+     print('Current Speed',current_speed)
      print('Ftotxy',Ftotx,Ftoty,Ftotth*180/np.pi)
-     """Fatmag=np.linalg.norm((Fatrx,Fatry))
+     Fatmag=np.linalg.norm((Fatrx,Fatry))
      Fmag=np.linalg.norm((Fx,Fy))
      print ("theta robot",th*180/3.1416,'---------------------------')
      print ('fasorFatrth',np.linalg.norm((Fatrx,Fatry)),(Fatrth)*180/3.1416 )
      print ("FXATR,FYATR",Fatrx,Fatry)
      print ('fasorFrepth',np.linalg.norm((Fx,Fy)),Fth*180/3.1416)
-     print ("Frepx,Frepy",Fx,Fy)"""
+     print ("Frepx,Frepy",Fx,Fy)
      
         
      """Fx,Fy= Fmag*np.cos(Fth) , Fmag*np.sin(Fth)   
@@ -105,53 +106,40 @@ def readSensor(data):
     
      vel=0 
      if( abs(Ftotth) < .15) :#or (np.linalg.norm((Fx,Fy)) < 100):
-         speed.linear.x=1.9
+         #speed.linear.x=1.9
+         speed.linear.x= min(current_speed.linear.x+0.05 ,3.0)
          print('lin')
          speed.angular.z=0
      
      else:
-         
-        if Ftotth < 0:
-            if (abs( Ftotth ) < np.pi/2):
-                vel=.24
-                print('open curve')
-         
+        if Ftotth > -np.pi/2  and Ftotth <0:
             print('Vang-')
-            speed.linear.x=vel
-            speed.angular.z=-0.55
-        if Ftotth > 0:
-            if (abs( Ftotth ) < np.pi/2):
-                vel=.24
-                print('open curve')
-         
-            
+            speed.linear.x  = max(current_speed.linear.x -0.01, 0.0)
+            speed.angular.z = max(current_speed.angular.z-0.1, -1.0)
+        
+        if Ftotth < np.pi/2  and Ftotth > 0:
             print('Vang+')
-            speed.linear.x=vel
-            speed.angular.z=.5
-        """if Ftotth < -1.57:
-            
-            print('ang++')
-            speed.linear.x=0
-            speed.angular.z=0.5
+            speed.linear.x  = max(current_speed.linear.x-0.01, 0.0)
+            speed.angular.z = min(current_speed.angular.z+0.1,1.0)
         
-            
         
- 
-        if Ftotth > 1.57:
-            print('ang-')
-            speed.linear.x=0
-            speed.angular.z=-0.5"""
+        if Ftotth < -np.pi/2:
+            
+            print('Vang---')
+            speed.linear.x  = max(current_speed.linear.x-0.1, 0.0)
+            speed.angular.z = max(current_speed.angular.z-0.25,-2.5)
+        
 
-        
+        if Ftotth > np.pi/2:
             
-       
         
-    
-
+            print('Vang+++')
+            speed.linear.x  = max(current_speed.linear.x-0.1, 0.0)
+            speed.angular.z = min(current_speed.angular.z+0.25,2.5)
 speed=Twist()
-speed.angular.z=0
+
 def inoutinout():
-    global xcl,ycl
+    global xcl,ycl,current_speed
     sub= rospy.Subscriber("/hsrb/odom",Odometry,newOdom)
     sub2=rospy.Subscriber("/hsrb/base_scan",LaserScan,readSensor)
     sub3=rospy.Subscriber("/clicked_point",PointStamped,readPoint)
@@ -160,10 +148,14 @@ def inoutinout():
     rate = rospy.Rate(15) # 10hz
     while not rospy.is_shutdown():
         hello_str = "Time %s" % rospy.get_time()
-        print("xcl,ycl",xcl,ycl)
-        if (xcl!=0 and ycl!=0):pub.publish(speed)
+        
+        if (xcl!=0 and ycl!=0):
+            pub.publish(speed)
+            current_speed=speed
+        else:
+            current_speed=Twist()
 
-        #rate.sleep()
+
 
 if __name__ == '__main__':
     try:
