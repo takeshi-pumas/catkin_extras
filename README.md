@@ -36,8 +36,10 @@ MOVEIT IS NOW INLCUDED IN LAUNCH;
 
 $ python3 /src/smaches/ANY SMACH.py
 
-PUMAS NAVIGATION IS NOW AVAILABL
+PUMAS NAVIGATION IS NOW AVAILABLE
 
 Check 
+https://drive.google.com/file/d/1uc-GpoMxOQ_FcuZyGpvUkLoJWH-bGQGT/view?usp=sharing
+
 
 
