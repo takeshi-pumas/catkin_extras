@@ -9,7 +9,7 @@ from hmm_navigation.msg import NavigateAction ,NavigateActionGoal,NavigateAction
 from sensor_msgs.msg import LaserScan
 from geometry_msgs.msg import Twist, PointStamped , PoseStamped
 from visualization_msgs.msg import Marker , MarkerArray
-
+from std_msgs.msg import Empty
 ##################################################
 def pose2feedback(pose_robot,quat_robot):
     feed = NavigateActionFeedback()
@@ -33,7 +33,7 @@ class pumas_navServer():
 
         success = True
         result = NavigateActionResult()
-        rate = rospy.Rate(1)
+        rate = rospy.Rate(10)
         timeout= rospy.Time.now().to_sec()+goal.timeout
         
         rot=tf.transformations.quaternion_from_euler(0,0,yaw)
@@ -73,7 +73,7 @@ class pumas_navServer():
             if i ==10000:
                 print (euclD)
                 i=0
-            
+        pub_stop.publish()
         
         
 
@@ -102,7 +102,7 @@ class pumas_navServer():
 
         
 if __name__=="__main__":
-    global listener , goal_nav_publish
+    global listener , goal_nav_publish , pub_stop
     rospy.init_node('pumas_navigation_actionlib_server')
     
     goal_nav_publish = rospy.Publisher('/move_base_simple/goal', PoseStamped, queue_size=1)
@@ -111,7 +111,7 @@ if __name__=="__main__":
     #pub3= rospy.Publisher('aa/Markov_route',MarkerArray,queue_size=1)
     #pub_goal= rospy.Publisher('/clicked_point',PointStamped,queue_size=1)
     listener = tf.TransformListener()
-    
+    pub_stop = rospy.Publisher('/navigation/stop', Empty, queue_size=10)
     
     s = pumas_navServer()
     rospy.spin()
