@@ -6,9 +6,12 @@
 
   <arg name="static_map_file"  default="$(find tmc_wrs_gazebo_worlds)/maps/moon/map.yaml"/>
   <arg name="prohibition_map_file"  default="$(find tmc_wrs_gazebo_worlds)/maps/moon/map.yaml"/>
-  <arg name="initial_pose_x" default="-5.7"/>
-  <arg name="initial_pose_y" default="-6.0"/>
-  <arg name="initial_pose_a" default=" 90"/>
+
+
+
+  <arg name="initial_pose_x" default="0.0"/>
+  <arg name="initial_pose_y" default="0.0"/>
+  <arg name="initial_pose_a" default="0.0"/>
   <arg name="laser_scan_topic" default="/hsrb/base_scan/fix"/>
   <arg name="point_cloud_topic" default="/hsrb/head_rgbd_sensor/depth_registered/rectified_points"/>
   <arg name="use_lidar" default="True"/>
