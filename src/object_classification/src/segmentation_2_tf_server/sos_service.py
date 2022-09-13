@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 import rospy                                      # the main module for ROS-python programs
 from std_srvs.srv import Trigger, TriggerResponse # we are creating a 'Trigger service'...
                                                   # ...Other types are available, and you can create

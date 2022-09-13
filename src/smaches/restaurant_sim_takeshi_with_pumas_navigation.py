@@ -11,23 +11,24 @@ import tf2_ros
 from tf2_sensor_msgs.tf2_sensor_msgs import do_transform_cloud
 from object_classification.srv import *
 from hsrb_interface import Robot
-import cv2  # New
-import rospy # New
-import face_recognition #New
+import cv2  
+import rospy 
+import face_recognition 
 from hmm_navigation.msg import NavigateActionGoal, NavigateAction
 from cv_bridge import CvBridge, CvBridgeError
 
 from utils_notebooks import *
 from utils_takeshi import *
-from utils_srv import *   #New
+from utils_srv import *  
 from sensor_msgs.msg import Image , LaserScan , PointCloud2
 
 
 
 from hri_msgs.msg import RecognizedSpeech
 
-
-
+########################################################################
+#THIS SMACH USES sos_wave_detector PUMAS NAVIGATION and pumas navclient.
+###########################################################################
 
 ########## Functions for takeshi states ##########
 
@@ -353,8 +354,12 @@ def gaze_point(x,y,z):
 
 def move_base(goal_x,goal_y,goal_yaw,time_out=10):
 
+########################################################################################
+    ###################################################################################
     #using nav client and toyota navigation go to x,y,yaw
-    #To Do: PUMAS NAVIGATION
+    #To Do: PUMAS NAVIGATION#####################################IT IS DONE .......
+    ################################################################################
+    ###################################################################################
     pose = PoseStamped()
     pose.header.stamp = rospy.Time(0)
     pose.header.frame_id = "map"
