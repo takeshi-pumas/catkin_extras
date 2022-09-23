@@ -1,5 +1,4 @@
-
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 Created on Wed Apr 17 22:54:18 2019
@@ -46,7 +45,7 @@ last_states_real=[]
 delta_xyth=[]
 o_k=[]
 o_k2=[]
-transitions= np.load('trans.npy')
+#transitions= np.load('trans.npy')
 buf_vit=60
 clf=load('aff_prop_class.joblib_2')
 marker=Marker()   
