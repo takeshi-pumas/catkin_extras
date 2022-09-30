@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from std_srvs.srv import Empty, Trigger, TriggerRequest
+from std_srvs.srv import Empty
 from geometry_msgs.msg import Twist , PointStamped , Point
 import actionlib
 import smach
@@ -7,6 +7,7 @@ import smach_ros
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 from geometry_msgs.msg import PoseStamped, Point , Quaternion
 from actionlib_msgs.msg import GoalStatus
+from std_msgs.msg import String      
 from tmc_msgs.msg import Voice
 import moveit_commander
 import moveit_msgs.msg
@@ -14,6 +15,8 @@ import tf2_ros
 from tf2_sensor_msgs.tf2_sensor_msgs import do_transform_cloud
 from object_classification.srv import *
 #import face_recognition 
+from face_recog.msg import *
+from face_recog.srv import *
 import cv2  
 import rospy 
 import numpy as np
@@ -26,21 +29,22 @@ from sensor_msgs.msg import Image , LaserScan , PointCloud2
 from hri_msgs.msg import RecognizedSpeech
 import tf
 ########################################################################
-#THIS SMACH USES sos_wave_detector PUMAS NAVIGATION and pumas navclient.
+#THIS SMACH USES Face Recog
 ###########################################################################
 
 ########## Functions for takeshi states ##########
 class RGB():
     
-
     def __init__(self):
         self._img_sub = rospy.Subscriber(
-            "/hsrb/head_rgbd_sensor/rgb/image_rect_color",
+            #"/hsrb/head_rgbd_sensor/rgb/image_rect_color",     #FOR DEBUG USB CAM"/usb_cam/image_raw"
+            "/usb_cam/image_raw",                               #"/hsrb/head_rgbd_sensor/rgb/image_rect_color"
             Image, self._img_cb)
         
         self._image_data = None
         
     def _img_cb(self, msg):
+        global bridge
         
         self._image_data = bridge.imgmsg_to_cv2(msg)
         
@@ -374,8 +378,7 @@ def move_base(goal_x,goal_y,goal_yaw,time_out=10):
 
 ########################################################################################
     ###################################################################################
-    #using nav client and toyota navigation go to x,y,yaw
-    #To Do: PUMAS NAVIGATION#####################################IT IS DONE .......
+    #using nav client and PUMAS navigation go to x,y,yaw
     ################################################################################
     ###################################################################################
     pose = PoseStamped()
@@ -455,7 +458,7 @@ def move_d_to(target_distance=0.5,target_link='Floor_Object0'):
         print ('no  tf found')
         return False
     
-    robot, _ =  listener.lookupTransform('map','base_link',rospy.Time(0))
+    robot, quat_robot =  listener.lookupTransform('map','base_link',rospy.Time(0))
     pose, quat =  listener.lookupTransform('base_link',target_link,rospy.Time(0))
 
     D=np.asarray(obj_tar)-np.asarray(robot)
@@ -466,11 +469,8 @@ def move_d_to(target_distance=0.5,target_link='Floor_Object0'):
         new_pose=np.asarray(obj_tar)-target_distance*d
     
     broadcaster.sendTransform(new_pose,(0,0,0,1), rospy.Time.now(), 'D_from_object','map')
-    wb_v= whole_body.get_current_joint_values()
-
-    arm.set_named_target('go')
-    arm.go()
-
+    
+    wb_v=tf.transformations.euler_from_quaternion(quat_robot)
 
     succ=move_base( new_pose[0],new_pose[1],         np.arctan2(pose[1],pose[0])+wb_v[2])
     return succ  
@@ -478,6 +478,32 @@ def move_d_to(target_distance=0.5,target_link='Floor_Object0'):
         
 import time
 base_vel_pub = rospy.Publisher('/hsrb/command_velocity', Twist, queue_size=10)
+
+def wait_for_face(timeout=10):
+    
+    rospy.sleep(0.3)
+    
+    start_time = rospy.get_time()
+    strings=Strings()
+    string_msg= String()
+    string_msg.data='Anyone'
+    while rospy.get_time() - start_time < timeout:
+        img=rgbd.get_image()  
+        req=RecognizeFaceRequest()
+        print ('Got  image with shape',img.shape)
+        req.Ids.ids.append(string_msg)
+        img_msg=bridge.cv2_to_imgmsg(img)
+        req.in_.image_msgs.append(img_msg)
+
+        res= recognize_face(req)
+
+        if res.Ids.ids[0].data == 'NO_FACE':
+            print ('No face FOund Keep scanning')
+        else:return res
+    
+
+
+
 def move_abs(vx,vy,vw, timeout=0.05):
     start_time = time.clock_gettime(0) 
     sec=time.clock_gettime(0)
@@ -506,15 +532,15 @@ class Initial(smach.State):
 
         print('Try',self.tries,'of 5 attempts') 
         self.tries+=1
-        if self.tries==6:
+        if self.tries==3:
             return 'tries'
         
         clear_octo_client()
-        close_gripper()
-        scene.remove_world_object()
+        
+        #scene.remove_world_object()
         #Takeshi neutral
-        arm.set_named_target('go')
-        arm.go()
+        #arm.set_named_target('go')
+        #arm.go()
         head.set_named_target('neutral')
         succ=head.go() 
         
@@ -526,13 +552,13 @@ class Initial(smach.State):
 
 
 
-class Scan_restaurant(smach.State):
+class Scan_face(smach.State):
     def __init__(self):
         smach.State.__init__(self,outcomes=['succ','failed','tries'])
         self.tries=0
     def execute(self,userdata):
 
-        rospy.loginfo('State : SCAN_RESTAURANT')
+        rospy.loginfo('State : SCAN_FACE')
         self.tries+=1        
         
         if self.tries==1:
@@ -548,27 +574,78 @@ class Scan_restaurant(smach.State):
             hv[0]= 0.6
             hv[1]= 0.0
             head.go(hv) 
-        if self.tries>=4:
+        if self.tries>=9:
             self.tries=0
-            return 'tries'
+            return'tries'
+        
+        #img=rgbd.get_image()  
+        #req=RecognizeFaceRequest()
+        #print ('Got  image with shape',img.shape)
+        #strings=Strings()
+        #string_msg= String()
+        #string_msg.data='Anyone'
+        #req.Ids.ids.append(string_msg)
+        #img_msg=bridge.cv2_to_imgmsg(img)
+        #req.in_.image_msgs.append(img_msg)
+        #res= recognize_face(req)
+        res=wait_for_face()##default 10 secs
+        
+        print('Cheking for faces')
+        if res== None:
+            return 'failed'
+        if res != None:
+            print('RESPONSE',res.Ids.ids      )
+            if res.Ids.ids[0].data == 'NO_FACE':
+                print ('No face Found Keep scanning')
+                return 'failed'
+            else:
+                print ('A face was found.')
+                trans,rot=listener.lookupTransform('/map', '/head_rgbd_sensor_link', rospy.Time(0))  
+                print (trans , rot)
+                trans[2]+=res.Ds.data[0]
 
-        req= TriggerRequest()
-
-        print (whole_body.get_current_joint_values()[:3])
+                broadcaster.sendTransform( trans,(0,0,0,1),rospy.Time.now(), 'Face','head_rgbd_sensor_link')            #res.Ids.ids[0].data
+                rospy.sleep(0.25)
+                return 'succ'
+                    
         
 
-        print('Looking for Waving Person')
+
+
+"""print('Looking for FACE (DLIB) try num ',self.tries)
         img=rgbd.get_image()        
         print (img.shape)
+        
+   """
+        
+class Goto_face(smach.State):
+    def __init__(self):
+        smach.State.__init__(self,outcomes=['succ','failed','tries'])
+        self.tries=0
+    def execute(self,userdata):
 
-                    
-                    
-        return 'tries'
 
+        rospy.loginfo('State : GOING TO FACE PUMAS NAV AND MAP')
+        goal_pose, quat=listener.lookupTransform( 'map','Face', rospy.Time(0))
 
+        ###move_base(goal_pose[0],goal_pose[1],0,10  )   #X Y YAW AND TIMEOUT
+        move_d_to(0.3,'Face')
+
+        
+
+        
 
 
         
+        return 'succ'
+        
+        
+
+        self.tries+=1        
+
+
+
+
 
 class Roam(smach.State):
     def __init__(self):
@@ -972,18 +1049,18 @@ class Delivery(smach.State):
             return'failed'
 
 def init(node_name):
-    global listener, broadcaster, tfBuffer, tf_static_broadcaster, scene, rgbd  , head,whole_body,arm,gripper  ,goal,navclient,clear_octo_client ,  detect_waving_client, class_names , bridge , base_vel_pub,takeshi_talk_pub, order, navclient
+    global listener, broadcaster, tfBuffer, tf_static_broadcaster, scene, rgbd  , head,whole_body,arm,gripper  ,goal,navclient,clear_octo_client ,  detect_waving_client, class_names , bridge , base_vel_pub,takeshi_talk_pub, order, navclient, recognize_face, pub_potfields_goal
     rospy.init_node(node_name)
     head = moveit_commander.MoveGroupCommander('head')
-    gripper =  moveit_commander.MoveGroupCommander('gripper')
-    whole_body=moveit_commander.MoveGroupCommander('whole_body')
-    arm =  moveit_commander.MoveGroupCommander('arm')
+    #gripper =  moveit_commander.MoveGroupCommander('gripper')
+    #whole_body=moveit_commander.MoveGroupCommander('whole_body')
+    #arm =  moveit_commander.MoveGroupCommander('arm')
     listener = tf.TransformListener()
     broadcaster = tf.TransformBroadcaster()
     navclient = actionlib.SimpleActionClient('/move_base/move', MoveBaseAction)
     tfBuffer = tf2_ros.Buffer()
     tf_static_broadcaster = tf2_ros.StaticTransformBroadcaster()
-    whole_body.set_workspace([-6.0, -6.0, 6.0, 6.0]) 
+    #whole_body.set_workspace([-6.0, -6.0, 6.0, 6.0]) 
     scene = moveit_commander.PlanningSceneInterface()
     rgbd = RGB()
     goal = MoveBaseGoal()
@@ -993,14 +1070,18 @@ def init(node_name):
     ###FANFARRIAS Y REDOBLES PUMASNAVIGATION ####################################
     #############################################################################
 
+    pub_potfields_goal = rospy.Publisher("/clicked_point",PointStamped,queue_size=10)
 
-    actionlib.SimpleActionClient('/navigate', NavigateAction)
+    actionlib.SimpleActionClient('/navigate', NavigateAction)   ### PUMAS NAV ACTION LIB
     
     clear_octo_client = rospy.ServiceProxy('/clear_octomap', Empty)
     bridge = CvBridge()
     #class_names=['002masterchefcan', '003crackerbox', '004sugarbox', '005tomatosoupcan', '006mustardbottle', '007tunafishcan', '008puddingbox', '009gelatinbox', '010pottedmeatcan', '011banana', '012strawberry', '013apple', '014lemon', '015peach', '016pear', '017orange', '018plum', '019pitcherbase', '021bleachcleanser', '022windexbottle', '024bowl', '025mug', '027skillet', '028skilletlid', '029plate', '030fork', '031spoon', '032knife', '033spatula', '035powerdrill', '036woodblock', '037scissors', '038padlock', '040largemarker', '042adjustablewrench', '043phillipsscrewdriver', '044flatscrewdriver', '048hammer', '050mediumclamp', '051largeclamp', '052extralargeclamp', '053minisoccerball', '054softball', '055baseball', '056tennisball', '057racquetball', '058golfball', '059chain', '061foambrick', '062dice', '063-amarbles', '063-bmarbles', '065-acups', '065-bcups', '065-ccups', '065-dcups', '065-ecups', '065-fcups', '065-gcups', '065-hcups', '065-icups', '065-jcups', '070-acoloredwoodblocks', '070-bcoloredwoodblocks', '071nineholepegtest', '072-atoyairplane', '073-alegoduplo', '073-blegoduplo', '073-clegoduplo', '073-dlegoduplo', '073-elegoduplo', '073-flegoduplo', '073-glegoduplo']
     #classify_client = rospy.ServiceProxy('/classify', Classify)
-    detect_waving_client = rospy.ServiceProxy('/detect_waving', Trigger) #New
+    print ('Waiting for face recog service')
+    rospy.wait_for_service('recognize_face')
+    recognize_face = rospy.ServiceProxy('recognize_face', RecognizeFace)    
+    train_new_face = rospy.ServiceProxy('new_face', RecognizeFace)    
     base_vel_pub = rospy.Publisher('/hsrb/command_velocity', Twist, queue_size=10)
     takeshi_talk_pub = rospy.Publisher('/talk_request', Voice, queue_size=10)
 
@@ -1009,26 +1090,17 @@ if __name__== '__main__':
     print("Takeshi STATE MACHINE...")
     init("takeshi_smach")
     sm = smach.StateMachine(outcomes = ['END'])     #State machine, final state "END"
-    sm.userdata.sm_counter = 0
-    sm.userdata.clear = False
+    
+    #sm.userdata.clear = False
     sis = smach_ros.IntrospectionServer('SMACH_VIEW_SERVER', sm, '/SM_ROOT')
     sis.start()
 
 
     with sm:
         #State machine for Restaurant
-        smach.StateMachine.add("INITIAL",           Initial(),          transitions = {'failed':'INITIAL',          'succ':'SCAN_RESTAURANT',           'tries':'END'}) 
-        smach.StateMachine.add("SCAN_RESTAURANT",   Scan_restaurant(),  transitions = {'failed':'SCAN_RESTAURANT',  'succ':'HRI_TAKE_ORDER',    'tries':'ROAM'}) 
-        smach.StateMachine.add("ROAM",              Roam(),             transitions = {'failed':'ROAM',       'succ':'INITIAL',    'tries':'GOTO_TABLE'}) 
-        smach.StateMachine.add("GOTO_TABLE",        Goto_table(),       transitions = {'failed':'GOTO_TABLE',       'succ':'INITIAL',    'tries':'GOTO_TABLE', 'end':'INITIAL'}) 
-        smach.StateMachine.add("HRI_TAKE_ORDER",    Hri_take_order(),   transitions = {'failed':'HRI_TAKE_ORDER',   'succ':'HRI_CONFIRM_ORDER', 'tries':'INITIAL'}) 
-        smach.StateMachine.add("HRI_CONFIRM_ORDER", Hri_confirm_order(),transitions = {'failed':'HRI_TAKE_ORDER',   'succ':'GOTO_BAR',          'tries':'INITIAL'}) 
-        smach.StateMachine.add("GOTO_BAR",          Goto_bar(),         transitions = {'failed':'GOTO_BAR',         'succ':'SCAN_BAR',          'tries':'END'}) 
-        smach.StateMachine.add("SCAN_BAR",          Scan_bar(),         transitions = {'failed':'GOTO_BAR',         'succ':'PRE_GRASP_BAR',     'tries':'GOTO_BAR'})
-        smach.StateMachine.add("PRE_GRASP_BAR",     Pre_grasp_bar(),    transitions = {'failed':'SCAN_BAR',         'succ':'GRASP_BAR',         'tries':'GOTO_BAR'})
-        smach.StateMachine.add("GRASP_BAR",         Grasp_bar(),        transitions = {'failed':'GOTO_BAR',         'succ':'GOTO_DEL_GOAL',     'tries':'SCAN_BAR'})
-        smach.StateMachine.add("GOTO_DEL_GOAL",     Goto_del_goal() ,   transitions = {'failed':'GOTO_DEL_GOAL',    'succ':'DELIVERY',          'tries':'GOTO_DEL_GOAL'})       
-        smach.StateMachine.add("DELIVERY",          Delivery() ,        transitions = {'failed':'DELIVERY',         'succ':'END',               'tries':'END'})       
+        smach.StateMachine.add("INITIAL",           Initial(),          transitions = {'failed':'INITIAL',          'succ':'SCAN_FACE',           'tries':'END'}) 
+        smach.StateMachine.add("SCAN_FACE",   Scan_face(),  transitions = {'failed':'SCAN_FACE',  'succ':'GOTO_FACE',    'tries':'INITIAL'}) 
+        smach.StateMachine.add("GOTO_FACE",   Goto_face(),  transitions = {'failed':'GOTO_FACE',  'succ':'INITIAL',    'tries':'INITIAL'}) 
     outcome = sm.execute()
 
  

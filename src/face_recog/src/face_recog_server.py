@@ -17,7 +17,8 @@ import face_recognition
 import cv2
 import os
 
-path_for_faces='/home/takeshi/Pictures/faces_for_recognition/'
+#path_for_faces='/home/takeshi/Pictures/faces_for_recognition/'
+path_for_faces='/home/roboworks/Pictures/faces_for_recognition/'
 
 ids=[]
 first= True
@@ -125,15 +126,30 @@ def callback(req):
     for image in images:
         print (image.shape)
         face_locations = face_recognition.face_locations(image)
-        
+        distances = []
+        Dstoface=[]
+        Angs=[]
+        names=[]
+        if len (face_locations)==0:
+
+
+            Ds, Rots=Floats(),Floats()                          ###DEFINITION RESPONSE
+            strings=Strings()
+            string_msg= String()
+            string_msg.data= 'NO_FACE'
+            strings.ids.append(string_msg)
+            Dstoface.append(0.0)
+            Ds.data= Dstoface
+            Angs.append(0.0)
+            Rots.data= Angs
+            return RecognizeFaceResponse(Ds,Rots,strings)        
+
+
         if len (face_locations)>0:
             face_encodings = face_recognition.face_encodings(image, face_locations)
             face_landmarks = face_recognition.face_landmarks(image)
 #####################################################################
-            distances = []
-            Dstoface=[]
-            Angs=[]
-            names=[]
+            
             # FACEWRLDCOORDS######################################################3
             size = image.shape
             focal_length = size[1]
@@ -192,7 +208,16 @@ def callback(req):
                 if any(results) !=True: names.append('unknown')
                 else:names.append(np.unique(ids[results])[0])
             print (names)
-
+            ############Write Response message
+            Ds, Rots=Floats(),Floats()
+            strings=Strings()
+            for name in names:    
+                string_msg= String()
+                string_msg.data=name
+                strings.ids.append(string_msg)
+            Ds.data=Dstoface
+            Rots.data=Angs
+            return RecognizeFaceResponse(Ds,Rots,strings)        
 
 
 
@@ -206,18 +231,9 @@ def callback(req):
 
 
 
-    ############Write Response message
-    Ds, Rots=Floats(),Floats()
-    strings=Strings()
-    for name in names:    
-        string_msg= String()
-        string_msg.data=name
-        strings.ids.append(string_msg)
-    Ds.data=Dstoface
-    Rots.data=Angs
     #print ('Predictions (top 3 for each class)',flo.data)
 
-    return RecognizeFaceResponse(Ds,Rots,strings)        
+    
   
     
     
