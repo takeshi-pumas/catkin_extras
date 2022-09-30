@@ -95,7 +95,7 @@
   </node>
 
   <node pkg="hmm_navigation"  name="pumas_nav_actionserver" type="pumas_nav_actionserver.py"/>
-  <node pkg="face_recog"  name="face_recog_server" type="sos_service_waving.py"/>
+  <!--node pkg="face_recog"  name="wave_recog_server" type="sos_service_waving.py"/-->
     
   
 </launch>
