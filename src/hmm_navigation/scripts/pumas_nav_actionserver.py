@@ -11,13 +11,14 @@ from geometry_msgs.msg import Twist, PointStamped , PoseStamped
 from visualization_msgs.msg import Marker , MarkerArray
 from std_msgs.msg import Empty
 ##################################################
-def pose2feedback(pose_robot,quat_robot):
+def pose2feedback(pose_robot,quat_robot,timeleft,euclD):
     feed = NavigateActionFeedback()
     feed.feedback.x_robot   = pose_robot[0]
     feed.feedback.y_robot   = pose_robot[1]
     euler= tf.transformations.euler_from_quaternion((quat_robot[0] ,quat_robot[1] ,quat_robot[2] ,quat_robot[3] )) 
     feed.feedback.yaw_robot = euler[2]
-    feed.feedback.status    = 3
+    feed.feedback.timeleft    = timeleft
+    feed.feedback.euclD= euclD
     return feed
 class pumas_navServer():
 
@@ -47,30 +48,29 @@ class pumas_navServer():
         goal_nav_publish.publish(goal_pose)
 
    
-        
+        result.result.success=2
         i=0
         while timeout >= rospy.Time.now().to_sec():     
             i+=1
             
             
-            try:
-                pose_robot,quat_robot=listener.lookupTransform('map', 'base_footprint', rospy.Time(0)) 
-            except:
-                print ('notf')
-                pose_robot=np.zeros(3)
-                quat_robot= np.zeros(4)
-                quat_robot[-1]=1
+            
+            pose_robot,quat_robot=listener.lookupTransform('map', 'base_footprint', rospy.Time(0)) 
+            
+            euclD=   np.linalg.norm(np.asarray((x,y))- pose_robot[:2])
 
-            feed = pose2feedback(pose_robot,quat_robot)
+            
+            timeleft=timeout-rospy.Time.now().to_sec()     
+            feed = pose2feedback(pose_robot,quat_robot,timeleft,eculD)
             self.pumas_nav_server.publish_feedback(feed.feedback)
         
-            euclD=   np.linalg.norm(np.asarray((x,y))- pose_robot[:2])
             if euclD<=0.2:
                 print ('Close Enough')  
                 result.result.success=1
-                self.pumas_nav_server.set_succeeded(result.result)  
+                
                 break
-            if i ==10000:
+            if i ==1000:
+                
                 print (euclD)
                 i=0
         pub_stop.publish()
@@ -81,8 +81,7 @@ class pumas_navServer():
         
         if result.result.success!=1:
             print('time is over')
-            result.result.success=2
-            #print (result)
+            print (result)
         self.pumas_nav_server.set_succeeded(result.result)
 
             
@@ -112,7 +111,7 @@ if __name__=="__main__":
     #pub_goal= rospy.Publisher('/clicked_point',PointStamped,queue_size=1)
     listener = tf.TransformListener()
     pub_stop = rospy.Publisher('/navigation/stop', Empty, queue_size=10)
-    
+    print ('pumas nav action server available')
     s = pumas_navServer()
     rospy.spin()
 

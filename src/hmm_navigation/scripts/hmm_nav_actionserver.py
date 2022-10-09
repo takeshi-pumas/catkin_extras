@@ -11,13 +11,14 @@ from geometry_msgs.msg import Twist, PointStamped
 from visualization_msgs.msg import Marker , MarkerArray
 
 ##################################################
-def pose2feedback(pose_robot,quat_robot):
+def pose2feedback(pose_robot,quat_robot,timeleft,euclD):
     feed = NavigateActionFeedback()
     feed.feedback.x_robot   = pose_robot[0]
     feed.feedback.y_robot   = pose_robot[1]
     euler= tf.transformations.euler_from_quaternion((quat_robot[0] ,quat_robot[1] ,quat_robot[2] ,quat_robot[3] )) 
     feed.feedback.yaw_robot = euler[2]
-    feed.feedback.status    = 3
+    feed.feedback.timeleft    = timeleft
+    feed.feedback.euclD= euclD
     return feed
 class HMM_navServer():
 
@@ -40,42 +41,35 @@ class HMM_navServer():
         goal_pnt.point.x , goal_pnt.point.y  =x,y
         pub_goal.publish(goal_pnt)
 
-        
+        result.result.success=2
         i=0
         while timeout >= rospy.Time.now().to_sec():     
+            
+            
+            
             i+=1
-            
-            
-            try:
-                pose_robot,quat_robot=listener.lookupTransform('map', 'base_footprint', rospy.Time(0)) 
-            except:
-                print ('notf')
-                pose_robot=np.zeros(3)
-                quat_robot= np.zeros(4)
-                quat_robot[-1]=1
-
-            feed = pose2feedback(pose_robot,quat_robot)
-            self.hmm_nav_server.publish_feedback(feed.feedback)
-        
+            pose_robot,quat_robot=listener.lookupTransform('map', 'base_footprint', rospy.Time(0)) 
             euclD=   np.linalg.norm(np.asarray((x,y))- pose_robot[:2])
+                
+
             if euclD<=0.2:
                 print ('Close Enough')  
                 result.result.success=1
-                self.hmm_nav_server.set_succeeded(result.result)  
                 break
-            if i ==10000:
-                print (euclD)
+            if i ==1000:
+                timeleft=timeout-rospy.Time.now().to_sec()     
+            
+                feed = pose2feedback(pose_robot,quat_robot,timeleft,euclD)
+                self.hmm_nav_server.publish_feedback(feed.feedback)
+            
+                print (timeleft,euclD)
                 i=0
             
         goal_pnt.point.x , goal_pnt.point.y  =0,0
         pub_goal.publish(goal_pnt)
-
-            
+        if result.result.success!=1:print('timed out')
+                
         
-        if result.result.success!=1:
-            print('time is over')
-            result.result.success=2
-            #print (result)
         self.hmm_nav_server.set_succeeded(result.result)
 
             
@@ -104,7 +98,7 @@ if __name__=="__main__":
     pub_goal= rospy.Publisher('/clicked_point',PointStamped,queue_size=1)
     listener = tf.TransformListener()
     
-    
+    print("hmm nav server available service navigate")
     s = HMM_navServer()
     rospy.spin()
 

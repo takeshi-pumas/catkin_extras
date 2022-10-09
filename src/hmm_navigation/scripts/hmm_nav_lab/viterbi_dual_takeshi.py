@@ -1,4 +1,5 @@
-#!/usr/bin/env python3
+
+#!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 """
 Created on Wed Apr 17 22:54:18 2019
@@ -45,9 +46,9 @@ last_states_real=[]
 delta_xyth=[]
 o_k=[]
 o_k2=[]
-#transitions= np.load('trans.npy')
+transitions= np.load('trans.npy')
 buf_vit=60
-clf=load('aff_prop_class.joblib')
+clf=load('aff_prop_class.joblib_2')
 marker=Marker()   
 markerarray=MarkerArray()
 first_adjust_2=True
@@ -77,15 +78,10 @@ Modelo2= HMM(A,B2,PI2)
 
     
 
-def callback(laser,odom,pose):
+def callback(laser,pose,odom):
         global xyth , xyth_odom , xyth_hmm1,xyth_hmm2, xyth_dual, hmm12real , xyth_odom_prueba , ccxyth , centroides , A
         global first,first_aff , last_states_trans , last_states_trans_2 ,last_states_trans_real
         global odom_adjust,odom_adjust_aff,first_adjust , first_adjust_2 , first_adjust_aff,first_adjust_dual
-        
-        #pose= pose_with.pose
-
-        print('viterbiing')
-
         n= len(ccxyth)
         markerarray=MarkerArray()
         ###PUB HMM
@@ -505,15 +501,11 @@ def listener():
     symbol= message_filters.Subscriber('/hsrb/base_scan',LaserScan)
     pub= rospy.Publisher('aa/Viterbi',MarkerArray,queue_size=1)
     pub2 = rospy.Publisher('/aa/HMM_topo/', MarkerArray, queue_size=1)  
-    
-    
-    #pose  = message_filters.Subscriber('/amcl_pose',PoseWithCovarianceStamped)#Toyota AMCL
+    #pose  = message_filters.Subscriber('/navigation/localization/amcl_pose',PoseWithCovarianceStamped)#TAKESHI REAL
     pose  = message_filters.Subscriber('/hsrb/base_pose',PoseStamped)#TAKESHI GAZEBO
-    
-
     odom= message_filters.Subscriber("/hsrb/wheel_odom",Odometry)
-    ats= message_filters.ApproximateTimeSynchronizer([symbol,odom,pose],queue_size=5,slop=.1,allow_headerless=True)
-    #ats= message_filters.ApproximateTimeSynchronizer([symbol,odom],queue_size=5,slop=.1,allow_headerless=True)
+    #ats= message_filters.ApproximateTimeSynchronizer([symbol,odom,twist],queue_size=5,slop=.1,allow_headerless=True)
+    ats= message_filters.ApproximateTimeSynchronizer([symbol,pose,odom],queue_size=5,slop=.1,allow_headerless=True)
     ats.registerCallback(callback)
     # spin() simply keeps python from exiting until this node is stopped
     rospy.spin()

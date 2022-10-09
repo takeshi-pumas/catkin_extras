@@ -4,5 +4,5 @@
 float32 x_robot
 float32 y_robot
 float32 yaw_robot
-int32   status
-
+float32 timeleft
+float32 euclD_target
