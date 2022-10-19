@@ -1,20 +1,86 @@
 #!/usr/bin/env python3
-from std_srvs.srv import Empty, Trigger, TriggerRequest
+from std_srvs.srv import Empty
+from geometry_msgs.msg import Twist , PointStamped , Point
+import actionlib
 import smach
+import smach_ros
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 from geometry_msgs.msg import PoseStamped, Point , Quaternion
 from actionlib_msgs.msg import GoalStatus
+from std_msgs.msg import String      
+from tmc_msgs.msg import Voice
 import moveit_commander
 import moveit_msgs.msg
 import tf2_ros
 from tf2_sensor_msgs.tf2_sensor_msgs import do_transform_cloud
 from object_classification.srv import *
-
+#import face_recognition 
+from face_recog.msg import *
+from face_recog.srv import *
+import cv2  
+import rospy 
+import numpy as np
+from hmm_navigation.msg import NavigateActionGoal, NavigateAction
 from cv_bridge import CvBridge, CvBridgeError
+#from utils_notebooks import *
+#from utils_takeshi import *
+#from utils_srv import *  
+from sensor_msgs.msg import Image , LaserScan , PointCloud2
+from hri_msgs.msg import RecognizedSpeech
+import tf
+########################################################################
+#THIS SMACH USES Face Recog
+###########################################################################
 
-from utils_notebooks import *
-from utils_takeshi import *
 ########## Functions for takeshi states ##########
+from tmc_msgs.msg import Voice
+takeshi_talk_pub = rospy.Publisher('/talk_request', Voice, queue_size=10)
+def string_to_Voice(sentence='I am ready to begin'):
+    voice_message=Voice()
+    voice_message.sentence = sentence
+    voice_message.queueing = False
+    voice_message.language = 1
+    voice_message.interrupting = False
+
+    return(voice_message)
+    
+def wait_for_push_hand(time=10):
+
+    start_time = rospy.get_time()
+    time= 10
+    print('timeout will be ',time,'seconds')
+    while rospy.get_time() - start_time < time:
+        torque=rospy.wait_for_message("/hsrb/wrist_wrench/raw", WrenchStamped)
+        if np.abs(torque.wrench.torque.y)>0.5:
+            print(' Hand Pused Ready TO start')
+            takeshi_talk_pub.publish(string_to_Voice())
+            break
+
+
+    if (rospy.get_time() - start_time >= time):print(time, 'secs have elapsed with no hand push')
+
+
+class RGB():
+    
+    def __init__(self):
+        self._img_sub = rospy.Subscriber(
+            #"/hsrb/head_rgbd_sensor/rgb/image_rect_color",     #FOR DEBUG USB CAM"/usb_cam/image_raw"
+            "/usb_cam/image_raw",                               #"/hsrb/head_rgbd_sensor/rgb/image_rect_color"
+            Image, self._img_cb)
+        
+        self._image_data = None
+        
+    def _img_cb(self, msg):
+        global bridge
+        
+        self._image_data = bridge.imgmsg_to_cv2(msg)
+        
+        return
+    
+    def get_image(self):
+        
+        return self._image_data
+
 class Proto_state(smach.State):###example of a state definition.
     def __init__(self):
         smach.State.__init__(self,outcomes=['succ','failed','tries'])
@@ -34,11 +100,34 @@ class Proto_state(smach.State):###example of a state definition.
         if self.tries==3:
             self.tries=0 
             return'tries'
+def res_to_array(res):
+    xyz_wrt_robot=(res.message[1:-1].split(', ')[0:3])
+    x_wrt_robot=(float)(xyz_wrt_robot[0])
+    y_wrt_robot=(float)(xyz_wrt_robot[1])
+    z_wrt_robot=(float)(xyz_wrt_robot[2])
 
-####################################################################Functions in notebook ##################################################################
+    x_wrt_robot,y_wrt_robot,z_wrt_robot
+    return np.asarray((x_wrt_robot,y_wrt_robot,z_wrt_robot))
 
-#To Do: 
-#To Do: pack them in an utils file
+def get_points_corrected():
+    data = rospy.wait_for_message('/hsrb/head_rgbd_sensor/depth_registered/rectified_points', PointCloud2)
+    np_data=ros_numpy.numpify(data)
+    ##trans,rot=listener.lookupTransform('/map', '/head_rgbd_sensor_frame', rospy.Time(0))  #Robot real
+    trans,rot=listener.lookupTransform('/map', '/head_rgbd_sensor_gazebo_frame', rospy.Time(0))  #GAZEBO
+    eu=np.asarray(tf.transformations.euler_from_quaternion(rot))
+    t=TransformStamped()
+    rot=tf.transformations.quaternion_from_euler(-eu[1],np.pi,0)
+    t.header.stamp = data.header.stamp
+
+    t.transform.rotation.x = rot[0]
+    t.transform.rotation.y = rot[1]
+    t.transform.rotation.z = rot[2]
+    t.transform.rotation.w = rot[3]
+
+    cloud_out = do_transform_cloud(data, t)
+    np_corrected=ros_numpy.numpify(cloud_out)
+    corrected=np_corrected.reshape(np_data.shape)
+    return corrected
 
 def move_abs(vx,vy,vw):
     twist = Twist()
@@ -278,18 +367,8 @@ def gaze_point(x,y,z):
     
     trans , rot = listener.lookupTransform('/map', '/head_rgbd_sensor_gazebo_frame', rospy.Time(0)) #
     
-  #  arm_pose=arm.get_current_joint_values()
-  #  arm_pose[0]=.1
-  #  arm_pose[1]= -0.3
-  #  arm.set_joint_value_target(arm_pose)
-  #  arm.go()
-    
     e =tf.transformations.euler_from_quaternion(rot)
-    #print('i am at',trans,np.rad2deg(e)[2])
-    #print('gaze goal',x,y,z)
-    #tf.transformations.euler_from_quaternion(rot)
-
-
+    
     x_rob,y_rob,z_rob,th_rob= trans[0], trans[1] ,trans[2] ,  e[2]
 
 
@@ -324,8 +403,11 @@ def gaze_point(x,y,z):
 
 def move_base(goal_x,goal_y,goal_yaw,time_out=10):
 
-    #using nav client and toyota navigation go to x,y,yaw
-    #To Do: PUMAS NAVIGATION
+########################################################################################
+    ###################################################################################
+    #using nav client and PUMAS navigation go to x,y,yaw
+    ################################################################################
+    ###################################################################################
     pose = PoseStamped()
     pose.header.stamp = rospy.Time(0)
     pose.header.frame_id = "map"
@@ -403,7 +485,7 @@ def move_d_to(target_distance=0.5,target_link='Floor_Object0'):
         print ('no  tf found')
         return False
     
-    robot, _ =  listener.lookupTransform('map','base_link',rospy.Time(0))
+    robot, quat_robot =  listener.lookupTransform('map','base_link',rospy.Time(0))
     pose, quat =  listener.lookupTransform('base_link',target_link,rospy.Time(0))
 
     D=np.asarray(obj_tar)-np.asarray(robot)
@@ -414,18 +496,55 @@ def move_d_to(target_distance=0.5,target_link='Floor_Object0'):
         new_pose=np.asarray(obj_tar)-target_distance*d
     
     broadcaster.sendTransform(new_pose,(0,0,0,1), rospy.Time.now(), 'D_from_object','map')
-    wb_v= whole_body.get_current_joint_values()
-
-    arm.set_named_target('go')
-    arm.go()
-
+    
+    wb_v=tf.transformations.euler_from_quaternion(quat_robot)
 
     succ=move_base( new_pose[0],new_pose[1],         np.arctan2(pose[1],pose[0])+wb_v[2])
-    return succ   
-        
+    return succ  
 
-    ##### Define state INITIAL #####
-#Estado inicial de takeshi, neutral
+        
+import time
+base_vel_pub = rospy.Publisher('/hsrb/command_velocity', Twist, queue_size=10)
+
+def wait_for_face(timeout=10):
+    
+    rospy.sleep(0.3)
+    
+    start_time = rospy.get_time()
+    strings=Strings()
+    string_msg= String()
+    string_msg.data='Anyone'
+    while rospy.get_time() - start_time < timeout:
+        img=rgbd.get_image()  
+        req=RecognizeFaceRequest()
+        print ('Got  image with shape',img.shape)
+        req.Ids.ids.append(string_msg)
+        img_msg=bridge.cv2_to_imgmsg(img)
+        req.in_.image_msgs.append(img_msg)
+
+        res= recognize_face(req)
+
+        if res.Ids.ids[0].data == 'NO_FACE':
+            print ('No face FOund Keep scanning')
+        else:return res
+    
+
+
+
+def move_abs(vx,vy,vw, timeout=0.05):
+    start_time = time.clock_gettime(0) 
+    sec=time.clock_gettime(0)
+
+    while sec- start_time < timeout: 
+        sec=time.clock_gettime(0)
+        twist = Twist()
+        twist.linear.x = vx
+        twist.linear.y = vy
+        twist.angular.z = vw / 180.0 * np.pi  
+        base_vel_pub.publish(twist)
+
+##### Define state INITIAL #####
+
 class Initial(smach.State):
     def __init__(self):
         smach.State.__init__(self,outcomes=['succ','failed','tries'],input_keys=['global_counter'])
@@ -435,693 +554,181 @@ class Initial(smach.State):
     def execute(self,userdata):
 
         
-        rospy.loginfo('STATE : robot neutral pose')
-        print('Try',self.tries,'of 5 attepmpts') 
+        rospy.loginfo('STATE : INITIAL')
+        print('robot neutral pose')
+
+        print('Try',self.tries,'of 5 attempts') 
         self.tries+=1
-        if self.tries==6:
+        if self.tries==3:
             return 'tries'
         
-        req=classify_client.request_class()
-        images=[]
-        image=np.zeros((50,50,3))
-        images.append(image)
-        images.append(image)
-        for image in images:
-            img_msg=bridge.cv2_to_imgmsg(image)
-            req.in_.image_msgs.append(img_msg)
-
-
-            resp1 = classify_client(req)
         clear_octo_client()
-        close_gripper()
-        scene.remove_world_object()
+        
+        #scene.remove_world_object()
         #Takeshi neutral
-        arm.set_named_target('go')
-        arm.go()
+        #arm.set_named_target('go')
+        #arm.go()
         head.set_named_target('neutral')
-        succ = head.go()             
+        succ=head.go() 
+        
+        #succ = True        
         if succ:
             return 'succ'
         else:
             return 'failed'
 
-class Scan_floor(smach.State):### check next state's goal 
-    def __init__(self):
-        smach.State.__init__(self,outcomes=['succ','clear','failed','tries'] ,input_keys=['clear_flag'],output_keys=['clear_flag'])
-        self.tries=0
-    def execute(self,userdata):
-
-        if  userdata.clear_flag:
-            print('clear floor table 1 flag', userdata.clear_flag)
-            return 'clear'
-            
-        rospy.loginfo('State : Scan Floor ')
-        move_base(0.5+0.1*self.tries,0.5+0.1*self.tries,0.25*np.pi)
-        gaze_point(1.0,1.0,0.1)
-        #cents,xyz, images=seg_square_imgs(plt_images=True)
-        cents,xyz, images=plane_seg_square_imgs(lower=500)
-
-        req=classify_client.request_class()
-        if len (images)!=0:
-
-            for image in images:
-                img_msg=bridge.cv2_to_imgmsg(image)
-                req.in_.image_msgs.append(img_msg)
 
 
-
-            resp1 = classify_client(req)
-            class_resp= np.asarray(resp1.out.data)
-            cont3=0
-            class_labels=[]
-            for cla in class_resp:
-                
-                if cont3==3:
-                    print ('-----------------')
-                    cont3=0
-                print (class_names [(int)(cla)])
-                class_labels.append(class_names [(int)(cla)])
-                cont3+=1    
-            static_tf_publish(cents)
-            return 'succ'
-        #move_base(0.7+0.1*self.tries,0.6+0.1*self.tries,0.5*np.pi) 
-        gaze_point(1.2,1.2,0.1)
-        
-        #cents,xyz, images=seg_square_imgs(plt_images=True)
-        cents,xyz, images=plane_seg_square_imgs()
-        if len (images)!=0:
-
-            for image in images:
-                img_msg=bridge.cv2_to_imgmsg(image)
-                req.in_.image_msgs.append(img_msg)
-
-
-            resp1 = classify_client(req)
-            class_resp= np.asarray(resp1.out.data)
-            cont3=0
-            class_labels=[]
-            for cla in class_resp:
-                if cont3==3:
-                    print ('-----------------')
-                    cont3=0
-                print (class_names [(int)(cla)])
-                class_labels.append(class_names [(int)(cla)])
-                cont3+=1    
-    
-            static_tf_publish(cents)
-            return 'succ'
-        
-        
-            
-        else:
-            userdata.clear_flag=True
-            return 'clear'
-
-
-        self.tries+=1
-        if self.tries==3:
-            self.tries=0 
-            return'tries'
-        else:
-            return 'failed'
-       
-##################################################Pre_grasp_floor()      
-class Pre_grasp_floor(smach.State):###get a convenient pre grasp pose
+class Scan_face(smach.State):
     def __init__(self):
         smach.State.__init__(self,outcomes=['succ','failed','tries'])
         self.tries=0
     def execute(self,userdata):
-        rospy.loginfo('State : PRE_GRASP_FLOOR')
-        
-        target_tf= 'Object_0_Floor'
-        move_d_to(0.75,target_tf)
-        arm.set_named_target('neutral')
-        arm.go()
-        #head.set_named_target('neutral')
-        #head.go()
-        
-        wb_p = whole_body.get_current_pose()
-        pose,quat= listener.lookupTransform(  '/base_link',target_tf,rospy.Time(0))
-        pose[0]+=-0.3           ###monitoring TF's in RVIZ might help understand this.
-        pose[1]+= -0.05
-        broadcaster.sendTransform(pose, quat,rospy.Time.now(),'Pre_grasp','base_link')
-        rospy.sleep(.1)    
-        
-        try:
-            xyz_map, quat =  listener.lookupTransform('map','Pre_grasp',rospy.Time(0))
-        except(tf.LookupException):
-            print ('no pre grasp table1 tf')
-            return 'failed'
-        
-        clear_octo_client()
-        
-        #whole_body.set_joint_value_target(wb_give_object)
-        #whole_body.go()
-        open_gripper()
-        whole_body.set_start_state_to_current_state()
-        wb_p=whole_body.get_current_pose()
-        wb_t=wb_p
-        wb_t.pose.position.x=  xyz_map[0]
-        wb_t.pose.position.y= xyz_map[1]
-        wb_t.pose.position.z=0.06
-        whole_body.set_pose_target(wb_t)
-        
-        replan =0
-        while replan < 10:
-            print ('replanning',replan)
-            #wb_t.pose.position.x=  xyz_map[0] + 0.05*replan
-            #wb_t.pose.position.y= xyz_map[1]  + 0.05*replan  
-            wb_t.pose.position.z=0.06         + 0.05*replan  
-            whole_body.set_pose_target(wb_t)
-            print( wb_t)
-            plan=whole_body.plan()
-            
-            if len (plan.joint_trajectory.points) != 0:
-                break
-            else: replan+=1        
-        
-        succ= False
-        if len (plan.joint_trajectory.points) != 0:
-            succ= whole_body.go()
-        self.tries+=1
-        if self.tries==3:
-            self.tries=0 
-            return'tries'
-        if succ:
-            return 'succ'
-        else:
-            return 'failed'
 
-##################################################Grasp_floor()      
-class Grasp_floor(smach.State):
+        rospy.loginfo('State : SCAN_FACE')
+        self.tries+=1        
+        
+        if self.tries==1:
+            head.set_named_target('neutral')
+            head.go() 
+        if self.tries==2:
+            hv= head.get_current_joint_values()
+            hv[0]= -0.6
+            hv[1]= 0.0
+            head.go(hv) 
+        if self.tries==3:
+            hv= head.get_current_joint_values()
+            hv[0]= 0.6
+            hv[1]= 0.0
+            head.go(hv) 
+        if self.tries>=9:
+            self.tries=0
+            return'tries'
+        
+        #img=rgbd.get_image()  
+        #req=RecognizeFaceRequest()
+        #print ('Got  image with shape',img.shape)
+        #strings=Strings()
+        #string_msg= String()
+        #string_msg.data='Anyone'
+        #req.Ids.ids.append(string_msg)
+        #img_msg=bridge.cv2_to_imgmsg(img)
+        #req.in_.image_msgs.append(img_msg)
+        #res= recognize_face(req)
+        res=wait_for_face()##default 10 secs
+        
+        print('Cheking for faces')
+        if res== None:
+            return 'failed'
+        if res != None:
+            print('RESPONSE',res.Ids.ids      )
+            if res.Ids.ids[0].data == 'NO_FACE':
+                print ('No face Found Keep scanning')
+                return 'failed'
+            else:
+                print ('A face was found.')
+                trans,rot=listener.lookupTransform('/map', '/head_rgbd_sensor_link', rospy.Time(0))  
+                print (trans , rot)
+                trans[2]+=res.Ds.data[0]
+
+                broadcaster.sendTransform( trans,(0,0,0,1),rospy.Time.now(), 'Face','head_rgbd_sensor_link')            #res.Ids.ids[0].data
+                rospy.sleep(0.25)
+                return 'succ'
+                    
+        
+
+
+
+"""print('Looking for FACE (DLIB) try num ',self.tries)
+        img=rgbd.get_image()        
+        print (img.shape)
+        
+   """
+        
+class Goto_face(smach.State):
     def __init__(self):
         smach.State.__init__(self,outcomes=['succ','failed','tries'])
         self.tries=0
     def execute(self,userdata):
-        rospy.loginfo('State : GRASP_FLOOR')
-
-        open_gripper()
-        target_tf= 'Object_0_Floor'
-
-        wb_p = whole_body.get_current_pose()
-        pose,quat= listener.lookupTransform(  '/base_link',target_tf,rospy.Time(0))
-        pose[0]+=-0.07           ###monitoring TF's in RVIZ might help understand this.
-        broadcaster.sendTransform(pose, quat,rospy.Time.now(),'Grasp','base_link')
-        rospy.sleep(.1)    
-        try:
-            xyz_map_grasp, _ =  listener.lookupTransform('map','Grasp',rospy.Time(0))
-        except(tf.LookupException):
-            print ('no grasp table1 tf')
-        #######   
-        clear_octo_client()
-        whole_body.set_start_state_to_current_state()
-        wb_p=whole_body.get_current_pose()
-        wb_t=wb_p
-        wb_t.pose.position.x=  xyz_map_grasp[0]
-        wb_t.pose.position.y= xyz_map_grasp[1]
-        wb_t.pose.position.z=0.035
-        whole_body.set_pose_target(wb_t)
-        
-        replan =0
-        while replan < 10:
-            open_gripper()
-            print ('replanning',replan)
-            #wb_t.pose.position.x=  xyz_map[0] + 0.05*replan
-            #wb_t.pose.position.y= xyz_map[1]  + 0.05*replan  
-            wb_t.pose.position.z=0.025          + 0.01*replan  
-            whole_body.set_pose_target(wb_t)
-            print( wb_t)
-            plan=whole_body.plan()
-            
-            if len (plan.joint_trajectory.points) != 0:
-                break
-            else: replan+=1        
-        
-        succ= False
-        if len (plan.joint_trajectory.points) != 0:
-            succ= whole_body.go()
-            close_gripper()
-        self.tries+=1
-        if self.tries==3:
-            self.tries=0 
-            return'tries'
-        if succ:
-            return 'succ'
-        else:
-            return 'failed'
-        self.tries+=1
-        if self.tries==3:
-            self.tries=0 
-            return'tries'
-        if succ:
-            return 'succ'
-        else:
-            return 'failed'
-class Pre_grasp_floor_above(smach.State):###get a convenient pre grasp pose
-    def __init__(self):
-        smach.State.__init__(self,outcomes=['succ','failed','tries'])
-        self.tries=0
-    def execute(self,userdata):
-        rospy.loginfo('State : PRE_GRASP_FLOOR_ABOVE')
-        
-        target_tf= 'Object_0_Floor'
-        move_d_to(0.363,target_tf)
-        move_abs(0.0,-0.1,0)
-        rospy.sleep(0.3)
-        open_gripper()
-        rospy.sleep(0.1)
-        arm_grasp_from_above = [0.19263830140116414, -2.2668981568652917, -0.007358947463759424, -0.9939144210462025, -0.17365421548386273, 0.0]
-        succ = arm.go(arm_grasp_from_above)
-        clear_octo_client()
-        av=arm.get_current_joint_values()
-        av[0]=0.11
-        arm.go(av)
-
-        move_abs(0.0,-0.1,0)
-        rospy.sleep(0.1)    
-        close_gripper()
-        rospy.sleep(0.1)    
-        av=arm.get_current_joint_values()
-        av[0]=0.21
-        arm.go(av)
-
-        
-        
-        
-        if succ:
-            return 'succ'
-        self.tries+=1
-        if self.tries==3:
-            self.tries=0 
-            return'tries'
-        else:
-            return 'failed'
 
 
+        rospy.loginfo('State : GOING TO FACE PUMAS NAV AND MAP')
+        goal_pose, quat=listener.lookupTransform( 'map','Face', rospy.Time(0))
 
-    
-
-##### Define state SCAN_TABLE #####
-class Goto_table(smach.State):
-    def __init__(self):
-        smach.State.__init__(self,outcomes=['succ','failed','tries','end'],input_keys=['counter_in'],output_keys=['counter_out'])
-        self.tries=0
-    def execute(self,userdata):
-        self.tries+=1
-        
-        global cents, rot, trans
-        
-        
-
-        goal_x , goal_y, goal_yaw = kl_table1
-        
-        
-
-        goal_x = 0.25 + 0.051*self.tries
-        goal_y = 1.2
-        goal_yaw = 1.57
-        goal_xyz=np.asarray((goal_x,goal_y,goal_yaw))
-        
-        
-        #move_base(goal_x+.25*self.tries, goal_y , goal_yaw)      
-        succ=move_base(goal_x+.25*self.tries, goal_y , goal_yaw)      
-        xyz=whole_body.get_current_joint_values()[:3]
-
-        print ('goal is ',goal_xyz,'current',xyz)
-        print ('Distance is ' ,np.linalg.norm(xyz-goal_xyz))
-        if (np.linalg.norm(xyz-goal_xyz)  < .3):
-            rospy.loginfo("Navigation Close Enough.")
-            return 'succ'
-        if succ:
-            return 'succ'
-        
-        if self.tries==5:
-            self.tries=0 
-            return'tries'
-
-        else:
-            return'failed'
-
-class Scan_table(smach.State):
-    def __init__(self):
-        smach.State.__init__(self,outcomes=['succ','failed','tries'],input_keys=['counter_in'],output_keys=['counter_out'])
-        self.tries=0
-    def execute(self,userdata):
-        self.tries+=1
-        if self.tries==3:
-            self.tries=0 
-            return'tries'
-        global cents, rot, trans
-        
-        userdata.counter_out=userdata.counter_in +1
-
-
-
-        gaze_point(1.2,1.7,.41)
-
-        cents,xyz, images=seg_square_imgs()
-        req=classify_client.request_class()
-        if len (images)!=0:
-
-            for image in images:
-                img_msg=bridge.cv2_to_imgmsg(image)
-                req.in_.image_msgs.append(img_msg)
-
-
-            resp1 = classify_client(req)
-            class_resp= np.asarray(resp1.out.data)
-            cont3=0
-            class_labels=[]
-            for cla in class_resp:
-                
-                if cont3==3:
-                    print( '-----------------')
-                    cont3=0
-                print (class_names [(int)(cla)])
-                class_labels.append(class_names [(int)(cla)])
-                cont3+=1   
-            static_tf_publish(cents)
-            return 'succ'
-        
-        
-        if self.tries==5:
-            self.tries=0 
-            return'tries'
-
-        else:
-            return'failed'
-
+        ###move_base(goal_pose[0],goal_pose[1],0,10  )   #X Y YAW AND TIMEOUT
+        move_d_to(0.3,'Face')
 
         
 
-        """trans, rot = listener.lookupTransform('/map', '/head_rgbd_sensor_gazebo_frame', rospy.Time(0))
-                                euler = tf.transformations.euler_from_quaternion(rot)        
-                                cents = segment_table()
-                                if len (cents)==0:
-                                    cents = segment_table2(2)
-                                    
-                                    
-                                                                    
-                                if len (cents)==0:
-                                    arm.set_named_target('go')
-                                    arm.go()
-                                    head.set_named_target('neutral')
-                                    head.go()
-                                    return 'failed'
-                                else:
-                                    print ('tfs published (not static)')
-                                    #static_tf_publish(cents)
-                                    self.tries=0 
-                                    return 'succ'"""
-##################################################Pre_grasp_table()      
-class Pre_grasp_table(smach.State):###get a convenient pre grasp pose
-    def __init__(self):
-        smach.State.__init__(self,outcomes=['succ','failed','tries'])
-        self.tries=0
-    def execute(self,userdata):
-        rospy.loginfo('State : PRE_GRASP_TABLE')
-        print ("self.tries",self.tries)
-        target_tf= 'Object_1_Table_1'
-        
-        move_d_to(0.8,target_tf)
-        head.set_named_target('neutral')
-        head.go()
-        arm.set_named_target('neutral')
-        arm.go()
-        av= arm.get_current_joint_values()
-        av[0]=.25
-        arm.go(av)
         
 
 
-        pose,quat= listener.lookupTransform(  '/base_link',target_tf,rospy.Time(0))
-        pose[0]+=-0.15
-        #pose[1]+= 0.05
-        broadcaster.sendTransform(pose, quat,rospy.Time.now(),'Pre_grasp','base_link')
-        rospy.sleep(.1)    
-
-
         
-        try:
-            xyz_map, quat =  listener.lookupTransform('map','Pre_grasp',rospy.Time(0))
-        except(tf.LookupException):
-            print ('no pre grasp table1 tf')
-            self.tries+=1
-            return 'failed'
-        
-        clear_octo_client()
-        
-        #whole_body.set_joint_value_target(wb_give_object)
-        #whole_body.go()
-        open_gripper()
-        whole_body.set_start_state_to_current_state()
-        wb_p=whole_body.get_current_pose()
-        wb_t=wb_p
-        wb_t.pose.position.x=  xyz_map[0]
-        wb_t.pose.position.y= xyz_map[1]
-        wb_t.pose.position.z=0.41
-        whole_body.set_pose_target(wb_t)
-        
-        replan =0
-        while replan < 10:
-            print ('replanning',replan)
-            #wb_t.pose.position.x=  xyz_map[0] + 0.05*replan
-            #wb_t.pose.position.y= xyz_map[1]  + 0.05*replan  
-            wb_t.pose.position.z=0.41         + 0.05*replan  
-            whole_body.set_pose_target(wb_t)
-            print( wb_t)
-            plan=whole_body.plan()
-            
-            if len (plan.joint_trajectory.points) != 0:
-                break
-            else: replan+=1        
-        
-        succ= False
-        if len (plan.joint_trajectory.points) != 0:
-            succ= whole_body.go()
-        self.tries+=1
-        if self.tries==3:
-            self.tries=0 
-            return'tries'
-        if succ:
-            return 'succ'
-        else:
-            return 'failed'   
-
-##################################################
-class Grasp_table(smach.State):
-    def __init__(self):
-        smach.State.__init__(self,outcomes=['succ','failed','tries'])
-        self.tries=0
-    def execute(self,userdata):
-        rospy.loginfo('State : GRASP_TABLE')
-
-        open_gripper()
-        target_tf= 'Object_1_Table_1'
-
-        wb_p = whole_body.get_current_pose()
-        pose,quat= listener.lookupTransform(  '/base_link',target_tf,rospy.Time(0))
-        pose[0]+=-0.02          ###monitoring TF's in RVIZ might help understand this.
-        broadcaster.sendTransform(pose, quat,rospy.Time.now(),'Grasp','base_link')
-        rospy.sleep(.1)    
-        try:
-            xyz_map_grasp, _ =  listener.lookupTransform('map','Grasp',rospy.Time(0))
-        except(tf.LookupException):
-            print ('no grasp table1 tf')
-        #######   
-        head.set_named_target('neutral')
-        head.go()
-        clear_octo_client()
-        whole_body.set_start_state_to_current_state()
-        wb_p=whole_body.get_current_pose()
-        wb_t=wb_p
-        wb_t.pose.position.x=  xyz_map_grasp[0]
-        wb_t.pose.position.y= xyz_map_grasp[1]
-        wb_t.pose.position.z=0.41 
-        whole_body.set_pose_target(wb_t)
-        
-        replan =0
-        while replan < 10:
-            open_gripper()
-            print ('replanning',replan)
-            #wb_t.pose.position.x=  xyz_map[0] + 0.05*replan
-            #wb_t.pose.position.y= xyz_map[1]  + 0.05*replan  
-            wb_t.pose.position.z=0.41          + 0.0051*replan  
-            whole_body.set_pose_target(wb_t)
-            print( wb_t)
-            plan=whole_body.plan()
-            
-            if len (plan.joint_trajectory.points) != 0:
-                break
-            else: replan+=1        
-        
-        succ= False
-        if len (plan.joint_trajectory.points) != 0:
-            succ= whole_body.go()
-            close_gripper()
-        self.tries+=1
-        if self.tries==3:
-            self.tries=0 
-            return'tries'
-        if succ:
-            return 'succ'
-        else:
-            return 'failed'
-        self.tries+=1
-        if self.tries==3:
-            self.tries=0 
-            return'tries'
-        if succ:
-            return 'succ'
-        else:
-            return 'failed'
-############################################               
-class Goto_person(smach.State):
-    def __init__(self):
-        smach.State.__init__(self,outcomes=['succ','failed','tries'],input_keys=['counter_in'],output_keys=['counter_out'])
-        self.tries=0
-    def execute(self,userdata):
-        self.tries+=1
-        if self.tries==4:
-            self.tries=0 
-            return'tries'
-        goal_x = 0.6
-        goal_y = 3.3
-        goal_yaw = 2*1.57
-        goal_xyz=np.asarray((goal_x,goal_y,goal_yaw))
-
-        # fill ROS message
-        pose = PoseStamped()
-        pose.header.stamp = rospy.Time(0)
-        pose.header.frame_id = "map"
-        pose.pose.position = Point(goal_x, goal_y, 0)
-        quat = tf.transformations.quaternion_from_euler(0, 0, goal_yaw)
-        pose.pose.orientation = Quaternion(*quat)
-
-        goal = MoveBaseGoal()
-        goal.target_pose = pose
-
-        # send message to the action server
-        navclient.send_goal(goal)
-
-        # wait for the action server to complete the order
-        navclient.wait_for_result(timeout=rospy.Duration(10))
-
-        # print result of navigation
-        action_state = navclient.get_state()
-        print(action_state)
-        xyz=whole_body.get_current_joint_values()[:3]
-        rospy.loginfo (str(whole_body.get_current_joint_values()[:2]))
-        print ('goal is ',goal_xyz,'current',xyz)
-        print ('Distance is ' ,np.linalg.norm(xyz-goal_xyz))
-        if (np.linalg.norm(xyz-goal_xyz)  < .3):
-            rospy.loginfo("Navigation Close Enough.")
-            return 'succ'
-
-        if action_state == GoalStatus.SUCCEEDED:
-            rospy.loginfo("Navigation Succeeded.")
-            return 'succ'
-        else:
-            print(action_state)
-            return'failed'
-
-class Give_object(smach.State):
-    def __init__(self):
-        smach.State.__init__(self,outcomes=['succ','failed','tries'],input_keys=['counter_in'],output_keys=['counter_out'])
-        self.tries=0
-    def execute(self,userdata):
-        self.tries+=1
-        
-
-        ###### MOVEIT IT IS A BIT COMPLEX FOR IN CODE COMMENTS; PLEASE CONTACT 
-        ######## we are seting all the joints in the "whole body " command group to a known value
-        #######  conveniently named give object
-        #######   before using  clearing the octomap service might be needed
-
-
-
-        clear_octo_client()
-        wb_give_object=[0.57, 3.26, 3.10, 0.057,-0.822,-0.0386, -0.724, 0.0, 0.0]
-        whole_body.set_joint_value_target(wb_give_object)
-        whole_body.go()
-
-        print ('yey')
         return 'succ'
-
-
-
-
-
-
-        if self.tries==3:
-            self.tries=0 
-            return'tries'
-
-
-
-
-
+        
         
 
+        self.tries+=1        
 
-#Initialize global variables and node
+
+
+
+
+
 def init(node_name):
-    global listener, broadcaster, tfBuffer, tf_static_broadcaster, scene, rgbd  , head,whole_body,arm,gripper  ,goal,navclient,clear_octo_client , classify_client , class_names , bridge , base_vel_pub
+    global listener, broadcaster, tfBuffer, tf_static_broadcaster, scene, rgbd  , head,whole_body,arm,gripper  ,goal,navclient,clear_octo_client ,  detect_waving_client, class_names , bridge , base_vel_pub,takeshi_talk_pub, order, navclient, recognize_face, pub_potfields_goal
     rospy.init_node(node_name)
     head = moveit_commander.MoveGroupCommander('head')
-    gripper =  moveit_commander.MoveGroupCommander('gripper')
-    whole_body=moveit_commander.MoveGroupCommander('whole_body')
-    arm =  moveit_commander.MoveGroupCommander('arm')
+    #gripper =  moveit_commander.MoveGroupCommander('gripper')
+    #whole_body=moveit_commander.MoveGroupCommander('whole_body')
+    #arm =  moveit_commander.MoveGroupCommander('arm')
     listener = tf.TransformListener()
     broadcaster = tf.TransformBroadcaster()
+    navclient = actionlib.SimpleActionClient('/move_base/move', MoveBaseAction)
     tfBuffer = tf2_ros.Buffer()
     tf_static_broadcaster = tf2_ros.StaticTransformBroadcaster()
-    whole_body.set_workspace([-6.0, -6.0, 6.0, 6.0]) 
+    #whole_body.set_workspace([-6.0, -6.0, 6.0, 6.0]) 
     scene = moveit_commander.PlanningSceneInterface()
-    rgbd = RGBD()
+    rgbd = RGB()
     goal = MoveBaseGoal()
-    navclient = actionlib.SimpleActionClient('/move_base/move', MoveBaseAction)
+    
+    #############################################################################
+    #navclient = actionlib.SimpleActionClient('/move_base/move', MoveBaseAction)#
+    ###FANFARRIAS Y REDOBLES PUMASNAVIGATION ####################################
+    #############################################################################
+
+    pub_potfields_goal = rospy.Publisher("/clicked_point",PointStamped,queue_size=10)
+
+    actionlib.SimpleActionClient('/navigate', NavigateAction)   ### PUMAS NAV ACTION LIB
+    
     clear_octo_client = rospy.ServiceProxy('/clear_octomap', Empty)
     bridge = CvBridge()
-    class_names=['002masterchefcan', '003crackerbox', '004sugarbox', '005tomatosoupcan', '006mustardbottle', '007tunafishcan', '008puddingbox', '009gelatinbox', '010pottedmeatcan', '011banana', '012strawberry', '013apple', '014lemon', '015peach', '016pear', '017orange', '018plum', '019pitcherbase', '021bleachcleanser', '022windexbottle', '024bowl', '025mug', '027skillet', '028skilletlid', '029plate', '030fork', '031spoon', '032knife', '033spatula', '035powerdrill', '036woodblock', '037scissors', '038padlock', '040largemarker', '042adjustablewrench', '043phillipsscrewdriver', '044flatscrewdriver', '048hammer', '050mediumclamp', '051largeclamp', '052extralargeclamp', '053minisoccerball', '054softball', '055baseball', '056tennisball', '057racquetball', '058golfball', '059chain', '061foambrick', '062dice', '063-amarbles', '063-bmarbles', '065-acups', '065-bcups', '065-ccups', '065-dcups', '065-ecups', '065-fcups', '065-gcups', '065-hcups', '065-icups', '065-jcups', '070-acoloredwoodblocks', '070-bcoloredwoodblocks', '071nineholepegtest', '072-atoyairplane', '073-alegoduplo', '073-blegoduplo', '073-clegoduplo', '073-dlegoduplo', '073-elegoduplo', '073-flegoduplo', '073-glegoduplo']
-    classify_client = rospy.ServiceProxy('/classify', Classify)
+    #class_names=['002masterchefcan', '003crackerbox', '004sugarbox', '005tomatosoupcan', '006mustardbottle', '007tunafishcan', '008puddingbox', '009gelatinbox', '010pottedmeatcan', '011banana', '012strawberry', '013apple', '014lemon', '015peach', '016pear', '017orange', '018plum', '019pitcherbase', '021bleachcleanser', '022windexbottle', '024bowl', '025mug', '027skillet', '028skilletlid', '029plate', '030fork', '031spoon', '032knife', '033spatula', '035powerdrill', '036woodblock', '037scissors', '038padlock', '040largemarker', '042adjustablewrench', '043phillipsscrewdriver', '044flatscrewdriver', '048hammer', '050mediumclamp', '051largeclamp', '052extralargeclamp', '053minisoccerball', '054softball', '055baseball', '056tennisball', '057racquetball', '058golfball', '059chain', '061foambrick', '062dice', '063-amarbles', '063-bmarbles', '065-acups', '065-bcups', '065-ccups', '065-dcups', '065-ecups', '065-fcups', '065-gcups', '065-hcups', '065-icups', '065-jcups', '070-acoloredwoodblocks', '070-bcoloredwoodblocks', '071nineholepegtest', '072-atoyairplane', '073-alegoduplo', '073-blegoduplo', '073-clegoduplo', '073-dlegoduplo', '073-elegoduplo', '073-flegoduplo', '073-glegoduplo']
+    #classify_client = rospy.ServiceProxy('/classify', Classify)
+    print ('Waiting for face recog service')
+    rospy.wait_for_service('recognize_face')
+    recognize_face = rospy.ServiceProxy('recognize_face', RecognizeFace)    
+    train_new_face = rospy.ServiceProxy('new_face', RecognizeFace)    
     base_vel_pub = rospy.Publisher('/hsrb/command_velocity', Twist, queue_size=10)
-    #service_client = rospy.ServiceProxy('/segment_2_tf', Trigger)
-    #service_client.wait_for_service(timeout=1.0)
-   
-
-    
-    
-  
+    takeshi_talk_pub = rospy.Publisher('/talk_request', Voice, queue_size=10)
 
 #Entry point    
 if __name__== '__main__':
     print("Takeshi STATE MACHINE...")
     init("takeshi_smach")
     sm = smach.StateMachine(outcomes = ['END'])     #State machine, final state "END"
-    sm.userdata.sm_counter = 0
-    sm.userdata.clear = False
+    
+    #sm.userdata.clear = False
+    sis = smach_ros.IntrospectionServer('SMACH_VIEW_SERVER', sm, '/SM_ROOT')
+    sis.start()
+
 
     with sm:
-        #State machine for grasping on Floor
-        smach.StateMachine.add("INITIAL",       Initial(),      transitions = {'failed':'INITIAL',      'succ':'SCAN_FLOOR',    'tries':'END'}) 
-        smach.StateMachine.add("SCAN_FLOOR",    Scan_floor(),      transitions = {'failed':'INITIAL',      'succ':'PRE_GRASP_FLOOR_ABOVE',    'tries':'INITIAL' , 'clear':'GOTO_TABLE'}, remapping= {'clear_flag':'clear'}) 
-        smach.StateMachine.add("PRE_GRASP_FLOOR",   Pre_grasp_floor() ,      transitions = {'failed':'PRE_GRASP_FLOOR',      'succ':'GRASP_FLOOR',    'tries':'INITIAL'}) 
-        smach.StateMachine.add("GRASP_FLOOR",   Grasp_floor() ,      transitions = {'failed':'GRASP_FLOOR',      'succ':'INITIAL',    'tries':'INITIAL'}) 
-        smach.StateMachine.add("PRE_GRASP_FLOOR_ABOVE",   Pre_grasp_floor_above() ,      transitions = {'failed':'PRE_GRASP_FLOOR_ABOVE',      'succ':'INITIAL',    'tries':'END'}) 
-        smach.StateMachine.add("GOTO_TABLE",    Goto_table(),   transitions = {'failed':'GOTO_TABLE',   'succ':'SCAN_TABLE',     'tries':'GOTO_TABLE', 'end':'INITIAL'},remapping={'counter_in':'sm_counter','counter_out':'sm_counter'})
-        smach.StateMachine.add("SCAN_TABLE",    Scan_table(),   transitions = {'failed':'SCAN_TABLE',   'succ':'PRE_GRASP_TABLE',     'tries':'INITIAL'},remapping={'counter_in':'sm_counter','counter_out':'sm_counter'})
-        smach.StateMachine.add("PRE_GRASP_TABLE",   Pre_grasp_table() ,      transitions = {'failed':'PRE_GRASP_TABLE',      'succ':'GRASP_TABLE',    'tries':'INITIAL'}) 
-        smach.StateMachine.add("GRASP_TABLE",   Grasp_table() ,      transitions = {'failed':'GRASP_TABLE',      'succ':'INITIAL',    'tries':'INITIAL'}) 
-        smach.StateMachine.add("GOTO_PERSON",    Goto_person(),   transitions = {'failed':'GOTO_PERSON',   'succ':'GIVE_OBJECT',     'tries':'INITIAL'},remapping={'counter_in':'sm_counter','counter_out':'sm_counter'})
-        smach.StateMachine.add("GIVE_OBJECT",    Give_object(),   transitions = {'failed':'GIVE_OBJECT',   'succ':'END',     'tries':'INITIAL'},remapping={'counter_in':'sm_counter','counter_out':'sm_counter'})
-        
-
-        
-
-      
-
+        #State machine for Restaurant
+        smach.StateMachine.add("INITIAL",           Initial(),          transitions = {'failed':'INITIAL',          'succ':'SCAN_FACE',           'tries':'END'}) 
+        smach.StateMachine.add("SCAN_FACE",   Scan_face(),  transitions = {'failed':'SCAN_FACE',  'succ':'GOTO_FACE',    'tries':'INITIAL'}) 
+        smach.StateMachine.add("GOTO_FACE",   Goto_face(),  transitions = {'failed':'GOTO_FACE',  'succ':'INITIAL',    'tries':'INITIAL'}) 
     outcome = sm.execute()
 
-
+ 
     

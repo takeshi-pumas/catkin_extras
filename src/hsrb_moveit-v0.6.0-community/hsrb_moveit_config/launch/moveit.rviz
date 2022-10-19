@@ -14,7 +14,7 @@ Panels:
         - /TF1/Frames1
         - /MarkerArray3
       Splitter Ratio: 0.7425600290298462
-    Tree Height: 180
+    Tree Height: 188
   - Class: rviz/Help
     Name: Help
   - Class: rviz/Views
@@ -59,8 +59,6 @@ Visualization Manager:
       MoveIt_Planning_Time: 11
       MoveIt_Use_Cartesian_Path: false
       MoveIt_Use_Constraint_Aware_IK: false
-      MoveIt_Warehouse_Host: 127.0.0.1
-      MoveIt_Warehouse_Port: 33829
       MoveIt_Workspace:
         Center:
           X: 0
@@ -306,6 +304,7 @@ Visualization Manager:
         State Display Time: 0.05 s
         Trail Step Size: 1
         Trajectory Topic: move_group/display_planned_path
+        Use Sim Time: false
       Planning Metrics:
         Payload: 1
         Show Joint Torques: false
@@ -679,6 +678,7 @@ Visualization Manager:
           Value: false
         wrist_roll_link:
           Value: false
+      Marker Alpha: 1
       Marker Scale: 1
       Name: TF
       Show Arrows: true
@@ -779,9 +779,7 @@ Visualization Manager:
       Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 0
       Min Color: 0; 0; 0
-      Min Intensity: 0
       Name: LaserScan
       Position Transformer: XYZ
       Queue Size: 10
@@ -800,6 +798,7 @@ Visualization Manager:
       Enabled: true
       History Length: 1
       Name: PointStamped
+      Queue Size: 10
       Radius: 0.20000000298023224
       Topic: /aa/Markov_NXT
       Unreliable: false
@@ -818,6 +817,7 @@ Visualization Manager:
       Enabled: true
       History Length: 1
       Name: PointStamped
+      Queue Size: 10
       Radius: 0.20000000298023224
       Topic: /clicked_point
       Unreliable: false
@@ -828,6 +828,7 @@ Visualization Manager:
       Enabled: true
       History Length: 1
       Name: PointStamped
+      Queue Size: 10
       Radius: 0.20000000298023224
       Topic: /aa/Markov_NXT
       Unreliable: false
@@ -843,6 +844,26 @@ Visualization Manager:
     - Class: rviz/MarkerArray
       Enabled: true
       Marker Topic: /aa/HMM_topo
+      Name: MarkerArray
+      Namespaces:
+        "": true
+        edges: true
+      Queue Size: 100
+      Value: true
+    - Alpha: 1
+      Class: rviz/PointStamped
+      Color: 204; 41; 204
+      Enabled: true
+      History Length: 1
+      Name: PointStamped
+      Queue Size: 10
+      Radius: 0.20000000298023224
+      Topic: /aa/Markov_NXT
+      Unreliable: false
+      Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /aa/Markov_route
       Name: MarkerArray
       Namespaces:
         {}
@@ -864,25 +885,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 3.3973402976989746
+      Distance: 5.859485626220703
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
+      Field of View: 0.7853981852531433
       Focal Point:
-        X: 1.1193640232086182
-        Y: -0.1503356695175171
-        Z: 3.427272758926847e-7
+        X: 3.3177459239959717
+        Y: 3.6372411251068115
+        Z: 3.427272758926847e-07
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.4047963619232178
+      Pitch: 1.424796462059021
       Target Frame: base_footprint
-      Value: XYOrbit (rviz)
-      Yaw: 5.654045581817627
+      Yaw: 0.29586392641067505
     Saved: ~
 Window Geometry:
   Displays:
@@ -896,7 +917,7 @@ Window Geometry:
     collapsed: false
   MotionPlanning - Trajectory Slider:
     collapsed: false
-  QMainWindow State: 000000ff00000000fd0000000100000000000002a20000029dfc0200000007fb000000100044006900730070006c006100790073010000003d000000f1000000c900fffffffb0000000800480065006c00700000000342000000bb0000006e00fffffffb0000000a0056006900650077007300000003b0000000b0000000a400fffffffb0000000c00430061006d00650072006100000002ff000001610000000000000000fb0000001e004d006f00740069006f006e00200050006c0061006e006e0069006e00670100000374000001890000000000000000fb00000044004d006f00740069006f006e0050006c0061006e006e0069006e00670020002d0020005400720061006a006500630074006f0072007900200053006c00690064006500720000000000ffffffff0000004100fffffffb0000001c004d006f00740069006f006e0050006c0061006e006e0069006e00670100000134000001a60000017d00ffffff000002c50000029d00000001000000020000000100000002fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd0000000100000000000002a2000002b3fc0200000007fb000000100044006900730070006c0061007900730100000027000000f9000000c900fffffffb0000000800480065006c00700000000342000000bb0000006e00fffffffb0000000a0056006900650077007300000003b0000000b0000000a400fffffffb0000000c00430061006d00650072006100000002ff000001610000000000000000fb0000001e004d006f00740069006f006e00200050006c0061006e006e0069006e00670100000374000001890000000000000000fb00000044004d006f00740069006f006e0050006c0061006e006e0069006e00670020002d0020005400720061006a006500630074006f0072007900200053006c00690064006500720000000000ffffffff0000001600000016fb0000001c004d006f00740069006f006e0050006c0061006e006e0069006e00670100000126000001b40000017d00ffffff000002c5000002b300000001000000020000000100000002fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Views:
     collapsed: false
   Width: 1389

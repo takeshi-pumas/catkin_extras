@@ -33,6 +33,33 @@ import tf
 ###########################################################################
 
 ########## Functions for takeshi states ##########
+from tmc_msgs.msg import Voice
+takeshi_talk_pub = rospy.Publisher('/talk_request', Voice, queue_size=10)
+def string_to_Voice(sentence='I am ready to begin'):
+    voice_message=Voice()
+    voice_message.sentence = sentence
+    voice_message.queueing = False
+    voice_message.language = 1
+    voice_message.interrupting = False
+
+    return(voice_message)
+    
+def wait_for_push_hand(time=10):
+
+    start_time = rospy.get_time()
+    time= 10
+    print('timeout will be ',time,'seconds')
+    while rospy.get_time() - start_time < time:
+        torque=rospy.wait_for_message("/hsrb/wrist_wrench/raw", WrenchStamped)
+        if np.abs(torque.wrench.torque.y)>0.5:
+            print(' Hand Pused Ready TO start')
+            takeshi_talk_pub.publish(string_to_Voice())
+            break
+
+
+    if (rospy.get_time() - start_time >= time):print(time, 'secs have elapsed with no hand push')
+
+
 class RGB():
     
     def __init__(self):
