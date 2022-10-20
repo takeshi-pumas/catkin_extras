@@ -1,11 +1,15 @@
 <launch>  
+ <remap from="/static_obstacle_map_ref" to="/static_map"/>
  <remap from="/static_map" to="/get_distance_map"/>
   <node name="killer_node" pkg="killer_node" type="killer_node.py" output="screen"/>
-  <node name="fake_global_pose" pkg="killer_node" type="fake_global_pose.py" output="screen"/>
+  <node name="fake_global_pose" pkg="killer_node" type="fake_global_pose.py" output="screen"/> 
+  <!--  fake global pose  AKA AMCL PUBLISH (UNNECESARY CHECK)  ....-->
 <node name="sensor_scan_fix" pkg="sensor_scan_fix" type="sensor_scan_fix.py" output="screen"/>
 
-  <arg name="static_map_file"  default="$(find config_files)/maps/biorobotica.yaml"/>
-  <arg name="prohibition_map_file"  default="$(find config_files)/prohibition_maps/biorobotica.yaml"/>
+  <!--arg name="static_map_file"  default="$(find config_files)/maps/map.yaml"/-->
+  <!-- MAP IS STORED IN ROBOT-->
+  
+  <arg name="prohibition_map_file"  default="$(find config_files)/prohibition_maps/map.yaml"/>
   <arg name="initial_pose_x" default="-5.7"/>
   <arg name="initial_pose_y" default="-6.0"/>
   <arg name="initial_pose_a" default=" 90"/>
@@ -49,6 +53,11 @@
     <!--###agregar mins y max-->
   </node>
 
+
+
+
+   <remap from="/static_obstacle_map_ref" to="/get_distance_map"/>
+
   <node name="map_augmenter"  pkg="map_augmenter"  type="map_augmenter_node"  output="screen">
     <param name="use_lidar" value="$(arg use_lidar)"/>
     <param name="use_sonars" value="$(arg use_sonars)"/>
@@ -57,8 +66,8 @@
     <param name="point_cloud_topic" value="$(arg point_cloud_topic)"/>
     <param name="laser_scan_topic" value="$(arg laser_scan_topic)"/>
     <param name="cloud_downsampling" value="$(arg cloud_downsampling)"/>
-    <param name="inflation_radius" value="0.2"/>
-    <param name="cost_radius" value="0.5"/>
+    <param name="inflation_radius" value="0.05"/>
+    <param name="cost_radius" value="0.05"/>
     <!--###decay_factor-->
 
   </node>
@@ -91,6 +100,6 @@
 
   </node>
   <node pkg="hmm_navigation"  name="pumas_nav_actionserver" type="pumas_nav_actionserver.py"/>
-  <node pkg="face_recog"  name="face_recog_server" type="sos_service_waving.py"/>
+  <!--node pkg="face_recog"  name="face_recog_server" type="sos_service_waving.py"/-->
   
 </launch>
