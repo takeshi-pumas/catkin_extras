@@ -5,7 +5,7 @@ import actionlib
 import smach
 import smach_ros
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
-from geometry_msgs.msg import PoseStamped, Point , Quaternion
+from geometry_msgs.msg import PoseStamped, Point , Quaternion ,WrenchStamped 
 from actionlib_msgs.msg import GoalStatus
 from std_msgs.msg import String      
 from tmc_msgs.msg import Voice
@@ -54,18 +54,22 @@ def wait_for_push_hand(time=10):
         if np.abs(torque.wrench.torque.y)>0.5:
             print(' Hand Pused Ready TO start')
             takeshi_talk_pub.publish(string_to_Voice())
+            return True
             break
 
 
-    if (rospy.get_time() - start_time >= time):print(time, 'secs have elapsed with no hand push')
+
+    if (rospy.get_time() - start_time >= time):
+        print(time, 'secs have elapsed with no hand push')
+        return False
 
 
 class RGB():
     
     def __init__(self):
         self._img_sub = rospy.Subscriber(
-            #"/hsrb/head_rgbd_sensor/rgb/image_rect_color",     #FOR DEBUG USB CAM"/usb_cam/image_raw"
-            "/usb_cam/image_raw",                               #"/hsrb/head_rgbd_sensor/rgb/image_rect_color"
+            "/hsrb/head_rgbd_sensor/rgb/image_rect_color",     #FOR DEBUG USB CAM"/usb_cam/image_raw"
+            #"/usb_cam/image_raw",                               #"/hsrb/head_rgbd_sensor/rgb/image_rect_color"
             Image, self._img_cb)
         
         self._image_data = None
@@ -566,10 +570,28 @@ class Initial(smach.State):
         
         #scene.remove_world_object()
         #Takeshi neutral
-        #arm.set_named_target('go')
-        #arm.go()
+        arm.set_named_target('go')
+        arm.go()
         head.set_named_target('neutral')
         succ=head.go() 
+        
+        #succ = True        
+        if succ:
+            return 'succ'
+        else:
+            return 'failed'
+
+class Wait_push_hand(smach.State):
+    def __init__(self):
+        smach.State.__init__(self,outcomes=['succ','failed','tries'],input_keys=['global_counter'])
+        self.tries=0
+
+        
+    def execute(self,userdata):
+        self.tries+=1
+        if self.tries==3:return 'tries'
+        rospy.loginfo('STATE : WAIT_PUSH_HAND')
+        succ=wait_for_push_hand(40) 
         
         #succ = True        
         if succ:
@@ -593,7 +615,7 @@ class Scan_face(smach.State):
             head.go() 
         if self.tries==2:
             hv= head.get_current_joint_values()
-            hv[0]= -0.6
+            hv[0]= -0.4  ##mav val ?
             hv[1]= 0.0
             head.go(hv) 
         if self.tries==3:
@@ -601,7 +623,7 @@ class Scan_face(smach.State):
             hv[0]= 0.6
             hv[1]= 0.0
             head.go(hv) 
-        if self.tries>=9:
+        if self.tries>=4:
             self.tries=0
             return'tries'
         
@@ -653,10 +675,10 @@ class Goto_face(smach.State):
 
 
         rospy.loginfo('State : GOING TO FACE PUMAS NAV AND MAP')
-        goal_pose, quat=listener.lookupTransform( 'map','Face', rospy.Time(0))
+        #goal_pose, quat=listener.lookupTransform( 'map','Face', rospy.Time(0))
 
         ###move_base(goal_pose[0],goal_pose[1],0,10  )   #X Y YAW AND TIMEOUT
-        move_d_to(0.3,'Face')
+        move_d_to(0.7,'Face')
 
         
 
@@ -679,9 +701,9 @@ def init(node_name):
     global listener, broadcaster, tfBuffer, tf_static_broadcaster, scene, rgbd  , head,whole_body,arm,gripper  ,goal,navclient,clear_octo_client ,  detect_waving_client, class_names , bridge , base_vel_pub,takeshi_talk_pub, order, navclient, recognize_face, pub_potfields_goal
     rospy.init_node(node_name)
     head = moveit_commander.MoveGroupCommander('head')
-    #gripper =  moveit_commander.MoveGroupCommander('gripper')
+    gripper =  moveit_commander.MoveGroupCommander('gripper')
     #whole_body=moveit_commander.MoveGroupCommander('whole_body')
-    #arm =  moveit_commander.MoveGroupCommander('arm')
+    arm =  moveit_commander.MoveGroupCommander('arm')
     listener = tf.TransformListener()
     broadcaster = tf.TransformBroadcaster()
     navclient = actionlib.SimpleActionClient('/move_base/move', MoveBaseAction)
@@ -725,7 +747,8 @@ if __name__== '__main__':
 
     with sm:
         #State machine for Restaurant
-        smach.StateMachine.add("INITIAL",           Initial(),          transitions = {'failed':'INITIAL',          'succ':'SCAN_FACE',           'tries':'END'}) 
+        smach.StateMachine.add("INITIAL",           Initial(),          transitions = {'failed':'INITIAL',          'succ':'WAIT_PUSH_HAND',           'tries':'END'}) 
+        smach.StateMachine.add("WAIT_PUSH_HAND",           Wait_push_hand(),          transitions = {'failed':'WAIT_PUSH_HAND',          'succ':'SCAN_FACE',           'tries':'END'}) 
         smach.StateMachine.add("SCAN_FACE",   Scan_face(),  transitions = {'failed':'SCAN_FACE',  'succ':'GOTO_FACE',    'tries':'INITIAL'}) 
         smach.StateMachine.add("GOTO_FACE",   Goto_face(),  transitions = {'failed':'GOTO_FACE',  'succ':'INITIAL',    'tries':'INITIAL'}) 
     outcome = sm.execute()
