@@ -1,0 +1,59 @@
+Tf manager class:
+Prototipe: tf_man = TF_MANAGER()
+Description: Tf2 ros listener and static/dinamic broadcaster
+Methods: tf_man.pub_tf(pos=[], rot = [], point_name='', ref='map') --> ()
+			Publishes a dinamic tf at any given position and reference frame
+
+		tf_man.pub_static_tf(pos=[], rot = [], point_name='', ref='map') --> ()
+			Publishes a static tf at any given position and reference frame
+
+		tf_man.getTF(target_frame='', ref_frame='map') --> [trans, rot]
+			Gets any given tf relative to any reference frame
+
+		tf_man.change_ref_frame_tf(point_name='', new_frame='map') --> ()
+			Changes the reference frame for any given point
+
+		tf_man.tf2_obj_2_arr(tf) --> [trans, rot]
+			Transform a tf2 object to 2 arrays
+
+
+Wrist Sensor class:
+Prototipe: wrench = WRIST_SENSOR()
+Description: Gets xyz forces and torques applied to gripper
+Methods: wrench.get_force() --> [fx, fy, fz]
+		wrench.get_torque() --> [tx, ty, tz]
+
+Gripper class:
+Prototipe: gripper = GRIPPER()
+Description: Gripper handler
+Methods: gripper.open() --> ()
+			Opens the gripper with force applied
+
+		gripper.close() --> ()
+			Closes the gripper with force applied
+
+		gripper.steady() --> () 
+			Keeps gripper with no force applied
+
+Omnibase class:
+Prototipe: base = OMNIBASE()
+Description: Handles the robot omnibase with relative movement
+Methods: base.tiny_move(velX = 0, velY = 0, velT = 0, std_time = 0.5, MAX_VEL = 0.03, MAX_VEL_THETA = 0.5) --> ()
+					velX: speed on X direction
+					velY: speed on Y direction
+					velT: speed on turn
+					std_time: time duration of movement
+					MAX_VEL: max x and y speed allowed
+					MAX_VEL_THETA max turn speed allowed
+
+Gaze class:
+Prototipe: gaze = GAZE()
+Description: Calculates pan and tilt angles to face any direction
+Methods: gaze.absolute(x, y, z) --> [pan, tilt]
+				x,y,z: Any given coordenate relative to 'map' frame
+
+		gaze.relative(x,y,z) ---> [pan, tilt]
+				x,y,z: Any given coordenate relative to 'base_link' frame
+
+		gaze.hand(x,y,z) --> ()
+				Method not working yet
