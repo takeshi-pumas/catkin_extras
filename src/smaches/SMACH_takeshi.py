@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+F#!/usr/bin/env python3
 from std_srvs.srv import Empty
 from geometry_msgs.msg import Twist , PointStamped , Point
 import actionlib
@@ -22,6 +22,7 @@ import rospy
 import numpy as np
 from hmm_navigation.msg import NavigateActionGoal, NavigateAction
 from cv_bridge import CvBridge, CvBridgeError
+from grasp_utils import *
 #from utils_notebooks import *
 #from utils_takeshi import *
 #from utils_srv import *  
@@ -117,7 +118,8 @@ def get_points_corrected():
     data = rospy.wait_for_message('/hsrb/head_rgbd_sensor/depth_registered/rectified_points', PointCloud2)
     np_data=ros_numpy.numpify(data)
     ##trans,rot=listener.lookupTransform('/map', '/head_rgbd_sensor_frame', rospy.Time(0))  #Robot real
-    trans,rot=listener.lookupTransform('/map', '/head_rgbd_sensor_gazebo_frame', rospy.Time(0))  #GAZEBO
+    #trans,rot=listener.lookupTransform('/map', '/head_rgbd_sensor_gazebo_frame', rospy.Time(0))  #GAZEBO
+    trans, rot = tf_man.getTF(target_frame='head_rgbd_sensor_frame', ref_frame='map')
     eu=np.asarray(tf.transformations.euler_from_quaternion(rot))
     t=TransformStamped()
     rot=tf.transformations.quaternion_from_euler(-eu[1],np.pi,0)
@@ -158,29 +160,29 @@ def np_2_pose(position,orientation):
     wb_p.pose.orientation.z= orientation[3]
     return wb_p
 
-def open_gripper():
-    target_motor=1
-    gripper.set_start_state_to_current_state()
-    try:
-        gripper.set_joint_value_target({'hand_motor_joint':target_motor})
-    except:
-        print('OOB')
-    succ=gripper.go()
-def close_gripper():
-    target_motor=0.0
-    gripper.set_start_state_to_current_state()
-    try:
-        gripper.set_joint_value_target({'hand_motor_joint':target_motor})
-    except:
-        print('OOB')
-    succ=gripper.go()
+    """def open_gripper():
+        target_motor=1
+        gripper.set_start_state_to_current_state()
+        try:
+            gripper.set_joint_value_target({'hand_motor_joint':target_motor})
+        except:
+            print('OOB')
+        succ=gripper.go()
+    def close_gripper():
+        target_motor=0.0
+        gripper.set_start_state_to_current_state()
+        try:
+            gripper.set_joint_value_target({'hand_motor_joint':target_motor})
+        except:
+            print('OOB')
+        succ=gripper.go()"""
 def correct_points(low=.27,high=1000):
 
     #Corrects point clouds "perspective" i.e. Reference frame head is changed to reference frame map
     data = rospy.wait_for_message('/hsrb/head_rgbd_sensor/depth_registered/rectified_points', PointCloud2)
     np_data=ros_numpy.numpify(data)
-    trans,rot=listener.lookupTransform('/map', '/head_rgbd_sensor_gazebo_frame', rospy.Time(0)) 
-    
+    #trans,rot=listener.lookupTransform('/map', '/head_rgbd_sensor_gazebo_frame', rospy.Time(0)) 
+    trans, rot = tf_man.getTF(target_frame='head_rgbd_sensor_gazebo_frame') #ref_frame is 'map' by default
     eu=np.asarray(tf.transformations.euler_from_quaternion(rot))
     t=TransformStamped()
     rot=tf.transformations.quaternion_from_euler(-eu[1],0,0)
@@ -356,7 +358,7 @@ def seg_square_imgs(lower=2000,higher=50000,reg_ly=0,reg_hy=1000,reg_lx=0,reg_hx
     return(cents,np.asarray(points), images)
 
 
-def gaze_point(x,y,z):
+"""def gaze_point(x,y,z):
 
     ###Moves head to make center point of rgbd image th coordinates w.r.t.map
     ### To do: (Start from current pose  instead of always going to neutral first )
@@ -402,7 +404,7 @@ def gaze_point(x,y,z):
     
     head.set_joint_value_target(head_pose)
     succ=head.go()
-    return succ
+    return succ"""
 
 
 def move_base(goal_x,goal_y,goal_yaw,time_out=10):
@@ -437,23 +439,26 @@ def move_base(goal_x,goal_y,goal_yaw,time_out=10):
 
 def static_tf_publish(cents):
     ## Publish tfs of the centroids obtained w.r.t. head sensor frame and references them to map (static)
-    trans , rot = listener.lookupTransform('/map', '/head_rgbd_sensor_gazebo_frame', rospy.Time(0))
+    #trans , rot = listener.lookupTransform('/map', '/head_rgbd_sensor_gazebo_frame', rospy.Time(0))
+    trans, rot = tf_man.getTF(target_frame='head_rgbd_sensor_gazebo_frame')
     for  i ,cent  in enumerate(cents):
         x,y,z=cent
         if np.isnan(x) or np.isnan(y) or np.isnan(z):
             print('nan')
         else:
-            broadcaster.sendTransform((x,y,z),rot, rospy.Time.now(), 'Object'+str(i),"head_rgbd_sensor_link")
+            #broadcaster.sendTransform((x,y,z),rot, rospy.Time.now(), 'Object'+str(i),"head_rgbd_sensor_link")
+            tf_man.pub_tf(pos=[x,y,z], rot=rot, point_name=f'Object {i}', ref='head_rgbd_sensor_link')
             rospy.sleep(.2)
-            xyz_map,cent_quat= listener.lookupTransform('/map', 'Object'+str(i),rospy.Time(0))
+            #xyz_map,cent_quat= listener.lookupTransform('/map', 'Object'+str(i),rospy.Time(0))
+            xyz_map,cent_quat = tf_man.getTF(target_frame=f'Object {i}')
             map_euler=tf.transformations.euler_from_quaternion(cent_quat)
             rospy.sleep(.2)
-            static_transformStamped = TransformStamped()
+            #static_transformStamped = TransformStamped()
             
 
             ##FIXING TF TO MAP ( ODOM REALLY)    
             #tf_broadcaster1.sendTransform( (xyz[0],xyz[1],xyz[2]),tf.transformations.quaternion_from_euler(0, 0, 0), rospy.Time(0), "obj"+str(ind), "head_rgbd_sensor_link")
-            static_transformStamped.header.stamp = rospy.Time.now()
+            """static_transformStamped.header.stamp = rospy.Time.now()
             static_transformStamped.header.frame_id = "map"
             
             static_transformStamped.transform.translation.x = float(xyz_map[0])
@@ -463,35 +468,45 @@ def static_tf_publish(cents):
             static_transformStamped.transform.rotation.x = 0#-quat[0]#trans.transform.rotation.x
             static_transformStamped.transform.rotation.y = 0#-quat[1]#trans.transform.rotation.y
             static_transformStamped.transform.rotation.z = 0#-quat[2]#trans.transform.rotation.z
-            static_transformStamped.transform.rotation.w = 1#-quat[3]#trans.transform.rotation.w
+            static_transformStamped.transform.rotation.w = 1#-quat[3]#trans.transform.rotation.w"""
             if xyz_map[2] > .7 and xyz_map[2] < .85:
-                static_transformStamped.child_frame_id = "Object_"+str(i)+"_Table_real_lab"
-                tf_static_broadcaster.sendTransform(static_transformStamped)
+
+                #static_transformStamped.child_frame_id = "Object_"+str(i)+"_Table_real_lab"
+                #tf_static_broadcaster.sendTransform(static_transformStamped)
+                tf_man.pub_static_tf(pos=xyz_map,point_name=f'Object_{i}_Table_real_lab')
                 print (xyz_map[2])
             
             
             if xyz_map[2] > .4 and xyz_map[2] < .46:   #table 1 
-                static_transformStamped.child_frame_id = "Object_"+str(i)+"_Table_1"
-                tf_static_broadcaster.sendTransform(static_transformStamped)
+                #static_transformStamped.child_frame_id = "Object_"+str(i)+"_Table_1"
+                #tf_static_broadcaster.sendTransform(static_transformStamped)
+                tf_man.pub_static_tf(pos=xyz_map,point_name=f'Object_{i}_Table_1')
                 print (xyz_map[2])
             if  xyz_map[2] < .25:   #Floor
-                static_transformStamped.child_frame_id = "Object_"+str(i)+"_Floor"
-                tf_static_broadcaster.sendTransform(static_transformStamped)
+                #static_transformStamped.child_frame_id = "Object_"+str(i)+"_Floor"
+                #tf_static_broadcaster.sendTransform(static_transformStamped)
+                tf_man.pub_static_tf(pos=xyz_map,point_name=f'Object_{i}_Floor')
                 print (xyz_map[2])
     return True
     
 
 def move_d_to(target_distance=0.5,target_link='Floor_Object0'):
     ###Face towards Targetlink and get target distance close
-    try:
-        obj_tar,_ =  listener.lookupTransform('map',target_link,rospy.Time(0))
+    """try:
+        #obj_tar,_ =  listener.lookupTransform('map',target_link,rospy.Time(0))
     except(tf.LookupException):
         print ('no  tf found')
-        return False
-    
-    robot, quat_robot =  listener.lookupTransform('map','base_link',rospy.Time(0))
-    pose, quat =  listener.lookupTransform('base_link',target_link,rospy.Time(0))
+        return False"""
 
+    obj_tar,_=tf_man.getTF(target_frame='target_link')
+    if not obj_tar:
+        print ('no tf found ')
+        return False
+    #robot, quat_robot =  listener.lookupTransform('map','base_link',rospy.Time(0))
+    #pose, quat =  listener.lookupTransform('base_link',target_link,rospy.Time(0))
+
+    robot, quat_robot = tf_man.getTF(target_frame='base_link')
+    pose, quat = tf_man.getTF(target_frame=target_link,ref_frame='base_link')
     D=np.asarray(obj_tar)-np.asarray(robot)
     d=D/np.linalg.norm(D)
     if target_distance==-1:
@@ -499,8 +514,8 @@ def move_d_to(target_distance=0.5,target_link='Floor_Object0'):
     else:
         new_pose=np.asarray(obj_tar)-target_distance*d
     
-    broadcaster.sendTransform(new_pose,(0,0,0,1), rospy.Time.now(), 'D_from_object','map')
-    
+    #broadcaster.sendTransform(new_pose,(0,0,0,1), rospy.Time.now(), 'D_from_object','map')
+    tf_man.pub_tf(pos=new_pose,point_name=f'D_from_object')
     wb_v=tf.transformations.euler_from_quaternion(quat_robot)
 
     succ=move_base( new_pose[0],new_pose[1],         np.arctan2(pose[1],pose[0])+wb_v[2])
@@ -535,7 +550,7 @@ def wait_for_face(timeout=10):
 
 
 
-def move_abs(vx,vy,vw, timeout=0.05):
+"""def move_abs(vx,vy,vw, timeout=0.05):
     start_time = time.clock_gettime(0) 
     sec=time.clock_gettime(0)
 
@@ -545,7 +560,7 @@ def move_abs(vx,vy,vw, timeout=0.05):
         twist.linear.x = vx
         twist.linear.y = vy
         twist.angular.z = vw / 180.0 * np.pi  
-        base_vel_pub.publish(twist)
+        base_vel_pub.publish(twist)"""
 
 ##### Define state INITIAL #####
 
@@ -639,7 +654,7 @@ class Scan_face(smach.State):
         #res= recognize_face(req)
         res=wait_for_face()##default 10 secs
         
-        print('Cheking for faces')
+        print('Checking for faces')
         if res== None:
             return 'failed'
         if res != None:
@@ -649,11 +664,16 @@ class Scan_face(smach.State):
                 return 'failed'
             else:
                 print ('A face was found.')
-                trans,rot=listener.lookupTransform('/map', '/head_rgbd_sensor_link', rospy.Time(0))  
+                #trans,rot=listener.lookupTransform('/map', '/head_rgbd_sensor_link', rospy.Time(0))  
+                trans, rot = tf_man.getTF(target_frame='head_rgbd_sensor_link')
                 print (trans , rot)
                 trans[2]+=res.Ds.data[0]
 
-                broadcaster.sendTransform( trans,(0,0,0,1),rospy.Time.now(), 'Face','head_rgbd_sensor_link')            #res.Ids.ids[0].data
+                #broadcaster.sendTransform( trans,(0,0,0,1),rospy.Time.now(), 'Face','head_rgbd_sensor_link')            #res.Ids.ids[0].data
+                tf_man.pub_tf(pos=trans,point_name='Face', ref='head_rgbd_sensor_link')
+
+                #advice: change 'Face' reference frame
+                #tf_man.change_ref_frame_tf(point_name='Face', new_frame='map')
                 rospy.sleep(0.25)
                 return 'succ'
                     
@@ -704,11 +724,11 @@ def init(node_name):
     gripper =  moveit_commander.MoveGroupCommander('gripper')
     #whole_body=moveit_commander.MoveGroupCommander('whole_body')
     arm =  moveit_commander.MoveGroupCommander('arm')
-    listener = tf.TransformListener()
-    broadcaster = tf.TransformBroadcaster()
+    #listener = tf.TransformListener()
+    #broadcaster = tf.TransformBroadcaster()
     navclient = actionlib.SimpleActionClient('/move_base/move', MoveBaseAction)
-    tfBuffer = tf2_ros.Buffer()
-    tf_static_broadcaster = tf2_ros.StaticTransformBroadcaster()
+    #tfBuffer = tf2_ros.Buffer()
+    #tf_static_broadcaster = tf2_ros.StaticTransformBroadcaster()
     #whole_body.set_workspace([-6.0, -6.0, 6.0, 6.0]) 
     scene = moveit_commander.PlanningSceneInterface()
     rgbd = RGB()
@@ -733,6 +753,8 @@ def init(node_name):
     train_new_face = rospy.ServiceProxy('new_face', RecognizeFace)    
     base_vel_pub = rospy.Publisher('/hsrb/command_velocity', Twist, queue_size=10)
     takeshi_talk_pub = rospy.Publisher('/talk_request', Voice, queue_size=10)
+    tf_man = TF_MANAGER()
+    grip = GRIPPER()
 
 #Entry point    
 if __name__== '__main__':
