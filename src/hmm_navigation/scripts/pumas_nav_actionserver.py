@@ -47,6 +47,7 @@ class pumas_navServer():
         goal_pose.pose.orientation.w=rot[3]
         goal_nav_publish.publish(goal_pose)
 
+
    
         result.result.success=2
         i=0
@@ -55,13 +56,13 @@ class pumas_navServer():
             
             
             
-            pose_robot,quat_robot=listener.lookupTransform('map', 'base_footprint', rospy.Time(0)) 
+            pose_robot,quat_robot=listener.lookupTransform('/map', 'base_footprint', rospy.Time(0)) 
             
             euclD=   np.linalg.norm(np.asarray((x,y))- pose_robot[:2])
 
             
             timeleft=timeout-rospy.Time.now().to_sec()     
-            feed = pose2feedback(pose_robot,quat_robot,timeleft,eculD)
+            feed = pose2feedback(pose_robot,quat_robot,timeleft,euclD)
             self.pumas_nav_server.publish_feedback(feed.feedback)
         
             if euclD<=0.2:
