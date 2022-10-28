@@ -84,7 +84,7 @@ def wait_for_push_hand(time=10):
     print('timeout will be ',time,'seconds')
     while rospy.get_time() - start_time < time:
         torque=rospy.wait_for_message("/hsrb/wrist_wrench/raw", WrenchStamped)
-        if np.abs(torque.wrench.torque.y)>0.5:
+        if np.abs(torque.wrench.torque.y)>1.0:
             print(' Hand Pused Ready TO start')
             takeshi_talk_pub.publish(string_to_Voice())
             return True
@@ -100,8 +100,8 @@ class RGB():
     
     def __init__(self):
         self._img_sub = rospy.Subscriber(
-            #"/hsrb/head_rgbd_sensor/rgb/image_rect_color",     #FOR DEBUG USB CAM"/usb_cam/image_raw"
-            "/usb_cam/image_raw",                               #"/hsrb/head_rgbd_sensor/rgb/image_rect_color"
+            "/hsrb/head_rgbd_sensor/rgb/image_rect_color",     #FOR DEBUG USB CAM"/usb_cam/image_raw"
+            #"/usb_cam/image_raw",                               #"/hsrb/head_rgbd_sensor/rgb/image_rect_color"
             Image, self._img_cb)
         
         self._image_data = None
@@ -528,8 +528,9 @@ def move_d_to(target_distance=0.5,target_link='Floor_Object0'):
         new_pose=np.asarray(robot)
     else:
         new_pose=np.asarray(obj_tar)-target_distance*d
-    
-    broadcaster.sendTransform(new_pose,(0,0,0,1), rospy.Time.now(), 'D_from_object','map')
+    t=write_tf(    new_pose,(0,0,0,1), 'D_from_object', 'map'     )
+    broadcaster.sendTransform(t )
+    #broadcaster.sendTransform(new_pose,(0,0,0,1), rospy.Time.now(), 'D_from_object','map')
     
     wb_v=tf.transformations.euler_from_quaternion(quat_robot)
 
@@ -628,8 +629,9 @@ class Wait_push_hand(smach.State):
         self.tries+=1
         if self.tries==3:
             return 'tries'
-        
-        succ= wait_for_push_hand(10)
+        takeshi_talk_pub.publish(string_to_Voice('Gently, ...  push my hand to begin'))
+
+        succ= wait_for_push_hand(100)
         succ = True        #HEY THIS MUST BE COMMENTED DEBUGUING
         
         
@@ -686,25 +688,28 @@ class Scan_face(smach.State):
         if res== None:
             return 'failed'
         if res != None:
-            print('RESPONSE',res.Ids.ids      )
+            print('RESPONSE',res.Ids.ids[0]      )
             if res.Ids.ids[0].data == 'NO_FACE':
                 print ('No face Found Keep scanning')
                 return 'failed'
             else:
                 print ('A face was found.')
+                takeshi_talk_pub.publish(string_to_Voice('I found you, I believe you are'+ res.Ids.ids[0].data))
                 
             
                 try:
-                    trans2 = tfBuffer.lookup_transform('map', 'head_rgbd_sensor_link', rospy.Time())
-                    print (trans2.transform.translation)
-                    trans,_=read_tf(trans2)
+                    trans = tfBuffer.lookup_transform('map', 'head_rgbd_sensor_link', rospy.Time())
+                    
+                    trans,quat=read_tf(trans)
                 except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
                     print ( 'No TF FOUND')
-                trans[2]+=res.Ds.data[0]
+                trans= np.zeros(3)
+
+                trans[2]+= res.Ds.data[0]##HALF DISTANCE
                 t=write_tf(    trans,(0,0,0,1), 'head_rgbd_sensor_link', 'Face'     )
-                broadcaster.sendTransform(t )
+                #broadcaster.sendTransform(t )
                 print (t)
-                #tf_static_broadcaster.sendTransform(t )            #res.Ids.ids[0].data
+                tf_static_broadcaster.sendTransform(t )            #res.Ids.ids[0].data
                 rospy.sleep(0.25)
                 return 'succ'
                     
@@ -738,9 +743,9 @@ class Goto_face(smach.State):
             
 
         #goal_pose, quat=listener.lookupTransform( 'map','Face', rospy.Time(0))
-        print(goal_pose[0],goal_pose[1],0,10  )   #X Y YAW AND TIMEOUT
-        move_base(goal_pose[0],goal_pose[1],0,10  )   #X Y YAW AND TIMEOUT
-        ##move_d_to(0.3,'Face')
+        print(goal_pose[0],goal_pose[1],goal_pose[2],10  ,'############################')   #X Y YAW AND TIMEOUT
+        move_base(goal_pose[0],goal_pose[1],goal_pose[2],10  )   #X Y YAW AND TIMEOUT
+        
 
         
 
@@ -818,7 +823,7 @@ if __name__== '__main__':
         smach.StateMachine.add("INITIAL",           Initial(),          transitions = {'failed':'INITIAL',          'succ':'WAIT_PUSH_HAND',           'tries':'END'}) 
         smach.StateMachine.add("WAIT_PUSH_HAND",   Wait_push_hand(),  transitions = {'failed':'WAIT_PUSH_HAND',  'succ':'SCAN_FACE',    'tries':'END'}) 
         smach.StateMachine.add("SCAN_FACE",   Scan_face(),  transitions = {'failed':'SCAN_FACE',  'succ':'GOTO_FACE',    'tries':'INITIAL'}) 
-        smach.StateMachine.add("GOTO_FACE",   Goto_face(),  transitions = {'failed':'GOTO_FACE',  'succ':'INITIAL',    'tries':'INITIAL'}) 
+        smach.StateMachine.add("GOTO_FACE",   Goto_face(),  transitions = {'failed':'GOTO_FACE',  'succ':'END',    'tries':'INITIAL'}) 
     outcome = sm.execute()
 
  

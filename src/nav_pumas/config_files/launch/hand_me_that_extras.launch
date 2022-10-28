@@ -1,0 +1,18 @@
+<launch>  
+  
+<!-- Face_recognition-->
+    <node pkg="face_recog"  name="face_recog_server" type="face_recog_server.py"/>
+
+<!-- MOVEIT-->
+
+  <include file="$(find hsrb_moveit_config)/launch/hsrb_demo_with_controller.launch">
+      <arg name="use_gui" value="false "/>
+      <arg name="load_robot_description" value="false"/>
+    </include>
+
+
+    <!-- Object Classification-->
+    <!--node pkg="object_classification"  name="classification_server" type="classification_server.py"/-->
+    
+          
+</launch>
