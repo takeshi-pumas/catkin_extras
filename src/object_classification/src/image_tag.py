@@ -222,7 +222,7 @@ def callback(points_msg):
 
 
     # Process any keyboard commands
-    keystroke = cv2.waitKey(5)
+    keystroke = cv2.waitKey(0)
     if 32 <= keystroke and keystroke < 128:
         key = chr(keystroke).lower()
         print (key)
@@ -241,8 +241,8 @@ def callback(points_msg):
 
         if key=='s': 
             
-            #img= correct_points(points_msg)
-            cents,xyz, images, img = plane_seg( points_msg,lower=10, higher=5000)
+            img= correct_points(points_msg)
+            #cents,xyz, images, img = plane_seg( points_msg,lower=10, higher=8000)
             cv2.imshow('corrected'  , img)
         if key=='q':
             rospy.signal_shutdown("User hit q key to quit.")

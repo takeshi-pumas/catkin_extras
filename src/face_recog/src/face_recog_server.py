@@ -17,8 +17,8 @@ import face_recognition
 import cv2
 import os
 
-#path_for_faces='/home/takeshi/Pictures/faces_for_recognition/'
-path_for_faces='/home/roboworks/Pictures/faces_for_recognition/'
+path_for_faces='/home/takeshi/Pictures/faces_for_recognition/'
+#path_for_faces='/home/roboworks/Pictures/faces_for_recognition/'
 
 ids=[]
 first= True

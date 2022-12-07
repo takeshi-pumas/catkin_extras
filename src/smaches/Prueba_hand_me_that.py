@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 from std_srvs.srv import Empty
-from geometry_msgs.msg import Twist , PointStamped , Point
+from geometry_msgs.msg import Twist , PointStamped , Point, WrenchStamped , TransformStamped
 import actionlib
 import smach
 import smach_ros
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
-from geometry_msgs.msg import PoseStamped, Point , Quaternion ,WrenchStamped 
+from geometry_msgs.msg import PoseStamped, Point , Quaternion
 from actionlib_msgs.msg import GoalStatus
 from std_msgs.msg import String      
 from tmc_msgs.msg import Voice
@@ -22,20 +22,53 @@ import rospy
 import numpy as np
 from hmm_navigation.msg import NavigateActionGoal, NavigateAction
 from cv_bridge import CvBridge, CvBridgeError
-from grasp_utils import *
 #from utils_notebooks import *
 #from utils_takeshi import *
 #from utils_srv import *  
 from sensor_msgs.msg import Image , LaserScan , PointCloud2
 from hri_msgs.msg import RecognizedSpeech
 import tf
+from tmc_msgs.msg import Voice
+from grasp_utils import *
+
+import time
+
 ########################################################################
 #THIS SMACH USES Face Recog
 ###########################################################################
 
 ########## Functions for takeshi states ##########
-from tmc_msgs.msg import Voice
-takeshi_talk_pub = rospy.Publisher('/talk_request', Voice, queue_size=10)
+
+"""def read_tf(t):
+    pose=np.asarray((
+        t.transform.translation.x,
+        t.transform.translation.y,
+        t.transform.translation.z
+        ))
+    quat=np.asarray((
+        t.transform.rotation.x,
+        t.transform.rotation.y,
+        t.transform.rotation.z,
+        t.transform.rotation.w
+        ))
+    
+    return pose, quat
+
+def write_tf(pose, eu, child_frame , parent_frame):
+    t= TransformStamped()
+    t.header.stamp = rospy.Time.now()
+    t.header.frame_id = child_frame
+    t.child_frame_id = parent_frame
+    t.transform.translation.x = pose[0]
+    t.transform.translation.y = pose[1]
+    t.transform.translation.z = pose[2]
+    q = tf.transformations.quaternion_from_euler(eu[0], eu[1], eu[2])
+    t.transform.rotation.x = q[0]
+    t.transform.rotation.y = q[1]
+    t.transform.rotation.z = q[2]
+    t.transform.rotation.w = q[3]
+    return t
+
 def string_to_Voice(sentence='I am ready to begin'):
     voice_message=Voice()
     voice_message.sentence = sentence
@@ -52,20 +85,19 @@ def wait_for_push_hand(time=10):
     print('timeout will be ',time,'seconds')
     while rospy.get_time() - start_time < time:
         torque=rospy.wait_for_message("/hsrb/wrist_wrench/raw", WrenchStamped)
-        if np.abs(torque.wrench.torque.y)>0.5:
+        if np.abs(torque.wrench.torque.y)>1.0:
             print(' Hand Pused Ready TO start')
             takeshi_talk_pub.publish(string_to_Voice())
             return True
             break
 
 
-
     if (rospy.get_time() - start_time >= time):
         print(time, 'secs have elapsed with no hand push')
-        return False
+        return False"""
 
 
-class RGB():
+"""class RGB():
     
     def __init__(self):
         self._img_sub = rospy.Subscriber(
@@ -84,7 +116,7 @@ class RGB():
     
     def get_image(self):
         
-        return self._image_data
+        return self._image_data"""
 
 class Proto_state(smach.State):###example of a state definition.
     def __init__(self):
@@ -118,8 +150,7 @@ def get_points_corrected():
     data = rospy.wait_for_message('/hsrb/head_rgbd_sensor/depth_registered/rectified_points', PointCloud2)
     np_data=ros_numpy.numpify(data)
     ##trans,rot=listener.lookupTransform('/map', '/head_rgbd_sensor_frame', rospy.Time(0))  #Robot real
-    #trans,rot=listener.lookupTransform('/map', '/head_rgbd_sensor_gazebo_frame', rospy.Time(0))  #GAZEBO
-    trans, rot = tf_man.getTF(target_frame='head_rgbd_sensor_frame', ref_frame='map')
+    trans,rot=listener.lookupTransform('/map', '/head_rgbd_sensor_gazebo_frame', rospy.Time(0))  #GAZEBO
     eu=np.asarray(tf.transformations.euler_from_quaternion(rot))
     t=TransformStamped()
     rot=tf.transformations.quaternion_from_euler(-eu[1],np.pi,0)
@@ -135,12 +166,12 @@ def get_points_corrected():
     corrected=np_corrected.reshape(np_data.shape)
     return corrected
 
-def move_abs(vx,vy,vw):
+"""def move_abs(vx,vy,vw):
     twist = Twist()
     twist.linear.x = vx
     twist.linear.y = vy
     twist.angular.z = vw / 180.0 * np.pi  
-    base_vel_pub.publish(twist)
+    base_vel_pub.publish(twist)"""
 
 def pose_2_np(wp_p):
     
@@ -160,33 +191,34 @@ def np_2_pose(position,orientation):
     wb_p.pose.orientation.z= orientation[3]
     return wb_p
 
-    """def open_gripper():
-        target_motor=1
-        gripper.set_start_state_to_current_state()
-        try:
-            gripper.set_joint_value_target({'hand_motor_joint':target_motor})
-        except:
-            print('OOB')
-        succ=gripper.go()
-    def close_gripper():
-        target_motor=0.0
-        gripper.set_start_state_to_current_state()
-        try:
-            gripper.set_joint_value_target({'hand_motor_joint':target_motor})
-        except:
-            print('OOB')
-        succ=gripper.go()"""
+"""def open_gripper():
+    target_motor=1
+    gripper.set_start_state_to_current_state()
+    try:
+        gripper.set_joint_value_target({'hand_motor_joint':target_motor})
+    except:
+        print('OOB')
+    succ=gripper.go()
+def close_gripper():
+    target_motor=0.0
+    gripper.set_start_state_to_current_state()
+    try:
+        gripper.set_joint_value_target({'hand_motor_joint':target_motor})
+    except:
+        print('OOB')
+    succ=gripper.go()"""
 def correct_points(low=.27,high=1000):
 
     #Corrects point clouds "perspective" i.e. Reference frame head is changed to reference frame map
     data = rospy.wait_for_message('/hsrb/head_rgbd_sensor/depth_registered/rectified_points', PointCloud2)
     np_data=ros_numpy.numpify(data)
-    #trans,rot=listener.lookupTransform('/map', '/head_rgbd_sensor_gazebo_frame', rospy.Time(0)) 
-    trans, rot = tf_man.getTF(target_frame='head_rgbd_sensor_gazebo_frame') #ref_frame is 'map' by default
+    trans,rot=listener.lookupTransform('/map', '/head_rgbd_sensor_gazebo_frame', rospy.Time(0)) 
+    
     eu=np.asarray(tf.transformations.euler_from_quaternion(rot))
     t=TransformStamped()
     rot=tf.transformations.quaternion_from_euler(-eu[1],0,0)
-    t.header.stamp = data.header.stamp
+    t.header.stamp = rospy.Time.now()
+
     
     t.transform.rotation.x = rot[0]
     t.transform.rotation.y = rot[1]
@@ -408,6 +440,10 @@ def seg_square_imgs(lower=2000,higher=50000,reg_ly=0,reg_hy=1000,reg_lx=0,reg_hx
 
 
 
+
+
+
+
 def move_base(goal_x,goal_y,goal_yaw,time_out=10):
     nav_goal= NavigateActionGoal()
     nav_goal.goal.x= goal_x
@@ -430,28 +466,25 @@ def move_base(goal_x,goal_y,goal_yaw,time_out=10):
 
 
 
-def static_tf_publish(cents):
+"""def static_tf_publish(cents):
     ## Publish tfs of the centroids obtained w.r.t. head sensor frame and references them to map (static)
-    #trans , rot = listener.lookupTransform('/map', '/head_rgbd_sensor_gazebo_frame', rospy.Time(0))
-    trans, rot = tf_man.getTF(target_frame='head_rgbd_sensor_gazebo_frame')
+    trans , rot = listener.lookupTransform('/map', '/head_rgbd_sensor_gazebo_frame', rospy.Time(0))
     for  i ,cent  in enumerate(cents):
         x,y,z=cent
         if np.isnan(x) or np.isnan(y) or np.isnan(z):
             print('nan')
         else:
-            #broadcaster.sendTransform((x,y,z),rot, rospy.Time.now(), 'Object'+str(i),"head_rgbd_sensor_link")
-            tf_man.pub_tf(pos=[x,y,z], rot=rot, point_name=f'Object {i}', ref='head_rgbd_sensor_link')
+            broadcaster.sendTransform((x,y,z),rot, rospy.Time.now(), 'Object'+str(i),"head_rgbd_sensor_link")
             rospy.sleep(.2)
-            #xyz_map,cent_quat= listener.lookupTransform('/map', 'Object'+str(i),rospy.Time(0))
-            xyz_map,cent_quat = tf_man.getTF(target_frame=f'Object {i}')
+            xyz_map,cent_quat= listener.lookupTransform('/map', 'Object'+str(i),rospy.Time(0))
             map_euler=tf.transformations.euler_from_quaternion(cent_quat)
             rospy.sleep(.2)
-            #static_transformStamped = TransformStamped()
+            static_transformStamped = TransformStamped()
             
 
             ##FIXING TF TO MAP ( ODOM REALLY)    
             #tf_broadcaster1.sendTransform( (xyz[0],xyz[1],xyz[2]),tf.transformations.quaternion_from_euler(0, 0, 0), rospy.Time(0), "obj"+str(ind), "head_rgbd_sensor_link")
-            """static_transformStamped.header.stamp = rospy.Time.now()
+            static_transformStamped.header.stamp = rospy.Time.now()
             static_transformStamped.header.frame_id = "map"
             
             static_transformStamped.transform.translation.x = float(xyz_map[0])
@@ -461,62 +494,51 @@ def static_tf_publish(cents):
             static_transformStamped.transform.rotation.x = 0#-quat[0]#trans.transform.rotation.x
             static_transformStamped.transform.rotation.y = 0#-quat[1]#trans.transform.rotation.y
             static_transformStamped.transform.rotation.z = 0#-quat[2]#trans.transform.rotation.z
-            static_transformStamped.transform.rotation.w = 1#-quat[3]#trans.transform.rotation.w"""
+            static_transformStamped.transform.rotation.w = 1#-quat[3]#trans.transform.rotation.w
             if xyz_map[2] > .7 and xyz_map[2] < .85:
-
-                #static_transformStamped.child_frame_id = "Object_"+str(i)+"_Table_real_lab"
-                #tf_static_broadcaster.sendTransform(static_transformStamped)
-                tf_man.pub_static_tf(pos=xyz_map,point_name=f'Object_{i}_Table_real_lab')
+                static_transformStamped.child_frame_id = "Object_"+str(i)+"_Table_real_lab"
+                tf_static_broadcaster.sendTransform(static_transformStamped)
                 print (xyz_map[2])
             
             
             if xyz_map[2] > .4 and xyz_map[2] < .46:   #table 1 
-                #static_transformStamped.child_frame_id = "Object_"+str(i)+"_Table_1"
-                #tf_static_broadcaster.sendTransform(static_transformStamped)
-                tf_man.pub_static_tf(pos=xyz_map,point_name=f'Object_{i}_Table_1')
+                static_transformStamped.child_frame_id = "Object_"+str(i)+"_Table_1"
+                tf_static_broadcaster.sendTransform(static_transformStamped)
                 print (xyz_map[2])
             if  xyz_map[2] < .25:   #Floor
-                #static_transformStamped.child_frame_id = "Object_"+str(i)+"_Floor"
-                #tf_static_broadcaster.sendTransform(static_transformStamped)
-                tf_man.pub_static_tf(pos=xyz_map,point_name=f'Object_{i}_Floor')
+                static_transformStamped.child_frame_id = "Object_"+str(i)+"_Floor"
+                tf_static_broadcaster.sendTransform(static_transformStamped)
                 print (xyz_map[2])
-    return True
+    return True"""
     
-
-def move_d_to(target_distance=0.5,target_link='Floor_Object0'):
+#pasar a tf2 o tf manager
+"""def move_d_to(target_distance=0.5,target_link='Floor_Object0'):
     ###Face towards Targetlink and get target distance close
-    """try:
-        #obj_tar,_ =  listener.lookupTransform('map',target_link,rospy.Time(0))
+    try:
+        obj_tar,_ =  listener.lookupTransform('map',target_link,rospy.Time(0))
     except(tf.LookupException):
         print ('no  tf found')
-        return False"""
-
-    obj_tar,_=tf_man.getTF(target_frame='target_link')
-    if not obj_tar:
-        print ('no tf found ')
         return False
-    #robot, quat_robot =  listener.lookupTransform('map','base_link',rospy.Time(0))
-    #pose, quat =  listener.lookupTransform('base_link',target_link,rospy.Time(0))
+    
+    robot, quat_robot =  listener.lookupTransform('map','base_link',rospy.Time(0))
+    pose, quat =  listener.lookupTransform('base_link',target_link,rospy.Time(0))
 
-    robot, quat_robot = tf_man.getTF(target_frame='base_link')
-    pose, quat = tf_man.getTF(target_frame=target_link,ref_frame='base_link')
     D=np.asarray(obj_tar)-np.asarray(robot)
     d=D/np.linalg.norm(D)
     if target_distance==-1:
         new_pose=np.asarray(robot)
     else:
         new_pose=np.asarray(obj_tar)-target_distance*d
-    
+    t=write_tf(    new_pose,(0,0,0,1), 'D_from_object', 'map'     )
+    broadcaster.sendTransform(t )
     #broadcaster.sendTransform(new_pose,(0,0,0,1), rospy.Time.now(), 'D_from_object','map')
-    tf_man.pub_tf(pos=new_pose,point_name=f'D_from_object')
+    
     wb_v=tf.transformations.euler_from_quaternion(quat_robot)
 
     succ=move_base( new_pose[0],new_pose[1],         np.arctan2(pose[1],pose[0])+wb_v[2])
-    return succ  
+    return succ  """
 
-        
-import time
-base_vel_pub = rospy.Publisher('/hsrb/command_velocity', Twist, queue_size=10)
+
 
 def wait_for_face(timeout=10):
     
@@ -578,8 +600,8 @@ class Initial(smach.State):
         
         #scene.remove_world_object()
         #Takeshi neutral
-        arm.set_named_target('go')
-        arm.go()
+        #arm.set_named_target('go')
+        #arm.go()
         head.set_named_target('neutral')
         succ=head.go() 
         
@@ -589,25 +611,39 @@ class Initial(smach.State):
         else:
             return 'failed'
 
+
+
+
 class Wait_push_hand(smach.State):
     def __init__(self):
-        smach.State.__init__(self,outcomes=['succ','failed','tries'],input_keys=['global_counter'])
+        smach.State.__init__(self,outcomes=['succ','failed','tries'])
         self.tries=0
 
         
     def execute(self,userdata):
-        self.tries+=1
-        if self.tries==3:return 'tries'
-        rospy.loginfo('STATE : WAIT_PUSH_HAND')
-        takeshi_talk_pub.publish(string_to_Voice('Gently push my hand to begin'))
 
-        succ=wait_for_push_hand(40) 
         
-        #succ = True        
+        rospy.loginfo('STATE : INITIAL')
+        print('robot neutral pose')
+
+        print('Try',self.tries,'of 3 attempts') 
+        self.tries+=1
+        if self.tries==3:
+            return 'tries'
+        takeshi_talk_pub.publish(string_to_Voice('Gently, ...  push my hand to begin'))
+
+        succ= wait_for_push_hand(100)
+        succ = True        #HEY THIS MUST BE COMMENTED DEBUGUING
+        
+        
+        
         if succ:
             return 'succ'
         else:
             return 'failed'
+
+
+
 
 
 
@@ -625,7 +661,7 @@ class Scan_face(smach.State):
             head.go() 
         if self.tries==2:
             hv= head.get_current_joint_values()
-            hv[0]= -0.4  ##mav val ?
+            hv[0]= -0.6
             hv[1]= 0.0
             head.go(hv) 
         if self.tries==3:
@@ -633,7 +669,7 @@ class Scan_face(smach.State):
             hv[0]= 0.6
             hv[1]= 0.0
             head.go(hv) 
-        if self.tries>=4:
+        if self.tries>=9:
             self.tries=0
             return'tries'
         
@@ -649,29 +685,33 @@ class Scan_face(smach.State):
         #res= recognize_face(req)
         res=wait_for_face()##default 10 secs
         
-        print('Checking for faces')
+        print('Cheking for faces')
         if res== None:
             return 'failed'
         if res != None:
-            print('RESPONSE',res.Ids.ids      )
+            print('RESPONSE',res.Ids.ids[0]      )
             if res.Ids.ids[0].data == 'NO_FACE':
                 print ('No face Found Keep scanning')
                 return 'failed'
             else:
                 print ('A face was found.')
-                #trans,rot=listener.lookupTransform('/map', '/head_rgbd_sensor_link', rospy.Time(0))  
-                trans, rot = tf_man.getTF(target_frame='head_rgbd_sensor_link')
-                print (trans , rot)
+                takeshi_talk_pub.publish(string_to_Voice('I found you, I believe you are'+ res.Ids.ids[0].data))
+                
+            
+                try:
+                    trans = tfBuffer.lookup_transform('map', 'head_rgbd_sensor_link', rospy.Time())
+                    
+                    trans,quat=read_tf(trans)
+                except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
+                    print ( 'No TF FOUND')
                 trans= np.zeros(3)
-                trans[2]+=res.Ds.data[0]
 
-                #broadcaster.sendTransform( trans,(0,0,0,1),rospy.Time.now(), 'Face','head_rgbd_sensor_link')            #res.Ids.ids[0].data
-                tf_man.pub_static_tf(pos=trans,point_name='Face', ref='head_rgbd_sensor_link')
-
-                #advice: change 'Face' reference frame
-                #tf_man.change_ref_frame_tf(point_name='Face', new_frame='map')
+                trans[2]+= res.Ds.data[0]##HALF DISTANCE
+                t=write_tf(    trans,(0,0,0,1), 'head_rgbd_sensor_link', 'Face'     )
+                #broadcaster.sendTransform(t )
+                print (t)
+                tf_static_broadcaster.sendTransform(t )            #res.Ids.ids[0].data
                 rospy.sleep(0.25)
-                return 0
                 return 'succ'
                     
         
@@ -692,13 +732,21 @@ class Goto_face(smach.State):
 
 
         rospy.loginfo('State : GOING TO FACE PUMAS NAV AND MAP')
-        #goal_pose, quat=listener.lookupTransform( 'map','Face', rospy.Time(0))
-        goal_pose, quat = tf_man.getTF(target_frame='Face', ref_frame='map')
-        print(goal_pose)
-        return 0
-        ###move_base(goal_pose[0],goal_pose[1],0,10  )   #X Y YAW AND TIMEOUT
-        move_d_to(0.7,'Face')
+        for i in range (20):
+            try:
+                trans2 = tfBuffer.lookup_transform('map', 'Face', rospy.Time())
+                goal_pose,quat =read_tf(trans2)
+                print (goal_pose, quat)
+                break
+            except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
+                print('somethins wrong')
 
+            
+
+        #goal_pose, quat=listener.lookupTransform( 'map','Face', rospy.Time(0))
+        print(goal_pose[0],goal_pose[1],goal_pose[2],10  ,'############################')   #X Y YAW AND TIMEOUT
+        move_base(goal_pose[0],goal_pose[1],goal_pose[2],10  )   #X Y YAW AND TIMEOUT
+        
 
         
 
@@ -718,31 +766,40 @@ class Goto_face(smach.State):
 
 
 def init(node_name):
-    global listener, broadcaster, tfBuffer, tf_static_broadcaster, scene, rgbd  , head,whole_body,arm,gripper  ,goal,navclient,clear_octo_client ,  detect_waving_client, class_names , bridge , base_vel_pub,takeshi_talk_pub, order, navclient, recognize_face, pub_potfields_goal, tf_man
+    global listener, broadcaster, tfBuffer, tf_static_broadcaster, scene, rgbd  , head,whole_body,arm,gripper  ,goal,navclient,clear_octo_client ,  detect_waving_client, class_names , bridge , base_vel_pub,takeshi_talk_pub, order, navclient, recognize_face, pub_potfields_goal
     rospy.init_node(node_name)
     head = moveit_commander.MoveGroupCommander('head')
-    gripper =  moveit_commander.MoveGroupCommander('gripper')
-    #whole_body=moveit_commander.MoveGroupCommander('whole_body')
+    #gripper =  moveit_commander.MoveGroupCommander('gripper')
+    whole_body=moveit_commander.MoveGroupCommander('whole_body')
     arm =  moveit_commander.MoveGroupCommander('arm')
-    #listener = tf.TransformListener()
     #broadcaster = tf.TransformBroadcaster()
-    #navclient = actionlib.SimpleActionClient('/move_base/move', MoveBaseAction)
-    #tfBuffer = tf2_ros.Buffer()
-    #tf_static_broadcaster = tf2_ros.StaticTransformBroadcaster()
-    #whole_body.set_workspace([-6.0, -6.0, 6.0, 6.0]) 
+    
+    tfBuffer = tf2_ros.Buffer()
+    listener = tf.TransformListener()
+    listener2 = tf2_ros.TransformListener(tfBuffer)
+    broadcaster = tf2_ros.TransformBroadcaster()
+    tf_static_broadcaster = tf2_ros.StaticTransformBroadcaster()
+    
+    #takeshi_talk_pub = rospy.Publisher('/talk_request', Voice, queue_size=10)
+
+    whole_body.set_workspace([-6.0, -6.0, 6.0, 6.0]) 
     scene = moveit_commander.PlanningSceneInterface()
     rgbd = RGB()
     goal = MoveBaseGoal()
+    tf_man = TF_MANAGER()
+    gripper = GRIPPER()
+    gaze = GAZE()
     
     #############################################################################
     #navclient = actionlib.SimpleActionClient('/move_base/move', MoveBaseAction)#
     ###FANFARRIAS Y REDOBLES PUMASNAVIGATION ####################################
     #############################################################################
+    navclient=actionlib.SimpleActionClient('/navigate', NavigateAction)   ### PUMAS NAV ACTION LIB
+
+    #navclient = #actionlib.SimpleActionClient('/move_base/move', MoveBaseAction)
+    
 
     pub_potfields_goal = rospy.Publisher("/clicked_point",PointStamped,queue_size=10)
-
-    navclient = actionlib.SimpleActionClient('/navigate', NavigateAction)   ### PUMAS NAV ACTION LIB
-    
     clear_octo_client = rospy.ServiceProxy('/clear_octomap', Empty)
     bridge = CvBridge()
     #class_names=['002masterchefcan', '003crackerbox', '004sugarbox', '005tomatosoupcan', '006mustardbottle', '007tunafishcan', '008puddingbox', '009gelatinbox', '010pottedmeatcan', '011banana', '012strawberry', '013apple', '014lemon', '015peach', '016pear', '017orange', '018plum', '019pitcherbase', '021bleachcleanser', '022windexbottle', '024bowl', '025mug', '027skillet', '028skilletlid', '029plate', '030fork', '031spoon', '032knife', '033spatula', '035powerdrill', '036woodblock', '037scissors', '038padlock', '040largemarker', '042adjustablewrench', '043phillipsscrewdriver', '044flatscrewdriver', '048hammer', '050mediumclamp', '051largeclamp', '052extralargeclamp', '053minisoccerball', '054softball', '055baseball', '056tennisball', '057racquetball', '058golfball', '059chain', '061foambrick', '062dice', '063-amarbles', '063-bmarbles', '065-acups', '065-bcups', '065-ccups', '065-dcups', '065-ecups', '065-fcups', '065-gcups', '065-hcups', '065-icups', '065-jcups', '070-acoloredwoodblocks', '070-bcoloredwoodblocks', '071nineholepegtest', '072-atoyairplane', '073-alegoduplo', '073-blegoduplo', '073-clegoduplo', '073-dlegoduplo', '073-elegoduplo', '073-flegoduplo', '073-glegoduplo']
@@ -750,11 +807,9 @@ def init(node_name):
     print ('Waiting for face recog service')
     rospy.wait_for_service('recognize_face')
     recognize_face = rospy.ServiceProxy('recognize_face', RecognizeFace)    
-    train_new_face = rospy.ServiceProxy('new_face', RecognizeFace)    
+    #train_new_face = rospy.ServiceProxy('new_face', RecognizeFace)    
     base_vel_pub = rospy.Publisher('/hsrb/command_velocity', Twist, queue_size=10)
     takeshi_talk_pub = rospy.Publisher('/talk_request', Voice, queue_size=10)
-    tf_man = TF_MANAGER()
-    grip = GRIPPER()
 
 #Entry point    
 if __name__== '__main__':
@@ -770,9 +825,9 @@ if __name__== '__main__':
     with sm:
         #State machine for Restaurant
         smach.StateMachine.add("INITIAL",           Initial(),          transitions = {'failed':'INITIAL',          'succ':'WAIT_PUSH_HAND',           'tries':'END'}) 
-        smach.StateMachine.add("WAIT_PUSH_HAND",           Wait_push_hand(),          transitions = {'failed':'WAIT_PUSH_HAND',          'succ':'SCAN_FACE',           'tries':'END'}) 
+        smach.StateMachine.add("WAIT_PUSH_HAND",   Wait_push_hand(),  transitions = {'failed':'WAIT_PUSH_HAND',  'succ':'SCAN_FACE',    'tries':'END'}) 
         smach.StateMachine.add("SCAN_FACE",   Scan_face(),  transitions = {'failed':'SCAN_FACE',  'succ':'GOTO_FACE',    'tries':'INITIAL'}) 
-        smach.StateMachine.add("GOTO_FACE",   Goto_face(),  transitions = {'failed':'GOTO_FACE',  'succ':'INITIAL',    'tries':'INITIAL'}) 
+        smach.StateMachine.add("GOTO_FACE",   Goto_face(),  transitions = {'failed':'GOTO_FACE',  'succ':'END',    'tries':'INITIAL'}) 
     outcome = sm.execute()
 
  

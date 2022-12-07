@@ -44,6 +44,22 @@ def string_to_Voice(sentence='I am ready to begin'):
 
     return(voice_message)
     
+def write_tf(pose, eu, child_frame , parent_frame):
+    t= TransformStamped()
+    t.header.stamp = rospy.Time.now()
+    t.header.frame_id = child_frame
+    t.child_frame_id = parent_frame
+    t.transform.translation.x = pose[0]
+    t.transform.translation.y = pose[1]
+    t.transform.translation.z = pose[2]
+    q = tf.transformations.quaternion_from_euler(eu[0], eu[1], eu[2])
+    t.transform.rotation.x = q[0]
+    t.transform.rotation.y = q[1]
+    t.transform.rotation.z = q[2]
+    t.transform.rotation.w = q[3]
+    return t
+
+
 def wait_for_push_hand(time=10):
 
     start_time = rospy.get_time()
@@ -605,16 +621,7 @@ class Scan_face(smach.State):
             self.tries=0
             return'tries'
         
-        #img=rgbd.get_image()  
-        #req=RecognizeFaceRequest()
-        #print ('Got  image with shape',img.shape)
-        #strings=Strings()
-        #string_msg= String()
-        #string_msg.data='Anyone'
-        #req.Ids.ids.append(string_msg)
-        #img_msg=bridge.cv2_to_imgmsg(img)
-        #req.in_.image_msgs.append(img_msg)
-        #res= recognize_face(req)
+     
         res=wait_for_face()##default 10 secs
         
         print('Cheking for faces')
@@ -627,13 +634,28 @@ class Scan_face(smach.State):
                 return 'failed'
             else:
                 print ('A face was found.')
-                trans,rot=listener.lookupTransform('/map', '/head_rgbd_sensor_link', rospy.Time(0))  
-                print (trans , rot)
-                trans[2]+=res.Ds.data[0]
+                d=res.Ds.data[0]
+                D_to_person=0.75
+                pose=np.zeros(3)
+                pose[2]+= d - D_to_person
+                quat=np.zeros(4)
+                quat[-1]=1
+                t=write_tf(pose,(0,0,0),'head_rgbd_sensor_link','face_goal')#broadcaster.sendTransform(pose, quat,rospy.Time.now(), '/goal_face','/head_rgbd_sensor_link')
+                print(t)
+                static_br.sendTransform(t)
+                try:
+                    trans = tfBuffer.lookup_transform('map', 'face_goal', rospy.Time())
+                    return 'succ'
+                except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
+                    print('somethins wrong')
+                    return 'failed'
 
-                broadcaster.sendTransform( trans,(0,0,0,1),rospy.Time.now(), 'Face','head_rgbd_sensor_link')            #res.Ids.ids[0].data
-                rospy.sleep(0.25)
-                return 'succ'
+                #trans,rot=listener.lookupTransform('/map', '/head_rgbd_sensor_link', rospy.Time(0))  
+                #print (trans , rot)
+                #trans[2]+=res.Ds.data[0]
+
+                #broadcaster.sendTransform( trans,(0,0,0,1),rospy.Time.now(), 'Face','head_rgbd_sensor_link')            #res.Ids.ids[0].data
+                #rospy.sleep(0.25)
                     
         
 

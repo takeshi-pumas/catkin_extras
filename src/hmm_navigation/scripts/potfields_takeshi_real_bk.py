@@ -55,7 +55,7 @@ def readSensor(data):
      Fx=0
      Fy = 0.001
      for i,deg in enumerate(laserdegs):
-        if  (lec[i]<1.5)  and ( i < 467 ) or ( i >500 ):
+        if  (lec[i]<1.6)  and ( i < 467 ) or ( i >500 ):
             
             Fx = Fx + (1/lec[i])**2 * np.cos(deg)
             Fy = Fy + (1/lec[i])**2 * np.sin(deg)
@@ -108,26 +108,26 @@ def readSensor(data):
 
          else:
              if( abs(Ftotth) < .7) :#or (np.linalg.norm((Fx,Fy)) < 100):
-                 speed.linear.x=  min (current_speed.linear.x+0.0015, 0.5)#1.9
+                 speed.linear.x=  min (current_speed.linear.x+0.005, 0.5)#1.9
                  speed.angular.z=0
                  print('lin')
              else:
                 if Ftotth > -np.pi/2  and Ftotth <0:
                     print('Vang-')
                     speed.linear.x  = max(current_speed.linear.x -0.0003, 0.04)
-                    speed.angular.z = max(current_speed.angular.z-0.0005, -0.2)
+                    speed.angular.z = max(current_speed.angular.z-0.0001, -0.2)
                 
                 if Ftotth < np.pi/2  and Ftotth > 0:
                     print('Vang+')
                     speed.linear.x  = max(current_speed.linear.x-0.0003, 0.04)
-                    speed.angular.z = min(current_speed.angular.z+0.0005,0.2)
+                    speed.angular.z = min(current_speed.angular.z+0.0001,0.2)
                 
                 
                 if Ftotth < -np.pi/2:
                     
                     print('Vang---')
                     speed.linear.x  = max(current_speed.linear.x-0.0025, 0.001)
-                    speed.angular.z = max(current_speed.angular.z-0.003,-0.5)
+                    speed.angular.z = max(current_speed.angular.z-0.0003,-0.5)
                 
 
                 if Ftotth > np.pi/2:
@@ -135,7 +135,7 @@ def readSensor(data):
                 
                     print('Vang+++')
                     speed.linear.x  = max(current_speed.linear.x-0.0025, 0.001)
-                    speed.angular.z = min(current_speed.angular.z+0.003, 0.5)
+                    speed.angular.z = min(current_speed.angular.z+0.0003, 0.5)
      else:
              
          cont+=1
@@ -156,13 +156,13 @@ def inoutinout():
     sub3=rospy.Subscriber("/clicked_point",PointStamped,readPoint)
     pub = rospy.Publisher('/hsrb/command_velocity', Twist, queue_size=1)
     listener = tf.TransformListener()
-    rate = rospy.Rate(25) # 10hz
+    rate = rospy.Rate(15) # 10hz
     print('Pot Fields AMCL active')
     while not rospy.is_shutdown():
         #print (current_speed)
         if (xcl!=0 and ycl!=0):
             pub.publish(speed)
-            rospy.sleep(0.15)
+            rospy.sleep(0.5)
             current_speed=speed
         else:
             current_speed=Twist()

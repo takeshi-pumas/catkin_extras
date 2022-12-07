@@ -59,9 +59,9 @@ class pumas_navServer():
             pose_robot,quat_robot=listener.lookupTransform('/map', 'base_footprint', rospy.Time(0)) 
             
             euclD=   np.linalg.norm(np.asarray((x,y))- pose_robot[:2])
-
-            
-            timeleft=timeout-rospy.Time.now().to_sec()     
+        
+            timeleft=timeout-rospy.Time.now().to_sec()  
+            print (timeleft,'timeleft')   
             feed = pose2feedback(pose_robot,quat_robot,timeleft,euclD)
             self.pumas_nav_server.publish_feedback(feed.feedback)
         
