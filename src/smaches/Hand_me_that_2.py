@@ -22,16 +22,13 @@ from face_recog.srv import *
 
 def move_base(goal_x,goal_y,goal_yaw,time_out=10):
     nav_goal= NavigateActionGoal()
-    nav_goal.goal.x= goal_x
-    nav_goal.goal.y= goal_y
-    nav_goal.goal.yaw=goal_yaw
-    nav_goal.goal.timeout= time_out
-
+    nav_goal.goal.x = goal_x
+    nav_goal.goal.y = goal_y
+    nav_goal.goal.yaw = goal_yaw
+    nav_goal.goal.timeout = time_out
     print (nav_goal)
-
     # send message to the action server
     navclient.send_goal(nav_goal.goal)
-
 
     # wait for the action server to complete the order
     navclient.wait_for_result(timeout=rospy.Duration(time_out))
@@ -133,9 +130,7 @@ class Wait_push_hand(smach.State):
         talk('Gently, ...  push my hand to begin')
         succ= wait_for_push_hand(100)
         #succ = True        #HEY THIS MUST BE COMMENTED DEBUGUING
-        
-        
-        
+
         if succ:
             return 'succ'
         else:
@@ -190,14 +185,8 @@ class Scan_face(smach.State):
             else:
                 print ('A face was found.')
                 talk('I found you, I believe you are'+ res.Ids.ids[0].data)
-                #takeshi_talk_pub.publish(string_to_Voice('))
                 
-            
                 try:
-                    #trans = tfBuffer.lookup_transform('map', 'head_rgbd_sensor_link', rospy.Time())
-                    
-                    #trans,quat=read_tf(trans)
-
                     trans,quat = tf_man.getTF(target_frame='head_rgbd_sensor_link')
                 except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
                     print ( 'No TF FOUND')
@@ -205,11 +194,6 @@ class Scan_face(smach.State):
 
                 trans[2]+= res.Ds.data[0]##HALF DISTANCE
 
-                #t=write_tf(    trans,(0,0,0,1), 'head_rgbd_sensor_link', 'Face'     )
-                #broadcaster.sendTransform(t )
-                #print (t)
-
-                #tf_static_broadcaster.sendTransform(t )            #res.Ids.ids[0].data
                 tf_man.pub_static_tf(pos=trans, point_name='Face', ref='head_rgbd_sensor_link')
                 
                 rospy.sleep(0.25)
@@ -223,36 +207,28 @@ class Goto_face(smach.State):
 
 
         rospy.loginfo('State : GOING TO FACE PUMAS NAV AND MAP')
-        """for i in range (20):
-            try:
-                trans2 = tfBuffer.lookup_transform('map', 'Face', rospy.Time())
-                goal_pose,quat =read_tf(trans2)
-                print (goal_pose, quat)
-                break
-            except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
-                print('somethins wrong')"""
         tf_man.change_ref_frame_tf(point_name='Face', new_frame='map')
         goal_pose,_ = tf_man.getTF(target_frame='Face')
 
-            
-
         #goal_pose, quat=listener.lookupTransform( 'map','Face', rospy.Time(0))
-        print(goal_pose[0],goal_pose[1],goal_pose[2],10  ,'############################')   #X Y YAW AND TIMEOUT
-        hcp = gaze.absolute(goal_pose[0], goal_pose[1],0)
+        print('Face at:',goal_pose[0], goal_pose[1], goal_pose[2])   #X Y YAW AND TIMEOUT
+        hcp = gaze.absolute(goal_pose[0], goal_pose[1], 0.0)
         head.set_joint_value_target(hcp)
         head.go()
-        #move_base(goal_pose[0],goal_pose[1],goal_pose[2],10  )   #X Y YAW AND TIMEOUT
-        
-        
-
-        
-
-
-        
+        #move_base(goal_pose[0],goal_pose[1], 0.0 ,10  )   #X Y YAW AND TIMEOUT
         return 'succ'
+
+class Grasp_from_floor(smach.State):
+    def __init__(self):
+        smach.State.__init__(self,outcomes=['succ','failed','tries'])
+        self.tries=0
+    def execute(self,userdata):
+
+
+
 def init(node_name):
-    global scene, rgbd  , head,whole_body,arm,gripper  ,goal,navclient,clear_octo_client ,  detect_waving_client, class_names , bridge , base_vel_pub,takeshi_talk_pub, order, navclient, recognize_face, pub_potfields_goal
-    global tf_man, gripper, gaze,wrist
+    global scene, rgbd, head, whole_body, arm, gripper, goal, navclient, clear_octo_client, detect_waving_client, class_names, bridge, base_vel_pub, takeshi_talk_pub, order, navclient, recognize_face, pub_potfields_goal
+    global tf_man, gripper, gaze, wrist
     rospy.init_node(node_name)
     head = moveit_commander.MoveGroupCommander('head')
     #gripper =  moveit_commander.MoveGroupCommander('gripper')
