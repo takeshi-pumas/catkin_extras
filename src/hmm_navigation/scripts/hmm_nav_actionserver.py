@@ -1,29 +1,10 @@
 #! /usr/bin/env python3
+from hmm_nav_utils import *
 
-import tf
-import tf2_ros
-import numpy as np
-import rospy
-import actionlib
-from hmm_navigation.msg import NavigateAction ,NavigateActionGoal,NavigateActionFeedback,NavigateActionResult
-from sensor_msgs.msg import LaserScan
-from geometry_msgs.msg import Twist, PointStamped
-from visualization_msgs.msg import Marker , MarkerArray
-
-##################################################
-def pose2feedback(pose_robot,quat_robot,timeleft,euclD):
-    feed = NavigateActionFeedback()
-    feed.feedback.x_robot   = pose_robot[0]
-    feed.feedback.y_robot   = pose_robot[1]
-    euler= tf.transformations.euler_from_quaternion((quat_robot[0] ,quat_robot[1] ,quat_robot[2] ,quat_robot[3] )) 
-    feed.feedback.yaw_robot = euler[2]
-    feed.feedback.timeleft    = timeleft
-    feed.feedback.euclD= euclD
-    return feed
 class HMM_navServer():
 
     def __init__(self):
-        self.hmm_nav_server = actionlib.SimpleActionServer("navigate",NavigateAction, execute_cb=self.execute_cb, auto_start=False)
+        self.hmm_nav_server = actionlib.SimpleActionServer("navigate_hmm",NavigateAction, execute_cb=self.execute_cb, auto_start=False)
         self.hmm_nav_server.start()
     
   
@@ -37,9 +18,20 @@ class HMM_navServer():
         rate = rospy.Rate(1)
         timeout= rospy.Time.now().to_sec()+goal.timeout
         goal_pnt= PointStamped()
+        goal_pnt.header.stamp=rospy.Time.now()
         goal_pnt.header.frame_id='map'
         goal_pnt.point.x , goal_pnt.point.y  =x,y
         pub_goal.publish(goal_pnt)
+        print (goal_pnt)
+        pose_robot,quat_robot=listener.lookupTransform('map', 'base_footprint', rospy.Time(0)) 
+        th_robot= tf.transformations.euler_from_quaternion(quat_robot)[2]
+        xyth= np.asarray((pose_robot[0],pose_robot[1],th_robot)) 
+        _,xythcuant= quantized(xyth,ccxyth)
+        _,xythclcuant= quantized(np.asarray((x,y,th)),ccxyth)
+        
+        path=dijkstra(xythcuant,xythclcuant,Markov_A_2_grafo(A,ccxyth))
+
+
 
         result.result.success=2
         i=0
@@ -48,21 +40,62 @@ class HMM_navServer():
             
             
             i+=1
+            
             pose_robot,quat_robot=listener.lookupTransform('map', 'base_footprint', rospy.Time(0)) 
+            
+            th_robot= tf.transformations.euler_from_quaternion(quat_robot)[2]
+            xyth= np.asarray((pose_robot[0],pose_robot[1],th_robot)) 
+            _,xythcuant= quantized(xyth,ccxyth)
             euclD=   np.linalg.norm(np.asarray((x,y))- pose_robot[:2])
-                
 
+            ####################
+            
+            if len (path)!=0:x_nxt,y_nxt,th_nxt= ccxyth[path[0]]
+            else:x_nxt,y_nxt,th_nxt== x,y
+            xyth_nxt=np.array((x_nxt,y_nxt,th_nxt))
+            _,xyth_nxt_cuant= quantized(xyth_nxt,ccxyth)
             if euclD<=0.2:
                 print ('Close Enough')  
                 result.result.success=1
                 break
+
+            
+
+            if (xythcuant in path[1:]):
+                killix= path.index(xythcuant)
+                print ('SHortuct DETECTED',killix)
+                del path[:path.index(xythcuant)]
+
+
+            if ((  xythcuant==xyth_nxt_cuant  or np.linalg.norm(ccxyth[xythcuant][:2]- ccxyth[xyth_nxt_cuant][:2])<.2  )     and    xythcuant!=xythclcuant):
+
+                print ('check node. Activate next')
+                if (len (path)==1):
+                    #print('PATH LEN 0 WTF ******* ')
+                    x,y,th=goal.x ,goal.y,goal.yaw
+                else:
+                    path.pop(0)
+                    x,y,th= ccxyth[path[0]]
+                goal_pnt= PointStamped()
+                goal_pnt.header.stamp=rospy.Time.now()
+                goal_pnt.header.frame_id='map'
+                goal_pnt.point.x , goal_pnt.point.y  =x,y
+                pub_goal.publish(goal_pnt)
+
+
+            
+            
+
+                
+
+            
             if i ==1000:
                 timeleft=timeout-rospy.Time.now().to_sec()     
             
                 feed = pose2feedback(pose_robot,quat_robot,timeleft,euclD)
                 self.hmm_nav_server.publish_feedback(feed.feedback)
             
-                print (timeleft,euclD)
+                print (timeleft,euclD, 'xythcuant','xythclcuant',xythcuant,xythclcuant,path)
                 i=0
             
         goal_pnt.point.x , goal_pnt.point.y  =0,0
@@ -89,16 +122,11 @@ class HMM_navServer():
 
         
 if __name__=="__main__":
-    global listener , pub ,pub2, pub3 , pub_goal
-    rospy.init_node('hmm_navigation_actionlib_server')
+   
     
-    pub = rospy.Publisher('/hsrb/command_velocity', Twist, queue_size=1)
-    pub2 = rospy.Publisher('/aa/Markov_NXT/', PointStamped, queue_size=1)  
-    pub3= rospy.Publisher('aa/Markov_route',MarkerArray,queue_size=1)
-    pub_goal= rospy.Publisher('/clicked_point',PointStamped,queue_size=1)
-    listener = tf.TransformListener()
+   
     
-    print("hmm nav server available service navigate")
+    print("hmm nav server available service navigate_hmm")
     s = HMM_navServer()
     rospy.spin()
 

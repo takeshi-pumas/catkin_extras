@@ -4,7 +4,7 @@
 
 <include file="$(find hsrb_moveit_config)/launch/hsrb_demo_with_controller.launch">
   <arg name="use_gui" value="true"/>
-  <arg name="load_robot_description" value="false"/>
+  <!--arg name="load_robot_description" value="false"/-->
 </include>
 
 
@@ -19,8 +19,14 @@
   </include>
 
 
-  <!--include file="$(find tmc_wrs_gazebo_worlds)/maps/moon/amcl_omni.launch"-->
-    
+  
+   
+  <!--node pkg="hmm_navigation"  name="PotFIELDSreal" type="potfields_takeshi_navroute.py"/-->  
+  <node pkg="hmm_navigation"  name="PotFIELDSreal" type="potfields_takeshi.py"/>  
+  <!--node pkg="hmm_navigation"  name="PotFIELDSreal" type="potfields_takeshi_real.py"/-->  
+  
+  <node pkg="known_locations_tf_server"  name="Known_locations_tf_server" type="setbool_service_locs_tf.py"/>  
+
 
 </launch>
 
