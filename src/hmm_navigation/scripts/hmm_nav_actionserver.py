@@ -12,10 +12,20 @@ class HMM_navServer():
         
         print (goal)
         x,y,th=goal.x ,goal.y,goal.yaw
+        pose_robot,quat_robot=listener.lookupTransform('map', 'base_footprint', rospy.Time(0)) 
+        th_robot= tf.transformations.euler_from_quaternion(quat_robot)[2]
+        xyth= np.asarray((pose_robot[0],pose_robot[1],th_robot)) 
+
+        euclD=   np.linalg.norm(np.asarray((x,y))- pose_robot[:2])
+        print ('xyth,euclD',xyth,euclD)
+        result = NavigateActionResult()
+
+
+
 
         success = True
-        result = NavigateActionResult()
-        rate = rospy.Rate(1)
+        
+        #rate = rospy.Rate(1)
         timeout= rospy.Time.now().to_sec()+goal.timeout
         goal_pnt= PointStamped()
         goal_pnt.header.stamp=rospy.Time.now()
@@ -23,18 +33,24 @@ class HMM_navServer():
         goal_pnt.point.x , goal_pnt.point.y  =x,y
         pub_goal.publish(goal_pnt)
         print (goal_pnt)
-        pose_robot,quat_robot=listener.lookupTransform('map', 'base_footprint', rospy.Time(0)) 
-        th_robot= tf.transformations.euler_from_quaternion(quat_robot)[2]
-        xyth= np.asarray((pose_robot[0],pose_robot[1],th_robot)) 
         _,xythcuant= quantized(xyth,ccxyth)
         _,xythclcuant= quantized(np.asarray((x,y,th)),ccxyth)
         
-        path=dijkstra(xythcuant,xythclcuant,Markov_A_2_grafo(A,ccxyth))
+        path=[]
+        if (xythcuant!=xythclcuant):path=dijkstra(xythcuant,xythclcuant,Markov_A_2_grafo(A,ccxyth))
+        
+        print ('path',path) 
 
 
-
+                    
+                #result.result.success=1
+                #self.hmm_nav_server.set_succeeded(result.result)
+                
         result.result.success=2
         i=0
+
+
+
         while timeout >= rospy.Time.now().to_sec():     
             
             
@@ -46,18 +62,25 @@ class HMM_navServer():
             th_robot= tf.transformations.euler_from_quaternion(quat_robot)[2]
             xyth= np.asarray((pose_robot[0],pose_robot[1],th_robot)) 
             _,xythcuant= quantized(xyth,ccxyth)
-            euclD=   np.linalg.norm(np.asarray((x,y))- pose_robot[:2])
+            
+
+            euclD=   np.linalg.norm(np.asarray((goal.x ,goal.y))- pose_robot[:2])
+
+            
+        
+            if euclD<=0.4:
+                print ('Close Enough')  
+                print ('xyth,euclD',xyth,euclD,np.asarray((x,y)))
+
+                result.result.success=1
+                break
 
             ####################
             
             if len (path)!=0:x_nxt,y_nxt,th_nxt= ccxyth[path[0]]
-            else:x_nxt,y_nxt,th_nxt== x,y
+            else:x_nxt,y_nxt,th_nxt = x,y,0.0
             xyth_nxt=np.array((x_nxt,y_nxt,th_nxt))
             _,xyth_nxt_cuant= quantized(xyth_nxt,ccxyth)
-            if euclD<=0.2:
-                print ('Close Enough')  
-                result.result.success=1
-                break
 
             
 
@@ -67,9 +90,9 @@ class HMM_navServer():
                 del path[:path.index(xythcuant)]
 
 
-            if ((  xythcuant==xyth_nxt_cuant  or np.linalg.norm(ccxyth[xythcuant][:2]- ccxyth[xyth_nxt_cuant][:2])<.2  )     and    xythcuant!=xythclcuant):
+            if ((  xythcuant==xyth_nxt_cuant  or np.linalg.norm(ccxyth[xythcuant][:2]- ccxyth[xyth_nxt_cuant][:2])<.4  )  ):
 
-                print ('check node. Activate next')
+                #print ('check node. Activate next')
                 if (len (path)==1):
                     #print('PATH LEN 0 WTF ******* ')
                     x,y,th=goal.x ,goal.y,goal.yaw
@@ -94,7 +117,7 @@ class HMM_navServer():
             
                 feed = pose2feedback(pose_robot,quat_robot,timeleft,euclD)
                 self.hmm_nav_server.publish_feedback(feed.feedback)
-            
+                
                 print (timeleft,euclD, 'xythcuant','xythclcuant',xythcuant,xythclcuant,path)
                 i=0
             

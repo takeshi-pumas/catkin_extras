@@ -22,7 +22,10 @@ def trigger_response(request):
     
     
     cents,xyz, images, img = plane_seg( points_msg,lower=100    , higher=4000,reg_hy=350)
+    
     print(len(cents))
+
+
     for i,cent in enumerate(cents):
                 print (cent)
                 x,y,z=cent
@@ -31,8 +34,11 @@ def trigger_response(request):
                 else:
                     broadcaster.sendTransform((x,y,z),(0,0,0,1), rospy.Time.now(), 'Object'+str(i),"head_rgbd_sensor_rgb_frame")
             
-    
-
+    rospy.sleep(.5)
+    cents_map=[]
+    for i in range(len (cents)):
+        trans,rot=tf_listener.lookupTransform('map', 'Object'+str(i), rospy.Time(0))
+        cents_map.append(trans)
     
 
 	    
@@ -44,7 +50,7 @@ def trigger_response(request):
     )    
     return TriggerResponse(
         success=True,
-        message=  'Object(s) tf added'
+        message=  str(cents_map)#'Object(s) tf added'
     )
 
 rospy.loginfo("segmentation service available")                    # initialize a ROS node

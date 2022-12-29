@@ -8,7 +8,7 @@ import pandas as pd
 from geometry_msgs.msg import TransformStamped
 def write_tf(pose, q, child_frame , parent_frame='map'):
     t= TransformStamped()
-    t.header.stamp = rospy.Time.now()
+    t.header.stamp = rospy.Time(0)
     t.header.frame_id =parent_frame
     t.child_frame_id =  child_frame
     t.transform.translation.x = pose[0]
