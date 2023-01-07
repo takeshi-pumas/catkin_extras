@@ -38,8 +38,6 @@ $ python3 /src/smaches/ANY SMACH.py
 
 PUMAS NAVIGATION IS NOW AVAILABLE
 
-Check 
-https://drive.google.com/file/d/1uc-GpoMxOQ_FcuZyGpvUkLoJWH-bGQGT/view?usp=sharing
-
+Check https://www.youtube.com/watch?v=oE1UKBc-sz4
 
 
