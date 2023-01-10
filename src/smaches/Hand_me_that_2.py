@@ -248,7 +248,7 @@ class Grasp_from_floor(smach.State):
         succ = False
         THRESHOLD = 0.02
         while not succ:
-            trans,_ = tf_man.getTF(target_frame='ar_marker/4', ref_frame='hand_palm_link')
+            trans,_ = tf_man.getTF(target_frame='ar_marker/704', ref_frame='hand_palm_link')
             if type(trans) is not bool:
                 _, eY, eX = trans
                 eX -= 0.35
