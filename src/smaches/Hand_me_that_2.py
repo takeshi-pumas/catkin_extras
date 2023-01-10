@@ -223,6 +223,7 @@ class Grasp_from_floor(smach.State):
         smach.State.__init__(self,outcomes=['succ','failed','tries'])
         self.tries=0
     def execute(self,userdata):
+        #get close to goal
         succ = False
         THRESHOLD = 0.02
         while not succ:
@@ -245,6 +246,7 @@ class Grasp_from_floor(smach.State):
         head.set_joint_value_target(h_search)
         head.go()
         gripper.open()
+        #grasp
         succ = False
         THRESHOLD = 0.02
         while not succ:
@@ -262,6 +264,7 @@ class Grasp_from_floor(smach.State):
         gripper.close()
         arm.set_named_target('neutral')
         arm.go()
+        return 'succ'
 
 
 
@@ -323,5 +326,6 @@ if __name__== '__main__':
         smach.StateMachine.add("INITIAL",           Initial(),          transitions = {'failed':'INITIAL',          'succ':'WAIT_PUSH_HAND',           'tries':'END'}) 
         smach.StateMachine.add("WAIT_PUSH_HAND",   Wait_push_hand(),  transitions = {'failed':'WAIT_PUSH_HAND',  'succ':'SCAN_FACE',    'tries':'END'}) 
         smach.StateMachine.add("SCAN_FACE",   Scan_face(),  transitions = {'failed':'SCAN_FACE',  'succ':'GOTO_FACE',    'tries':'INITIAL'}) 
-        smach.StateMachine.add("GOTO_FACE",   Goto_face(),  transitions = {'failed':'GOTO_FACE',  'succ':'END',    'tries':'INITIAL'}) 
+        smach.StateMachine.add("GOTO_FACE",   Goto_face(),  transitions = {'failed':'GOTO_FACE',  'succ':'GRASP_FROM_FLOOR',    'tries':'INITIAL'}) 
+        smach.StateMachine.add("GRASP_FROM_FLOOR",   Grasp_from_floor(),  transitions = {'failed':'GRASP_FROM_FLOOR',  'succ':'END',    'tries':'INITIAL'}) 
     outcome = sm.execute()          
