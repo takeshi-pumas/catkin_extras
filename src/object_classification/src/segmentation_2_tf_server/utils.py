@@ -27,15 +27,23 @@ global tf_listener, ptcld_lis, broadcaster , bridge
 
 
 rospy.init_node('pca_segmentation') 
-tf_listener = tf.TransformListener()
-broadcaster= tf.TransformBroadcaster()
-tf_static_broadcaster= tf2_ros.StaticTransformBroadcaster()
+tfBuffer = tf2_ros.Buffer()
+tfBuffer = tf2_ros.Buffer()
+listener2 = tf2_ros.TransformListener(tfBuffer)
+listener = tf.TransformListener()
+
+broadcaster = tf2_ros.TransformBroadcaster()
+tf_static_broadcaster = tf2_ros.StaticTransformBroadcaster()
+
+#tf_listener = tf.TransformListener()
+#broadcaster= tf.TransformBroadcaster()
+#tf_static_broadcaster= tf2_ros.StaticTransformBroadcaster()
 #pub = rospy.Publisher('/segmented_images', Image, queue_size=1)
 bridge=CvBridge()
 
 def write_tf(pose, q, child_frame , parent_frame='map'):
     t= TransformStamped()
-    t.header.stamp = rospy.Time(0)
+    t.header.stamp = rospy.Time.now()
     t.header.frame_id =parent_frame
     t.child_frame_id =  child_frame
     t.transform.translation.x = pose[0]
@@ -47,6 +55,21 @@ def write_tf(pose, q, child_frame , parent_frame='map'):
     t.transform.rotation.z = q[2]
     t.transform.rotation.w = q[3]
     return t
+
+def read_tf(t):
+    pose=np.asarray((
+        t.transform.translation.x,
+        t.transform.translation.y,
+        t.transform.translation.z
+        ))
+    quat=np.asarray((
+        t.transform.rotation.x,
+        t.transform.rotation.y,
+        t.transform.rotation.z,
+        t.transform.rotation.w
+        ))
+    
+    return pose, quat
 def correct_points(points_msg,low=0.27,high=1000):
 
     # Function that transforms Point Cloud reference frame from  head, to map. (i.e. sensor coords to map coords )
@@ -56,9 +79,19 @@ def correct_points(points_msg,low=0.27,high=1000):
     #data = rospy.wait_for_message('/hsrb/head_rgbd_sensor/depth_registered/rectified_points', PointCloud2)
     np_data=ros_numpy.numpify(points_msg)
     
-    #trans,rot=tf_listener.lookupTransform('/map', '/head_rgbd_sensor_gazebo_frame', rospy.Time(0)) 
-    trans,rot=tf_listener.lookupTransform('/map', '/head_rgbd_sensor_rgb_frame', rospy.Time(0))
+    
+    
 
+    try:
+        trans = tfBuffer.lookup_transform('map', 'head_rgbd_sensor_link', rospy.Time())
+                    
+        trans,rot=read_tf(trans)
+        print ("############tf2",trans,rot)
+    except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
+        print ( 'No TF FOUND')
+
+    #trans,rot=tf_listener.lookupTransform('/map', '/head_rgbd_sensor_rgb_frame', rospy.Time(0))
+    #print ("############TF1",trans,rot)
 
 
     eu=np.asarray(tf.transformations.euler_from_quaternion(rot))

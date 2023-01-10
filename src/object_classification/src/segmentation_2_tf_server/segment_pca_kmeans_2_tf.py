@@ -32,12 +32,23 @@ def trigger_response(request):
                 if np.isnan(x) or np.isnan(y) or np.isnan(z):
                     print('nan')
                 else:
-                    broadcaster.sendTransform((x,y,z),(0,0,0,1), rospy.Time.now(), 'Object'+str(i),"head_rgbd_sensor_rgb_frame")
+                    t=write_tf(    (x,y,z),(0,0,0,1), 'Object'+str(i), "head_rgbd_sensor_rgb_frame"     )
+                    broadcaster.sendTransform(t)
+                    #broadcaster.sendTransform((x,y,z),(0,0,0,1), rospy.Time.now(), 'Object'+str(i),"head_rgbd_sensor_rgb_frame")
             
     rospy.sleep(.5)
     cents_map=[]
     for i in range(len (cents)):
-        trans,rot=tf_listener.lookupTransform('map', 'Object'+str(i), rospy.Time(0))
+        #trans,rot=tf_listener.lookupTransform('map', 'Object'+str(i), rospy.Time(0))
+        try:
+            trans = tfBuffer.lookup_transform('map', 'Object'+str(i), rospy.Time())
+                        
+            trans,rot=read_tf(trans)
+            print ("############tf2",trans,rot)
+        except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
+            print ( 'No TF FOUND')
+
+
         cents_map.append(trans)
     
 
