@@ -84,9 +84,9 @@ def correct_points(points_msg,low=0.27,high=1000):
         trans = tfBuffer.lookup_transform('map', 'head_rgbd_sensor_link', rospy.Time())
                     
         trans,rot=read_tf(trans)
-        print ("############tf2",trans,rot)
+        print ("############head",trans,rot)
     except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
-        print ( 'No TF FOUND')
+        print ( 'No  head TF FOUND')
 
     #trans,rot=tf_listener.lookupTransform('/map', '/head_rgbd_sensor_rgb_frame', rospy.Time(0))
     #print ("############TF1",trans,rot)

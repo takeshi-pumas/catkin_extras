@@ -530,6 +530,7 @@ def pub_points(cld_points_corrected,lastSK,skPub=1):
         tf_man.change_ref_frame_tf(point_name='CODO',new_frame='map')
         tf_man.change_ref_frame_tf(point_name='MANO',new_frame='map')
         #print("referencia cambiada?")
+
     else:
         cabeza = [cld_points_corrected['x'][round(lastSK[0,1]), round(lastSK[0,0])],
                 cld_points_corrected['y'][round(lastSK[0,1]), round(lastSK[0,0])],
@@ -548,6 +549,7 @@ def callback(req):
     cnt_acciones=0
     last_act=-1
     response=RecognizeResponse()
+    
     if req.in_==0:
         print("No se hace nada")
 
@@ -612,22 +614,24 @@ def callback(req):
             else:
                 cv2.putText(img=im, text="buffer size:"+str(len(buffer))+", symbol det:"+str(symbol)+" reps:"+str(cnt_acciones)+" act:"+str(class_names[last_act]), 
                 org=(5, 20),fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.6, color=(35, 255, 148),thickness=2)
-            cv2.imshow("Imagen RGB",im)
-            cv2.waitKey(10)
+            if req.visual!=0:
+                cv2.imshow("Imagen RGB",im)
+                cv2.waitKey(10)
 
             #<<<<<<<<<<< si la inferencia se repite un determinado numero de veces
             #            termina el ciclo y regresa variables y demas >>>>>>>>>>>>
             
-            if cnt_acciones==60 and last_act==4:
-                print("Accion detectada: {}".format(class_names[last_act]))
+            if cnt_acciones==30 and last_act==4:
+                print("Accion 4 detectada: {}".format(class_names[last_act]))
                 img_msg=bridge.cv2_to_imgmsg(imgOut) # change to rgbd in robot
                 sk_msg=bridge.cv2_to_imgmsg(dataout)
                 print("Recibiendo imagen rgbd...")
                 frameC,dataPC=get_coordinates()
                 print("publicando...")
-                frameC=draw_skeleton(dataout,h,w,frameC,bkground=True)    
-                cv2.imshow("IMAGEN RGBD",frameC)
-                cv2.waitKey(400)
+                frameC=draw_skeleton(dataout,h,w,frameC,bkground=True)  
+                #if req.visual!=0:  
+                #    cv2.imshow("IMAGEN RGBD",frameC)
+                #    cv2.waitKey(400)
                 pub_points(dataPC,dataout,skPub=1)
                 print("tfs publicadas")
 
@@ -635,12 +639,12 @@ def callback(req):
 
 
             # Si es drink o neutral, sigue reconociendo hasta obtener otra accion
-            elif cnt_acciones==60 and (last_act==2 or last_act==3):
+            elif cnt_acciones==30 and (last_act==2 or last_act==3):
                 print("Accion detectada: neutral o drink, se sigue detectando... ")
                 cnt_acciones=0
             
             # Si es waving, similar a pointing pero solo publica la cara
-            elif cnt_acciones==60:
+            elif cnt_acciones==30:
                 print("Accion detectada: {}".format(class_names[last_act]))
                 print("Recibiendo imagen rgbd...")
                 frameC,dataPC=get_coordinates()
@@ -651,9 +655,9 @@ def callback(req):
                 sk_msg=bridge.cv2_to_imgmsg(dataout)
                 
                 break
-
-        cv2.destroyAllWindows()
-        cv2.waitKey(1)
+        if req.visual!=0:
+            cv2.destroyAllWindows()
+            cv2.waitKey(1)
      
         
         if len(response.im_out.image_msgs)==0:
@@ -669,6 +673,64 @@ def callback(req):
         response.i_out=np.argmax(probas[:])
 
         return response
+    #----------------
+    # Para give object
+    elif req.in_==2:
+        print("Opcion 2, estimar brazo para dar objeto".format(req.in_))
+        cnt=0
+        while True:
+
+            im=rgb.get_image()
+            dataout=np.zeros((25,2))
+            datum.cvInputData = im
+            opWrapper.emplaceAndPop(op.VectorDatum([datum]))
+            if datum.poseKeypoints is not None:
+                cnt+=1
+                dataout=np.copy(datum.poseKeypoints[0,:,:2])
+                im=draw_skeleton(dataout,h,w,im,bkground=True)
+                cv2.putText(img=im, text="Contador: "+str(cnt),org=(5, 20),fontFace=cv2.FONT_HERSHEY_SIMPLEX, 
+                            fontScale=0.6, color=(35, 255, 148),thickness=2)
+
+                if req.visual!=0:
+                    cv2.imshow("Imagen RGB",im)
+                    cv2.waitKey(10)
+                print(cnt)
+                if cnt==50:
+                    
+                    print("Obteniendo rgbd...")
+                    frameC,dataPC=get_coordinates()
+                    print("esqueleto encontrado")
+
+                    mano,codo=detect_pointing_arm(dataout,dataPC)
+                    tf_man.pub_static_tf(pos=codo,point_name='CODO',ref='head_rgbd_sensor_link')
+                    tf_man.pub_static_tf(pos=mano,point_name='MANO',ref='head_rgbd_sensor_link')
+                    #print("cambiando referencia")
+                    tf_man.change_ref_frame_tf(point_name='CODO',new_frame='map')
+                    tf_man.change_ref_frame_tf(point_name='MANO',new_frame='map')
+
+                    print("tf publicada")
+            
+                    response.i_out=1
+                    break
+            
+        if req.visual!=0:
+            cv2.destroyAllWindows()
+            cv2.waitKey(1)
+    
+        img_msg=bridge.cv2_to_imgmsg(im)
+        img_msg2=bridge.cv2_to_imgmsg(dataout)
+        if len(response.im_out.image_msgs)==0:
+            response.im_out.image_msgs.append(img_msg)
+        else:
+            response.im_out.image_msgs[0]=img_msg
+
+        if len(response.sk.image_msgs)==0:
+            response.sk.image_msgs.append(img_msg2)
+        else:
+            response.sk.image_msgs[0]=img_msg2
+        
+        return response
+
     #----------------
     # Para obtener la imagen y esqueleto 1 vez y trabajar con ella fuera del servicio
     else:
@@ -707,8 +769,7 @@ def callback(req):
         else:
             response.sk.image_msgs[0]=img_msg2
         
-        return response
-        
+        return response    
 
 #--------------------------------------------------------
 def recognition_server():
