@@ -9,6 +9,7 @@ import moveit_msgs.msg
 import tf2_ros
 from tf2_sensor_msgs.tf2_sensor_msgs import do_transform_cloud
 from object_classification.srv import *
+from segmentation.srv import *
 #import face_recognition 
 import cv2  
 import rospy 
@@ -18,15 +19,14 @@ from hmm_navigation.msg import NavigateActionGoal, NavigateAction
 from cv_bridge import CvBridge, CvBridgeError
 import pandas as pd
 from std_srvs.srv import Empty
-
 from sensor_msgs.msg import Image , LaserScan , PointCloud2
-
 import tf
-
 import time
 
+from grasp_utils import *
+
 global listener, broadcaster, tfBuffer, tf_static_broadcaster, scene, rgbd  , head,whole_body,arm,gripper 
-global clear_octo_client, goal,navclient,segmentation_server ,df
+global clear_octo_client, goal,navclient,segmentation_server ,df , tf_man , gaze
 rospy.init_node('smach')
 head = moveit_commander.MoveGroupCommander('head')
 gripper =  moveit_commander.MoveGroupCommander('gripper')
@@ -41,22 +41,25 @@ broadcaster = tf2_ros.TransformBroadcaster()
 tf_static_broadcaster = tf2_ros.StaticTransformBroadcaster()
 clear_octo_client = rospy.ServiceProxy('/clear_octomap', Empty)
 
-segmentation_server = rospy.ServiceProxy('/segment_2_tf', Trigger) 
+segmentation_server = rospy.ServiceProxy('/segment' , Segmentation)
+#segmentation_server = rospy.ServiceProxy('/segment_2_tf', Trigger) 
+
 
 #whole_body.set_workspace([-6.0, -6.0, 6.0, 6.0]) 
 scene = moveit_commander.PlanningSceneInterface()
 df=pd.read_csv('/home/roboworks/Codes/known_locations.txt')
 
 #############################################################################
-#navclient=actionlib.SimpleActionClient('/navigate', NavigateAction)   ### PUMAS NAV ACTION LIB
-navclient=actionlib.SimpleActionClient('/navigate_hmm', NavigateAction)   ### HMM NAV
+navclient=actionlib.SimpleActionClient('/navigate', NavigateAction)   ### PUMAS NAV ACTION LIB
+#navclient=actionlib.SimpleActionClient('/navigate_hmm', NavigateAction)   ### HMM NAV
 #navclient = #actionlib.SimpleActionClient('/move_base/move', MoveBaseAction)########TOYOTA NAV
 ###############################################################################################
 
 
 base_vel_pub = rospy.Publisher('/hsrb/command_velocity', Twist, queue_size=10)
 
-
+tf_man = TF_MANAGER()
+gaze = GAZE()
 
 def strmsg_to_float(s):
     cent_map=[]
@@ -87,9 +90,9 @@ def move_base(goal_x,goal_y,goal_yaw,time_out=10):
     action_state = navclient.get_state()
     return navclient.get_state()
 
-def write_tf(pose, q, child_frame , parent_frame='map'):
+def write_tf(pose, q, child_frame , parent_frame='map',time=0):
     t= TransformStamped()
-    t.header.stamp = rospy.Time.now()
+    t.header.stamp = rospy.Time(time)
     t.header.frame_id =parent_frame
     t.child_frame_id =  child_frame
     t.transform.translation.x = pose[0]
