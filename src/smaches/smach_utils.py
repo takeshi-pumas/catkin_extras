@@ -47,7 +47,7 @@ segmentation_server = rospy.ServiceProxy('/segment' , Segmentation)
 
 #whole_body.set_workspace([-6.0, -6.0, 6.0, 6.0]) 
 scene = moveit_commander.PlanningSceneInterface()
-df=pd.read_csv('/home/roboworks/Codes/known_locations.txt')
+df=pd.read_csv('/home/takeshi/Codes/known_locations.txt')
 
 #############################################################################
 navclient=actionlib.SimpleActionClient('/navigate', NavigateAction)   ### PUMAS NAV ACTION LIB
@@ -149,3 +149,14 @@ def close_gripper():
     except:
         print('OOB')
     succ=gripper.go()
+
+
+def move_D(target_pose,D):
+    target_pose=np.asarray(target_pose)
+    robot_pose,quat_r = tf_man.getTF(target_frame='base_link')
+    yaw=tf.transformations.euler_from_quaternion(quat_r)[2]
+    robot_pose=np.asarray(robot_pose)
+    target_rob = target_pose-robot_pose
+    goal_pose= target_pose-(target_rob*D/np.linalg.norm(target_rob))
+    
+    return goal_pose,yaw
