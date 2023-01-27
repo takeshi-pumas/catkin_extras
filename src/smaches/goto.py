@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 
-#import rospy
+import rospy
 
-# import actionlib
-# from hmm_navigation.msg import NavigateActionGoal, NavigateAction
+import actionlib
+from hmm_navigation.msg import NavigateActionGoal, NavigateAction
 
-# navclient = actionlib.SimpleActionClient('/navigate_hmm', NavigateAction)   ### HMM NAV
+global navclient
+
+navclient=actionlib.SimpleActionClient('/navigate', NavigateAction)   ### PUMAS NAV ACTION LIB
 
 def move_base(goal_x,goal_y,goal_yaw,time_out=10):
     nav_goal = NavigateActionGoal()
@@ -34,7 +36,8 @@ def request():
 	goal = goal.casefold()
 
 	#Read the "known location" file 
-	with open('test.txt','r') as known_loc:
+	path = '/home/takeshi/Codes/known_locations.txt'
+	with open(path,'r') as known_loc:
 		lines = known_loc.readlines()
     #Match goal with known locations 
 	for line in lines[1:]:
@@ -45,7 +48,7 @@ def request():
 		if succ:
 			name,trans[0],trans[1],trans[2],_ = line.split(',',4)
 			for i,t in enumerate(trans):
-				trans[i] = int(t)
+				trans[i] = float(t)
 			break
 	if not succ:
 		print("Location goal is not valid")
@@ -57,10 +60,12 @@ def action():
 	#Ros node start
 	rospy.init_node('goto', anonymous=True)
 
+	status = 0
 	# action
 	succ, trans = request()
 	if succ:
-		return move_base(*trans,time_out = 20)
+		status = move_base(*trans,time_out = 20)
+		print(status)
 
 	#to keep node alive 
 	rospy.spin()
