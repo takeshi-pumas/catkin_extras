@@ -215,7 +215,7 @@ class Goto_face(smach.State):
         hcp = gaze.absolute(goal_pose[0], goal_pose[1], 0.0)
         head.set_joint_value_target(hcp)
         head.go()
-        #move_base(goal_pose[0],goal_pose[1], 0.0 ,10  )   #X Y YAW AND TIMEOUT
+        move_base(goal_pose[0],goal_pose[1], 0.0 ,50  )   #X Y YAW AND TIMEOUT
         return 'succ'
 
 class Grasp_from_floor(smach.State):
@@ -224,23 +224,24 @@ class Grasp_from_floor(smach.State):
         self.tries=0
     def execute(self,userdata):
         #get close to goal
-        succ = False
-        THRESHOLD = 0.02
-        while not succ:
-            trans,_ = tf_man.getTF(target_frame='Face', ref_frame='base_link')
-            if type(trans) is not bool:
-                eX, eY, _ = trans
-                eX -= 0.35
-                rospy.loginfo("Distance to goal: {:.3f}, {:.3f}".format(eX, eY))
-                if abs(eY) < THRESHOLD:
-                    eY = 0
-                if abs(eX) < THRESHOLD:
-                    eX = 0
-                succ =  eX == 0 and eY == 0
-                grasp_base.tiny_move(velX=0.2*eX, velY=-0.4*eY, std_time=0.2, MAX_VEL=0.3)
+        #succ = False
+        #THRESHOLD = 0.02
+        #while not succ:
+        #    trans,_ = tf_man.getTF(target_frame='Face', ref_frame='base_link')
+        #    if type(trans) is not bool:
+        #        eX, eY, _ = trans
+        #        eX -= 0.35
+        #        rospy.loginfo("Distance to goal: {:.3f}, {:.3f}".format(eX, eY))
+        #        if abs(eY) < THRESHOLD:
+        #            eY = 0
+        #        if abs(eX) < THRESHOLD:
+        #            eX = 0
+        #        succ =  eX == 0 and eY == 0
+        #        grasp_base.tiny_move(velX=0.2*eX, velY=-0.4*eY, std_time=0.2, MAX_VEL=0.3)
         #prepare arm to grasp pose
         floor_pose = [0.0,-2.47,0.0,0.86,-0.032,0.0]
         h_search = [0.0,-0.80]
+        AR_starter.call()
         arm.set_joint_value_target(floor_pose)
         arm.go()
         head.set_joint_value_target(h_search)
@@ -253,7 +254,7 @@ class Grasp_from_floor(smach.State):
             trans,_ = tf_man.getTF(target_frame='ar_marker/704', ref_frame='hand_palm_link')
             if type(trans) is not bool:
                 _, eY, eX = trans
-                eX -= 0.35
+                eX -= 0.05
                 rospy.loginfo("Distance to goal: {:.3f}, {:.3f}".format(eX, eY))
                 if abs(eY) < THRESHOLD:
                     eY = 0
@@ -270,7 +271,7 @@ class Grasp_from_floor(smach.State):
 
 def init(node_name):
     global scene, rgbd, head, whole_body, arm, gripper, goal, navclient, clear_octo_client, detect_waving_client, class_names, bridge, base_vel_pub, takeshi_talk_pub, order, navclient, recognize_face, pub_potfields_goal
-    global tf_man, gripper, gaze, wrist, AR_starter, AR_stopper
+    global tf_man, gripper, gaze, wrist, AR_starter, AR_stopper, grasp_base
     rospy.init_node(node_name)
     head = moveit_commander.MoveGroupCommander('head')
     #gripper =  moveit_commander.MoveGroupCommander('gripper')
@@ -285,16 +286,16 @@ def init(node_name):
     gripper = GRIPPER()
     gaze = GAZE()
     wrist = WRIST_SENSOR()
+    grasp_base=OMNIBASE()
     
 
     AR_starter = rospy.ServiceProxy('/marker/start_recognition',Empty)
     AR_stopper = rospy.ServiceProxy('/marker/stop_recognition',Empty)
     #############################################################################
-    #navclient = actionlib.SimpleActionClient('/move_base/move', MoveBaseAction)#
-    ###FANFARRIAS Y REDOBLES PUMASNAVIGATION ####################################
-    #############################################################################
-    navclient=actionlib.SimpleActionClient('/navigate', NavigateAction)   ### PUMAS NAV ACTION LIB
-
+    #navclient=actionlib.SimpleActionClient('/navigate', NavigateAction)   ### PUMAS NAV ACTION LIB
+    navclient=actionlib.SimpleActionClient('/navigate_hmm', NavigateAction)   ### HMM NAV
+    #navclient = #actionlib.SimpleActionClient('/move_base/move', MoveBaseAction)########TOYOTA NAV
+    ###############################################################################################
     #navclient = #actionlib.SimpleActionClient('/move_base/move', MoveBaseAction)
     
 

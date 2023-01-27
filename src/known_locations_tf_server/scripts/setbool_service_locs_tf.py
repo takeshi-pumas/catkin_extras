@@ -23,7 +23,7 @@ def write_tf(pose, q, child_frame , parent_frame='map'):
 def np_to_str(np_arr):
     str_np=''
     for e in np_arr:
-        str_np+= ','+str(e)
+        str_np+= ','+str("%.2f" % e)
     return str_np
 
 def read_tf(t):
@@ -61,7 +61,7 @@ def callback(req):
         trans,quat=read_tf(trans)
         #with  open('known_locations.txt' , 'a') as out:
         
-        with  open('/home/roboworks/Codes/known_locations.txt' , 'a') as out:
+        with  open('/home/takeshi/Codes/known_locations.txt' , 'a') as out:
             out.write (req.location_name.data+np_to_str(trans)+np_to_str(quat)  +'\n' )
         print (trans,quat)
         ####################### 
@@ -93,7 +93,7 @@ tf_static_broadcaster = tf2_ros.StaticTransformBroadcaster()
 
 
 #df=pd.read_csv('known_locations.txt')
-df=pd.read_csv('/home/roboworks/Codes/known_locations.txt')##RELATIVIZE PATH?
+df=pd.read_csv('/home/takeshi/Codes/known_locations.txt')##RELATIVIZE PATH?
 print (df)
 known_locs=df.values
 if len(df)!=0:

@@ -88,8 +88,8 @@ pub2 = rospy.Publisher('/aa/Markov_NXT/', PointStamped, queue_size=1)
 pub3= rospy.Publisher('aa/Markov_route',MarkerArray,queue_size=1)
 pub_goal= rospy.Publisher('/clicked_point',PointStamped,queue_size=1)
 listener = tf.TransformListener()
-ccxyth=np.load('/home/roboworks/catkin_extras/src/hmm_navigation/scripts/hmm_nav/ccxyth.npy')
-A=np.load('/home/roboworks/catkin_extras/src/hmm_navigation/scripts/hmm_nav/A.npy')
+ccxyth=np.load('/home/takeshi/catkin_extras/src/hmm_navigation/scripts/hmm_nav/ccxyth.npy')
+A=np.load('/home/takeshi/catkin_extras/src/hmm_navigation/scripts/hmm_nav/A.npy')
 
 
 

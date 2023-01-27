@@ -3,11 +3,12 @@
 from smach_utils import * 
 
 
+
 ##### Define state INITIAL #####
 
 class Initial(smach.State):
     def __init__(self):
-        smach.State.__init__(self,outcomes=['succ','failed','tries'],input_keys=['global_counter'])
+        smach.State.__init__(self,outcomes=['succ','failed','tries'])
         self.tries=0
 
         
@@ -26,11 +27,12 @@ class Initial(smach.State):
         
         #scene.remove_world_object()
         #Takeshi neutral
-        arm.set_named_target('go')
-        arm.go()
         head.set_named_target('neutral')
         succ=head.go() 
         
+        arm.set_named_target('go')
+        succ=arm.go()
+
         #succ = True        
         if succ:
             return 'succ'
@@ -39,7 +41,7 @@ class Initial(smach.State):
 
 class GotoArea2(smach.State):
     def __init__(self):
-        smach.State.__init__(self,outcomes=['succ','failed','tries'],input_keys=['global_counter'])
+        smach.State.__init__(self,outcomes=['succ','failed','tries'])
         self.tries=0
 
         
@@ -47,12 +49,12 @@ class GotoArea2(smach.State):
 
         self.tries+=1
         rospy.loginfo('STATE : GOTO_AREA2')
-        goal_x=df[df['child_id_frame']=='Location']['x'].values
-        goal_y=df[df['child_id_frame']=='Location']['y'].values
-        print (goal_x,goal_y)
+        goal_x=df[df['child_id_frame']=='Location ']['x'].values
+        goal_y=df[df['child_id_frame']=='Location ']['y'].values
+        print (goal_x,goal_y,"GOAL------------------")
         result_state=move_base(goal_x,goal_y,0.0,30)
         print (result_state)
-        if self.tries==3:
+        if self.tries==5:
             self.tries=0
             return 'tries'
         
@@ -62,7 +64,7 @@ class GotoArea2(smach.State):
 
 class ScanFloor(smach.State):
     def __init__(self):
-        smach.State.__init__(self,outcomes=['succ','failed','tries'],input_keys=['global_counter'])
+        smach.State.__init__(self,outcomes=['succ','failed','tries'])
         self.tries=0
 
         
@@ -74,24 +76,20 @@ class ScanFloor(smach.State):
         hv[1]= -0.6
         succ= head.go(hv)
         res=segmentation_server.call()
-        print (res)
-        if(res.success):
-            cents=strmsg_to_float(res.message)
-            print ('cents',cents)       
-            if len (cents)!=0:
-                t= write_tf(cents[0,:],np.asarray((0,0,0,1)) , 'SM_Object' )
-                print (t)        
-                broadcaster.sendTransform(t)
+        print (res.poses.data)
+        if len (res.poses.data)!=0:
+            cents=np.asarray(res.poses.data).reshape((int(len (res.poses.data)/3),3 )   )
+            print ('cents',cents)
+            for cent in cents:
+                print(cent)
+                tf_man.pub_static_tf(pos=cent, point_name='SM_Object', ref='head_rgbd_sensor_link')
+                
 
-                return 'succ'
-            
-        return 'failed'
-        """try:
-            trans = tfBuffer.lookup_transform('map', 'base_footprint', rospy.Time())
-            print ('trans',trans)
-            except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
-            print ( 'No TF FOUND')
-        """
+            return 'succ'
+        return'failed'
+                
+
+
 class Pregrasp_Floor(smach.State):
     def __init__(self):
         smach.State.__init__(self,outcomes=['succ','failed','tries'],input_keys=['global_counter'])
@@ -110,14 +108,18 @@ class Pregrasp_Floor(smach.State):
 
         #move_abs(.03,.03,0,2)
         
+        
+
+
         try:
             trans = tfBuffer.lookup_transform('map', 'SM_Object', rospy.Time())
             obj_pose,obj_quat=read_tf(trans)
-            print ('pose object',obj_pose   )
-            
+            print ('pose hand',obj_pose, obj_quat)
+
         except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
             print ( 'No TF FOUND')
             return 'failed'
+
         try:
             trans = tfBuffer.lookup_transform('map', 'hand_palm_link', rospy.Time())
             hand_pose,hand_quat=read_tf(trans)
@@ -253,9 +255,9 @@ if __name__== '__main__':
 
     with sm:
         #State machine for Restaurant
-        smach.StateMachine.add("INITIAL",               Initial(),          transitions = {'failed':'INITIAL',          'succ':'SCAN_FLOOR',           'tries':'END'}) 
-        smach.StateMachine.add("GOTO_AREA2",            GotoArea2(),          transitions = {'failed':'GOTO_AREA2',          'succ':'SCAN_FLOOR',           'tries':'END'}) 
         smach.StateMachine.add("SCAN_FLOOR",            ScanFloor(),          transitions = {'failed':'GOTO_START',          'succ':'PREGRASP_FLOOR',           'tries':'END'}) 
+        smach.StateMachine.add("INITIAL",               Initial(),          transitions = {'failed':'INITIAL',          'succ':'GOTO_AREA2',           'tries':'END'}) 
+        smach.StateMachine.add("GOTO_AREA2",            GotoArea2(),          transitions = {'failed':'GOTO_AREA2',          'succ':'SCAN_FLOOR',           'tries':'END'}) 
         smach.StateMachine.add("PREGRASP_FLOOR",        Pregrasp_Floor(),          transitions = {'failed':'PREGRASP_FLOOR',          'succ':'GRASP_FLOOR',           'tries':'END'}) 
         smach.StateMachine.add("GRASP_FLOOR",           Grasp_Floor(),          transitions = {'failed':'GRASP_FLOOR',          'succ':'POSTGRASP_FLOOR',           'tries':'END'}) 
         smach.StateMachine.add("POSTGRASP_FLOOR",       Postgrasp_Floor(),          transitions = {'failed':'POSTGRASP_FLOOR',          'succ':'GOTO_AREA2',           'tries':'END'}) 

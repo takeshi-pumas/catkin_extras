@@ -18,41 +18,38 @@ def trigger_response(request):
     print (image.shape)
     
     
-    cents,xyz, images, img = plane_seg( points_msg,lower=100    , higher=4000,reg_hy=350)
+    cents,xyz, images, img = plane_seg( points_msg,lower=10    , higher=4000,reg_hy=350)
     
     print(len(cents))
 
 
     for i,cent in enumerate(cents):
-                print (cent)
-                x,y,z=cent
-                if np.isnan(x) or np.isnan(y) or np.isnan(z):
-                    print('nan')
-                else:
-                    t=write_tf(    (x,y,z),(0,0,0,1), 'Object'+str(i), "head_rgbd_sensor_rgb_frame"     )
-                    broadcaster.sendTransform(t)
-                    #broadcaster.sendTransform((x,y,z),(0,0,0,1), rospy.Time.now(), 'Object'+str(i),"head_rgbd_sensor_rgb_frame")
-            
-    rospy.sleep(.5)
-    cents_map=[]
-    for i in range(len (cents)):
-        #trans,rot=tf_listener.lookupTransform('map', 'Object'+str(i), rospy.Time(0))
-        try:
-            trans = tfBuffer.lookup_transform('map', 'Object'+str(i), rospy.Time(), rospy.Duration(1.0))
+        print (cent)
+        x,y,z=cent
+        if np.isnan(x) or np.isnan(y) or np.isnan(z):
+            print('nan')
+        else:
+            t=write_tf(    (x,y,z),(0,0,0,1), 'Object'+str(i), "head_rgbd_sensor_rgb_frame"     )
+            broadcaster.sendTransform(t)
+            """#broadcaster.sendTransform((x,y,z),(0,0,0,1), rospy.Time.now(), 'Object'+str(i),"head_rgbd_sensor_rgb_frame")
                         
-            trans,rot=read_tf(trans)
-            print ("############tf2",trans,rot)
-        except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
-            print ( 'No TF FOUND')
-
-
-        cents_map.append(trans)
-    ccs_map=np.asarray(cents_map)
+                #trans,rot=tf_listener.lookupTransform('map', 'Object'+str(i), rospy.Time(0))"""
+    """for i,cent in enumerate(cents):
+                    try:
+                        trans = tfBuffer.lookup_transform('map', 'Object'+str(i), rospy.Time(), rospy.Duration(5.0))
+                        print ("############tf2",trans,rot)
+                        cents_map.append(trans)
+                        print ("############_APP",trans,rot,cents_map)
+                        trans,rot=read_tf(trans)
+                    except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
+                            print ( 'No  object TF FOUND')"""
+                #print ('#############',cents_map)
+                #ccs_map=np.asarray(cents_map)
     pose, quat=Floats(),Floats()
     res= SegmentationResponse()
     #pose.data=cents_map
-    pose.data=ccs_map.ravel()
-
+    pose.data=np.asarray(cents).ravel()
+    #print ('##POSE',pose,trans,ccs_map,cents_map    )
     res.poses=pose
     # res.quats=pose
     return res
