@@ -20,6 +20,14 @@ def pose2feedback(pose_robot,quat_robot,timeleft,euclD):
     feed.feedback.timeleft    = timeleft
     feed.feedback.euclD= euclD
     return feed
+
+
+def goal_police(goal):
+    #goal corrector
+    goal_corrected = goal
+
+
+    return goal_corrected
 class pumas_navServer():
 
     def __init__(self):
@@ -29,6 +37,11 @@ class pumas_navServer():
   
     def execute_cb(self, goal):
         
+
+        ##goal police
+        #goal_corrected = goal_police(goal)
+
+        #####
         print (goal)
         x,y,yaw=goal.x ,goal.y,goal.yaw
 
@@ -65,11 +78,11 @@ class pumas_navServer():
             feed = pose2feedback(pose_robot,quat_robot,timeleft,euclD)
             self.pumas_nav_server.publish_feedback(feed.feedback)
         
-            if euclD<=0.2:
-                print ('Close Enough')  
-                result.result.success=1
+            #if euclD<=0.2:
+            #    print ('Close Enough')  
+            #    result.result.success=1
                 
-                break
+            #    break
             if i ==1000:
                 
                 print (euclD)

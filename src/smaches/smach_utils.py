@@ -29,7 +29,7 @@ global listener, broadcaster, tfBuffer, tf_static_broadcaster, scene, rgbd  , he
 global clear_octo_client, goal,navclient,segmentation_server ,df , tf_man , gaze
 rospy.init_node('smach')
 head = moveit_commander.MoveGroupCommander('head')
-gripper =  moveit_commander.MoveGroupCommander('gripper')
+#gripper =  moveit_commander.MoveGroupCommander('gripper')
 #whole_body=moveit_commander.MoveGroupCommander('whole_body')
 arm =  moveit_commander.MoveGroupCommander('arm')
 #broadcaster = tf.TransformBroadcaster()
@@ -58,8 +58,12 @@ navclient=actionlib.SimpleActionClient('/navigate', NavigateAction)   ### PUMAS 
 
 base_vel_pub = rospy.Publisher('/hsrb/command_velocity', Twist, queue_size=10)
 
+
+
 tf_man = TF_MANAGER()
 gaze = GAZE()
+gripper = GRIPPER()
+grasp_base=OMNIBASE()
 
 def strmsg_to_float(s):
     cent_map=[]
@@ -160,3 +164,7 @@ def move_D(target_pose,D):
     goal_pose= target_pose-(target_rob*D/np.linalg.norm(target_rob))
     
     return goal_pose,yaw
+
+#known_loc_lis = rospy.wait_for_message('/known_location/goal', PoseStamped)
+
+#
