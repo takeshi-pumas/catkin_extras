@@ -6,6 +6,9 @@ from std_msgs.msg import String                                # the main module
 from known_locations_tf_server.srv import *
 import pandas as pd
 from geometry_msgs.msg import TransformStamped
+
+global path 
+path = '/home/rusanrod/catkin_extras/src/smaches/known_locations.txt'
 def write_tf(pose, q, child_frame , parent_frame='map'):
     t= TransformStamped()
     t.header.stamp = rospy.Time(0)
@@ -61,7 +64,7 @@ def callback(req):
         trans,quat=read_tf(trans)
         #with  open('known_locations.txt' , 'a') as out:
         
-        with  open('/home/takeshi/Codes/known_locations.txt' , 'a') as out:
+        with  open(path , 'a') as out:
             out.write (req.location_name.data+np_to_str(trans)+np_to_str(quat)  +'\n' )
         print (trans,quat)
         ####################### 
@@ -93,7 +96,8 @@ tf_static_broadcaster = tf2_ros.StaticTransformBroadcaster()
 
 
 #df=pd.read_csv('known_locations.txt')
-df=pd.read_csv('/home/takeshi/Codes/known_locations.txt')##RELATIVIZE PATH?
+
+df=pd.read_csv(path)##RELATIVIZE PATH?
 print (df)
 known_locs=df.values
 if len(df)!=0:
