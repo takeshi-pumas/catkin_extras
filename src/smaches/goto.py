@@ -36,7 +36,7 @@ def request():
 	goal = goal.casefold()
 
 	#Read the "known location" file 
-	path = '/home/takeshi/Codes/known_locations.txt'
+	path = '/home/rusanrod/catkin_extras/src/smaches/known_locations.txt'
 	with open(path,'r') as known_loc:
 		lines = known_loc.readlines()
     #Match goal with known locations 
@@ -55,7 +55,40 @@ def request():
 		# return succ, [0,0,0]
 	# else:
 	return succ, trans
+def request_from_node(location):
+	trans = [0,0,0]
+	rot = [0,0,0,1]
+	print("Where do you want to go?")
+	# goal = input()
+	goal = location.casefold()
 
+	#Read the "known location" file 
+	path = '/home/rusanrod/catkin_extras/src/smaches/known_locations.txt'
+	with open(path,'r') as known_loc:
+		lines = known_loc.readlines()
+    #Match goal with known locations 
+	for line in lines[1:]:
+		line = line.replace('\n', '')
+		line = line.replace(' ', '')
+		name,_ = line.split(',',1)
+		succ = name.casefold() == goal
+		if succ:
+			name,trans[0],trans[1],trans[2],_ = line.split(',',4)
+			for i,t in enumerate(trans):
+				trans[i] = float(t)
+			break
+	if not succ:
+		print("Location goal is not valid")
+		# return succ, [0,0,0]
+	# else:
+	return succ, trans
+def goto(location):
+	status = 0
+	# action
+	succ, trans = request_from_node(location)
+	if succ:
+		status = move_base(*trans,time_out = 20)
+		return status
 def action():
 	#Ros node start
 	rospy.init_node('goto', anonymous=True)

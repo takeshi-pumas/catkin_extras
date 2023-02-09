@@ -375,7 +375,39 @@ class TF_MANAGER():
         rot.append(transf.transform.rotation.w)
 
         return [pos, rot]
+from sensor_msgs.msg import LaserScan
 
+class LineDetector():
+    def __init__(self):
+        self.scan_sub = rospy.Subscriber("/hsrb/base_scan", LaserScan, self._scan_callback)
+        # self.scan_sub = rospy.Subscriber("/hsrb/base_scan/fix", LaserScan, self._scan_callback)
+        self._result = False
+    def _scan_callback(self, scan_msg):
+        # Obtener las lecturas de los puntos del LIDAR
+        ranges = scan_msg.ranges
+
+         # Tomar solo las muestras centrales
+        num_samples = len(ranges)
+        num_central_samples = int(num_samples * 0.05) # valor ajustable
+        start_index = int((num_samples - num_central_samples) / 2)
+        central_ranges = ranges[start_index : start_index + num_central_samples]
+
+        # Calcular la media de las lecturas
+        mean = sum(central_ranges) / len(central_ranges)
+
+        # Calcular la desviación estándar de las lecturas
+        variance = sum((x - mean)**2 for x in central_ranges) / len(central_ranges)
+        std_dev = variance**0.5
+
+        # Verificar si las lecturas se aproximan a ser una línea
+        if std_dev < 0.5: # valor ajustable
+            # rospy.loginfo("Posible línea enfrente")
+            self._result = True
+        else:
+            # rospy.loginfo("No se encontró una línea")
+            self._result = False
+    def line_found(self):
+        return self._result
 def talk(msg):
     talker = rospy.Publisher('/talk_request', Voice, queue_size=10)
     voice = Voice()
