@@ -9,8 +9,47 @@ from hmm_navigation.msg import NavigateAction ,NavigateActionGoal,NavigateAction
 from sensor_msgs.msg import LaserScan
 from geometry_msgs.msg import Twist, PointStamped , PoseStamped
 from visualization_msgs.msg import Marker , MarkerArray
-from std_msgs.msg import Empty
+from std_msgs.msg import Empty, String
+
+import rospkg
+import yaml
 ##################################################
+#YAML reader
+def read_yaml(known_locations_file = '/known_locations.yaml'):
+    rospack = rospkg.RosPack()
+    file_path = rospack.get_path('location_reacher') +'/config_files' + known_locations_file
+
+    with open(file_path, 'r') as file:
+        content = yaml.safe_load(file)
+    return content
+def match_location(location):
+    content = read_yaml()
+    try:
+        return True, content[location]
+    except:
+        return False, 'No location found'
+##################################################
+class location_reacher():
+    def __init__(self):
+        #self.goal = PoseStamped()
+        #self.goal.header.frame_id = 'map'
+        self.positionXYT = [0.0, 0.0, 0.0]
+        #self._location_sub = rospy.Subscriber(
+        #    '/goal_location', String, self._callback)
+    def _callback(self, msg):
+        # print(msg)
+        goal_msg = msg.data.casefold()
+        succ,loc = match_location(goal_msg)
+        if succ:
+            self.positionXYT = loc[:3]
+            #move_base(self.positionXYT[0]['x'],self.positionXYT[1]['y'],self.positionXYT[2]['theta'], time_out = 20)
+            # self._fill_msg()
+        else:
+            print(loc)
+
+##################################################
+
+
 def pose2feedback(pose_robot,quat_robot,timeleft,euclD):
     feed = NavigateActionFeedback()
     feed.feedback.x_robot   = pose_robot[0]
@@ -44,6 +83,14 @@ class pumas_navServer():
         #####
         print (goal)
         x,y,yaw=goal.x ,goal.y,goal.yaw
+        known_loc = goal.known_location.data.casefold()
+
+        if known_loc is not 'None':
+            succ,loc = match_location(known_loc)
+            if succ:
+                XYT = loc[:3]
+                x,y,yaw = XYT[0]['x'],XYT[1]['y'],XYT[2]['theta']
+
 
         success = True
         result = NavigateActionResult()

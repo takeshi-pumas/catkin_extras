@@ -411,6 +411,8 @@ class LineDetector():
 def talk(msg):
     talker = rospy.Publisher('/talk_request', Voice, queue_size=10)
     voice = Voice()
+    voice.interrupting = True
+    voice.queueing = True
     voice.language = 1
     voice.sentence = msg
     talker.publish(voice)
