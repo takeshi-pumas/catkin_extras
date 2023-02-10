@@ -75,12 +75,10 @@ class pumas_navServer():
     
   
     def execute_cb(self, goal):
-        
-
-        ##goal police
+        ######
+        #goal police
         #goal_corrected = goal_police(goal)
-
-        #####
+        ######
         print (goal)
         x,y,yaw=goal.x ,goal.y,goal.yaw
         known_loc = goal.known_location.data.casefold()
@@ -90,7 +88,6 @@ class pumas_navServer():
             if succ:
                 XYT = loc[:3]
                 x,y,yaw = XYT[0]['x'],XYT[1]['y'],XYT[2]['theta']
-
 
         success = True
         result = NavigateActionResult()
@@ -107,60 +104,29 @@ class pumas_navServer():
         goal_pose.pose.orientation.w=rot[3]
         goal_nav_publish.publish(goal_pose)
 
-
-   
         result.result.success=2
         i=0
         while timeout >= rospy.Time.now().to_sec():     
-            i+=1
-            
-            
-            
+            i+=1            
             pose_robot,quat_robot=listener.lookupTransform('/map', 'base_footprint', rospy.Time(0)) 
-            
             euclD=   np.linalg.norm(np.asarray((x,y))- pose_robot[:2])
-        
             timeleft=timeout-rospy.Time.now().to_sec()  
             print (timeleft,'timeleft')   
             feed = pose2feedback(pose_robot,quat_robot,timeleft,euclD)
             self.pumas_nav_server.publish_feedback(feed.feedback)
-        
             #if euclD<=0.2:
             #    print ('Close Enough')  
             #    result.result.success=1
-                
             #    break
             if i ==1000:
-                
                 print (euclD)
                 i=0
-        pub_stop.publish()
-        
-        
-
-            
-        
+        pub_stop.publish()    
         if result.result.success!=1:
             print('time is over')
             print (result)
         self.pumas_nav_server.set_succeeded(result.result)
 
-            
-
-        
-
-
-
-
-
-
-
-
-
-
-
-
-        
 if __name__=="__main__":
     global listener , goal_nav_publish , pub_stop
     rospy.init_node('pumas_navigation_actionlib_server')
