@@ -9,18 +9,15 @@ from object_classification.srv import *
 import tf2_ros    
 from segmentation.msg import *
 
-
 import numpy as np
-
 import ros_numpy
-
-
 import os
 
 from sensor_msgs.msg import Image , LaserScan , PointCloud2
 from geometry_msgs.msg import TransformStamped, Pose
 from tf2_sensor_msgs.tf2_sensor_msgs import do_transform_cloud
 
+#-----------------------------------------------------------------
 global tf_listener, ptcld_lis, broadcaster , bridge
 
 
@@ -39,9 +36,11 @@ tf_static_broadcaster = tf2_ros.StaticTransformBroadcaster()
 #pub = rospy.Publisher('/segmented_images', Image, queue_size=1)
 bridge=CvBridge()
 
+#-----------------------------------------------------------------
 def write_tf(pose, q, child_frame , parent_frame='map'):
     t= TransformStamped()
     t.header.stamp = rospy.Time.now()
+    #t.header.stamp = rospy.Time(0)
     t.header.frame_id =parent_frame
     t.child_frame_id =  child_frame
     t.transform.translation.x = pose[0]
@@ -53,7 +52,7 @@ def write_tf(pose, q, child_frame , parent_frame='map'):
     t.transform.rotation.z = q[2]
     t.transform.rotation.w = q[3]
     return t
-
+#-----------------------------------------------------------------
 def read_tf(t):
     pose=np.asarray((
         t.transform.translation.x,
@@ -68,6 +67,8 @@ def read_tf(t):
         ))
     
     return pose, quat
+
+#-----------------------------------------------------------------
 def correct_points(points_msg,low=0.27,high=1000):
 
     # Function that transforms Point Cloud reference frame from  head, to map. (i.e. sensor coords to map coords )
@@ -76,9 +77,6 @@ def correct_points(points_msg,low=0.27,high=1000):
 
     #data = rospy.wait_for_message('/hsrb/head_rgbd_sensor/depth_registered/rectified_points', PointCloud2)
     np_data=ros_numpy.numpify(points_msg)
-    
-    
-    
 
     try:
         trans = tfBuffer.lookup_transform('map', 'head_rgbd_sensor_link', rospy.Time())
@@ -112,10 +110,10 @@ def correct_points(points_msg,low=0.27,high=1000):
     img[np.isnan(img)]=2
 
     img_corrected = np.where((img<trans[2]*0.96) ,img,5)
-
-
 #    img_corrected = np.where((img<trans[2]+0.07)&(img>trans[2]-0.05) ,img,5)
     return img_corrected , corrected
+
+#-----------------------------------------------------------------
 def plane_seg (points_msg,lower=500 ,higher=50000,reg_ly= 30,reg_hy=600,plt_images=False):
     
     points_data=ros_numpy.numpify(points_msg)
@@ -179,7 +177,7 @@ def plane_seg (points_msg,lower=500 ,higher=50000,reg_ly= 30,reg_hy=600,plt_imag
             else:   
                 print ('cent out of region... rejected')
     return(cents,np.asarray(points), images,hsv_image)
-    
+#-----------------------------------------------------------------    
 
                 
 

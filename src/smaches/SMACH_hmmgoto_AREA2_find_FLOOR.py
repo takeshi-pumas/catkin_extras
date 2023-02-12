@@ -311,8 +311,8 @@ if __name__== '__main__':
 
     with sm:
         #State machine for Restaurant
-        smach.StateMachine.add("SCAN_FLOOR",            ScanFloor(),          transitions = {'failed':'SCAN_FLOOR',   'succ':'GRASP_FROM_FLOOR', 'tries':'END'}) 
         smach.StateMachine.add("INITIAL",               Initial(),          transitions = {'failed':'INITIAL',          'succ':'GOTO_AREA',           'tries':'END'}) 
+        smach.StateMachine.add("SCAN_FLOOR",            ScanFloor(),          transitions = {'failed':'SCAN_FLOOR',   'succ':'GRASP_FROM_FLOOR', 'tries':'END'}) 
         smach.StateMachine.add("GOTO_AREA",            GotoArea(),          transitions = {'failed':'GOTO_AREA',          'succ':'SCAN_FLOOR',           'tries':'END'}) 
         smach.StateMachine.add("PREGRASP_FLOOR",        Pregrasp_Floor(),          transitions = {'failed':'PREGRASP_FLOOR',          'succ':'GRASP_FROM_FLOOR',           'tries':'END'}) 
         smach.StateMachine.add("GRASP_FROM_FLOOR",           Grasp_from_floor(),          transitions = {'failed':'GRASP_FROM_FLOOR',          'succ':'POSTGRASP_FLOOR',           'tries':'END'}) 

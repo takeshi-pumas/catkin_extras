@@ -33,7 +33,7 @@ def trigger_response(request):
                     print('nan')
                 else:
                     t=write_tf(    (x,y,z),(0,0,0,1), 'Object'+str(i), "head_rgbd_sensor_rgb_frame"     )
-                    broadcaster.sendTransform(t)
+                    tf_static_broadcaster.sendTransform(t)
                     #broadcaster.sendTransform((x,y,z),(0,0,0,1), rospy.Time.now(), 'Object'+str(i),"head_rgbd_sensor_rgb_frame")
             
     rospy.sleep(.5)
@@ -41,15 +41,15 @@ def trigger_response(request):
     for i in range(len (cents)):
         #trans,rot=tf_listener.lookupTransform('map', 'Object'+str(i), rospy.Time(0))
         try:
-            trans = tfBuffer.lookup_transform('map', 'Object'+str(i), rospy.Time())
+            trans = tfBuffer.lookup_transform('map', 'Object'+str(i), rospy.Time.now())
                         
             trans,rot=read_tf(trans)
             print ("############tf2",trans,rot)
+            cents_map.append(trans)
         except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
             print ( 'No TF FOUND')
 
 
-        cents_map.append(trans)
     
 
 	    

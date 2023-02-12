@@ -208,14 +208,22 @@ class Goto_face(smach.State):
 
         rospy.loginfo('State : GOING TO FACE PUMAS NAV AND MAP')
         tf_man.change_ref_frame_tf(point_name='Face', new_frame='map')
-        goal_pose,_ = tf_man.getTF(target_frame='Face')
-
         #goal_pose, quat=listener.lookupTransform( 'map','Face', rospy.Time(0))
+        face_pose,_ = tf_man.getTF(target_frame='Face')
+        robot_pose,quat_r = tf_man.getTF(target_frame='base_link')
+        yaw=tf.transformations.euler_from_quaternion(quat_r)[2]
+
+        face_pose=np.asarray(face_pose)
+        robot_pose=np.asarray(robot_pose)
+        face_rob = face_pose-robot_pose
+        goal_pose= face_pose-(face_rob*1.0/np.linalg.norm(face_rob))
+
         print('Face at:',goal_pose[0], goal_pose[1], goal_pose[2])   #X Y YAW AND TIMEOUT
         hcp = gaze.absolute(goal_pose[0], goal_pose[1], 0.0)
+        move_base(goal_pose[0],goal_pose[1], 0.0 ,20  )   #X Y YAW AND TIMEOUT
         head.set_joint_value_target(hcp)
         head.go()
-        move_base(goal_pose[0],goal_pose[1], 0.0 ,50  )   #X Y YAW AND TIMEOUT
+        tf_man.pub_static_tf(pos=goal_pose, point_name='Goal_D', ref='map')
         return 'succ'
 
 class Grasp_from_floor(smach.State):
@@ -239,8 +247,9 @@ class Grasp_from_floor(smach.State):
         #        succ =  eX == 0 and eY == 0
         #        grasp_base.tiny_move(velX=0.2*eX, velY=-0.4*eY, std_time=0.2, MAX_VEL=0.3)
         #prepare arm to grasp pose
+        clear_octo_client()
         floor_pose = [0.0,-2.47,0.0,0.86,-0.032,0.0]
-        h_search = [0.0,-0.80]
+        h_search = [0.0,-0.70]
         AR_starter.call()
         arm.set_joint_value_target(floor_pose)
         arm.go()
@@ -263,8 +272,13 @@ class Grasp_from_floor(smach.State):
                 succ =  eX == 0 and eY == 0
                 grasp_base.tiny_move(velX=0.2*eX, velY=-0.4*eY, std_time=0.2, MAX_VEL=0.3)
         gripper.close()
+        grasp_base.tiny_move(velX=-0.5, std_time=0.5, MAX_VEL=0.1)
+        rospy.sleep(0.5)
         arm.set_named_target('neutral')
         arm.go()
+        head.set_named_target('neutral')
+        head.go()
+        talk("Done, Thanks for your attention")
         return 'succ'
 
 
@@ -292,8 +306,8 @@ def init(node_name):
     AR_starter = rospy.ServiceProxy('/marker/start_recognition',Empty)
     AR_stopper = rospy.ServiceProxy('/marker/stop_recognition',Empty)
     #############################################################################
-    #navclient=actionlib.SimpleActionClient('/navigate', NavigateAction)   ### PUMAS NAV ACTION LIB
-    navclient=actionlib.SimpleActionClient('/navigate_hmm', NavigateAction)   ### HMM NAV
+    navclient=actionlib.SimpleActionClient('/navigate', NavigateAction)   ### PUMAS NAV ACTION LIB
+    #navclient=actionlib.SimpleActionClient('/navigate_hmm', NavigateAction)   ### HMM NAV
     #navclient = #actionlib.SimpleActionClient('/move_base/move', MoveBaseAction)########TOYOTA NAV
     ###############################################################################################
     #navclient = #actionlib.SimpleActionClient('/move_base/move', MoveBaseAction)
@@ -328,5 +342,5 @@ if __name__== '__main__':
         smach.StateMachine.add("WAIT_PUSH_HAND",   Wait_push_hand(),  transitions = {'failed':'WAIT_PUSH_HAND',  'succ':'SCAN_FACE',    'tries':'END'}) 
         smach.StateMachine.add("SCAN_FACE",   Scan_face(),  transitions = {'failed':'SCAN_FACE',  'succ':'GOTO_FACE',    'tries':'INITIAL'}) 
         smach.StateMachine.add("GOTO_FACE",   Goto_face(),  transitions = {'failed':'GOTO_FACE',  'succ':'GRASP_FROM_FLOOR',    'tries':'INITIAL'}) 
-        smach.StateMachine.add("GRASP_FROM_FLOOR",   Grasp_from_floor(),  transitions = {'failed':'GRASP_FROM_FLOOR',  'succ':'END',    'tries':'INITIAL'}) 
+        smach.StateMachine.add("GRASP_FROM_FLOOR",   Grasp_from_floor(),  transitions = {'failed':'GRASP_FROM_FLOOR',  'succ':'END',    'tries':'GRASP_FROM_FLOOR'}) 
     outcome = sm.execute()          

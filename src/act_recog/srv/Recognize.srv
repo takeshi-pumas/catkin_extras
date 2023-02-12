@@ -1,4 +1,5 @@
 int64  in
+int64 visual
 ---
 int64 i_out
 Image im_out
