@@ -67,7 +67,7 @@ def write_yaml(trans,req, known_locations_file = '/known_locations.yaml'):
     data[4]['qy']=          math.trunc(quat[1]*1000)/1000
     data[5]['qz']=          math.trunc(quat[2]*1000)/1000
     data[6]['qw']=          math.trunc(quat[3]*1000)/1000
-    con[req.location_name.data]=data 
+    con[req.location_name]=data 
     
     file_path = rospack.get_path('config_files')  + known_locations_file
 
@@ -108,7 +108,7 @@ def callback(req):
     #print (resp)
     try:
         trans = tfBuffer.lookup_transform('map', 'base_link', rospy.Time())
-        trans.child_frame_id= req.location_name.data
+        trans.child_frame_id= req.location_name
         tf_static_broadcaster.sendTransform(trans)
         
         
@@ -121,12 +121,12 @@ def callback(req):
 
         ###################################################
         #with  open(path , 'a') as out:
-        #    out.write (req.location_name.data+np_to_str(trans)+np_to_str(quat)  +'\n' )
+        #    out.write (req.location_name+np_to_str(trans)+np_to_str(quat)  +'\n' )
         #print (trans,quat)
         ####################### 
 
 
-        resp.success.data= succ
+        resp.success= succ
         return resp
 
 
@@ -134,7 +134,7 @@ def callback(req):
 
     except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
         print ( 'No TF FOUND')
-        resp.success.data= False
+        resp.success= False
         return resp
 
     

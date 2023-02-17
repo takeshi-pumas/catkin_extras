@@ -7,10 +7,16 @@ import numpy as np
 import ros_numpy
 from std_msgs.msg import String
 from tmc_msgs.msg import Voice
-from geometry_msgs.msg import Twist, WrenchStamped, TransformStamped, Pose
+from geometry_msgs.msg import Twist, WrenchStamped, TransformStamped, Pose, Point, Quaternion
 from sensor_msgs.msg import Image as ImageMsg, PointCloud2
 import tmc_control_msgs.msg
 import trajectory_msgs.msg
+
+
+
+import actionlib
+from hmm_navigation.msg import NavigateActionGoal, NavigateAction
+
 
 #import math as m
 #import moveit_commander
@@ -329,13 +335,15 @@ class TF_MANAGER():
         TS.header.stamp = rospy.Time.now()
         TS.header.frame_id = ref
         TS.child_frame_id = point_name
-        TS.transform.translation.x = pos[0]
-        TS.transform.translation.y = pos[1]
-        TS.transform.translation.z = pos[2]
-        TS.transform.rotation.x = rot[0]
-        TS.transform.rotation.y = rot[1]
-        TS.transform.rotation.z = rot[2]
-        TS.transform.rotation.w = rot[3]
+        TS.transform.translation = Point(pos)
+        TS.transform.rotation = Quaternion(rot)
+        # TS.transform.translation.x = pos[0]
+        # TS.transform.translation.y = pos[1]
+        # TS.transform.translation.z = pos[2]
+        # TS.transform.rotation.x = rot[0]
+        # TS.transform.rotation.y = rot[1]
+        # TS.transform.rotation.z = rot[2]
+        # TS.transform.rotation.w = rot[3]
         return TS
 
     def pub_tf(self, pos = [0,0,0], rot = [0,0,0,1] ,point_name ='', ref="map"):
@@ -426,3 +434,43 @@ def set_pose_goal(pos=[0,0,0], rot=[0,0,0,1]):
     pose_goal.position.y = pos[1]
     pose_goal.position.z = pos[2]
     return pose_goal
+
+
+navclient = actionlib.SimpleActionClient('/navigate', NavigateAction)   ### PUMAS NAV ACTION LIB
+
+def move_base(goal_x=0.0,goal_y=0.0,goal_yaw=0.0,time_out=10, known_location='None'):
+    #Create and fill Navigate Action Goal message
+    nav_goal = NavigateActionGoal()
+    nav_goal.goal.x = goal_x
+    nav_goal.goal.y = goal_y
+    nav_goal.goal.yaw = goal_yaw
+    nav_goal.goal.timeout = time_out
+    nav_goal.goal.known_location = known_location
+    print (nav_goal)
+
+    # send message to the action server
+    navclient.send_goal(nav_goal.goal)
+
+    # wait for the action server to complete the order
+    navclient.wait_for_result(timeout=rospy.Duration(time_out))
+
+    # Results of navigation
+    # PENDING         = 0   The goal has yet to be processed by the action server
+    # ACTIVE          = 1   The goal is currently being processed by the action server
+    # PREEMPTED       = 2   The goal received a cancel request after it started executing
+                            # and has since completed its execution (Terminal State)
+    # SUCCEEDED       = 3   The goal was achieved successfully by the action server (Terminal State)
+    # ABORTED         = 4   The goal was aborted during execution by the action server due
+                            # to some failure (Terminal State)
+    # REJECTED        = 5   The goal was rejected by the action server without being processed,
+                            # because the goal was unattainable or invalid (Terminal State)
+    # PREEMPTING      = 6   The goal received a cancel request after it started executing
+                            # and has not yet completed execution
+    # RECALLING       = 7   The goal received a cancel request before it started executing,
+                                # but the action server has not yet confirmed that the goal is canceled
+    # RECALLED        = 8   The goal received a cancel request before it started executing
+                            # and was successfully cancelled (Terminal State)
+    # LOST            = 9   An action client can determine that a goal is LOST. This should not be
+                            # sent over the wire by an action server
+    action_state = navclient.get_state()
+    return navclient.get_state()

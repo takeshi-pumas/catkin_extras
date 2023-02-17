@@ -164,7 +164,3 @@ def move_D(target_pose,D):
     goal_pose= target_pose-(target_rob*D/np.linalg.norm(target_rob))
     
     return goal_pose,yaw
-
-#known_loc_lis = rospy.wait_for_message('/known_location/goal', PoseStamped)
-
-#
