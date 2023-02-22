@@ -79,6 +79,7 @@ class pumas_navServer():
         #goal police
         #goal_corrected = goal_police(goal)
         #########
+        success = True
 
         #Matching known location if given
         x,y,yaw = 0,0,0
@@ -91,7 +92,7 @@ class pumas_navServer():
                 goal.x, goal.y, goal.yaw = x, y, yaw
         else:
             x, y, yaw = goal.x, goal.y, goal.yaw
-        print (goal)
+        # print (goal)
 
         #Fill result message (could be modified)
         result = NavigateActionResult()
@@ -112,8 +113,8 @@ class pumas_navServer():
         while timeout >= rospy.Time.now().to_sec():
 
             #Goal distance and orientation calculation
+            c_pose, q_rob = listener.lookupTransform('map', 'base_link', rospy.Time(0))
             l_pose = c_pose
-            c_pose, q_rob = listener.lookupTransform('/map', 'base_link', rospy.Time(0))
             _,_,rob_yaw = tf.transformations.euler_from_quaternion(q_rob)
             rob_yaw = rob_yaw % (2 * np.pi)
             euclD = np.linalg.norm(np.asarray((x,y)) - c_pose[:2])
@@ -127,34 +128,25 @@ class pumas_navServer():
             movement = np.linalg.norm(np.asarray(c_pose) - np.asarray(l_pose)) >= 0.05 
             state = NS.get_status()
 
-            if state == 1:
-                if not movement:
-                    pub_stop.publish()
-                    goal_nav_publish.publish(goal_pose)
-                else:
-                    timeout = rospy.Time.now().to_sec() + 10
-            elif state == 3:
-                self.pumas_nav_server.set_succeeded()
-            else:
-                print('Else condition')
+            # if state == 1:
+            #     if not movement:
+            #         rospy.loginfo('Not moving')
+            #         # pub_stop.publish()
+            #         # goal_nav_publish.publish(goal_pose)
+            #     else:
+            #         rospy.loginfo('Moving')
+            #         timeout = rospy.Time.now().to_sec() + 10
+            if state == 3:
+                success= True
+                # self.pumas_nav_server.set_succeeded()
 
-            #Por revisar
-            # state = NS.get_status()
-            # print(f'El estado actual del robot es {state}')
-            # if state == 1 and euclD <= 0.2 and abs(anglD) <= 0.1 :
-               # print ('Close Enough')  
-               # result.result.success = 1
-               # break
+        state = NS.get_status()
+        if not success:
+            pub_stop.publish()
+            self.pumas_nav_server.set_aborted()
+        else:
+            self.pumas_nav_server.set_succeeded()
 
-            # if i == 1000:
-                # print (euclD)
-                # i = 0
-        # pub_stop.publish()
-
-        # if result.result.success != 1:
-            # print('time is over')
-            # print (result)
-        
 
 if __name__=="__main__":
     global listener , goal_nav_publish , pub_stop, NS
@@ -170,6 +162,6 @@ if __name__=="__main__":
     listener = tf.TransformListener()
     pub_stop = rospy.Publisher('/navigation/stop', Empty, queue_size=10)
     print ('pumas nav action server available')
-    # NS = nav_status()
+    NS = nav_status()
     s = pumas_navServer()
     rospy.spin()

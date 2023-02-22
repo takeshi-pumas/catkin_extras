@@ -11,6 +11,7 @@ from geometry_msgs.msg import Twist, WrenchStamped, TransformStamped, Pose, Poin
 from sensor_msgs.msg import Image as ImageMsg, PointCloud2
 import tmc_control_msgs.msg
 import trajectory_msgs.msg
+from tmc_msgs.msg import TalkRequestActionGoal, TalkRequestAction 
 
 
 
@@ -168,8 +169,8 @@ class GRIPPER():
         self._grip_cmd_pub = rospy.Publisher('/hsrb/gripper_controller/command',
                                trajectory_msgs.msg.JointTrajectory, queue_size=100)
         self._grip_cmd_force = rospy.Publisher('/hsrb/gripper_controller/grasp/goal',
-        			tmc_control_msgs.msg.GripperApplyEffortActionGoal, queue_size=100)
-        			
+                    tmc_control_msgs.msg.GripperApplyEffortActionGoal, queue_size=100)
+                    
         self._joint_name = "hand_motor_joint"
         self._position = 0.5
         self._velocity = 0.5
@@ -262,26 +263,18 @@ class GAZE():
         self._base = 'base_link'
         self._hand = 'hand_palm_link'
         self._tf_man = TF_MANAGER()
+        self._pub = rospy.Publisher(
+            '/hsrb/head_trajectory_controller/command',
+            trajectory_msgs.msg.JointTrajectory, queue_size=10)
     def _gaze_point(self):
     ###Moves head to make center point of rgbd image to coordinates w.r.t.map
-        # traf1 = self._tfbuff.lookup_transform(self._reference, self._cam, rospy.Time(0))
-        # rospy.sleep(0.5)
-        # traf2 = selftfbuff.lookup_transform(self._reference, self._base, rospy.Time(0)) 
-        # trans,_ = tf2_obj_2_arr(traf1)
-        # _, rot = tf2_obj_2_arr(traf2)
-
 
         trans, dc = self._tf_man.getTF(ref_frame=self._reference,target_frame=self._cam)
         rospy.sleep(0.3)
         dc,rot = self._tf_man.getTF(ref_frame=self._reference, target_frame=self._base)
-
-        # trans,dc = self._tf_man.tf2_obj_2_arr(transformation1)
-        # dc,rot = self._tf_man.tf2_obj_2_arr(transformation2)
-
         e = tf.transformations.euler_from_quaternion(rot)
-
+        
         x_rob, y_rob, z_rob, th_rob = trans[0], trans[1], trans[2], e[2]
-
         D_x = x_rob - self._x
         D_y = y_rob - self._y
         D_z = z_rob - self._z
@@ -291,10 +284,10 @@ class GAZE():
             pan_correct -= 2*np.pi
         if(pan_correct < -np.pi):
             pan_correct += 2*np.pi
-
         if ((pan_correct) > .5 * np.pi):
             print ('Exorcist alert')
             pan_correct=.5*np.pi
+            
         head_pose = [0,0]
         head_pose[0] = pan_correct
         tilt_correct = np.arctan2(D_z,np.linalg.norm((D_x,D_y)))
@@ -302,27 +295,36 @@ class GAZE():
         return head_pose
     
     def absolute(self, x, y, z):
+        #Head gaze to a x, y, z point relative to map
         self._x = x
         self._y = y
         self._z = z
         self._reference = 'map'
-        return self._gaze_point()
+        head_pose =  self._gaze_point()
+        self.set_joint_values(head_pose)
+        return head_pose
     def relative(self, x, y, z):
+        #Head gaze to a x, y, z point relative to base_link
         self._x = x
         self._y = y
         self._z = z
         self._reference = 'base_link'
-        return self._gaze_point()
-    def hand(self, x, y, z):
-        self._x = x
-        self._y = y
-        self._z = z
-        self._reference = 'base_link'
+        head_pose =  self._gaze_point()
+        self.set_joint_values(head_pose)
+        return head_pose
+    def set_joint_values(self, head_pose):
+        # fill ROS message
+        traj = trajectory_msgs.msg.JointTrajectory()
+        traj.joint_names = ["head_pan_joint", "head_tilt_joint"]
+        p = trajectory_msgs.msg.JointTrajectoryPoint()
+        p.positions = head_pose
+        p.velocities = [0, 0]
+        p.time_from_start = rospy.Duration(3)
+        traj.points = [p]
 
-# Funciones aisladas
-
-    
-    
+        # publish ROS message
+        self._pub.publish(traj)
+            
 class TF_MANAGER():
     def __init__(self):
         self._tfbuff = tf2.Buffer()
@@ -416,14 +418,18 @@ class LineDetector():
             self._result = False
     def line_found(self):
         return self._result
-def talk(msg):
-    talker = rospy.Publisher('/talk_request', Voice, queue_size=10)
-    voice = Voice()
-    voice.interrupting = True
-    voice.queueing = True
-    voice.language = 1
-    voice.sentence = msg
-    talker.publish(voice)
+talk_client = actionlib.SimpleActionClient('/talk_request_action', TalkRequestAction)   ### PUMAS NAV ACTION LIB
+
+def talk(msg, time_out = 5):
+    # talker = rospy.Publisher('/talk_request_action/goal', TalkRequestActionGoal, queue_size=10)
+    voice = TalkRequestActionGoal()
+    voice.goal.data.interrupting = True
+    voice.goal.data.queueing = True
+    voice.goal.data.language = 1
+    voice.goal.data.sentence = msg
+    talk_client.send_goal(voice.goal)
+    talk_client.wait_for_result(timeout=rospy.Duration(time_out))
+
 def set_pose_goal(pos=[0,0,0], rot=[0,0,0,1]):
     pose_goal = Pose()
     pose_goal.orientation.x = rot[0]
