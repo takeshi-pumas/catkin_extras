@@ -131,14 +131,6 @@ class pumas_navServer():
             movement = np.linalg.norm(np.asarray(c_pose) - np.asarray(l_pose)) >= 0.05 
             state = NS.get_status()
 
-            # if state == 1:
-            #     if not movement:
-            #         rospy.loginfo('Not moving')
-            #         # pub_stop.publish()
-            #         # goal_nav_publish.publish(goal_pose)
-            #     else:
-            #         rospy.loginfo('Moving')
-            #         timeout = rospy.Time.now().to_sec() + 10
             if state == 3:
                 success= True
                 # self.pumas_nav_server.set_succeeded()
