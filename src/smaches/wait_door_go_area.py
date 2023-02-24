@@ -11,7 +11,8 @@ from geometry_msgs.msg import PoseStamped
 from std_msgs.msg import String
 # import tf2_ros as tf2
 # from tf2_sensor_msgs.tf2_sensor_msgs import do_transform_cloud
-from grasp_utils import *
+# from grasp_utils import *
+from utils.grasp_utils import *
 import actionlib
 from hmm_navigation.msg import NavigateActionGoal, NavigateAction
 
@@ -106,9 +107,9 @@ class Goto_area(smach.State):
     def execute(self,userdata):
         rospy.loginfo('STATE : GOTO_AREA')
         self.tries+=1
-        head.set_joint_value_target([0.0,-0.5])
-        head.go()
-        rospy.sleep(1.0)
+        # head.set_joint_value_target([0.0,-0.5])
+        # head.go()
+        # rospy.sleep(1.0)
         if self.tries==5:
             return 'tries'
         move_base(known_location='living_room')

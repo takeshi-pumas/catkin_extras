@@ -12,6 +12,7 @@ from geometry_msgs.msg import Twist, PointStamped, PoseStamped, Quaternion, Poin
 from visualization_msgs.msg import Marker, MarkerArray
 from std_msgs.msg import Empty, String
 
+from utils.grasp_utils import *
 import rospkg
 import yaml
 
@@ -94,6 +95,8 @@ class pumas_navServer():
             x, y, yaw = goal.x, goal.y, goal.yaw
         # print (goal)
 
+
+        head.set_joint_values(head_pose = [0.0,-0.5])
         #Fill result message (could be modified)
         result = NavigateActionResult()
         rate = rospy.Rate(10)
@@ -146,6 +149,7 @@ class pumas_navServer():
             self.pumas_nav_server.set_aborted()
         else:
             self.pumas_nav_server.set_succeeded()
+        head.set_joint_values(head_pose=[0.0,0.0])
 
 
 if __name__=="__main__":
@@ -157,7 +161,7 @@ if __name__=="__main__":
     #pub3= rospy.Publisher('aa/Markov_route',MarkerArray,queue_size=1)
     #pub_goal= rospy.Publisher('/clicked_point',PointStamped,queue_size=1)
 
-
+    head = GAZE()
     goal_nav_publish = rospy.Publisher('/move_base_simple/goal', PoseStamped, queue_size=1)
     listener = tf.TransformListener()
     pub_stop = rospy.Publisher('/navigation/stop', Empty, queue_size=10)
