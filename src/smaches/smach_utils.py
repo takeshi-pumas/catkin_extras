@@ -10,6 +10,7 @@ import tf2_ros
 from tf2_sensor_msgs.tf2_sensor_msgs import do_transform_cloud
 from object_classification.srv import *
 from segmentation.srv import *
+from ros_whisper_vosk.srv import GetSpeech
 #import face_recognition 
 import cv2  
 import rospy 
@@ -26,7 +27,7 @@ import time
 from grasp_utils import *
 
 global listener, broadcaster, tfBuffer, tf_static_broadcaster, scene, rgbd  , head,whole_body,arm,gripper 
-global clear_octo_client, goal,navclient,segmentation_server ,df , tf_man , gaze
+global clear_octo_client, goal,navclient,segmentation_server ,df , tf_man , gaze ,speech_recog_server
 rospy.init_node('smach')
 head = moveit_commander.MoveGroupCommander('head')
 #gripper =  moveit_commander.MoveGroupCommander('gripper')
@@ -48,7 +49,7 @@ segmentation_server = rospy.ServiceProxy('/segment' , Segmentation)
 #whole_body.set_workspace([-6.0, -6.0, 6.0, 6.0]) 
 scene = moveit_commander.PlanningSceneInterface()
 df=pd.read_csv('/home/takeshi/Codes/known_locations.txt')
-
+speech_recog_server = rospy.ServiceProxy('/speech_recognition/vosk_service' ,GetSpeech)
 #############################################################################
 navclient=actionlib.SimpleActionClient('/navigate', NavigateAction)   ### PUMAS NAV ACTION LIB
 #navclient=actionlib.SimpleActionClient('/navigate_hmm', NavigateAction)   ### HMM NAV
