@@ -5,4 +5,4 @@ src/hsrb_moveit-v0.6.0-community/hsrb_moveit_config/launch/moveit.rviz
 src/hmm_navigation/scripts/hmm_nav/aff_prop_class.joblib
 src/smaches/__pycache__/
 src/smaches/.ipynb_checkpoints/
-
+src/hmm_navigation/scripts/__pycache__/
