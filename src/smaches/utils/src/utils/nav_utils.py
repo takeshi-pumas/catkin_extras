@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import imports
 from utils.misc_utils import *
 
 class OMNIBASE():
@@ -43,7 +42,7 @@ class OMNIBASE():
             self.velT = velT
         self._move_base_time()
     # Move base using navigation (absolute movement)
-	def move_base(self,goal_x=0.0,goal_y=0.0,goal_yaw=0.0,time_out=10, known_location='None'):
+    def move_base(self,goal_x=0.0,goal_y=0.0,goal_yaw=0.0,time_out=10, known_location='None'):
     	#Create and fill Navigate Action Goal message
     	nav_goal = NavigateActionGoal()
     	nav_goal.goal.x = goal_x
@@ -71,30 +70,20 @@ class OMNIBASE():
     	# LOST            = 9
     	action_state = self.navclient.get_state()
     	return action_state
-
-	def move_d_to(self, target_distance = 0.5, target_link='base_link'):
+    def move_d_to(self, target_distance = 0.5, target_link='None'):
     	###Face towards Targetlink and get target distance close
-    	target, _ = self._tf_man.getTF(target_frame = target_link)
-    	robot, _ = self._tf_man.getTF(target_frame = 'base_link')
-    	# try:
-        # 	obj_tar,_ =  listener.lookupTransform('map',target_link,rospy.Time(0))
-    	# except(tf.LookupException):
-	    #     print ('no  tf found')
-        # return False
-    	
-    	# robot, _ =  listener.lookupTransform('map','base_link',rospy.Time(0))
-    	# pose, quat =  listener.lookupTransform('base_link',target_link,rospy.Time(0))
+    	if target_link != 'None':
+    		target, _ = self._tf_man.getTF(target_frame = target_link)
+    		robot, _ = self._tf_man.getTF(target_frame = 'base_link')
+    		pose,_ = self._tf_man.getTF(target_frame= target_link, ref_frame='base_link')
 
     	# D vector: robot-target
     	D = np.asarray(target) - np.asarray(robot)
     	d = D/np.linalg.norm(D)
-    	if target_distance==-1:
-	        new_pose = np.asarray(robot)
-	    else:
-        	new_pose = np.asarray(target) - target_distance*d
-    
-    	# broadcaster.sendTransform(new_pose,(0,0,0,1), rospy.Time.now(), 'D_from_object','map')
-    	# wb_v= whole_body.get_current_joint_values()
-    	alpha = np.arctan2(pose[1],pose[0])
+    	if target_distance == -1:
+    		new_pose = np.asarray(robot)
+    	else:
+    		new_pose = np.asarray(target) - target_distance * d
+    	alpha = -np.arctan2(pose[0],pose[1])
     	succ = self.move_base(goal_x = new_pose[0], goal_y = new_pose[1], goal_yaw = alpha)
-    	return succ  
+    	return succ

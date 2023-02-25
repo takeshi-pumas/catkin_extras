@@ -1,5 +1,20 @@
 # -*- coding: utf-8 -*-
-import imports
+import cv2 
+import tf as tf
+import tf2_ros as tf2
+import rospy
+import numpy as np
+import ros_numpy
+from std_msgs.msg import String
+from tmc_msgs.msg import Voice
+from geometry_msgs.msg import Twist, WrenchStamped, TransformStamped, Pose, Point, Quaternion
+from sensor_msgs.msg import Image as ImageMsg, PointCloud2
+import tmc_control_msgs.msg
+import trajectory_msgs.msg
+from tmc_msgs.msg import TalkRequestActionGoal, TalkRequestAction 
+import actionlib
+from hmm_navigation.msg import NavigateActionGoal, NavigateAction
+from sensor_msgs.msg import LaserScan
 
 #Class to get XTION camera info (head)
 class RGBD():
@@ -130,8 +145,8 @@ class TF_MANAGER():
         TS.header.stamp = rospy.Time.now()
         TS.header.frame_id = ref
         TS.child_frame_id = point_name
-        TS.transform.translation = Point(pos)
-        TS.transform.rotation = Quaternion(rot)
+        TS.transform.translation = Point(*pos)
+        TS.transform.rotation = Quaternion(*rot)
         return TS
 
     def pub_tf(self, pos = [0,0,0], rot = [0,0,0,1] ,point_name ='', ref="map"):
