@@ -51,7 +51,6 @@ def pose2feedback(pose_robot,quat_robot,timeleft,euclD):
     feed = NavigateActionFeedback()
     feed.feedback.x_robot   = pose_robot[0]
     feed.feedback.y_robot   = pose_robot[1]
-    # euler = tf.transformations.euler_from_quaternion((quat_robot[0] ,quat_robot[1] ,quat_robot[2] ,quat_robot[3])) 
     _,_,yaw = tf.transformations.euler_from_quaternion(quat_robot) 
     feed.feedback.yaw_robot = yaw
     feed.feedback.timeleft  = timeleft
@@ -110,14 +109,11 @@ class pumas_navServer():
         # result.result.success = 2
         i = 0
 
-        l_pose, _ = listener.lookupTransform('/map', 'base_link', rospy.Time(0))
-        movement = False
         #Feedback publisher and timeout checker
-        while timeout >= rospy.Time.now().to_sec():
+        while timeout >= rospy.Time.now().to_sec() and not success:
 
             #Goal distance and orientation calculation
-            c_pose, q_rob = listener.lookupTransform('map', 'base_link', rospy.Time(0))
-            l_pose = c_pose
+            c_pose, q_rob = tf_man.getTF(target_frame='base_link')
             _,_,rob_yaw = tf.transformations.euler_from_quaternion(q_rob)
             rob_yaw = rob_yaw % (2 * np.pi)
             euclD = np.linalg.norm(np.asarray((x,y)) - c_pose[:2])
@@ -128,7 +124,6 @@ class pumas_navServer():
             feed = pose2feedback(c_pose, q_rob, timeleft, euclD)
             self.pumas_nav_server.publish_feedback(feed.feedback)
 
-            movement = np.linalg.norm(np.asarray(c_pose) - np.asarray(l_pose)) >= 0.05 
             state = NS.get_status()
 
             if state == 3:
@@ -145,7 +140,7 @@ class pumas_navServer():
 
 
 if __name__=="__main__":
-    global listener , goal_nav_publish , pub_stop, NS
+    global goal_nav_publish , pub_stop, NS, tf_man
     rospy.init_node('pumas_navigation_actionlib_server')
     
     #pub = rospy.Publisher('/hsrb/command_velocity', Twist, queue_size=1)
@@ -155,7 +150,7 @@ if __name__=="__main__":
 
     head = GAZE()
     goal_nav_publish = rospy.Publisher('/move_base_simple/goal', PoseStamped, queue_size=1)
-    listener = tf.TransformListener()
+    tf_man = TF_MANAGER()
     pub_stop = rospy.Publisher('/navigation/stop', Empty, queue_size=10)
     print ('pumas nav action server available')
     NS = nav_status()

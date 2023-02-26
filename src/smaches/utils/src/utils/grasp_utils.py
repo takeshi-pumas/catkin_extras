@@ -27,10 +27,12 @@ class WRIST_SENSOR():
 #Class to handle end effector (gripper)
 class GRIPPER():
     def __init__(self):
-        self._grip_cmd_pub = rospy.Publisher('/hsrb/gripper_controller/command',
-                               trajectory_msgs.msg.JointTrajectory, queue_size=100)
-        self._grip_cmd_force = rospy.Publisher('/hsrb/gripper_controller/grasp/goal',
-                    tmc_control_msgs.msg.GripperApplyEffortActionGoal, queue_size=100)
+        self._grip_cmd_pub = rospy.Publisher(
+            '/hsrb/gripper_controller/command',
+            trajectory_msgs.msg.JointTrajectory, queue_size=100)
+        self._grip_cmd_force = rospy.Publisher(
+            '/hsrb/gripper_controller/grasp/goal',
+            tmc_control_msgs.msg.GripperApplyEffortActionGoal, queue_size=100)
                     
         self._joint_name = "hand_motor_joint"
         self._position = 0.5
@@ -93,12 +95,13 @@ class GAZE():
     def _gaze_point(self):
     ###Moves head to make center point of rgbd image to coordinates w.r.t.map
 
-        trans, dc = self._tf_man.getTF(ref_frame=self._reference,target_frame=self._cam)
+        trans,_ = self._tf_man.getTF(ref_frame=self._reference,target_frame=self._cam)
         rospy.sleep(0.3)
-        dc,rot = self._tf_man.getTF(ref_frame=self._reference, target_frame=self._base)
-        e = tf.transformations.euler_from_quaternion(rot)
+        _,rot = self._tf_man.getTF(ref_frame=self._reference, target_frame=self._base)
+        _,_, th_rob = tf.transformations.euler_from_quaternion(rot)
         
-        x_rob, y_rob, z_rob, th_rob = trans[0], trans[1], trans[2], e[2]
+        # x_rob, y_rob, z_rob, th_rob = trans[0], trans[1], trans[2], e[2]
+        x_rob, y_rob, z_rob = *trans
         D_x = x_rob - self._x
         D_y = y_rob - self._y
         D_z = z_rob - self._z
@@ -151,6 +154,6 @@ class GAZE():
 
 def set_pose_goal(pos=[0,0,0], rot=[0,0,0,1]):
     pose_goal = Pose()
-    pose_goal.position = Point(pos)
-    pose_goal.orientation = Quaternion(rot)
+    pose_goal.position = Point(*pos)
+    pose_goal.orientation = Quaternion(*rot)
     return pose_goal

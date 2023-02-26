@@ -76,14 +76,14 @@ class OMNIBASE():
     		target, _ = self._tf_man.getTF(target_frame = target_link)
     		robot, _ = self._tf_man.getTF(target_frame = 'base_link')
     		pose,_ = self._tf_man.getTF(target_frame= target_link, ref_frame='base_link')
+        else:
+            return False
+        # delta vector: robot-target
+        delta = np.asarray(target) - np.asarray(robot)
+        dist = np.linalg.norm(delta)
+        theta_goal = np.arctan2(delta[1], delta[0])
 
-    	# D vector: robot-target
-    	D = np.asarray(target) - np.asarray(robot)
-    	d = D/np.linalg.norm(D)
-    	if target_distance == -1:
-    		new_pose = np.asarray(robot)
-    	else:
-    		new_pose = np.asarray(target) - target_distance * d
-    	alpha = -np.arctan2(pose[0],pose[1])
-    	succ = self.move_base(goal_x = new_pose[0], goal_y = new_pose[1], goal_yaw = alpha)
-    	return succ
+        x_goal = target[0] - target_distance * np.cos(theta_goal)
+        y_goal = target[1] - target_distance * np.sin(theta_goal)
+    	succ = self.move_base(goal_x = x_goal, goal_y = y_goal, goal_yaw = theta_goal)
+    	return True
