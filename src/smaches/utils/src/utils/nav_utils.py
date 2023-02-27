@@ -73,17 +73,15 @@ class OMNIBASE():
     def move_d_to(self, target_distance = 0.5, target_link='None'):
     	###Face towards Targetlink and get target distance close
     	if target_link != 'None':
-    		target, _ = self._tf_man.getTF(target_frame = target_link)
-    		robot, _ = self._tf_man.getTF(target_frame = 'base_link')
-    		pose,_ = self._tf_man.getTF(target_frame= target_link, ref_frame='base_link')
-        else:
-            return False
-        # delta vector: robot-target
+            target, _ = self._tf_man.getTF(target_frame = target_link)
+            robot, _ = self._tf_man.getTF(target_frame = 'base_link')
+            pose,_ = self._tf_man.getTF(target_frame= target_link, ref_frame='base_link')
+        else :return False
         delta = np.asarray(target) - np.asarray(robot)
         dist = np.linalg.norm(delta)
         theta_goal = np.arctan2(delta[1], delta[0])
 
         x_goal = target[0] - target_distance * np.cos(theta_goal)
         y_goal = target[1] - target_distance * np.sin(theta_goal)
-    	succ = self.move_base(goal_x = x_goal, goal_y = y_goal, goal_yaw = theta_goal)
-    	return True
+        succ = self.move_base(goal_x = x_goal, goal_y = y_goal, goal_yaw = theta_goal)
+        return True

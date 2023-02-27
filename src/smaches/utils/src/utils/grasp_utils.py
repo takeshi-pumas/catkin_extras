@@ -100,8 +100,8 @@ class GAZE():
         _,rot = self._tf_man.getTF(ref_frame=self._reference, target_frame=self._base)
         _,_, th_rob = tf.transformations.euler_from_quaternion(rot)
         
-        # x_rob, y_rob, z_rob, th_rob = trans[0], trans[1], trans[2], e[2]
-        x_rob, y_rob, z_rob = *trans
+        x_rob, y_rob, z_rob, th_rob = trans[0], trans[1], trans[2], e[2]
+        #x_rob, y_rob, z_rob = *trans
         D_x = x_rob - self._x
         D_y = y_rob - self._y
         D_z = z_rob - self._z
