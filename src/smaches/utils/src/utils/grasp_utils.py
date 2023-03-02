@@ -100,7 +100,7 @@ class GAZE():
         _,rot = self._tf_man.getTF(ref_frame=self._reference, target_frame=self._base)
         _,_, th_rob = tf.transformations.euler_from_quaternion(rot)
         
-        x_rob, y_rob, z_rob, th_rob = trans[0], trans[1], trans[2], e[2]
+        x_rob, y_rob, z_rob = trans[0], trans[1], trans[2]
         #x_rob, y_rob, z_rob = *trans
         D_x = x_rob - self._x
         D_y = y_rob - self._y
@@ -151,6 +151,11 @@ class GAZE():
 
         # publish ROS message
         self._pub.publish(traj)
+        
+    def to_tf(self, target_frame='None'):
+        if target_frame is not 'None':
+            xyz,_ = self._tf_man.getTF(target_frame=target_frame)
+            self.absolute(*xyz)
 
 def set_pose_goal(pos=[0,0,0], rot=[0,0,0,1]):
     pose_goal = Pose()
