@@ -82,16 +82,14 @@ class pumas_navServer():
         success = True
 
         #Matching known location if given
-        x,y,yaw = 0,0,0
+        x, y, yaw = goal.x, goal.y, goal.yaw
         known_loc = goal.known_location.casefold()
         if known_loc != 'None':
             succ,loc = match_location(known_loc)
             if succ:
                 XYT = loc[:3]
                 x, y, yaw = XYT[0]['x'], XYT[1]['y'], XYT[2]['theta'] #it could change
-                goal.x, goal.y, goal.yaw = x, y, yaw
-        else:
-            x, y, yaw = goal.x, goal.y, goal.yaw
+                # goal.x, goal.y, goal.yaw = x, y, yaw
         # print (goal)
 
 
