@@ -49,17 +49,15 @@ class Wait_push_hand(smach.State):
     def execute(self,userdata):
 
         
-        rospy.loginfo('STATE : INITIAL')
-        print('robot neutral pose')
+        rospy.loginfo('STATE : Wait for Wait_push_hand')
+        print('Waiting for hand to be pushed')
 
         print('Try',self.tries,'of 3 attempts') 
         self.tries+=1
         if self.tries==3:
             return 'tries'
-        #takeshi_talk_pub.publish(string_to_Voice('Gently, ...  push my hand to begin'))
         talk('Gently, ...  push my hand to begin')
         succ= wait_for_push_hand(100)
-        #succ = True        #HEY THIS MUST BE COMMENTED DEBUGUING
 
         if succ:
             return 'succ'
@@ -121,19 +119,34 @@ class Scan_face(smach.State):
 
 
 
-                talk('I found you, I believe you are'+ res.Ids.ids[0].data)
+                talk('I found you, I Think you are .'+ res.Ids.ids[0].data)
                 
-                try:
-                    trans,quat = tf_man.getTF(target_frame='head_rgbd_sensor_link')
-                except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
-                    print ( 'No TF FOUND')
+               
                 trans= np.zeros(3)
+                trans[2]+= res.Ds.data[0]
 
-                trans[2]+= res.Ds.data[0]##HALF DISTANCE
+                #print (trans)
 
-                #tf_man.pub_static_tf(pos=trans, point_name='Face', ref='head_rgbd_sensor_link')
-                
-                rospy.sleep(0.9)
+                tf_man.pub_static_tf(pos=trans, point_name=res.Ids.ids[0].data, ref='head_rgbd_sensor_link')
+                rospy.sleep(0.3)
+                tf_man.change_ref_frame_tf(res.Ids.ids[0].data)
+                #############################Move D to target###############################################
+                robot,robotquat=tf_man.getTF('base_link')
+                #print ('robotpose',robot)
+                target,targetquat=tf_man.getTF(res.Ids.ids[0].data)
+                #print ('targetpose',target)
+                delta = (         (np.asarray(target) - np.asarray(robot))/np.linalg.norm(np.asarray(target) - np.asarray(robot)  )   )    *0.5
+                #print ('delta',delta)
+                goal_D = robot + delta
+                #goal_D[-1]=0
+                #print('goal_D',goal_D)
+                tf_man.pub_static_tf(pos=goal_D, point_name='face_D', ref='map')
+                tf_man.change_ref_frame_tf('face_D  ')
+                goal,_=tf_man.getTF('face_D')
+                res=omni_base.move_base(goal_x= goal_D[0] , goal_y = goal_D[1], goal_yaw= tf.transformations.euler_from_quaternion(robotquat)[2]    )
+                ############
+                print(res)
+
                 return 'succ'
 
 class New_face(smach.State):
@@ -156,9 +169,11 @@ class New_face(smach.State):
         succ=head.go() 
         talk('Please, tell me your name')
         res=speech_recog_server()
+        talk( 'Hello'+ res.data )
         img=rgbd.get_image()
         res2=train_face(img,res.data)
         print(res2)
+        talk ('I am  learning your face, please stare at me')
         
 
 
@@ -172,6 +187,58 @@ class New_face(smach.State):
             return 'succ'
         else:
             return 'failed'
+
+class Goto_living_room(smach.State):
+    def __init__(self):
+        smach.State.__init__(self,outcomes=['succ','failed','tries'])
+        self.tries=0
+
+        
+    def execute(self,userdata):
+
+        
+        rospy.loginfo('STATE : navigate to known location')
+
+        print('Try',self.tries,'of 3 attempts') 
+        self.tries+=1
+        if self.tries==3:
+            return 'tries'
+        talk('Navigating to ,living room')
+        res= omni_base.move_base(known_location='living_room')
+        print (res)
+
+        if res==3:
+            return 'succ'
+        else:
+            talk('Navigation Failed, retrying')
+            return 'failed'
+
+class Goto_face(smach.State):
+    def __init__(self):
+        smach.State.__init__(self,outcomes=['succ','failed','tries'])
+        self.tries=0
+
+        
+    def execute(self,userdata):
+
+        
+        rospy.loginfo('STATE : navigate to known location')
+
+        print('Try',self.tries,'of 3 attempts') 
+        self.tries+=1
+        if self.tries==3:
+            return 'tries'
+        res= omni_base.move_base
+
+        print (res)
+        talk('Navigating to ,living room')
+
+        if res==3:
+            return 'succ'
+        else:
+            talk('Navigation Failed, retrying')
+            return 'failed'
+
 
 
 def init(node_name):
@@ -194,11 +261,15 @@ if __name__== '__main__':
     with sm:
         #State machine for Restaurant
         #smach.StateMachine.add("INITIAL",           Initial(),          transitions = {'failed':'INITIAL',          'succ':'WAIT_PUSH_HAND',           'tries':'END'}) 
-        #smach.StateMachine.add("WAIT_PUSH_HAND",   Wait_push_hand(),  transitions = {'failed':'WAIT_PUSH_HAND',  'succ':'SCAN_FACE',    'tries':'END'}) 
         
-        smach.StateMachine.add("INITIAL",           Initial(),          transitions = {'failed':'INITIAL',          'succ':'SCAN_FACE'      ,           'tries':'END'}) 
+        smach.StateMachine.add("INITIAL",           Initial(),          transitions = {'failed':'INITIAL',          'succ':'WAIT_PUSH_HAND'      ,           'tries':'END'}) 
         smach.StateMachine.add("SCAN_FACE",   Scan_face(),  transitions = {'failed':'SCAN_FACE'          ,  'unknown':'NEW_FACE' ,       'succ':'END'   ,           'tries':'INITIAL'}) 
+        smach.StateMachine.add("WAIT_PUSH_HAND",   Wait_push_hand(),  transitions = {'failed':'WAIT_PUSH_HAND',  'succ':'SCAN_FACE',    'tries':'END'}) 
         smach.StateMachine.add("NEW_FACE",           New_face(),          transitions = {'failed':'INITIAL',          'succ':'END'      ,           'tries':'END'}) 
+        smach.StateMachine.add("GOTO_FACE",           Goto_face(),          transitions = {'failed':'GOTO_FACE',          'succ':'GOTO_LIVING_ROOM'      ,           'tries':'END'}) 
+
+        smach.StateMachine.add("GOTO_LIVING_ROOM",           Goto_living_room(),          transitions = {'failed':'GOTO_LIVING_ROOM',          'succ':'END'      ,           'tries':'END'}) 
+
 
         
     outcome = sm.execute()          
