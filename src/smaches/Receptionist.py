@@ -229,7 +229,10 @@ class Goto_living_room_2(smach.State):
             return 'tries'
         talk('Navigating to ,living room')
         res= omni_base.move_base(known_location='living_room')
-        #res= omni_base.move_base(known_location='living_room')   #MOVE REL RUBEN
+        robot,robotquat=tf_man.getTF('base_link')
+        new_yaw=(tf.transformations.euler_from_quaternion(robotquat)[2]+np.pi)%2*np.pi
+
+        res= omni_base.move_base(robot[0],robot[1],new_yaw) ### go to living room an do a 180
         print (res)
 
         if res==3:
@@ -264,7 +267,7 @@ class Goto_face(smach.State):
             talk('Navigation Failed, retrying')
             return 'failed'
 
-class Find_sitting_place()(smach.State):
+class Find_sitting_place(smach.State):
     def __init__(self):
         smach.State.__init__(self,outcomes=['succ','failed','tries'])
         self.tries=0
@@ -342,10 +345,10 @@ if __name__== '__main__':
         smach.StateMachine.add("NEW_FACE",           New_face(),          transitions = {'failed':'INITIAL',          'succ':'END'      ,           'tries':'END'}) 
         smach.StateMachine.add("GOTO_FACE",           Goto_face(),          transitions = {'failed':'GOTO_FACE',          'succ':'GOTO_LIVING_ROOM'      ,           'tries':'END'}) 
         smach.StateMachine.add("GOTO_LIVING_ROOM",           Goto_living_room(),          transitions = {'failed':'GOTO_LIVING_ROOM',          'succ':'FIND_SITTING_PLACE'      ,           'tries':'END'})
-        smach.StateMachine.add("FIND_SITTING_PLACE",           Find_sitting_place(),          transitions = {'failed':'GOTO_LIVING_ROOM_2',          'succ':'SIT_GUEST'      ,           'tries':'END'}) 
+        smach.StateMachine.add("FIND_SITTING_PLACE",           Find_sitting_place(),          transitions = {'failed':'GOTO_LIVING_ROOM_2',          'succ':'END'      ,           'tries':'END'}) 
         smach.StateMachine.add("GOTO_LIVING_ROOM_2",           Goto_living_room_2(),          transitions = {'failed':'GOTO_LIVING_ROOM',          'succ':'END'      ,           'tries':'END'})
-        smach.StateMachine.add("SIT_GUEST",           Sit_guest(),          transitions = {'failed':'GOTO_LIVING_ROOM',          'succ':'INTRODUCE_GUEST'      ,           'tries':'END'}) 
-        smach.StateMachine.add("INTRODUCE_GUEST",           Introduce_guest(),          transitions = {'failed':'GOTO_LIVING_ROOM',          'succ':'INTRODUCE_GUEST'      ,           'tries':'END'}) 
+        #smach.StateMachine.add("SIT_GUEST",           Sit_guest(),          transitions = {'failed':'GOTO_LIVING_ROOM',          'succ':'INTRODUCE_GUEST'      ,           'tries':'END'}) 
+        #smach.StateMachine.add("INTRODUCE_GUEST",           Introduce_guest(),          transitions = {'failed':'GOTO_LIVING_ROOM',          'succ':'INTRODUCE_GUEST'      ,           'tries':'END'}) 
         
         
         
