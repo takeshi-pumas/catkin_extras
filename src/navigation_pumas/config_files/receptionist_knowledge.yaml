@@ -1,0 +1,39 @@
+##Places 
+Places: 
+  Place_1:
+    occupied: 'None'
+    location: 
+      x: 0.0
+      y: 0.0
+      theta: 0.0
+  Place_2:
+    occupied: 'None'
+    location: 
+      x: 0.0
+      y: 0.0
+      theta: 0.0
+  Place_3:
+    occupied: 'None'
+    location: 
+      x: 0.0
+      y: 0.0
+      theta: 0.0
+
+##People
+People: 
+  Host:
+    name: 'None'
+    location: 'None'
+    drink: 'None'
+  Guest_1:
+    name: 'None'
+    location: 'None'
+    drink: 'None'
+  Guest_2:
+    name: 'None'
+    location: 'None'
+    drink: 'None'
+  Guest_3:
+    name: 'None'
+    location: 'None'
+    drink: 'None'

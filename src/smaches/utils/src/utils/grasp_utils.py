@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from utils.misc_utils import *
-
+from utils.nav_utils import OMNIBASE
 
 
 #Class to get wrist sensor info (Force and torque)
@@ -94,51 +94,54 @@ class GAZE():
             trajectory_msgs.msg.JointTrajectory, queue_size=10)
     def _gaze_point(self):
     ###Moves head to make center point of rgbd image to coordinates w.r.t.map
-
         trans,_ = self._tf_man.getTF(ref_frame=self._reference,target_frame=self._cam)
         rospy.sleep(0.3)
         _,rot = self._tf_man.getTF(ref_frame=self._reference, target_frame=self._base)
         _,_, th_rob = tf.transformations.euler_from_quaternion(rot)
         
         x_rob, y_rob, z_rob = trans[0], trans[1], trans[2]
-        #x_rob, y_rob, z_rob = *trans
         D_x = x_rob - self._x
         D_y = y_rob - self._y
         D_z = z_rob - self._z
         D_th = np.arctan2(D_y,D_x)
+        #pan: horizontal angle, tilt: vertical angle
+        #keep pan angle between -2*pi and 2*pi
         pan_correct = (- th_rob + D_th + np.pi) % (2*np.pi)
-        if(pan_correct > np.pi):
-            pan_correct -= 2*np.pi
-        if(pan_correct < -np.pi):
-            pan_correct += 2*np.pi
-        if ((pan_correct) > .5 * np.pi):
+        #pan mapping from pi and -pi
+        if pan_correct > np.pi:
+            pan_correct -= 2 * np.pi
+        elif pan_correct < -np.pi:
+            pan_correct += 2 * np.pi
+        tilt_correct = -np.arctan2(D_z,np.linalg.norm((D_x,D_y)))
+        #pan exorcist alert 
+        if abs(pan_correct) > 0.5 * np.pi:
             print ('Exorcist alert')
-            pan_correct=.5*np.pi
-            
-        head_pose = [0,0]
-        head_pose[0] = pan_correct
-        tilt_correct = np.arctan2(D_z,np.linalg.norm((D_x,D_y)))
-        head_pose [1] = -tilt_correct
-        return head_pose
+            # pan_correct=0.5*np.pi
+            self._turn_base_gaze()
+            return [0.0, tilt_correct]
+            # return self._gaze_point()
+        else:    
+            head_pose = [pan_correct,  tilt_correct]
+            return head_pose
     
+    def _gaze_abs_rel(self, x, y, z):
+        self._x = x
+        self._y = y
+        self._z = z
+        head_pose =  self._gaze_point()
+        self.set_joint_values(head_pose)
+        return head_pose
+
     def absolute(self, x, y, z):
         #Head gaze to a x, y, z point relative to map
-        self._x = x
-        self._y = y
-        self._z = z
         self._reference = 'map'
-        head_pose =  self._gaze_point()
-        self.set_joint_values(head_pose)
-        return head_pose
+        return self._gaze_abs_rel(x,y,z)
+
     def relative(self, x, y, z):
         #Head gaze to a x, y, z point relative to base_link
-        self._x = x
-        self._y = y
-        self._z = z
         self._reference = 'base_link'
-        head_pose =  self._gaze_point()
-        self.set_joint_values(head_pose)
-        return head_pose
+        return self._gaze_abs_rel(x,y,z)
+
     def set_joint_values(self, head_pose):
         # fill ROS message
         traj = trajectory_msgs.msg.JointTrajectory()
@@ -151,11 +154,27 @@ class GAZE():
 
         # publish ROS message
         self._pub.publish(traj)
-        
+
     def to_tf(self, target_frame='None'):
-        if target_frame is not 'None':
+        if target_frame != 'None':
             xyz,_ = self._tf_man.getTF(target_frame=target_frame)
+            rospy.sleep(0.3)
             self.absolute(*xyz)
+
+    def _turn_base_gaze(self):
+        self._tf_man.pub_static_tf(pos=[self._x,self._y,self._z], point_name='gaze')
+        base = OMNIBASE()
+        succ = False
+        THRESHOLD = 0.05
+        while not succ:
+            xyz,_=self._tf_man.getTF(target_frame='gaze', ref_frame=self._base)
+            eT = np.arctan2(xyz[1],xyz[0])
+            succ = abs(eT) < THRESHOLD 
+            if succ:
+                eT = 0
+            base.tiny_move(velT = eT)
+        return True
+
 
 def set_pose_goal(pos=[0,0,0], rot=[0,0,0,1]):
     pose_goal = Pose()
