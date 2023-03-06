@@ -77,9 +77,9 @@ def readSensor(data):
      Fatrth=np.arctan2(Fatry, Fatrx) 
      Fatrth=Fatrth-th
      Fmagat= np.linalg.norm((Fatrx,Fatry))
-     Ftotx= Fmag*np.cos(Fth)*.0025   +    Fmagat*np.cos(Fatrth)
+     Ftotx= Fmag*np.cos(Fth)*.0015   +    Fmagat*np.cos(Fatrth)
      #Ftotx= Fmag*np.cos(Fth) *600  +    Fmagat*np.cos(Fatrth)
-     Ftoty= Fmag*np.sin(Fth)*.0025    +    Fmagat*np.sin(Fatrth)
+     Ftoty= Fmag*np.sin(Fth)*.0015    +    Fmagat*np.sin(Fatrth)
      #Ftoty= Fmag*np.sin(Fth)  *600   +    Fmagat*np.sin(Fatrth)
      Ftotth=np.arctan2(Ftoty,Ftotx)
      

@@ -12,17 +12,21 @@ def trigger_response(request):
     '''
     print ('Segmenting')
     points_msg=rospy.wait_for_message("/hsrb/head_rgbd_sensor/depth_registered/rectified_points",PointCloud2,timeout=5)
-    points_data = ros_numpy.numpify(points_msg)    
-    image_data = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]   
-    image=cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
-    print (image.shape)
-    
-    
-    cents,xyz, images, img = plane_seg( points_msg,lower=10    , higher=4000,reg_hy=350)
-    
+    # <<<<<<<<<<<<<<<<<<<<<<ANTERIOR SEGMENTADOR>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    # points_data = ros_numpy.numpify(points_msg)    
+    # image_data = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]   
+    # image=cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
+    # print (image.shape)
+    # cents,xyz, images, img = plane_seg( points_msg,lower=10    , higher=4000,reg_hy=350)
+    # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    cents,xyz, images, img = plane_seg2(points_msg,op_s=0,hg=0.85,lg=0.9,lower=300, higher=6000,reg_hy=350,plot=False)
+
     print(len(cents))
 
+    cv2.imshow("Aa",img)
+    cv2.waitKey(0)
 
+    cv2.destroyAllWindows()
     for i,cent in enumerate(cents):
         print (cent)
         x,y,z=cent
