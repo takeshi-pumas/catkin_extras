@@ -120,59 +120,36 @@ class Scan_face(smach.State):
 
 
                 talk('I found you, I Think you are .'+ res.Ids.ids[0].data)
+                
+
+
+                #######################################GET POINTS from PTCLOUD on a BoundingBox ##############################
                 points=rgbd.get_points()
-                
                 xyz=[]
-                #points['x'][int(res.Angs.data[0]):int(res.Angs.data[0] +res.Angs.data[2]),int(res.Angs.data[1]):int(res.Angs.data[1] +res.Angs.data[3])]):
-                    #if np.isnan(x[0]): print ('reject')
-                    #else:    xyz.append (x[0])    
-                    #if np.isnan(x):print('reject')
-                    #else: print('accept',x)
-                #image_aux= points[boundRect[1]:boundRect[1]+boundRect[3],boundRect[0]:boundRect[0]+boundRect[2]]
 
-                
-
-                npmask=points['x'][int(res.Angs.data[0]):int(res.Angs.data[0] +res.Angs.data[2]),int(res.Angs.data[1]):int(res.Angs.data[1] +res.Angs.data[3])]
-                
-                print (npmask.shape)
-                print (len (npmask))
-                print ( npmask_[-1])
-                
-                
-
-
-                print (res.Angs.data) #BOUNDING BOX (CHECK POINTS FOR COORDS)
-                #if len (npmask)>0:
-                #    for a in npmask:
-                #        print (a)
-
-                # ix,iy=a[0],a[1]
-                # aux=(np.asarray((points['x'][res.Angs.data[0]+ix,boundRect[0]+iy],points['y'][boundRect[1]+ix,boundRect[0]+iy],points['z'][boundRect[1]+ix,boundRect[0]+iy])))
-                # #print (aux)
-                # if np.isnan(aux[0]) or np.isnan(aux[1]) or np.isnan(aux[2]):
-                #         'reject point'
-                # else:
-                #     xyz.append(aux)
-                #     print (xyz)
-                
-                #xyz=np.asarray(xyz)
-                #print (xyz)
-                #cent=xyz.mean(axis=0)
-               
-
-
-
+                for i in np.arange((int)(res.Angs.data[0]),(int)(res.Angs.data[0])+(int)(res.Angs.data[2])):
+                    for j in np.arange((int)(res.Angs.data[1]),(int)(res.Angs.data[1])+(int)(res.Angs.data[3])):
+                        aa=np.asarray(points[['x','y','z']][i,j])
+                        if np.isnan(np.asarray((aa['x'],aa['y'],aa['z']))).sum() ==0:                   
+                            xyz.append(np.asarray((aa['x'],aa['y'],aa['z'])) )
+                xyz=np.asarray(xyz)
+                trans=xyz.mean(axis=0)
                 #print (trans)
-
+                #############################################################################################################
+                #trans=bbox_3d_mean(points,res.Angs.data)
+                #print (trans)
+                #############################################################################################
+                ##############################################################################################
                 tf_man.pub_static_tf(pos=trans, point_name=res.Ids.ids[0].data, ref='head_rgbd_sensor_link')
+                #tf_man.pub_static_tf(pos=trans, point_name=res.Ids.ids[0].data, ref='head_rgbd_sensor_link')
                 rospy.sleep(0.3)
                 tf_man.change_ref_frame_tf(res.Ids.ids[0].data)
-                #############################Move D to target###############################################
+                #############################Move D to target###############################################RUBEN  UTILS
                 robot,robotquat=tf_man.getTF('base_link')
                 #print ('robotpose',robot)
                 target,targetquat=tf_man.getTF(res.Ids.ids[0].data)
                 #print ('targetpose',target)
-                delta = (         (np.asarray(target) - np.asarray(robot))/np.linalg.norm(np.asarray(target) - np.asarray(robot)  )   )    *0.85
+                delta = (         (np.asarray(target) - np.asarray(robot))/np.linalg.norm(np.asarray(target) - np.asarray(robot)  )   )    *0.85  ##D_to object
                 #print ('delta',delta)
                 goal_D = target - delta
                 #goal_D[-1]=0
@@ -181,7 +158,7 @@ class Scan_face(smach.State):
                 tf_man.change_ref_frame_tf('face_D  ')
                 goal,_=tf_man.getTF('face_D')
                 res=omni_base.move_base(goal_x= goal_D[0] , goal_y = goal_D[1], goal_yaw= tf.transformations.euler_from_quaternion(robotquat)[2]    )
-                ############
+                #################################################################################################################################
                 print(res)
 
                 return 'succ'
