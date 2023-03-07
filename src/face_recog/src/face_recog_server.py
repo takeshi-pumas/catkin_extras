@@ -17,7 +17,7 @@ import face_recognition
 import cv2
 import os
 
-path_for_faces='/home/takeshi/Pictures/faces_for_recognition/'
+path_for_faces='/home/oscar/Pictures/faces_for_recognition/'
 #path_for_faces='/home/roboworks/Pictures/faces_for_recognition/'
 
 ids=[]
@@ -148,6 +148,8 @@ def callback(req):
         if len (face_locations)>0:
             face_encodings = face_recognition.face_encodings(image, face_locations)
             face_landmarks = face_recognition.face_landmarks(image)
+            
+        
 #####################################################################
             
             # FACEWRLDCOORDS######################################################3
@@ -200,6 +202,13 @@ def callback(req):
                 Angs.append(Ang)
                 
             print (Dstoface)
+            print (Angs)
+            Angs=[]
+           
+            Angs.append( face_locations[0][0])
+            Angs.append( face_locations[0][1] )
+            Angs.append( face_locations[0][2] )
+            Angs.append( face_locations[0][3] )
             print (Angs)
             names=[]
             for face_encoding in face_encodings:
