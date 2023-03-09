@@ -121,20 +121,20 @@ class Scan_face(smach.State):
 
                 talk('I found you, I Think you are .'+ res.Ids.ids[0].data)
                 
-
+                print (res.Angs.data)
 
                 #######################################GET POINTS from PTCLOUD on a BoundingBox ##############################
                 points=rgbd.get_points()
                 xyz=[]
 
-                for i in np.arange((int)(res.Angs.data[0]),(int)(res.Angs.data[0])+(int)(res.Angs.data[2])):
-                    for j in np.arange((int)(res.Angs.data[1]),(int)(res.Angs.data[1])+(int)(res.Angs.data[3])):
+                for i in np.arange((int)(res.Angs.data[1]),(int)(res.Angs.data[3])):
+                    for j in np.arange((int)(res.Angs.data[0]),(int)(res.Angs.data[2])):
                         aa=np.asarray(points[['x','y','z']][i,j])
                         if np.isnan(np.asarray((aa['x'],aa['y'],aa['z']))).sum() ==0:                   
                             xyz.append(np.asarray((aa['x'],aa['y'],aa['z'])) )
                 xyz=np.asarray(xyz)
                 trans=xyz.mean(axis=0)
-                #print (trans)
+                print (trans)
                 #############################################################################################################
                 #trans=bbox_3d_mean(points,res.Angs.data)
                 #print (trans)
@@ -149,7 +149,7 @@ class Scan_face(smach.State):
                 #print ('robotpose',robot)
                 target,targetquat=tf_man.getTF(res.Ids.ids[0].data)
                 #print ('targetpose',target)
-                delta = (         (np.asarray(target) - np.asarray(robot))/np.linalg.norm(np.asarray(target) - np.asarray(robot)  )   )    *0.85  ##D_to object
+                delta = (         (np.asarray(target) - np.asarray(robot))/np.linalg.norm(np.asarray(target) - np.asarray(robot)  )   )    * 1.25  ##D_to object
                 #print ('delta',delta)
                 goal_D = target - delta
                 #goal_D[-1]=0
@@ -157,9 +157,16 @@ class Scan_face(smach.State):
                 tf_man.pub_static_tf(pos=goal_D, point_name='face_D', ref='map')
                 tf_man.change_ref_frame_tf('face_D  ')
                 goal,_=tf_man.getTF('face_D')
-                res=omni_base.move_base(goal_x= goal_D[0] , goal_y = goal_D[1], goal_yaw= tf.transformations.euler_from_quaternion(robotquat)[2]    )
+                print(goal_D[0] , goal_D[1], tf.transformations.euler_from_quaternion(robotquat)[2]    )
+                #################################################################
+                #res=omni_base.move_base(goal_x= goal_D[0] , goal_y = goal_D[1], goal_yaw= tf.transformations.euler_from_quaternion(robotquat)[2]    )
+                #res=move_base(goal_x= goal_D[0] , goal_y = goal_D[1], goal_yaw= ((tf.transformations.euler_from_quaternion(robotquat)[2])+np.arctan2(delta[1], delta[0]))%2*np.pi  )
                 #################################################################################################################################
+                #print (hcp)
+                #head.set_joint_value_target(hcp)
+                #omni_base.move_d_to(1.0, res.Ids.ids[0].data )
                 print(res)
+                gaze.absolute(*target)
 
                 return 'succ'
 
@@ -241,7 +248,7 @@ class Goto_living_room_2(smach.State):
         self.tries+=1
         if self.tries==3:
             return 'tries'
-        talk('Navigating to ,living room')
+        talk('Navigating to ,living room 2')
         res= omni_base.move_base(known_location='living_room')
         robot,robotquat=tf_man.getTF('base_link')
         new_yaw=(tf.transformations.euler_from_quaternion(robotquat)[2]+np.pi)%2*np.pi
@@ -356,13 +363,16 @@ if __name__== '__main__':
         #State machine for Restaurant
         #smach.StateMachine.add("INITIAL",           Initial(),          transitions = {'failed':'INITIAL',          'succ':'WAIT_PUSH_HAND',           'tries':'END'}) 
         
+        #smach.StateMachine.add("SCAN_FACE",   Scan_face(),  transitions = {'failed':'SCAN_FACE'          ,  'unknown':'NEW_FACE' ,       'succ':'GOTO_LIVING_ROOM'   ,           'tries':'INITIAL'}) 
         smach.StateMachine.add("SCAN_FACE",   Scan_face(),  transitions = {'failed':'SCAN_FACE'          ,  'unknown':'NEW_FACE' ,       'succ':'GOTO_LIVING_ROOM'   ,           'tries':'INITIAL'}) 
+        
+
         smach.StateMachine.add("INITIAL",           Initial(),          transitions = {'failed':'INITIAL',          'succ':'WAIT_PUSH_HAND'      ,           'tries':'END'}) 
         smach.StateMachine.add("WAIT_PUSH_HAND",   Wait_push_hand(),  transitions = {'failed':'WAIT_PUSH_HAND',  'succ':'SCAN_FACE',    'tries':'END'}) 
         smach.StateMachine.add("NEW_FACE",           New_face(),          transitions = {'failed':'INITIAL',          'succ':'END'      ,           'tries':'END'}) 
         smach.StateMachine.add("GOTO_FACE",           Goto_face(),          transitions = {'failed':'GOTO_FACE',          'succ':'GOTO_LIVING_ROOM'      ,           'tries':'END'}) 
         smach.StateMachine.add("GOTO_LIVING_ROOM",           Goto_living_room(),          transitions = {'failed':'GOTO_LIVING_ROOM',          'succ':'FIND_SITTING_PLACE'      ,           'tries':'END'})
-        smach.StateMachine.add("FIND_SITTING_PLACE",           Find_sitting_place(),          transitions = {'failed':'GOTO_LIVING_ROOM_2',          'succ':'END'      ,           'tries':'END'}) 
+        smach.StateMachine.add("FIND_SITTING_PLACE",           Find_sitting_place(),          transitions = {'failed':'GOTO_LIVING_ROOM',          'succ':'END'      ,           'tries':'END'}) 
         smach.StateMachine.add("GOTO_LIVING_ROOM_2",           Goto_living_room_2(),          transitions = {'failed':'GOTO_LIVING_ROOM',          'succ':'END'      ,           'tries':'END'})
         #smach.StateMachine.add("SIT_GUEST",           Sit_guest(),          transitions = {'failed':'GOTO_LIVING_ROOM',          'succ':'INTRODUCE_GUEST'      ,           'tries':'END'}) 
         #smach.StateMachine.add("INTRODUCE_GUEST",           Introduce_guest(),          transitions = {'failed':'GOTO_LIVING_ROOM',          'succ':'INTRODUCE_GUEST'      ,           'tries':'END'}) 

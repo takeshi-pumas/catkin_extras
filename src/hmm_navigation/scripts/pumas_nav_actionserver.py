@@ -124,18 +124,19 @@ class pumas_navServer():
             self.pumas_nav_server.publish_feedback(feed.feedback)
 
             state = NS.get_status()
-
-            if state == 3:
-                success= True
+            
+            success = state == 3 and euclD < 0.05 and anglD < 0.1 
+            #if state == 3:
+            #    success= True
                 # self.pumas_nav_server.set_succeeded()
 
         state = NS.get_status()
+        pub_stop.publish()
+        head.set_joint_values(head_pose=[0.0,0.0])
         if not success:
-            pub_stop.publish()
             self.pumas_nav_server.set_aborted()
         else:
             self.pumas_nav_server.set_succeeded()
-        head.set_joint_values(head_pose=[0.0,0.0])
 
 
 if __name__=="__main__":
