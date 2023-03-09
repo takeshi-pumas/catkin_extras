@@ -18,7 +18,7 @@ from os import listdir,path
 #import utils_inf as infHMM
 #from utils_srv2 import *
 
-print(listdir('.'))
+#print(listdir('.'))
 try:
     sys.path.append('../openpose/build/python');
     from openpose import pyopenpose as op
@@ -211,12 +211,12 @@ def loadModels(classes):
 def create_vk(data,cb,quitaJ=False,centralized=False):
     # Se crean listas vacias para vk
     if quitaJ:
-        dataN=reduce25_to_15(data)
+        data=reduce25_to_15(data)
         
     if centralized:
-        dataN=centralizaMatriz(dataN)
+        data=centralizaMatriz(data)
     #data=flat_list(data)
-    tmp=dataN[:,:].ravel(order='F')
+    tmp=data[:,:].ravel(order='F')
 
     # se obtienen las distancias euclidianas comparando con todos los vectores del codebook
     # retorna la menor de estas distancias
@@ -429,7 +429,6 @@ def init_openPose(n_people=1):
         sys.exit(-1)
     return opWrapper,datum
     
-#---------------------------------------------------
 
 #---------------------------------------------------
 def correct_points(points_msg,low=.27,high=1000):
@@ -550,17 +549,9 @@ def callback(req):
     last_act=-1
     response=RecognizeResponse()
     
-    if req.in_==0:
-        print("No se hace nada")
-
-        img_msg=bridge.cv2_to_imgmsg(np.ones((640,480,3)))
-        img_msg2=bridge.cv2_to_imgmsg(np.ones((25,2)))
-        response.im_out.image_msgs.append(img_msg)
-        response.sk.image_msgs.append(img_msg2)
-        response.i_out=0
-        return response
+  
     #----------------
-    elif req.in_==1:
+    if req.in_==1:
         print("Opcion 1\n\tObteniendo imagenes...")
         dataout=np.zeros((25,2))
         if ctrlz:
