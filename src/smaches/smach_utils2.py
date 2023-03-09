@@ -122,7 +122,20 @@ def wait_for_push_hand(time=10):
         return False
 
 
+def bbox_3d_mean(points,bbox):
+    
+    xyz=[]
+    bbox[0]
+    for i in np.arange((int)(bbox[0]),(int)(bbox[2])):
+        for j in np.arange((int)(bbox[1]),(int)(bbox[3])):
+            aa=np.asarray(points[['x','y','z']][i,j])
+            if np.isnan(np.asarray((aa['x'],aa['y'],aa['z']))).sum() ==0:                   
+                xyz.append(np.asarray((aa['x'],aa['y'],aa['z'])) )
+    return np.asarray(xyz).mean(axis=0)
 
+
+
+    
 
 tf_man = TF_MANAGER()
 gaze = GAZE()

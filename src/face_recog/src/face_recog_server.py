@@ -17,6 +17,7 @@ import face_recognition
 import cv2
 import os
 
+
 path_for_faces='/home/takeshi/Pictures/faces_for_recognition/'
 #path_for_faces='/home/roboworks/Pictures/faces_for_recognition/'
 
@@ -146,6 +147,15 @@ def callback(req):
 
 
         if len (face_locations)>0:
+            
+
+
+            Angs.append( face_locations[0][0] )#Bounding Box
+            Angs.append( face_locations[0][1] )#Bounding Box
+            Angs.append( face_locations[0][2] )#Bounding Box
+            Angs.append( face_locations[0][0] )#Bounding Box
+
+
             face_encodings = face_recognition.face_encodings(image, face_locations)
             face_landmarks = face_recognition.face_landmarks(image)
 #####################################################################
@@ -199,14 +209,16 @@ def callback(req):
                 phi= np.arctan(yy/focal_length)
                 Angs.append(Ang)
                 
-            print (Dstoface)
-            print (Angs)
             names=[]
             for face_encoding in face_encodings:
                 results = face_recognition.compare_faces(encodings, face_encoding)
                 print ('results',results)
                 if any(results) !=True: names.append('unknown')
                 else:names.append(np.unique(ids[results])[0])
+            print (names)
+            print('results',results)
+            if any(results) !=True: names.append('unknown')
+            else:names.append(np.unique(ids[results])[0])
             print (names)
             ############Write Response message
             Ds, Rots=Floats(),Floats()
