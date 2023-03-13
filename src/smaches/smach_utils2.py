@@ -190,15 +190,16 @@ def bbox_3d_mean(points,bbox):
     for i in np.arange((int)(bbox[0]),(int)(bbox[2])):
         for j in np.arange((int)(bbox[1]),(int)(bbox[3])):
             aa=np.asarray(points[['x','y','z']][i,j])
-            if np.isnan(np.asarray((aa['x'],aa['y'],aa['z']))).sum() ==0:                   
-                xyz.append(np.asarray((aa['x'],aa['y'],aa['z'])) )
+            if np.isnan(aa['x']) or np.isnan(aa['y'])or np.isnan(aa['z']):print ('reject point')
+
+            else:xyz.append(np.asarray((aa['x'],aa['y'],aa['z'])) )
     return np.asarray(xyz).mean(axis=0).tolist()
 
 
 
 
 
-    
+ ##TO DO AUDIO CAPTURE NODE   
 
 tf_man = TF_MANAGER()
 # gaze = GAZE()
