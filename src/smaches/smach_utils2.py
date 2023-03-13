@@ -26,13 +26,16 @@ from sensor_msgs.msg import Image , LaserScan , PointCloud2
 import tf
 import time
 from cv_bridge import CvBridge, CvBridgeError
+from nav_msgs.msg import OccupancyGrid
+
+
 
 from utils.grasp_utils import *
 from utils.misc_utils import *
 from utils.nav_utils import *
 
 global listener, broadcaster, tfBuffer, tf_static_broadcaster, scene, rgbd  , head,train_new_face
-global clear_octo_client, goal,navclient,segmentation_server  , tf_man , gaze,omni_base ,speech_recog_server,bridge
+global clear_octo_client, goal,navclient,segmentation_server  , tf_man , gaze,omni_base ,speech_recog_server,bridge, map_msg,pix_per_m
 rospy.init_node('smach')
 head = moveit_commander.MoveGroupCommander('head')
 #gripper =  moveit_commander.MoveGroupCommander('gripper')
@@ -53,17 +56,74 @@ speech_recog_server = rospy.ServiceProxy('/speech_recognition/vosk_service' ,Get
 recognize_face = rospy.ServiceProxy('recognize_face', RecognizeFace)
 train_new_face = rospy.ServiceProxy('new_face', RecognizeFace)    
 
+
+
+map_msg= rospy.wait_for_message('/augmented_map', OccupancyGrid)####WAIT for nav pumas map
+inflated_map= np.asarray(map_msg.data)
+img_map=inflated_map.reshape((map_msg.info.width,map_msg.info.height))
+pix_per_m=map_msg.info.resolution
+contours, hierarchy = cv2.findContours(img_map.astype('uint8'),cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+contoured=cv2.drawContours(img_map.astype('uint8'), contours, 1, (255,255,255), 1)
+
 rgbd= RGBD()
 bridge = CvBridge()
 #segmentation_server = rospy.ServiceProxy('/segment_2_tf', Trigger) 
 
 
-#whole_body.set_workspace([-6.0, -6.0, 6.0, 6.0]) 
-#df=pd.read_csv('/home/takeshi/Codes/known_locations.txt')
-#############################################################################
-#navclient=actionlib.SimpleActionClient('/navigate_hmm', NavigateAction)   ### HMM NAV
-#navclient = #actionlib.SimpleActionClient('/move_base/move', MoveBaseAction)########TOYOTA NAV
-###############################################################################################
+
+def get_robot_px():
+    trans, rot=tf_man.getTF('base_link')
+    robot=np.asarray(trans[:2])
+    print (trans)
+    return np.asarray((robot/pix_per_m).round(),dtype='int')
+
+
+def check_point_map(x,y):
+
+    # Quiero saber punto 0,-7 m esta libre?
+    ##meters, map (not pixels)
+    #x,y=0.2,8
+    #px=check_point_map(x,y)  # px is closest safe goal
+    #px*pix_per_m
+    xrob,yrob=get_robot_px()
+    safe_xy=np.asarray((x,-1*y))
+    safe_xy_px=point_to_px (x,y)
+    delta_px=  safe_xy_px-np.asarray((xrob,yrob))
+    delta_px= delta_px / np.linalg.norm(delta_px).round()
+    delta_px=np.round(delta_px*10)
+    newxy=np.zeros(2)
+    
+    for i in range(9):
+        if (contoured[1024+ safe_xy_px[1].astype('int'),1024-safe_xy_px[0].astype('int')]!=0):   ## axis are twisted cause y sign
+                    print ('not safe at', safe_xy_px , safe_xy_px*pix_per_m)
+                    
+                    xrob,yrob=get_robot_px()
+                    delta_px=  safe_xy_px-np.asarray((xrob,yrob))
+                    delta_px= delta_px / np.linalg.norm(delta_px).round()
+                    delta_px=np.round(delta_px*10)
+
+
+                    newxy[0]=safe_xy_px[0]-delta_px[0].astype('int')
+                    newxy[1]=safe_xy_px[1]-delta_px[1].astype('int')
+                    safe_xy_px=newxy
+        else:
+                print ('safe at', safe_xy_px, safe_xy_px*pix_per_m)
+                return safe_xy_px
+    return safe_xy_px
+
+def point_to_px(x,y):
+    safe_xy=np.asarray((x,y))
+    return np.round(safe_xy/pix_per_m).astype('int')
+def px_to_point(px,py):
+    return np.asarray((px,py))*pix_per_m
+
+    
+    
+    
+
+
+
+
 def train_face(image, name):
     req=RecognizeFaceRequest()
     strings=Strings()
@@ -132,6 +192,8 @@ def bbox_3d_mean(points,bbox):
             if np.isnan(np.asarray((aa['x'],aa['y'],aa['z']))).sum() ==0:                   
                 xyz.append(np.asarray((aa['x'],aa['y'],aa['z'])) )
     return np.asarray(xyz).mean(axis=0)
+
+
 
 
 
