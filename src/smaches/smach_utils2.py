@@ -192,7 +192,7 @@ def bbox_3d_mean(points,bbox):
             aa=np.asarray(points[['x','y','z']][i,j])
             if np.isnan(np.asarray((aa['x'],aa['y'],aa['z']))).sum() ==0:                   
                 xyz.append(np.asarray((aa['x'],aa['y'],aa['z'])) )
-    return np.asarray(xyz).mean(axis=0)
+    return np.asarray(xyz).mean(axis=0).tolist()
 
 
 
