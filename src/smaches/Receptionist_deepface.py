@@ -27,8 +27,10 @@ class Initial(smach.State):
         
         #scene.remove_world_object()
         #Takeshi neutral
-        head.set_named_target('neutral')
-        succ=head.go() 
+        # head.set_named_target('neutral')
+        # succ=head.go() 
+        head.set_joint_values([0.0,0.0])
+        rospy.sleep(0.8)
         
         #arm.set_named_target('go')
         #succ=arm.go()
@@ -74,21 +76,25 @@ class Scan_face(smach.State):
         self.tries+=1        
         
         if self.tries==1:
-            head.set_named_target('neutral')
-            head.go() 
-        if self.tries==2:
+            # head.set_named_target('neutral')
+            # head.go() 
+            head.set_joint_values([0.0,0.0]) 
+        elif self.tries==2:
             hv= head.get_current_joint_values()
-            hv[0]= -0.6
-            hv[1]= 0.0
-            head.go(hv) 
-        if self.tries==3:
-            hv= head.get_current_joint_values()
-            hv[0]= 0.6
-            hv[1]= 0.0
-            head.go(hv) 
-        if self.tries>=4:
+            # hv[0]= -0.6
+            # hv[1]= 0.0
+            # head.go(hv) 
+            head.set_joint_values([-0.6,0.0]) 
+        elif self.tries==3:
+            # hv= head.get_current_joint_values()
+            # hv[0]= 0.6
+            # hv[1]= 0.0
+            # head.go(hv)
+            head.set_joint_values([0.6,0.0]) 
+        elif self.tries>=4:
             self.tries=0
             return'tries'
+        rospy.sleep(0.8)
         
         #img=rgbd.get_image()  
         #req=RecognizeFaceRequest()
@@ -186,8 +192,10 @@ class New_face(smach.State):
         if self.tries==3:
             return 'tries'
                 
-        head.set_named_target('neutral')
-        succ=head.go() 
+        # head.set_named_target('neutral')
+        head.set_joint_values([0.0,0.0])
+        rospy.sleep(0.8)
+        # succ=head.go() 
         talk('Please, tell me your name')
         res=speech_recog_server()
         talk( 'Hello'+ res.data )
@@ -308,19 +316,21 @@ class Find_sitting_place(smach.State):
 
         
         if self.tries==2:
-            hv= head.get_current_joint_values()
-            hv[0]= -0.6
-            hv[1]= 0.0
-            head.go(hv) 
-        if self.tries==3:
-            hv= head.get_current_joint_values()
-            hv[0]= 0.6
-            hv[1]= 0.0
-            head.go(hv) 
-        if self.tries>=4:
+            # hv= head.get_current_joint_values()
+            # hv[0]= -0.6
+            # hv[1]= 0.0
+            # head.go(hv) 
+            head.set_joint_values([-0.6,0.0])
+        elif self.tries==3:
+            # hv= head.get_current_joint_values()
+            # hv[0]= 0.6
+            # hv[1]= 0.0
+            # head.go(hv) 
+            head.set_joint_values([0.6,0.0])
+        elif self.tries>=4:
             self.tries=0
             return'tries'
-
+        rospy.sleep(0.8)
 
 
 

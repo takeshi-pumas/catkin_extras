@@ -1,58 +1,46 @@
 People:
   Guest_1:
     drink: Juice
-    location: Place_1
+    location: None
     name: Tomas
   Guest_2:
     drink: Coffee
-    location: Place_5
+    location: None
     name: Pedro
   Guest_3:
     drink: Juice
-    location: Place_4
+    location: Place_2
     name: Jose
   Guest_4:
     drink: Beer
-    location: Place_6
+    location: None
     name: Juan
   Host:
     drink: Coke
-    location: Place_2
+    location: Place_1
     name: Ruben
 Places:
+  Place_0:
+    location:
+      theta: 0.0
+      x: 0.0
+      y: 0.0
+    occupied: occupied
   Place_1:
     location:
-      theta: 0.0
-      x: 10.0
-      y: -2.0
-    occupied: Guest_1
+      theta: 0.05
+      x: 9.71
+      y: -3.14
+    occupied: Host
   Place_2:
     location:
-      theta: 0.0
-      x: 10.0
-      y: -3.0
-    occupied: Host
+      theta: 4.72
+      x: 9.76
+      y: -3.31
+    occupied: Guest_3
   Place_3:
     location:
-      theta: 3.1415
-      x: 8.0
-      y: -3.0
+      theta: 0.06
+      x: 9.75
+      y: -2.47
     occupied: None
-  Place_4:
-    location:
-      theta: -0.05
-      x: 1.13
-      y: -1.96
-    occupied: Guest_3
-  Place_5:
-    location:
-      theta: 6.22
-      x: 1.13
-      y: -1.97
-    occupied: Guest_2
-  Place_6:
-    location:
-      theta: 2.03
-      x: 2.85
-      y: -0.78
-    occupied: Guest_4

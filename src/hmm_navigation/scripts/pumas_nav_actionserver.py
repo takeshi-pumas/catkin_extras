@@ -113,7 +113,7 @@ class pumas_navServer():
         goal_nav_publish.publish(goal_pose)
 
         # Feedback publisher and timeout checker
-        while timeout >= rospy.Time.now().to_sec() and not success:
+        while (timeout >= rospy.Time.now().to_sec()) and not success:
             # Goal distance and orientation calculation
             c_pose, q_rob = tf_man.getTF(target_frame='base_link')
             _, _, rob_yaw = tf.transformations.euler_from_quaternion(q_rob)
@@ -130,7 +130,7 @@ class pumas_navServer():
             # state = NS.get_status()
 
             # success = state == 3 and euclD < 0.05 and anglD < 0.3
-            success = euclD < 0.05 and anglD < 0.3
+            success = euclD < 0.4 and anglD < 0.5
 
         # state = NS.get_status()
         head.set_joint_values(head_pose = [0.0, 0.0])

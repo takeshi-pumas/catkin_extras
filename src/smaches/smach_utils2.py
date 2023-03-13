@@ -35,9 +35,10 @@ from utils.misc_utils import *
 from utils.nav_utils import *
 
 global listener, broadcaster, tfBuffer, tf_static_broadcaster, scene, rgbd  , head,train_new_face
-global clear_octo_client, goal,navclient,segmentation_server  , tf_man , gaze,omni_base ,speech_recog_server,bridge, map_msg,pix_per_m
+global clear_octo_client, goal,navclient,segmentation_server  , tf_man , omni_base ,speech_recog_server,bridge, map_msg,pix_per_m
 rospy.init_node('smach')
-head = moveit_commander.MoveGroupCommander('head')
+# head = moveit_commander.MoveGroupCommander('head')
+head = GAZE()
 #gripper =  moveit_commander.MoveGroupCommander('gripper')
 #whole_body=moveit_commander.MoveGroupCommander('whole_body')
 #arm =  moveit_commander.MoveGroupCommander('arm')
@@ -51,7 +52,7 @@ tf_static_broadcaster = tf2_ros.StaticTransformBroadcaster()
 clear_octo_client = rospy.ServiceProxy('/clear_octomap', Empty)
 segmentation_server = rospy.ServiceProxy('/segment' , Segmentation)
 navclient=actionlib.SimpleActionClient('/navigate', NavigateAction)   ### PUMAS NAV ACTION LIB
-scene = moveit_commander.PlanningSceneInterface()
+# scene = moveit_commander.PlanningSceneInterface()
 speech_recog_server = rospy.ServiceProxy('/speech_recognition/vosk_service' ,GetSpeech)
 recognize_face = rospy.ServiceProxy('recognize_face', RecognizeFace)
 train_new_face = rospy.ServiceProxy('new_face', RecognizeFace)    
@@ -200,7 +201,7 @@ def bbox_3d_mean(points,bbox):
     
 
 tf_man = TF_MANAGER()
-gaze = GAZE()
+# gaze = GAZE()
 gripper = GRIPPER()
 omni_base=OMNIBASE()
 
