@@ -1,24 +1,8 @@
 People:
-  Guest_1:
-    drink: Juice
-    location: None
-    name: Tomas
-  Guest_2:
-    drink: Coffee
-    location: None
-    name: Pedro
-  Guest_3:
-    drink: Juice
-    location: Place_2
-    name: Jose
-  Guest_4:
-    drink: Beer
-    location: None
-    name: Juan
   Host:
     drink: Coke
     location: Place_1
-    name: Ruben
+    name: ruben
 Places:
   Place_0:
     location:

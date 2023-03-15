@@ -34,11 +34,10 @@ from utils.grasp_utils import *
 from utils.misc_utils import *
 from utils.nav_utils import *
 
-global listener, broadcaster, tfBuffer, tf_static_broadcaster, scene, rgbd  , head,train_new_face
+global listener, broadcaster, tfBuffer, tf_static_broadcaster, scene, rgbd  , head,train_new_face, wrist
 global clear_octo_client, goal,navclient,segmentation_server  , tf_man , omni_base ,speech_recog_server,bridge, map_msg,pix_per_m
 rospy.init_node('smach')
 # head = moveit_commander.MoveGroupCommander('head')
-head = GAZE()
 #gripper =  moveit_commander.MoveGroupCommander('gripper')
 #whole_body=moveit_commander.MoveGroupCommander('whole_body')
 #arm =  moveit_commander.MoveGroupCommander('arm')
@@ -197,14 +196,12 @@ def bbox_3d_mean(points,bbox):
             else:xyz.append(aa)
     return np.asarray(xyz).mean(axis=0).tolist()
 
-
-
-
-
  ##TO DO AUDIO CAPTURE NODE   
 
 tf_man = TF_MANAGER()
-# gaze = GAZE()
+head = GAZE()
 gripper = GRIPPER()
 omni_base=OMNIBASE()
+wrist = WRIST_SENSOR()
+
 
