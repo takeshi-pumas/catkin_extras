@@ -184,17 +184,15 @@ def wait_for_push_hand(time=10):
 
 
 def bbox_3d_mean(points,bbox):
-    
     xyz=[]
-    bbox[0]
-    for i in np.arange((int)(bbox[0]),(int)(bbox[2])):
-        for j in np.arange((int)(bbox[1]),(int)(bbox[3])):
-            aa=np.asarray(points[['x','y','z']][i,j])
-            if np.isnan(aa['x']) or np.isnan(aa['y'])or np.isnan(aa['z']):print ('reject point')
+    xyz_n=points[['x','y','z']][int(bbox[0]):int(bbox[3]),int(bbox[2]):int(bbox[1])]
+    for i in range(xyz_n.shape[0]):
+        for j in range(xyz_n.shape[1]):
+            if ~np.isnan(xyz_n['x'][i,j]) and ~np.isnan(xyz_n['y'][i,j]) and ~np.isnan(xyz_n['z'][i,j]):
+                xyz.append(np.asarray([xyz_n['x'][i,j],xyz_n['y'][i,j],xyz_n['z'][i,j]]))
+                
 
-            else:xyz.append(np.asarray((aa['x'],aa['y'],aa['z'])) )
-    return np.asarray(xyz).mean(axis=0).tolist()
-
+    return np.asarray(xyz).mean(axis=0)
 
 
 
