@@ -42,6 +42,13 @@ def find_empty_places():
     t,x,y = loc
     return seat[0], [x,y,t]
 
+def waiting_people():
+	knowledge = read_yaml()
+	people = [key for key, places_dict in knowledge['People'].items() if places_dict.get('location') == 'Waiting']
+	num_wait = len(people)
+	waiting = knowledge['People'][people[0]]['name']
+	return num_wait, waiting
+
 def assign_occupancy(who = 'None', where = 'None'):
     #Use: hsr found a empty place for the new guest
     knowledge = read_yaml()
@@ -59,7 +66,7 @@ def add_guest(name, drink):
     	knowledge = read_yaml()
     	guests_len = len(knowledge['People'])
     	new_guest = f'Guest_{guests_len}'
-    	knowledge['People'][new_guest] = {'drink': drink, 'location': 'None', 'name': name}
+    	knowledge['People'][new_guest] = {'drink': drink, 'location': 'Waiting', 'name': name}
     	write_yaml(knowledge)
     	return True
     except: return False
@@ -68,7 +75,7 @@ def add_place():
     try:
         tf_manager = TF_MANAGER()
         rospy.sleep(0.8)
-        trans, rot = tf_manager.getTF( target_frame='base_link')
+        trans, rot = tf_manager.getTF( target_frame = 'base_link')
         _, _, theta = tf.transformations.euler_from_quaternion(rot)
         places_len = len(knowledge['Places'])
         new_place = f'Place_{places_len}'
