@@ -34,11 +34,14 @@ from utils.grasp_utils import *
 from utils.misc_utils import *
 from utils.nav_utils import *
 
+<<<<<<< HEAD
 global listener, broadcaster, tfBuffer, tf_static_broadcaster, scene, rgbd  , head,train_new_face,WRIST_SENSOR
+=======
+global listener, broadcaster, tfBuffer, tf_static_broadcaster, scene, rgbd  , head,train_new_face, wrist
+>>>>>>> dc2960de1660ab92e37fed6fe232f3f19280e5bf
 global clear_octo_client, goal,navclient,segmentation_server  , tf_man , omni_base ,speech_recog_server,bridge, map_msg,pix_per_m
 rospy.init_node('smach')
 # head = moveit_commander.MoveGroupCommander('head')
-head = GAZE()
 #gripper =  moveit_commander.MoveGroupCommander('gripper')
 #whole_body=moveit_commander.MoveGroupCommander('whole_body')
 arm =  moveit_commander.MoveGroupCommander('arm')
@@ -184,6 +187,7 @@ def wait_for_push_hand(time=10):
 
 
 def bbox_3d_mean(points,bbox):
+<<<<<<< HEAD
     xyz=[]
     xyz_n=points[['x','y','z']][int(bbox[0]):int(bbox[3]),int(bbox[2]):int(bbox[1])]
     for i in range(xyz_n.shape[0]):
@@ -197,11 +201,31 @@ def bbox_3d_mean(points,bbox):
 
 
 
+=======
+    print("HOLA")
+    xyz=[]
+    bbox[0]
+    for i in np.arange((int)(bbox[0]),(int)(bbox[2])):
+        for j in np.arange((int)(bbox[1]),(int)(bbox[3])):
+            print(points[['x','y','z']][i,j])
+            aa=np.asarray(points[['x','y','z']][i,j])
+            print(type(aa),aa)
+            if np.isnan(aa).any():print ('reject point')
+
+            else:xyz.append(aa)
+    return np.asarray(xyz).mean(axis=0).tolist()
+
+>>>>>>> dc2960de1660ab92e37fed6fe232f3f19280e5bf
  ##TO DO AUDIO CAPTURE NODE   
 
 tf_man = TF_MANAGER()
-# gaze = GAZE()
+head = GAZE()
 gripper = GRIPPER()
 omni_base=OMNIBASE()
+<<<<<<< HEAD
 wrist= WRIST_SENSOR()
+=======
+wrist = WRIST_SENSOR()
+
+>>>>>>> dc2960de1660ab92e37fed6fe232f3f19280e5bf
 
