@@ -34,14 +34,14 @@ from utils.grasp_utils import *
 from utils.misc_utils import *
 from utils.nav_utils import *
 
-global listener, broadcaster, tfBuffer, tf_static_broadcaster, scene, rgbd  , head,train_new_face
+global listener, broadcaster, tfBuffer, tf_static_broadcaster, scene, rgbd  , head,train_new_face,WRIST_SENSOR
 global clear_octo_client, goal,navclient,segmentation_server  , tf_man , omni_base ,speech_recog_server,bridge, map_msg,pix_per_m
 rospy.init_node('smach')
 # head = moveit_commander.MoveGroupCommander('head')
 head = GAZE()
 #gripper =  moveit_commander.MoveGroupCommander('gripper')
 #whole_body=moveit_commander.MoveGroupCommander('whole_body')
-#arm =  moveit_commander.MoveGroupCommander('arm')
+arm =  moveit_commander.MoveGroupCommander('arm')
 #broadcaster = tf.TransformBroadcaster()
 
 tfBuffer = tf2_ros.Buffer()
@@ -203,4 +203,5 @@ tf_man = TF_MANAGER()
 # gaze = GAZE()
 gripper = GRIPPER()
 omni_base=OMNIBASE()
+wrist= WRIST_SENSOR()
 
