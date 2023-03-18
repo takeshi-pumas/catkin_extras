@@ -77,12 +77,21 @@ def callback_2(req):
     for i in range(len(req.in_.image_msgs)):
         images.append(bridge.imgmsg_to_cv2(req.in_.image_msgs[i]))
         print (req.Ids.ids[i].data)
-        if req.Ids.ids[i].data in os.listdir(path_for_faces):print('ID ALREADY ASSIGNED , please choose another name')
-        else:
-            os.mkdir(path_for_faces+'/'+req.Ids.ids[i].data)
-            image= cv2.cvtColor(bridge.imgmsg_to_cv2(req.in_.image_msgs[i]), cv2.COLOR_BGR2RGB)
-            cv2.imwrite(path_for_faces+'/'+req.Ids.ids[i].data+'/'+req.Ids.ids[i].data+'.jpg',image)
+        image= cv2.cvtColor(bridge.imgmsg_to_cv2(req.in_.image_msgs[i]), cv2.COLOR_BGR2RGB)
+        face_locations=face_recognition.face_locations(image)
+        if len (face_locations)==1:
 
+            message='trained new id'+'_'+req.Ids.ids[i].data
+            if req.Ids.ids[i].data in os.listdir(path_for_faces):
+                print('ID ALREADY ASSIGNED , adding image caution advised',str(len(os.listdir(path_for_faces+'/'+req.Ids.ids[i].data))))
+                cv2.imwrite(path_for_faces+'/'+req.Ids.ids[i].data+'/'+req.Ids.ids[i].data+str(len(os.listdir(path_for_faces+'/'+req.Ids.ids[i].data)))+'.jpg',image)
+            else:
+                os.mkdir(path_for_faces+'/'+req.Ids.ids[i].data)
+                cv2.imwrite(path_for_faces+'/'+req.Ids.ids[i].data+'/'+req.Ids.ids[i].data+'.jpg',image)
+
+        else:
+            print ('no faces found or more than one')
+            message= 'image rejected '+'_'+str(len(face_locations))+'_faces in image'
 
 
         
@@ -98,7 +107,7 @@ def callback_2(req):
     strings=Strings()
 
     string_msg= String()
-    string_msg.data='trained new id'+'_'+req.Ids.ids[i].data
+    string_msg.data=message
     strings.ids.append(string_msg)
     Ds.data=[0.0,0.0]
     Rots.data=[1,1]

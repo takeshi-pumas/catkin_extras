@@ -17,3 +17,4 @@ float32 y_robot
 float32 yaw_robot
 float32 timeleft
 float32 euclD
+float32 anglD
