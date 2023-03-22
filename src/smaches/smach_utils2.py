@@ -195,8 +195,17 @@ def bbox_3d_mean(points,bbox):
 
     return np.asarray(xyz).mean(axis=0)
 
-
-
+"""def bbox_3d_mean(points,bbox):
+    
+    xyz=[]
+    
+    for i in np.arange((int)(bbox[0]),(int)(bbox[0])+(int)(bbox[2])):
+        for j in np.arange((int)(bbox[1]),(int)(bbox[1])+(int)(bbox[3])):
+            aa=np.asarray(points[['x','y','z']][i,j])
+            if np.isnan(np.asarray((aa['x'],aa['y'],aa['z']))).sum() ==0:                   
+                xyz.append(np.asarray((aa['x'],aa['y'],aa['z'])) )
+    return np.asarray(xyz).mean(axis=0)
+"""
 
  ##TO DO AUDIO CAPTURE NODE   
 

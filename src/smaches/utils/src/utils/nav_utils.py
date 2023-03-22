@@ -66,7 +66,7 @@ class OMNIBASE():
             goal_x=x_goal, goal_y=y_goal, goal_yaw=theta_goal)
         return True
 
-    def move_base(self, goal_x=0.0, goal_y=0.0, goal_yaw=0.0, time_out=10, known_location='None'):
+    def move_base(self, goal_x=0.0, goal_y=0.0, goal_yaw=0.0, time_out=30, known_location='None'):
         # Create and fill Navigate Action Goal message
         nav_goal = NavigateActionGoal()
         nav_goal.goal.x = goal_x

@@ -140,7 +140,7 @@ class Scan_face(smach.State):
                     print ( 'No TF FOUND')
                 omni_base.move_d_to(1.5, name )
                 print (trans)
-                head.absolute(*trans)
+                #head.absolute(*trans)
 
                 talk (name +'... I will lead you to the living room, please follow me')
                 

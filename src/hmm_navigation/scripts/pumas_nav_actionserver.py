@@ -55,7 +55,7 @@ def match_location(location):
 # Navigation functions
 
 
-def pose2feedback(pose_robot, quat_robot, timeleft, euclD, anglD):
+def pose2feedback(pose_robot, quat_robot, timeleft, euclD , anglD):
     feed = NavigateActionFeedback()
     feed.feedback.x_robot = pose_robot[0]
     feed.feedback.y_robot = pose_robot[1]
@@ -102,7 +102,7 @@ class pumas_navServer():
                 x, y, yaw = XYT[0]['x'], XYT[1]['y'], XYT[2]['theta']
                 goal.x, goal.y, goal.yaw = x, y, yaw
 
-        #head.set_joint_values(head_pose=[0.0, -0.5])
+        head.set_joint_values(head_pose=[0.0, -0.5])
         # Fill result message (could be modified)
         result = NavigateActionResult()
         rate = rospy.Rate(10)
@@ -119,36 +119,21 @@ class pumas_navServer():
             c_pose, q_rob = tf_man.getTF(target_frame='base_link')
             _, _, rob_yaw = tf.transformations.euler_from_quaternion(q_rob)
             #rob_yaw = rob_yaw % (2 * np.pi)
+            #anglD = (yaw - rob_yaw)
+            anglD = (yaw - rob_yaw)
+
             euclD = np.linalg.norm(np.asarray((x, y)) - c_pose[:2])
-            
-
-            anglD = yaw - rob_yaw
-
-            #UGLY
-            if anglD < -2*np.pi :
-                anglD= -1*anglD%2*np.pi
-            elif anglD > 2*np.pi :
-                anglD= anglD%2*np.pi
-
-
-            if anglD < -np.pi :
-                anglD= (anglD%np.pi)
-            elif anglD > np.pi:
-                anglD=(anglD%np.pi)*-1
-
-            ###
-
-
+            print (anglD)
             timeleft = timeout - rospy.Time.now().to_sec()
             if timeleft > 0:
-                
+                print(timeleft, 'timeleft')
                 feed = pose2feedback(c_pose, q_rob, timeleft, euclD,anglD)
                 self.pumas_nav_server.publish_feedback(feed.feedback)
 
             # state = NS.get_status()
 
             # success = state == 3 and euclD < 0.05 and anglD < 0.3
-            success = euclD < 0.4 and abs(anglD) < 0.35
+            success = euclD < 0.4 and abs(anglD) < 0.1
 
         # state = NS.get_status()
         head.set_joint_values(head_pose = [0.0, 0.0])
