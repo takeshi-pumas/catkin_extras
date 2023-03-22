@@ -123,11 +123,13 @@ def detect_human(points_msg):
     probMap = output[0, i, :, :]
     probMap = cv2.resize(probMap, (inWidth, inHeight))
     cent= probmap_to_3d_mean(points_data,probMap)
+    print (cent)
+    if np.isnan(cent.any()):cent=np.zeros(3)
     res=Human_detectorResponse()
     res.x= cent[0]
     res.y= cent[1]
     res.z= cent[2]
-    print (res)
+    
     return res    
 
 

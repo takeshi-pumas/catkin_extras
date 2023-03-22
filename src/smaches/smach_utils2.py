@@ -10,6 +10,7 @@ import tf2_ros
 from tf2_sensor_msgs.tf2_sensor_msgs import do_transform_cloud
 from object_classification.srv import *
 from segmentation.srv import *
+from human_detector.srv import Human_detector ,Human_detectorResponse 
 from ros_whisper_vosk.srv import GetSpeech
 from face_recog.msg import *
 from face_recog.srv import *
@@ -34,7 +35,7 @@ from utils.grasp_utils import *
 from utils.misc_utils import *
 from utils.nav_utils import *
 
-global listener, broadcaster, tfBuffer, tf_static_broadcaster, scene, rgbd  , head,train_new_face,WRIST_SENSOR
+global listener, broadcaster, tfBuffer, tf_static_broadcaster, scene, rgbd  , head,train_new_face,WRIST_SENSOR ,human_detect_server
 global clear_octo_client, goal,navclient,segmentation_server  , tf_man , omni_base ,speech_recog_server,bridge, map_msg,pix_per_m
 rospy.init_node('smach')
 # head = moveit_commander.MoveGroupCommander('head')
@@ -49,6 +50,7 @@ listener = tf2_ros.TransformListener(tfBuffer)
 broadcaster = tf2_ros.TransformBroadcaster()
 tf_static_broadcaster = tf2_ros.StaticTransformBroadcaster()
 clear_octo_client = rospy.ServiceProxy('/clear_octomap', Empty)
+human_detect_server = rospy.ServiceProxy('/detect_human' , Human_detector)
 segmentation_server = rospy.ServiceProxy('/segment' , Segmentation)
 navclient=actionlib.SimpleActionClient('/navigate', NavigateAction)   ### PUMAS NAV ACTION LIB
 # scene = moveit_commander.PlanningSceneInterface()
