@@ -11,6 +11,7 @@ from geometry_msgs.msg import Twist, WrenchStamped, TransformStamped, Pose, Poin
 from sensor_msgs.msg import Image as ImageMsg, PointCloud2
 import tmc_control_msgs.msg
 import trajectory_msgs.msg
+import control_msgs.msg
 from tmc_msgs.msg import TalkRequestActionGoal, TalkRequestAction 
 import actionlib
 from hmm_navigation.msg import NavigateActionGoal, NavigateAction

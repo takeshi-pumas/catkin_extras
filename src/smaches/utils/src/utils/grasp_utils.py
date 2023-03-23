@@ -181,3 +181,27 @@ def set_pose_goal(pos=[0,0,0], rot=[0,0,0,1]):
     pose_goal.position = Point(*pos)
     pose_goal.orientation = Quaternion(*rot)
     return pose_goal
+
+
+class ARM():
+    def __init__(self):
+        self._joint_names = ["arm_lift_joint", "arm_flex_joint", "arm_roll_joint", "wrist_flex_joint", "wrist_roll_joint"]
+        self._cli = actionlib.SimpleActionClient(
+            '/hsrb/arm_trajectory_controller/follow_joint_trajectory',
+            control_msgs.msg.FollowJointTrajectoryAction)
+    def set_joint_values(self, joint_values = [0.0, 0.0, 0.0, 0.0, 0.0])
+        goal = control_msgs.msg.FollowJointTrajectoryGoal()
+        traj = trajectory_msgs.msg.JointTrajectory()
+        traj.joint_names = self._joint_names
+        p = trajectory_msgs.msg.JointTrajectoryPoint()
+        p.positions = joint_values
+        p.velocities = [0, 0, 0, 0, 0]
+        p.time_from_start = rospy.Duration(3)
+        traj.points = [p]
+        goal.trajectory = traj
+
+        # send message to the action server
+        self._cli.send_goal(goal)
+
+        # wait for the action server to complete the order
+        return self._cli.wait_for_result()
