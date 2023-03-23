@@ -124,9 +124,9 @@ class pumas_navServer():
 
                 #UGLY
             if anglD < -2*np.pi :
-                anglD= -1*anglD%2*np.pi
+                anglD= -1*anglD%(2*np.pi)
             elif anglD > 2*np.pi :
-                anglD= anglD%2*np.pi
+                anglD= anglD%(2*np.pi)
 
 
             if anglD < -np.pi :

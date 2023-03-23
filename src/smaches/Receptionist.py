@@ -218,7 +218,7 @@ class Goto_living_room_2(smach.State):
         res = omni_base.move_base(known_location='living_room')
         robot, robotquat = tf_man.getTF('base_link')
         new_yaw = (tf.transformations.euler_from_quaternion(
-            robotquat)[2]+np.pi) % 2*np.pi
+            robotquat)[2]+np.pi)
 
         # go to living room an do a 180
         res = omni_base.move_base(robot[0], robot[1], new_yaw)
