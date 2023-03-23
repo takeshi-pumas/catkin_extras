@@ -167,7 +167,7 @@ def callback(req):
             Angs.append( face_locations[0][0] )#Bounding Box
             Angs.append( face_locations[0][1] )#Bounding Box
             Angs.append( face_locations[0][2] )#Bounding Box
-            Angs.append( face_locations[0][0] )#Bounding Box
+            Angs.append( face_locations[0][3] )#Bounding Box
 
 
             face_encodings = face_recognition.face_encodings(image, face_locations)

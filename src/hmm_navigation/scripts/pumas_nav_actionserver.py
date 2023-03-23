@@ -122,6 +122,18 @@ class pumas_navServer():
             #anglD = (yaw - rob_yaw)
             anglD = (yaw - rob_yaw)
 
+                #UGLY
+            if anglD < -2*np.pi :
+                anglD= -1*anglD%2*np.pi
+            elif anglD > 2*np.pi :
+                anglD= anglD%2*np.pi
+
+
+            if anglD < -np.pi :
+                anglD= (anglD%np.pi)
+            elif anglD > np.pi:
+                anglD=(anglD%np.pi)*-1
+
             euclD = np.linalg.norm(np.asarray((x, y)) - c_pose[:2])
             print (anglD)
             timeleft = timeout - rospy.Time.now().to_sec()
