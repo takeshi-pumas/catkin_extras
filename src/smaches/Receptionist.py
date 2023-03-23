@@ -115,30 +115,25 @@ class Scan_face(smach.State):
                 name=res.Ids.ids[0].data
                 talk('I found you, I Think you are .' + name)
                 print(res.Angs.data)
-
-                
                 points = rgbd.get_points()
-                trans = bbox_3d_mean(points, np.asarray(res.Angs.data))
+                boundRect=np.asarray(res.Angs.data).astype('int')                
+                trans = bbox_3d_mean(points, boundRect)
                 print(trans)
                 #############################################################################################
                 ##############################################################################################
-                tf_man.pub_static_tf(
-                    pos=trans, point_name=name, ref='head_rgbd_sensor_link')
-                #tf_man.pub_static_tf(pos=trans, point_name=res.Ids.ids[0].data, ref='head_rgbd_sensor_link')
+                tf_man.pub_static_tf(pos=trans, point_name=name, ref='head_rgbd_sensor_link')
+                
                 rospy.sleep(0.3)
                 tf_man.change_ref_frame_tf(res.Ids.ids[0].data)
-                #################################################################
-                #res=omni_base.move_base(goal_x= goal_D[0] , goal_y = goal_D[1], goal_yaw= tf.transformations.euler_from_quaternion(robotquat)[2]    )
-                #res=move_base(goal_x= goal_D[0] , goal_y = goal_D[1], goal_yaw= ((tf.transformations.euler_from_quaternion(robotquat)[2])+np.arctan2(delta[1], delta[0]))%2*np.pi  )
-                #################################################################################################################################
-                #print (hcp)
-                # head.set_joint_value_target(hcp)
-                print(res)
+                
+                
                 try:
                     trans,quat = tf_man.getTF(target_frame=name)
                 except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
                     print ( 'No TF FOUND')
                 omni_base.move_d_to(1.5, name )
+                head.to_tf(name)
+
                 print (trans)
                 #head.absolute(*trans)
 

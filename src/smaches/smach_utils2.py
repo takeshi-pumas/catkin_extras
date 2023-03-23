@@ -184,16 +184,21 @@ def wait_for_push_hand(time=10):
         return False
 
 
-def bbox_3d_mean(points,bbox):
+def bbox_3d_mean(points,boundRect):
+    #plt.imshow(cv2_img[boundRect[0]:boundRect[1],boundRect[3]:boundRect[2]]                ) #FACELOC FROM FACE
+    #boundRect=np.asarray(res.Angs.data).astype('int') (From face recog response)
+
     xyz=[]
-    xyz_n=points[['x','y','z']][int(bbox[0]):int(bbox[3]),int(bbox[2]):int(bbox[1])]
+    xyz_n=points[['x','y','z']][boundRect[0]:boundRect[1],boundRect[3]:boundRect[2]]
     for i in range(xyz_n.shape[0]):
         for j in range(xyz_n.shape[1]):
             if ~np.isnan(xyz_n['x'][i,j]) and ~np.isnan(xyz_n['y'][i,j]) and ~np.isnan(xyz_n['z'][i,j]):
                 xyz.append(np.asarray([xyz_n['x'][i,j],xyz_n['y'][i,j],xyz_n['z'][i,j]]))
                 
-
-    return np.asarray(xyz).mean(axis=0)
+    if len(xyz)!=0:
+        return np.asarray(xyz).mean(axis=0)
+    else:
+        return np.ones(3)
 
 """def bbox_3d_mean(points,bbox):
     
