@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 from sensor_msgs.msg import Image , LaserScan , PointCloud2
 from geometry_msgs.msg import TransformStamped, Pose
 from tf2_sensor_msgs.tf2_sensor_msgs import do_transform_cloud
-
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 #-----------------------------------------------------------------
 global tf_listener, ptcld_lis, broadcaster , bridge
 
@@ -115,6 +115,7 @@ def correct_points(points_msg,low=0.27,high=1000):
     return img_corrected , corrected
 
 #-----------------------------------------------------------------
+"""
 def plane_seg (points_msg,lower=500 ,higher=50000,reg_ly= 30,reg_hy=600,plt_images=False):
     
     points_data=ros_numpy.numpify(points_msg)
@@ -178,6 +179,7 @@ def plane_seg (points_msg,lower=500 ,higher=50000,reg_ly= 30,reg_hy=600,plt_imag
             else:   
                 print ('cent out of region... rejected')
     return(cents,np.asarray(points), images,hsv_image)
+"""
 
 #-----------------------------------------------------    
 def plot_with_cbar(image,cmap="jet"):
@@ -187,12 +189,8 @@ def plot_with_cbar(image,cmap="jet"):
     cax = divider.append_axes("right", size="5%", pad=0.05)
     plt.colorbar(im, cax=cax)
     plt.show()
-
 #-----------------------------------------------------
-def segment_table(points_data,corrected,zs_no_nans,obj_lMax=0.8,plot_=False):
-    if plot_:
-        print("Imagen entrada en Z")
-        plot_with_cbar(corrected['z'],cmap="gist_rainbow")
+def segment_table(points_data,zs_no_nans,obj_lMax=0.8):
 
     histogram, bin_edges =(np.histogram(zs_no_nans, bins=50))
     t = tfBuffer.lookup_transform('map', 'head_rgbd_sensor_link', rospy.Time())
@@ -204,51 +202,40 @@ def segment_table(points_data,corrected,zs_no_nans,obj_lMax=0.8,plot_=False):
     #Quita a una altura
     plane_height= (trans)+bin_edges[histogram[:-1].argmax()+1]
     img_corrected = np.where(    (-zs_no_nans <  (trans*0.999)-plane_height-0.01),zs_no_nans,1)
-    if plot_:
-        print("Imagen sin datos menores a altura de mesa")
-        plot_with_cbar(img_corrected,cmap="gist_rainbow")
+
     # Quita objetos lejanos
     lenZ_no_nans=np.where(~np.isnan(points_data['z']),points_data['z'],-5)
     lenZ_corrected=np.where(lenZ_no_nans<obj_lMax,lenZ_no_nans,-5)
-    if plot_:
-        print(f"Imagen sin corrected en Z pero quitando si Z del sensor es mayor que {obj_lMax}")
-        plot_with_cbar(lenZ_corrected,cmap="gist_rainbow")
+
     # quita Z en los que los X sean -5
     for r in range(img_corrected.shape[0]):
         for c in range(img_corrected.shape[1]):
             if lenZ_corrected[r,c]<=-5:
                 img_corrected[r,c]=1
-    if plot_:
-        print(f"Im final con quitando X mayor a {obj_lMax}")
-        plot_with_cbar(img_corrected,cmap="gist_rainbow")
     return img_corrected
 #-----------------------------------------------------    
-def segment_floor(corrected,zs_no_nans,obj_hMax=0.85,obj_lMax=1.5,plot_=False):
+def segment_floor(points_data,zs_no_nans,obj_hMax=0.85,obj_lMax=1.5):
     # obj_hMax -> altura maxima para objetos para segmentar
     # obj_lMax -> distancia de objetos maxima para segmentar
-    # Quita nan
-    print("Imagen de entrada")
-    if plot_:
-        plot_with_cbar(zs_no_nans,cmap="gist_rainbow")
-    
+
     # Quita piso y mayor a una cierta altura
     t = tfBuffer.lookup_transform('map', 'head_rgbd_sensor_link', rospy.Time())
     trans=t.transform.translation.z
     img_corrected = np.where((zs_no_nans < -obj_hMax),zs_no_nans,1)
     img_corrected = np.where((img_corrected >-trans-0.15),img_corrected,1)
 
+
     # Quita objetos lejanos
-    xs_no_nans=np.where(~np.isnan(corrected['x']),corrected['x'],-5)
-    x_corrected=np.where(xs_no_nans<obj_lMax,xs_no_nans,-5)
+    ls_no_nans=np.where(~np.isnan(points_data['z']),points_data['z'],-5)
+
+    lZ_corrected=np.where(ls_no_nans>obj_lMax,ls_no_nans,-5)
 
     # Con esto, quita en z los que en X esten con -5
     for r in range(img_corrected.shape[0]):
         for c in range(img_corrected.shape[1]):
-            if x_corrected[r,c]<=-5:
+            if lZ_corrected[r,c]<=-5:
                 img_corrected[r,c]=1
-    if plot_:
-        print(f"Salida, en Z sin datos en X mayores que {obj_lMax}")
-        plot_with_cbar(img_corrected,cmap="gist_rainbow")
+
     return img_corrected
 
 #-----------------------------------------------------------------    
@@ -267,18 +254,17 @@ def plane_seg2(points_msg,hg=0.85,lg=1.5,lower=100 ,higher=50000,reg_ly= 30,reg_
     t = tfBuffer.lookup_transform('map', 'head_rgbd_sensor_link', rospy.Time())
     trans=t.transform.translation.z
     plane_height= (trans)+bin_edges[histogram[:-1].argmax()+1]
+    print(plane_height)
     if plane_height<0.1:
         print("Segmentacion en: Piso")
-        im_corrected=segment_floor(corrected,zs_no_nans,obj_hMax=hg,obj_lMax=lg,plot_=plot_)
+        im_corrected=segment_floor(points_data,zs_no_nans,obj_hMax=hg,obj_lMax=lg)
     else:
         print("Segmentacion en: Mesa")
-        im_corrected=segment_table(points_data,corrected,zs_no_nans,obj_lMax=kg,plot_=plot_)
+        im_corrected=segment_table(points_data,zs_no_nans,obj_lMax=lg)
     
     if plot:
-        cv2.imshow("image to segment",im_corrected)
+        cv2.imshow("Image to segment",im_corrected)
         cv2.waitKey(0)
-        #plot_with_cbar(im_corrected,cmap="prism")
-        
 
         cv2.destroyAllWindows()
     contours, hierarchy = cv2.findContours(im_corrected.astype('uint8'),cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
