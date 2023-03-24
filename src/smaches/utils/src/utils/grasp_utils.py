@@ -189,7 +189,7 @@ class ARM():
         self._cli = actionlib.SimpleActionClient(
             '/hsrb/arm_trajectory_controller/follow_joint_trajectory',
             control_msgs.msg.FollowJointTrajectoryAction)
-    def set_joint_values(self, joint_values = [0.0, 0.0, 0.0, 0.0, 0.0])
+    def set_joint_values(self, joint_values = [0.0, 0.0, -1.6, -1.6, 0.0]):
         goal = control_msgs.msg.FollowJointTrajectoryGoal()
         traj = trajectory_msgs.msg.JointTrajectory()
         traj.joint_names = self._joint_names
@@ -205,3 +205,7 @@ class ARM():
 
         # wait for the action server to complete the order
         return self._cli.wait_for_result()
+    def get_joint_values(self):
+        states = rospy.wait_for_message('/hsrb/joint_states', JointState)
+        st = states.position
+        return [st[1], st[0],st[2], st[11], st[12]]

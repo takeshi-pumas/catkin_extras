@@ -9,6 +9,7 @@ from std_msgs.msg import String
 from tmc_msgs.msg import Voice
 from geometry_msgs.msg import Twist, WrenchStamped, TransformStamped, Pose, Point, Quaternion
 from sensor_msgs.msg import Image as ImageMsg, PointCloud2
+from sensor_msgs.msg import JointState
 import tmc_control_msgs.msg
 import trajectory_msgs.msg
 import control_msgs.msg
