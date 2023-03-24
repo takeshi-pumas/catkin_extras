@@ -189,7 +189,7 @@ def bbox_3d_mean(points,boundRect):
     #boundRect=np.asarray(res.Angs.data).astype('int') (From face recog response)
 
     xyz=[]
-    xyz_n=points[['x','y','z']][boundRect[0]:boundRect[1],boundRect[3]:boundRect[2]]
+    xyz_n=points[['x','y','z']][boundRect[0]:boundRect[2],boundRect[3]:boundRect[1]]
     for i in range(xyz_n.shape[0]):
         for j in range(xyz_n.shape[1]):
             if ~np.isnan(xyz_n['x'][i,j]) and ~np.isnan(xyz_n['y'][i,j]) and ~np.isnan(xyz_n['z'][i,j]):

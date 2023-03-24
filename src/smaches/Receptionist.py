@@ -118,14 +118,14 @@ class Scan_face(smach.State):
                 
 
 
-                #points = rgbd.get_points()
-                #boundRect=np.asarray(res.Angs.data).astype('int')                
-                #trans = bbox_3d_mean(points, boundRect)
+                points = rgbd.get_points()                              ##FACE POS FROM FACE RECOG
+                boundRect=np.asarray(res.Angs.data).astype('int')       ##FACE POS FROM FACE RECOG
+                trans = bbox_3d_mean(points, boundRect)                 ##FACE POS FROM FACE RECOG
                 
 
-                trans_dict=human_detect_server.call()
-                trans =[trans_dict.x,trans_dict.y,trans_dict.z]
-                print( trans )
+                #trans_dict=human_detect_server.call()
+                #trans =[trans_dict.x,trans_dict.y,trans_dict.z]
+                #print( trans )
                 
                 #############################################################################################
                 ##############################################################################################
@@ -146,7 +146,7 @@ class Scan_face(smach.State):
                 #head.absolute(*trans)
 
                 talk (name +'... I will lead you to the living room, please follow me')
-                return 0
+                
                 return 'succ'
 
 
