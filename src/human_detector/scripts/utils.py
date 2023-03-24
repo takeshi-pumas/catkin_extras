@@ -31,8 +31,8 @@ listener = tf.TransformListener()
 broadcaster = tf2_ros.TransformBroadcaster()
 tf_static_broadcaster = tf2_ros.StaticTransformBroadcaster()
 
-protoFile = "/home/oscar/Documents/pose/body_25/pose_deploy.prototxt"
-weightsFile = "/home/oscar/Documents/pose/body_25/pose_iter_584000.caffemodel"
+protoFile = "/home/takeshi/openpose/models/pose/body_25/pose_deploy.prototxt"
+weightsFile = "/home/takeshi/openpose/models/pose/body_25/pose_iter_584000.caffemodel"
 net = cv2.dnn.readNetFromCaffe(protoFile, weightsFile)
 #tf_listener = tf.TransformListener()
 #broadcaster= tf.TransformBroadcaster()

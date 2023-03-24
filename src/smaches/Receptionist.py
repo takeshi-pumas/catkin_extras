@@ -115,30 +115,38 @@ class Scan_face(smach.State):
                 name=res.Ids.ids[0].data
                 talk('I found you, I Think you are .' + name)
                 print(res.Angs.data)
-                points = rgbd.get_points()
-                boundRect=np.asarray(res.Angs.data).astype('int')                
-                trans = bbox_3d_mean(points, boundRect)
-                print(trans)
+                
+
+
+                #points = rgbd.get_points()
+                #boundRect=np.asarray(res.Angs.data).astype('int')                
+                #trans = bbox_3d_mean(points, boundRect)
+                
+
+                trans_dict=human_detect_server.call()
+                trans =[trans_dict.x,trans_dict.y,trans_dict.z]
+                print( trans )
+                
                 #############################################################################################
                 ##############################################################################################
                 tf_man.pub_static_tf(pos=trans, point_name=name, ref='head_rgbd_sensor_link')
                 
                 rospy.sleep(0.3)
-                tf_man.change_ref_frame_tf(res.Ids.ids[0].data)
+                tf_man.change_ref_frame_tf(name)
                 
                 
                 try:
                     trans,quat = tf_man.getTF(target_frame=name)
                 except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
                     print ( 'No TF FOUND')
-                omni_base.move_d_to(1.5, name )
+                omni_base.move_d_to(1, name )
                 head.to_tf(name)
 
                 print (trans)
                 #head.absolute(*trans)
 
                 talk (name +'... I will lead you to the living room, please follow me')
-                
+                return 0
                 return 'succ'
 
 

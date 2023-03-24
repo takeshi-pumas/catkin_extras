@@ -179,7 +179,6 @@ def plane_seg (points_msg,lower=500 ,higher=50000,reg_ly= 30,reg_hy=600,plt_imag
             else:   
                 print ('cent out of region... rejected')
     return(cents,np.asarray(points), images,hsv_image)
-"""
 
 #-----------------------------------------------------    
 def plot_with_cbar(image,cmap="jet"):
@@ -189,6 +188,9 @@ def plot_with_cbar(image,cmap="jet"):
     cax = divider.append_axes("right", size="5%", pad=0.05)
     plt.colorbar(im, cax=cax)
     plt.show()
+
+"""
+
 #-----------------------------------------------------
 def segment_table(points_data,zs_no_nans,obj_lMax=0.8):
 
