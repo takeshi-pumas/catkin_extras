@@ -117,11 +117,11 @@ def callback(req):
 
 
         
-
-        Angs.append( res[0]['facial_area']['x'] )
+##########################################################Wierd order because of dlib server compatibility
         Angs.append( res[0]['facial_area']['y'] )
-        Angs.append( res[0]['facial_area']['x']+res[0]['facial_area']['w'] )
-        Angs.append( res[0]['facial_area']['y']+ res[0]['facial_area']['h'])
+        Angs.append( res[0]['facial_area']['h'] )
+        Angs.append( res[0]['facial_area']['w'] )
+        Angs.append( res[0]['facial_area']['x'] )
         
          
 
@@ -163,7 +163,60 @@ def callback(req):
     
     
     
-    
+def callback_3(req):
+    global path_for_faces , encodings , ids
+    images=[]
+    for i in range(len(req.in_.image_msgs)):
+        images.append(bridge.imgmsg_to_cv2(req.in_.image_msgs[i]))
+    for image in images:
+        print (image.shape)
+        try:
+            res=DeepFace.extract_faces(image)
+            objs = DeepFace.analyze(image, actions = ['age', 'gender', 'race', 'emotion'] ) 
+
+            ############Write Response message
+            Ds, Rots=Floats(),Floats()
+            strings=Strings()
+            Angs=[]
+
+            for st in (objs[0]['dominant_gender'],objs[0]['dominant_race'],objs[0]['dominant_emotion'],str(objs[0]['age'])):
+                print (st)
+                string_msg= String()
+                string_msg.data=st
+                strings.ids.append(string_msg)
+
+            #strings.ids.append(str( objs[0]['age']) )
+
+            Angs.append( objs[0]['region']['x'] )
+            Angs.append( objs[0]['region']['x'] + objs[0]['region']['w'] )
+            Angs.append( objs[0]['region']['y'] + objs[0]['region']['h'] )
+            Angs.append( objs[0]['region']['y'] )
+
+
+
+            Rots.data=Angs
+            return RecognizeFaceResponse(Ds,Rots,strings)        
+
+
+
+
+
+
+
+
+
+        except(ValueError): 
+            print('No Face')
+            Ds, Rots=Floats(),Floats()                          ###DEFINITION RESPONSE
+            strings=Strings()
+            string_msg= String()
+            string_msg.data= 'NO_FACE'
+            strings.ids.append(string_msg)
+            Dstoface.append(0.0)
+            Ds.data= Dstoface
+            Angs.append(0.0)
+            Rots.data= Angs
+            return RecognizeFaceResponse(Ds,Rots,strings)        
 
 
 def classify_server():
@@ -177,6 +230,7 @@ def classify_server():
     rospy.loginfo("Face Recognition service available")                    # initialize a ROS node
     s = rospy.Service('recognize_face', RecognizeFace, callback) 
     s2 = rospy.Service('new_face', RecognizeFace, callback_2) 
+    s3 = rospy.Service('analyze_face', RecognizeFace, callback_3) 
     
    
 

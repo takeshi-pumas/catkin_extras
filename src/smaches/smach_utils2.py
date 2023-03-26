@@ -36,7 +36,7 @@ from utils.misc_utils import *
 from utils.nav_utils import *
 
 global listener, broadcaster, tfBuffer, tf_static_broadcaster, scene, rgbd  , head,train_new_face,WRIST_SENSOR ,human_detect_server
-global clear_octo_client, goal,navclient,segmentation_server  , tf_man , omni_base ,speech_recog_server,bridge, map_msg,pix_per_m
+global clear_octo_client, goal,navclient,segmentation_server  , tf_man , omni_base ,speech_recog_server,bridge, map_msg,pix_per_m , analyze_face
 rospy.init_node('smach')
 # head = moveit_commander.MoveGroupCommander('head')
 #gripper =  moveit_commander.MoveGroupCommander('gripper')
@@ -49,23 +49,23 @@ tfBuffer = tf2_ros.Buffer()
 listener = tf2_ros.TransformListener(tfBuffer)
 broadcaster = tf2_ros.TransformBroadcaster()
 tf_static_broadcaster = tf2_ros.StaticTransformBroadcaster()
-clear_octo_client = rospy.ServiceProxy('/clear_octomap', Empty)
-human_detect_server = rospy.ServiceProxy('/detect_human' , Human_detector)
-segmentation_server = rospy.ServiceProxy('/segment' , Segmentation)
+clear_octo_client = rospy.ServiceProxy('/clear_octomap', Empty)   ###OGRASPING OBSTACLE 
+human_detect_server = rospy.ServiceProxy('/detect_human' , Human_detector)  ####HUMAN FINDER OPPOSEBASED
+segmentation_server = rospy.ServiceProxy('/segment' , Segmentation)    ##### PLANE SEGMENTATION (PARALEL TO FLOOR)
 navclient=actionlib.SimpleActionClient('/navigate', NavigateAction)   ### PUMAS NAV ACTION LIB
 # scene = moveit_commander.PlanningSceneInterface()
-speech_recog_server = rospy.ServiceProxy('/speech_recognition/vosk_service' ,GetSpeech)
-recognize_face = rospy.ServiceProxy('recognize_face', RecognizeFace)
-train_new_face = rospy.ServiceProxy('new_face', RecognizeFace)    
+speech_recog_server = rospy.ServiceProxy('/speech_recognition/vosk_service' ,GetSpeech)##############TOYOTA
+recognize_face = rospy.ServiceProxy('recognize_face', RecognizeFace)                    #FACE RECOG
+train_new_face = rospy.ServiceProxy('new_face', RecognizeFace)                          #FACE RECOG
+analyze_face = rospy.ServiceProxy('analyze_face', RecognizeFace)    ###DEEP FACE ONLY
 
 
-
-map_msg= rospy.wait_for_message('/augmented_map', OccupancyGrid)####WAIT for nav pumas map
-inflated_map= np.asarray(map_msg.data)
-img_map=inflated_map.reshape((map_msg.info.width,map_msg.info.height))
-pix_per_m=map_msg.info.resolution
-contours, hierarchy = cv2.findContours(img_map.astype('uint8'),cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
-contoured=cv2.drawContours(img_map.astype('uint8'), contours, 1, (255,255,255), 1)
+#map_msg= rospy.wait_for_message('/augmented_map', OccupancyGrid)####WAIT for nav pumas map
+#inflated_map= np.asarray(map_msg.data)
+#img_map=inflated_map.reshape((map_msg.info.width,map_msg.info.height))
+#pix_per_m=map_msg.info.resolution
+#contours, hierarchy = cv2.findContours(img_map.astype('uint8'),cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+#contoured=cv2.drawContours(img_map.astype('uint8'), contours, 1, (255,255,255), 1)
 
 rgbd= RGBD()
 bridge = CvBridge()
@@ -161,8 +161,9 @@ def wait_for_face(timeout=10):
 
         if res.Ids.ids[0].data == 'NO_FACE':
             print ('No face FOund Keep scanning')
+            return False, None
         
-        else:return res
+        else:return res , img
 
 def wait_for_push_hand(time=10):
 
@@ -183,6 +184,28 @@ def wait_for_push_hand(time=10):
         print(time, 'secs have elapsed with no hand push')
         return False
 
+def analyze_face_from_image(cv2_img,name=''):   
+    req=RecognizeFaceRequest()
+
+    strings=Strings()
+    string_msg= String()
+    string_msg.data='analyze '
+    req.Ids.ids.append(string_msg)
+    img_msg=bridge.cv2_to_imgmsg(cv2_img)
+    req.in_.image_msgs.append(img_msg)
+    #res=recognize(req)
+    res = analyze_face(req)
+    results=[]
+    for chars in res.Ids.ids:
+        results.append(chars.data)
+    results
+    name= 'Jack'
+    pronoun='She'
+    if results[0]=='Man':pronoun='He'
+
+    takeshi_line= name+' has arrived A '+results[0]+' I believe '+pronoun +' is  around '+results[-1]+' years old. I would say he is a bit '+results[2]+ ' And I would guess '+pronoun+' is of '+ results[1]+' descent.'
+    print (takeshi_line)
+    return takeshi_line
 
 def bbox_3d_mean(points,boundRect):
     #plt.imshow(cv2_img[boundRect[0]:boundRect[1],boundRect[3]:boundRect[2]]                ) #FACELOC FROM FACE
