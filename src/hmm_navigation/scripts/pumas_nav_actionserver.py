@@ -145,7 +145,7 @@ class pumas_navServer():
             # state = NS.get_status()
 
             # success = state == 3 and euclD < 0.05 and anglD < 0.3
-            success = euclD < 0.4 and abs(anglD) < 0.1
+            success = euclD < 0.45 and abs(anglD) < 0.1
 
         # state = NS.get_status()
         head.set_joint_values(head_pose = [0.0, 0.0])

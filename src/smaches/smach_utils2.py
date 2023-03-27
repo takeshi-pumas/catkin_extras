@@ -203,8 +203,7 @@ def analyze_face_from_image(cv2_img,name=''):
     #name= 'Jack'
     pronoun='She'
     if results[0]=='Man':pronoun='He'
-    takeshi_line= name+' has arrived A '+results[0]+' I believe '+pronoun +' is  around '+results[-1]+' years old. I would say he is a bit '+results[2]+ ' And I would guess '+pronoun+' is of '+ results[1]+' descent.'
-    print (takeshi_line)
+    takeshi_line= name+' has arrived.....'+pronoun+'  is  a  '+results[0]+'...  I believe '+pronoun +' is  around '+results[-1]+' years old.... I would say he is a bit '+results[2]+ ' And I would guess '+pronoun+' is of '+ results[1]+' descent.'
     return takeshi_line
 
 def bbox_3d_mean(points,boundRect):
@@ -241,4 +240,4 @@ gripper = GRIPPER()
 omni_base=OMNIBASE()
 wrist= WRIST_SENSOR()
 head = GAZE()
-#arm =  moveit_commander.MoveGroupCommander('arm')
+arm =  moveit_commander.MoveGroupCommander('arm')
