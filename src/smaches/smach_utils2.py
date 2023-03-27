@@ -2,7 +2,7 @@
 
 import smach
 import smach_ros
-from geometry_msgs.msg import PoseStamped, Point , Quaternion , TransformStamped , Twist
+from geometry_msgs.msg import PoseStamped, Point , PointStamped , Quaternion , TransformStamped , Twist
 from std_srvs.srv import Trigger, TriggerResponse 
 import moveit_commander
 import moveit_msgs.msg
