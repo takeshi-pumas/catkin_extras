@@ -185,8 +185,9 @@ def wait_for_push_hand(time=10):
         return False
 
 def analyze_face_from_image(cv2_img,name=''):   
+    #USING DEEP FACE SERVICE
+    # FIND SOME CHARACTERISTICS FROM A FACE IMAGE
     req=RecognizeFaceRequest()
-
     strings=Strings()
     string_msg= String()
     string_msg.data='analyze '
@@ -202,14 +203,12 @@ def analyze_face_from_image(cv2_img,name=''):
     #name= 'Jack'
     pronoun='She'
     if results[0]=='Man':pronoun='He'
-
     takeshi_line= name+' has arrived A '+results[0]+' I believe '+pronoun +' is  around '+results[-1]+' years old. I would say he is a bit '+results[2]+ ' And I would guess '+pronoun+' is of '+ results[1]+' descent.'
     print (takeshi_line)
     return takeshi_line
 
 def bbox_3d_mean(points,boundRect):
-    #plt.imshow(cv2_img[boundRect[0]:boundRect[1],boundRect[3]:boundRect[2]]                ) #FACELOC FROM FACE
-    #boundRect=np.asarray(res.Angs.data).astype('int') (From face recog response)
+    #Gets the mean of the Points from the pincloud enclosed in the bound Rect of the RGBD image
 
     xyz=[]
     xyz_n=points[['x','y','z']][boundRect[0]:boundRect[2],boundRect[3]:boundRect[1]]
