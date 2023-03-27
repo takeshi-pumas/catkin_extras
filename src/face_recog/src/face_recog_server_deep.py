@@ -91,12 +91,19 @@ def callback(req):
         print (image.shape)
         try:
             res=DeepFace.extract_faces(image )
-            print ('face found')
+            print ('face found h')
             dfs = DeepFace.find(image,path_for_faces)
-            print('id',dfs[0]['identity'].iloc[0].split('/')[-2])
+            print('id->',dfs[0]['identity'].iloc[1].split('/')[-2])
+            name=dfs[0]['identity'].iloc[1].split('/')[-2]
+            names.append(name)
+
+    
+
+
         except(ValueError): 
-            print('No Face')
-            Ds, Rots=Floats(),Floats()                          ###DEFINITION RESPONSE
+            print('No Face h')
+            Ds, Rots=Floats(),Floats()  
+                                    ###DEFINITION RESPONSE
             strings=Strings()
             string_msg= String()
             string_msg.data= 'NO_FACE'
@@ -107,31 +114,12 @@ def callback(req):
             Rots.data= Angs
             return RecognizeFaceResponse(Ds,Rots,strings)        
 
-
-        
-
-
-
-        name=dfs[0]['identity'].iloc[0].split('/')[-2]
-        names.append(name)
-
-
-        
+    
 ##########################################################Wierd order because of dlib server compatibility
         Angs.append( res[0]['facial_area']['y'] )
         Angs.append( res[0]['facial_area']['h'] )
         Angs.append( res[0]['facial_area']['w'] )
         Angs.append( res[0]['facial_area']['x'] )
-        
-         
-
-
-        
-        
-        
-
-
-
         
         ############Write Response message
         Ds, Rots=Floats(),Floats()
@@ -143,26 +131,7 @@ def callback(req):
         Ds.data=Dstoface
         Rots.data=Angs
         return RecognizeFaceResponse(Ds,Rots,strings)        
-
-
-
-                
-                
-                
-                
-
-
-
-
-
-
-    #print ('Predictions (top 3 for each class)',flo.data)
-
-    
-  
-    
-    
-    
+   
 def callback_3(req):
     global path_for_faces , encodings , ids
     images=[]
@@ -178,6 +147,7 @@ def callback_3(req):
             Ds, Rots=Floats(),Floats()
             strings=Strings()
             Angs=[]
+            Dstoface=[]
 
             for st in (objs[0]['dominant_gender'],objs[0]['dominant_race'],objs[0]['dominant_emotion'],str(objs[0]['age'])):
                 print (st)
@@ -187,28 +157,22 @@ def callback_3(req):
 
             #strings.ids.append(str( objs[0]['age']) )
 
-            Angs.append( objs[0]['region']['x'] )
-            Angs.append( objs[0]['region']['x'] + objs[0]['region']['w'] )
-            Angs.append( objs[0]['region']['y'] + objs[0]['region']['h'] )
-            Angs.append( objs[0]['region']['y'] )
-
+            ##########################################################Wierd order because of dlib server compatibility
+            Angs.append( res[0]['facial_area']['y'] )
+            Angs.append( res[0]['facial_area']['h'] )
+            Angs.append( res[0]['facial_area']['w'] )
+            Angs.append( res[0]['facial_area']['x'] )
 
 
             Rots.data=Angs
             return RecognizeFaceResponse(Ds,Rots,strings)        
 
-
-
-
-
-
-
-
-
         except(ValueError): 
             print('No Face')
             Ds, Rots=Floats(),Floats()                          ###DEFINITION RESPONSE
             strings=Strings()
+            Dstoface=[]
+            Angs=[]
             string_msg= String()
             string_msg.data= 'NO_FACE'
             strings.ids.append(string_msg)

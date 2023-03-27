@@ -357,14 +357,14 @@ class Introduce_guest(smach.State):
         takeshi_line= analyze_face_from_image(img_face,name)   
         
         print (takeshi_line)
-        talk(takeshi_line)
-        
-
-        if res == 3:
+        if (len(takeshi_line)!=0):
+            talk(takeshi_line)
             return 'succ'
-        else:
-            talk('Navigation Failed, retrying')
+        else :
+            print ('no face in img')
             return 'failed'
+
+        
 
 def init(node_name):
     print('smach ready')

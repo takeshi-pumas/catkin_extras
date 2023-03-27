@@ -161,7 +161,7 @@ def wait_for_face(timeout=10):
 
         if res.Ids.ids[0].data == 'NO_FACE':
             print ('No face FOund Keep scanning')
-            return False, None
+            return None, None
         
         else:return res , img
 
@@ -198,8 +198,8 @@ def analyze_face_from_image(cv2_img,name=''):
     results=[]
     for chars in res.Ids.ids:
         results.append(chars.data)
-    results
-    name= 'Jack'
+    if (len(results)==1):return ''  ###NO FACE
+    #name= 'Jack'
     pronoun='She'
     if results[0]=='Man':pronoun='He'
 
@@ -242,4 +242,4 @@ gripper = GRIPPER()
 omni_base=OMNIBASE()
 wrist= WRIST_SENSOR()
 head = GAZE()
-arm =  moveit_commander.MoveGroupCommander('arm')
+#arm =  moveit_commander.MoveGroupCommander('arm')
