@@ -206,8 +206,8 @@ def classify_server():
     broadcaster= tf.TransformBroadcaster()
     tf_static_broadcaster= tf2_ros.StaticTransformBroadcaster()
     rospy.loginfo("Face Recognition service available")                    # initialize a ROS node
-    s = rospy.Service('recognize_face', RecognizeFace, callback) 
-    s2 = rospy.Service('new_face', RecognizeFace, callback_2) 
+    #s = rospy.Service('recognize_face', RecognizeFace, callback) 
+    #s2 = rospy.Service('new_face', RecognizeFace, callback_2) 
     s3 = rospy.Service('analyze_face', RecognizeFace, callback_3) 
     
    
