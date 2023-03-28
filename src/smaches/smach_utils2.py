@@ -35,8 +35,8 @@ from utils.grasp_utils import *
 from utils.misc_utils import *
 from utils.nav_utils import *
 
-global listener, broadcaster, tfBuffer, tf_static_broadcaster, scene, rgbd  , head,train_new_face,WRIST_SENSOR ,human_detect_server
-global clear_octo_client, goal,navclient,segmentation_server  , tf_man , omni_base ,speech_recog_server,bridge, map_msg,pix_per_m , analyze_face
+global listener, broadcaster, tfBuffer, tf_static_broadcaster, scene, rgbd, head,train_new_face, wrist, human_detect_server
+global clear_octo_client, goal,navclient,segmentation_server  , tf_man , omni_base, brazo, speech_recog_server, bridge, map_msg, pix_per_m, analyze_face
 rospy.init_node('smach')
 # head = moveit_commander.MoveGroupCommander('head')
 #gripper =  moveit_commander.MoveGroupCommander('gripper')
@@ -201,9 +201,15 @@ def analyze_face_from_image(cv2_img,name=''):
         results.append(chars.data)
     if (len(results)==1):return ''  ###NO FACE
     #name= 'Jack'
-    pronoun='She'
-    if results[0]=='Man':pronoun='He'
-    takeshi_line= name+' has arrived.....'+pronoun+'  is  a  '+results[0]+'...  I believe '+pronoun +' is  around '+results[-1]+' years old.... I would say he is a bit '+results[2]+ ' And I would guess '+pronoun+' is of '+ results[1]+' descent.'
+    pronoun='she'
+    gender = results[0]
+    age = results[-1]
+    state = results[2]
+    race = results[1]
+    if gender=='Man':pronoun='he'
+    takeshi_line = f'{name} has arrived... {pronoun} is a {gender}... I believe {pronoun}.' 
+    takeshi_line += f'is  around  {age} years old... I would say he is a bit  {state}.'
+    takeshi_line += f'And I might guess {pronoun} is of {race}.'
     return takeshi_line
 
 def bbox_3d_mean(points,boundRect):
@@ -240,4 +246,5 @@ gripper = GRIPPER()
 omni_base=OMNIBASE()
 wrist= WRIST_SENSOR()
 head = GAZE()
+brazo = ARM()
 arm =  moveit_commander.MoveGroupCommander('arm')

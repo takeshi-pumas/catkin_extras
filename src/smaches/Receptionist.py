@@ -27,6 +27,7 @@ class Initial(smach.State):
         # head.set_named_target('neutral')
         # succ=head.go()
         head.set_joint_values([0.0, 0.0])
+
         rospy.sleep(0.8)
 
         # arm.set_named_target('go')
@@ -75,7 +76,7 @@ class Goto_door(smach.State):   ###ADD KNONW LOCATION DOOR
         self.tries += 1
         if self.tries == 3:
             return 'tries'
-        if self.tries==1:talk('Navigating to ,door')
+        if self.tries==1:talk('Navigating to door')
         res = omni_base.move_base(known_location='door')
         print(res)
 
@@ -330,8 +331,11 @@ class Find_sitting_place(smach.State):
         if res == None:
 
             talk('Here is a place to sit.')
-            arm.set_named_target('neutral')
-            arm.go()
+            #arm.set_named_target('neutral')
+            #arm.go()
+            bcp = brazo.get_joint_values()
+            bcp[2] = 0.0
+            brazo.set_joint_values(bcp)
             return 'succ'
 
         if res != None:
