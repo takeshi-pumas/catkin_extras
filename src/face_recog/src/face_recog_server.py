@@ -121,16 +121,17 @@ def callback(req):
     first= True
 
     for person in os.listdir(path_for_faces):    
-        for example in os.listdir(path_for_faces+person):
-            if first:
-                first= False
-                dataset_pic=face_recognition.load_image_file(path_for_faces+person+'/'+example)
-                encodings = face_recognition.face_encodings(dataset_pic)
-                
-            else:
-                dataset_pic = face_recognition.load_image_file(path_for_faces+person+'/'+example)
-                encodings.append(face_recognition.face_encodings(dataset_pic)[0])
-            ids.append(person)
+        if person[-3:]!='pkl':
+            for example in os.listdir(path_for_faces+person):
+                if first:
+                    first= False
+                    dataset_pic=face_recognition.load_image_file(path_for_faces+person+'/'+example)
+                    encodings = face_recognition.face_encodings(dataset_pic)
+                    
+                else:
+                    dataset_pic = face_recognition.load_image_file(path_for_faces+person+'/'+example)
+                    encodings.append(face_recognition.face_encodings(dataset_pic)[0])
+                ids.append(person)
     ids=np.asarray(ids)
     
     

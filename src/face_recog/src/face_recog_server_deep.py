@@ -39,7 +39,7 @@ def callback_2(req):
 
 
 
-    images=[]
+    """images=[]
     new_names=[]
     for i in range(len(req.in_.image_msgs)):
         images.append(bridge.imgmsg_to_cv2(req.in_.image_msgs[i]))
@@ -49,13 +49,27 @@ def callback_2(req):
             os.mkdir(path_for_faces+'/'+req.Ids.ids[i].data)
             image= cv2.cvtColor(bridge.imgmsg_to_cv2(req.in_.image_msgs[i]), cv2.COLOR_BGR2RGB)
             cv2.imwrite(path_for_faces+'/'+req.Ids.ids[i].data+'/'+req.Ids.ids[i].data+'.jpg',image)
+            
 
 
-
+    """
         
 
 
-    
+    images=[]
+    new_names=[]
+    for i in range(len(req.in_.image_msgs)):
+        images.append(bridge.imgmsg_to_cv2(req.in_.image_msgs[i]))
+        print (req.Ids.ids[i].data)
+        image= cv2.cvtColor(bridge.imgmsg_to_cv2(req.in_.image_msgs[i]), cv2.COLOR_BGR2RGB)
+        if req.Ids.ids[i].data in os.listdir(path_for_faces):
+            print('ID ALREADY ASSIGNED , adding image caution advised',str(len(os.listdir(path_for_faces+'/'+req.Ids.ids[i].data))))
+            cv2.imwrite(path_for_faces+'/'+req.Ids.ids[i].data+'/'+req.Ids.ids[i].data+str(len(os.listdir(path_for_faces+'/'+req.Ids.ids[i].data)))+'.jpg',image)
+        else:
+            os.mkdir(path_for_faces+'/'+req.Ids.ids[i].data)
+            cv2.imwrite(path_for_faces+'/'+req.Ids.ids[i].data+'/'+req.Ids.ids[i].data+'.jpg',image)
+            print('New ID added ')
+
 
 
 
@@ -192,8 +206,8 @@ def classify_server():
     broadcaster= tf.TransformBroadcaster()
     tf_static_broadcaster= tf2_ros.StaticTransformBroadcaster()
     rospy.loginfo("Face Recognition service available")                    # initialize a ROS node
-    #s = rospy.Service('recognize_face', RecognizeFace, callback) 
-    #s2 = rospy.Service('new_face', RecognizeFace, callback_2) 
+    s = rospy.Service('recognize_face', RecognizeFace, callback) 
+    s2 = rospy.Service('new_face', RecognizeFace, callback_2) 
     s3 = rospy.Service('analyze_face', RecognizeFace, callback_3) 
     
    
