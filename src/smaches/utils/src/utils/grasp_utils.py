@@ -209,3 +209,13 @@ class ARM():
         states = rospy.wait_for_message('/hsrb/joint_states', JointState)
         st = states.position
         return [st[1], st[0],st[2], st[11], st[12]]
+
+    def named_poses(self, pose = 'go'):
+        if pose == 'go':
+            joint_values = [0.0, 0.0, -1.6, -1.6, 0.0]
+        elif pose = 'grasp_floor'
+            joint_values = [0.0,-2.47,0.0,0.86,-0.032, 0.0]
+        #go case
+        else:   
+            joint_values = [0.0, 0.0, 0.0, -1.6, 0.0]
+        self.set_joint_values(joint_values)

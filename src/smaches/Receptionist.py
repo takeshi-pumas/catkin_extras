@@ -77,7 +77,8 @@ class Goto_door(smach.State):   ###ADD KNONW LOCATION DOOR
         if self.tries == 3:
             return 'tries'
         if self.tries==1:talk('Navigating to door')
-        res = omni_base.move_base(known_location='door')
+        # res = omni_base.move_base(known_location='door')
+        res = omni_base.navigate()
         print(res)
 
         if res == 3:

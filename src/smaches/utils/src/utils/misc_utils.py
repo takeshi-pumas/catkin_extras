@@ -7,7 +7,7 @@ import numpy as np
 import ros_numpy
 from std_msgs.msg import String
 from tmc_msgs.msg import Voice
-from geometry_msgs.msg import Twist, WrenchStamped, TransformStamped, Pose, Point, Quaternion
+from geometry_msgs.msg import Twist, WrenchStamped, TransformStamped, Pose, Point, Quaternion, PoseStamped
 from sensor_msgs.msg import Image as ImageMsg, PointCloud2
 from sensor_msgs.msg import JointState
 import tmc_control_msgs.msg

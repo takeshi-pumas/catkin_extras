@@ -16,6 +16,9 @@ class OMNIBASE():
             '/navigate', NavigateAction)  # PUMAS NAV ACTION LIB
         self._tf_man = TF_MANAGER()
 
+        self.nav_goal_pub = rospy.Publisher(
+            '/move_base_simple/goal', PoseStamped, queue_size=10)
+
     def _move_base_vel(self):
         twist = Twist()
         twist.linear.x = self.velX
@@ -94,3 +97,40 @@ class OMNIBASE():
         # LOST            = 9
         action_state = self.navclient.get_state()
         return action_state
+
+    def navigate(self, goal_x = 0.0, goal_y = 0.0, goal_theta = 0.0, known_location = 'None'):
+        if known_location != 'None':
+            x,y,theta = get_known_location(known_location)
+        else:
+            x,y,theta = goal_x,goal_y,goal_theta
+
+        goal_position = Point(x,y,0.0)
+        goal_orientation = Quaternion(*tf.transformations.quaternion_from_euler(0.0, 0.0, theta))
+        goal_msg = PoseStamped()
+        goal_msg.pose.position = goal_position
+        goal_msg.pose.orientation = goal_orientation
+        self.nav_goal_pub.publish(goal_msg)
+
+    def _read_yaml(self, known_locations_file='/known_locations.yaml'):
+        rospack = rospkg.RosPack()
+        file_path = rospack.get_path('config_files') + known_locations_file
+
+        with open(file_path, 'r') as file:
+            content = yaml.safe_load(file)
+        return content
+
+
+    def _match_location(self, location):
+        content = self._read_yaml()
+        try:
+            return True, content[location]
+        except:
+            return False, 'No location found'
+
+    def get_known_location(self, location):
+        succ, loc = match_location(known_loc)
+        if succ:
+            XYT = loc[:3]
+            # it could change
+            x, y, theta = XYT[0]['x'], XYT[1]['y'], XYT[2]['theta']
+            return x, y, theta
