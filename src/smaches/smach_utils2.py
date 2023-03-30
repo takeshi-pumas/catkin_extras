@@ -70,16 +70,23 @@ analyze_face = rospy.ServiceProxy('analyze_face', RecognizeFace)    ###DEEP FACE
 rgbd= RGBD()
 bridge = CvBridge()
 #segmentation_server = rospy.ServiceProxy('/segment_2_tf', Trigger) 
+tf_man = TF_MANAGER()
+gripper = GRIPPER()
+omni_base=OMNIBASE()
+wrist= WRIST_SENSOR()
+head = GAZE()
+brazo = ARM()
+arm =  moveit_commander.MoveGroupCommander('arm')
 
 
-
+#------------------------------------------------------
 def get_robot_px():
     trans, rot=tf_man.getTF('base_link')
     robot=np.asarray(trans[:2])
     print (trans)
     return np.asarray((robot/pix_per_m).round(),dtype='int')
 
-
+#------------------------------------------------------
 def check_point_map(x,y):
 
     # Quiero saber punto 0,-7 m esta libre?
@@ -112,20 +119,15 @@ def check_point_map(x,y):
                 print ('safe at', safe_xy_px, safe_xy_px*pix_per_m)
                 return safe_xy_px
     return safe_xy_px
-
+    
+#------------------------------------------------------
 def point_to_px(x,y):
     safe_xy=np.asarray((x,y))
     return np.round(safe_xy/pix_per_m).astype('int')
 def px_to_point(px,py):
     return np.asarray((px,py))*pix_per_m
 
-    
-    
-    
-
-
-
-
+#------------------------------------------------------
 def train_face(image, name):
     req=RecognizeFaceRequest()
     strings=Strings()
@@ -140,7 +142,7 @@ def train_face(image, name):
     return res.Ids.ids[0].data.split(' ')[0] == 'trained'
 
 
-
+#------------------------------------------------------
 def wait_for_face(timeout=10):
     
     rospy.sleep(0.3)
@@ -165,6 +167,7 @@ def wait_for_face(timeout=10):
         
         else:return res , img
 
+#------------------------------------------------------
 def wait_for_push_hand(time=10):
 
     start_time = rospy.get_time()
@@ -179,11 +182,11 @@ def wait_for_push_hand(time=10):
             return True
             break
 
-
     if (rospy.get_time() - start_time >= time):
         print(time, 'secs have elapsed with no hand push')
         return False
 
+#------------------------------------------------------
 def analyze_face_from_image(cv2_img,name=''):   
     #USING DEEP FACE SERVICE
     # FIND SOME CHARACTERISTICS FROM A FACE IMAGE
@@ -212,6 +215,7 @@ def analyze_face_from_image(cv2_img,name=''):
     takeshi_line += f'And I might guess {pronoun} is of {race}.'
     return takeshi_line
 
+#------------------------------------------------------
 def bbox_3d_mean(points,boundRect):
     #Gets the mean of the Points from the pincloud enclosed in the bound Rect of the RGBD image
 
@@ -239,12 +243,9 @@ def bbox_3d_mean(points,boundRect):
     return np.asarray(xyz).mean(axis=0)
 """
 
- ##TO DO AUDIO CAPTURE NODE   
+#------------------------------------------------------
+def gaze_to_face():
 
-tf_man = TF_MANAGER()
-gripper = GRIPPER()
-omni_base=OMNIBASE()
-wrist= WRIST_SENSOR()
-head = GAZE()
-brazo = ARM()
-arm =  moveit_commander.MoveGroupCommander('arm')
+    return False
+
+#------------------------------------------------------

@@ -5,6 +5,7 @@ from smach_utils2 import *
 
 ##### Define state INITIAL #####
 
+#--------------------------------------------------
 class Initial(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
@@ -40,7 +41,7 @@ class Initial(smach.State):
         else:
             return 'failed'
 
-
+#--------------------------------------------------
 class Wait_push_hand(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
@@ -63,6 +64,7 @@ class Wait_push_hand(smach.State):
         else:
             return 'failed'
 
+#--------------------------------------------------
 class Goto_door(smach.State):   ###ADD KNONW LOCATION DOOR
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
@@ -77,8 +79,7 @@ class Goto_door(smach.State):   ###ADD KNONW LOCATION DOOR
         if self.tries == 3:
             return 'tries'
         if self.tries==1:talk('Navigating to door')
-        # res = omni_base.move_base(known_location='door')
-        res = omni_base.navigate()
+        res = omni_base.move_base(known_location='door')
         print(res)
 
         if res == 3:
@@ -88,7 +89,7 @@ class Goto_door(smach.State):   ###ADD KNONW LOCATION DOOR
             talk('Navigation Failed, retrying')
             return 'failed'
 
-
+#--------------------------------------------------
 class Scan_face(smach.State):
     def __init__(self):
         smach.State.__init__(
@@ -148,14 +149,14 @@ class Scan_face(smach.State):
                 
 
 
-                #points = rgbd.get_points()                              ##FACE POS FROM FACE RECOG
-                #boundRect=np.asarray(res.Angs.data).astype('int')       ##FACE POS FROM FACE RECOG
-                #trans = bbox_3d_mean(points, boundRect)                 ##FACE POS FROM FACE RECOG
+                points = rgbd.get_points()                              ##FACE POS FROM FACE RECOG
+                boundRect=np.asarray(res.Angs.data).astype('int')       ##FACE POS FROM FACE RECOG
+                trans = bbox_3d_mean(points, boundRect)                 ##FACE POS FROM FACE RECOG
                 
 
-                trans_dict=human_detect_server.call()                   ##FROM HUMAN FINDER OPEN POSE
-                trans =[trans_dict.x,trans_dict.y,trans_dict.z]         ##FROM HUMAN FINDER OPEN POSE
-                print( trans )                                          ##FROM HUMAN FINDER OPEN POSE
+                #trans_dict=human_detect_server.call()                   ##FROM HUMAN FINDER OPEN POSE
+                #trans =[trans_dict.x,trans_dict.y,trans_dict.z]         ##FROM HUMAN FINDER OPEN POSE
+                #print( trans )                                          ##FROM HUMAN FINDER OPEN POSE
                 
                 #############################################################################################
                 ##############################################################################################
@@ -169,7 +170,7 @@ class Scan_face(smach.State):
                     trans,quat = tf_man.getTF(target_frame=name)
                 except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
                     print ( 'No TF FOUND')
-                omni_base.move_d_to(1, name )
+                omni_base.move_d_to(1, name,     )
                 head.to_tf(name)
 
                 print (trans)
@@ -179,42 +180,47 @@ class Scan_face(smach.State):
                 name_face=name
                 return 'succ'
 
-
+#--------------------------------------------------
 class New_face(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
-        self.tries = 0
-
+        self.new_name = ''
+        self.num_faces= 0
     def execute(self, userdata):
+        global img_face,name_face
 
         rospy.loginfo('STATE : NEW_FACE')
 
-        self.tries += 1
-        if self.tries == 3:
-            return 'tries'
+        if self.new_name == '':
+            talk('Please, tell me your name')
+            res = speech_recog_server()
+            self.new_name= res.data
+            talk('I am  learning your face, please stare at me')
+            name_face=self.new_name
+        #    return 'tries'
 
         # head.set_named_target('neutral')
-        head.set_joint_values([0.0, 0.0])
-        rospy.sleep(0.8)
+        #head.set_joint_values([0.0, 0.0])
+        #rospy.sleep(1.5)
         # succ=head.go()
-        talk('Please, tell me your name')
-        res = speech_recog_server()
-        talk('Hello' + res.data)
+        #talk('Hello' + self.new_name)
         img = rgbd.get_image()
-        res2 = train_face(img, res.data)
+        res2 = train_face(img, self.new_name)
         print(res2)
-        talk('I am  learning your face, please stare at me')
+        if res2 ==False:
+            talk('Image rejected. Retrying')
+            return 'failed'
+        self.num_faces+=1
 
         # arm.set_named_target('go')
         # succ=arm.go()
+        if self.num_faces==3:
+            self.num_faces=0
+            return 'succ'   
+        else: return 'failed'
+            
 
-        succ = True
-        if succ:
-            return 'succ'
-        else:
-            return 'failed'
-
-
+#--------------------------------------------------
 class Goto_living_room(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
@@ -238,7 +244,7 @@ class Goto_living_room(smach.State):
             talk('Navigation Failed, retrying')
             return 'failed'
 
-
+#--------------------------------------------------
 class Goto_living_room_2(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
@@ -268,7 +274,7 @@ class Goto_living_room_2(smach.State):
             talk('Navigation Failed, retrying')
             return 'failed'
 
-
+#--------------------------------------------------
 class Goto_face(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
@@ -294,7 +300,7 @@ class Goto_face(smach.State):
 
 
 
-
+#--------------------------------------------------
 class Find_sitting_place(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
@@ -342,7 +348,8 @@ class Find_sitting_place(smach.State):
         if res != None:
             return 'failed'
 ################################################################
-         
+
+#--------------------------------------------------
 class Introduce_guest(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
@@ -370,14 +377,15 @@ class Introduce_guest(smach.State):
             return 'succ'
         else :
             print ('no face in img deep analyze')
+            talk('description found no face')
             return 'failed'
 
         
-
+#--------------------------------------------------
 def init(node_name):
     print('smach ready')
 
-
+#--------------------------------------------------
 # Entry point
 if __name__ == '__main__':
     print("Takeshi STATE MACHINE...")
@@ -397,7 +405,7 @@ if __name__ == '__main__':
         smach.StateMachine.add("WAIT_PUSH_HAND",   Wait_push_hand(),  transitions={'failed': 'WAIT_PUSH_HAND',  'succ': 'GOTO_DOOR',    'tries': 'END'})
         smach.StateMachine.add("SCAN_FACE",   Scan_face(),  transitions={'failed': 'SCAN_FACE',  'unknown': 'NEW_FACE',       'succ': 'GOTO_LIVING_ROOM','tries': 'GOTO_DOOR'})
         smach.StateMachine.add("GOTO_DOOR",Goto_door(),transitions={'failed': 'GOTO_DOOR',          'succ': 'SCAN_FACE','tries': 'SCAN_FACE'})
-        smach.StateMachine.add("NEW_FACE",           New_face(),      transitions={'failed': 'INITIAL',          'succ': 'END',           'tries': 'SCAN_FACE'})
+        smach.StateMachine.add("NEW_FACE",           New_face(),      transitions={'failed': 'NEW_FACE',          'succ': 'GOTO_LIVING_ROOM',           'tries': 'SCAN_FACE'})
         smach.StateMachine.add("GOTO_FACE",           Goto_face(),    transitions={'failed': 'GOTO_FACE',          'succ': 'GOTO_LIVING_ROOM',           'tries': 'SCAN_FACE'})
         smach.StateMachine.add("GOTO_LIVING_ROOM",Goto_living_room(),transitions={'failed': 'GOTO_LIVING_ROOM',          'succ': 'FIND_SITTING_PLACE','tries': 'END'})
         smach.StateMachine.add("FIND_SITTING_PLACE", Find_sitting_place(), transitions={'failed': 'GOTO_LIVING_ROOM',          'succ': 'INTRODUCE_GUEST',           'tries': 'GOTO_DOOR'})

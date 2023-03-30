@@ -548,7 +548,7 @@ def callback(req):
     cnt_acciones=0
     last_act=-1
     response=RecognizeResponse()
-    
+    max_inf_it=100
   
     #----------------
     if req.in_==1:
@@ -612,7 +612,7 @@ def callback(req):
             #<<<<<<<<<<< si la inferencia se repite un determinado numero de veces
             #            termina el ciclo y regresa variables y demas >>>>>>>>>>>>
             
-            if cnt_acciones==30 and last_act==4:
+            if cnt_acciones==max_inf_it and last_act==4:
                 print("Accion 4 detectada: {}".format(class_names[last_act]))
                 img_msg=bridge.cv2_to_imgmsg(imgOut) # change to rgbd in robot
                 sk_msg=bridge.cv2_to_imgmsg(dataout)
@@ -630,12 +630,12 @@ def callback(req):
 
 
             # Si es drink o neutral, sigue reconociendo hasta obtener otra accion
-            elif cnt_acciones==30 and (last_act==2 or last_act==3):
+            elif cnt_acciones==max_inf_it and (last_act==2 or last_act==3):
                 print("Accion detectada: neutral o drink, se sigue detectando... ")
                 cnt_acciones=0
             
             # Si es waving, similar a pointing pero solo publica la cara
-            elif cnt_acciones==30:
+            elif cnt_acciones==max_inf_it:
                 print("Accion detectada: {}".format(class_names[last_act]))
                 print("Recibiendo imagen rgbd...")
                 frameC,dataPC=get_coordinates()
