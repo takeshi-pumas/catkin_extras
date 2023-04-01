@@ -232,4 +232,4 @@ def talk(msg, time_out = 5):
     voice.goal.data.language = 1
     voice.goal.data.sentence = msg
     talk_client.send_goal(voice.goal)
-    talk_client.wait_for_result(timeout=rospy.Duration(time_out))
+    return talk_client.wait_for_result(timeout=rospy.Duration(time_out))

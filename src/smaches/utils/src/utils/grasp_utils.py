@@ -141,6 +141,19 @@ class GAZE():
         #Head gaze to a x, y, z point relative to base_link
         self._reference = 'base_link'
         return self._gaze_abs_rel(x,y,z)
+        
+    def set_named_target(self, pose='neutral'):
+        if pose == 'down':
+            head_pose = [0.0,-1.0]
+        elif pose == 'up':
+            head_pose = [0.0, 1.0]
+        elif pose == 'right':
+            head_pose = [0.7, 0.0]
+        elif pose == 'left':
+            head_pose = [-0.7, 0.0]
+        else:
+            head_pose = [0.0, 0.0]
+        self.set_joint_values(head_pose) 
 
     def set_joint_values(self, head_pose):
         # fill ROS message
@@ -195,8 +208,8 @@ class ARM():
         traj.joint_names = self._joint_names
         p = trajectory_msgs.msg.JointTrajectoryPoint()
         p.positions = joint_values
-        p.velocities = [0, 0, 0, 0, 0]
-        p.time_from_start = rospy.Duration(3)
+        p.velocities = [0.1, 0.1, 0.1, 0.1, 0.1]
+        p.time_from_start = rospy.Duration(0.5)
         traj.points = [p]
         goal.trajectory = traj
 
@@ -210,8 +223,8 @@ class ARM():
         st = states.position
         return [st[1], st[0],st[2], st[11], st[12]]
 
-    def named_poses(self, pose = 'go'):
-        if pose == 'go':
+    def set_named_target(self, pose = 'go'):
+        if pose == 'neutral':
             joint_values = [0.0, 0.0, -1.6, -1.6, 0.0]
         elif pose == 'grasp_floor':
             joint_values = [0.0,-2.47,0.0,0.86,-0.032, 0.0]
