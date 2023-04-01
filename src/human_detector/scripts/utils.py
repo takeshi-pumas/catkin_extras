@@ -31,8 +31,8 @@ listener = tf.TransformListener()
 broadcaster = tf2_ros.TransformBroadcaster()
 tf_static_broadcaster = tf2_ros.StaticTransformBroadcaster()
 
-protoFile = "/home/takeshi/openpose/models/pose/body_25/pose_deploy.prototxt"
-weightsFile = "/home/takeshi/openpose/models/pose/body_25/pose_iter_584000.caffemodel"
+protoFile = "/home/roboworks/openpose/models/pose/body_25/pose_deploy.prototxt"
+weightsFile = "/home/roboworks/openpose/models/pose/body_25/pose_iter_584000.caffemodel"
 net = cv2.dnn.readNetFromCaffe(protoFile, weightsFile)
 #tf_listener = tf.TransformListener()
 #broadcaster= tf.TransformBroadcaster()
@@ -123,6 +123,7 @@ def detect_human(points_msg):
     probMap = output[0, i, :, :]
     probMap = cv2.resize(probMap, (inWidth, inHeight))
     cent= probmap_to_3d_mean(points_data,probMap)
+    if np.isnan(cent.any()):return Human_detectorResponse()
     print (cent)
     if np.isnan(cent.any()):cent=np.zeros(3)
     res=Human_detectorResponse()

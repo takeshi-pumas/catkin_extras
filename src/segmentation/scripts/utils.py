@@ -242,7 +242,7 @@ def segment_floor(points_data,zs_no_nans,obj_hMax=0.85,obj_lMax=1.5):
 
 #-----------------------------------------------------------------    
     
-def plane_seg2(points_msg,hg=0.85,lg=1.5,lower=100 ,higher=50000,reg_ly= 30,reg_hy=600,plot=False):
+def plane_seg2(points_msg,hg=0.85,lg=1.5,lower=1000 ,higher=50000,reg_ly= 30,reg_hy=600,plot=False):
     points_data = ros_numpy.numpify(points_msg)    
     image_data = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]   
     image=cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
