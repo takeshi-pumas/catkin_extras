@@ -12,7 +12,7 @@ import pandas as pd
 from geometry_msgs.msg import TransformStamped
 from copy import deepcopy
 global path 
-path = '/home/takeshi/Codes/known_locations.txt'
+#path = '/home/takeshi/Codes/known_locations.txt'
 def write_tf(pose, q, child_frame , parent_frame='map'):
     t= TransformStamped()
     t.header.stamp = rospy.Time(0)
@@ -58,7 +58,9 @@ def read_yaml(known_locations_file = '/known_locations.yaml'):
 
 def write_yaml(trans,req, known_locations_file = '/known_locations.yaml'):
     trans,quat=read_tf(trans)
-    con= read_yaml()
+    
+
+    con= read_yaml(known_locations_file=known_locations_file)
     data=deepcopy(con[list(con.keys())[-1]])
     data[0]['x']=           math.trunc(trans[0]*1000)/1000
     data[1]['y']=           math.trunc(trans[1]  *1000)/1000
@@ -78,7 +80,7 @@ def write_yaml(trans,req, known_locations_file = '/known_locations.yaml'):
 
 
 def yaml_to_df():
-    con = read_yaml()
+    con = read_yaml(known_locations_file = file_name)
     values=[]
     locations=[]
     for c in con:
@@ -115,7 +117,7 @@ def callback(req):
         
         #####################################
         
-        succ=write_yaml(trans,req)
+        succ=write_yaml(trans,req,file_name)
         print(succ)
         
 
@@ -155,6 +157,8 @@ rospack = rospkg.RosPack()
 #df=pd.read_csv('known_locations.txt')
 
 #df=pd.read_csv(path)##RELATIVIZE PATH?
+file_name    = rospy.get_param("~file_name", "/known_locations.yaml")
+print (file_name)
 df= yaml_to_df()
 print (df)
 known_locs=df.values
@@ -162,6 +166,7 @@ if len(df)!=0:
     for i in range(len(df)):
         trans=df[['x','y','th']].iloc[i].values
         quat=df[['qx','qy','qz','qw']].iloc[i].values
+        trans[-1]=0
         t=write_tf(trans,quat,df['child_id_frame'].iloc[i])
         print (t,i)
         tf_static_broadcaster.sendTransform(t)
