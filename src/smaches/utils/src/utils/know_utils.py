@@ -117,3 +117,11 @@ def add_place():
         return True
     except:
         return False
+
+def clean_knowledge():
+    knowledge = read_yaml()
+    host = knowledge['People']['Guest_0']
+    knowledge['People'] = {'Guest_0': host}
+    for i in range(1, len(knowledge['Places'])):
+        knowledge['Places'][f'Place_{i}']['occupied'] = 'None'
+    write_yaml(knowledge)

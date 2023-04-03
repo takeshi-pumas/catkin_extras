@@ -18,10 +18,11 @@ class Initial(smach.State):
         print(f'Try {self.tries} of 5 attempts')
         if self.tries == 3:
             return 'tries'
+        clean_knowledge()
         head.set_named_target('neutral')
-        print('head listo')
+        #print('head listo')
         #brazo.set_named_target('go')
-        print('brazo listo')
+        #print('brazo listo')
         rospy.sleep(0.8)
 
         return 'succ'
@@ -273,7 +274,7 @@ class Introduce_guest(smach.State):
         print (takeshi_line)
         if (len(takeshi_line)!=0):
             talk(takeshi_line)
-            rospy.sleep(2)
+            rospy.sleep(6.0)
             return 'succ'
         else :
             print ('no face in img deep analyze')
@@ -308,6 +309,6 @@ if __name__ == '__main__':
         smach.StateMachine.add("GOTO_FACE",         Goto_face(),        transitions={'failed': 'GOTO_FACE',     'succ': 'LEAD_TO_LIVING_ROOM',   'tries': 'SCAN_FACE'})
         smach.StateMachine.add("LEAD_TO_LIVING_ROOM",Lead_to_living_room(), transitions={'failed': 'LEAD_TO_LIVING_ROOM','succ': 'FIND_SITTING_PLACE','tries': 'END'})
         smach.StateMachine.add("FIND_SITTING_PLACE", Find_sitting_place(),  transitions={'failed': 'FIND_SITTING_PLACE','succ': 'INTRODUCE_GUEST',    'tries': 'END'})
-        smach.StateMachine.add("INTRODUCE_GUEST",   Introduce_guest(),      transitions={'failed':'LEAD_TO_LIVING_ROOM','succ':'END',    'tries':'END'})
+        smach.StateMachine.add("INTRODUCE_GUEST",   Introduce_guest(),      transitions={'failed':'LEAD_TO_LIVING_ROOM','succ':'WAIT_PUSH_HAND',    'tries':'WAIT_PUSH_HAND'})
 
     outcome = sm.execute()
