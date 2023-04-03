@@ -34,6 +34,7 @@ from nav_msgs.msg import OccupancyGrid
 from utils.grasp_utils import *
 from utils.misc_utils import *
 from utils.nav_utils import *
+from utils.know_utils import *
 
 global listener, broadcaster, tfBuffer, tf_static_broadcaster, scene, rgbd, head,train_new_face, wrist, human_detect_server
 global clear_octo_client, goal,navclient,segmentation_server  , tf_man , omni_base, brazo, speech_recog_server, bridge, map_msg, pix_per_m, analyze_face
@@ -249,3 +250,13 @@ def gaze_to_face():
     return False
 
 #------------------------------------------------------
+def detect_human_to_tf():
+    humanpose=human_detect_server.call()
+    print (humanpose)
+    if (np.asarray((humanpose.x,humanpose.y,humanpose.z)).all()== np.zeros(3).all()):
+        print (np.asarray((humanpose.x,humanpose.y,humanpose.z)))
+        return False
+    else:
+        tf_man.pub_static_tf(np.asarray((humanpose.x,humanpose.x,humanpose.z)),point_name='human', ref='head_rgbd_sensor_link')
+        succ=tf_man.change_ref_frame_tf('human')
+        return succ

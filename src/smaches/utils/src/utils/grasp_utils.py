@@ -161,8 +161,8 @@ class GAZE():
         traj.joint_names = ["head_pan_joint", "head_tilt_joint"]
         p = trajectory_msgs.msg.JointTrajectoryPoint()
         p.positions = head_pose
-        p.velocities = [0, 0]
-        p.time_from_start = rospy.Duration(3)
+        p.velocities = [0.1, 0.1]
+        p.time_from_start = rospy.Duration(0.07)
         traj.points = [p]
 
         # publish ROS message
@@ -214,6 +214,7 @@ class ARM():
         goal.trajectory = traj
 
         # send message to the action server
+        print('message sent')
         self._cli.send_goal(goal)
 
         # wait for the action server to complete the order

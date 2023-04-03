@@ -2,7 +2,6 @@
 
 from smach_utils2 import *
 
-
 ##### Define state INITIAL #####
 
 # --------------------------------------------------
@@ -20,7 +19,9 @@ class Initial(smach.State):
         if self.tries == 3:
             return 'tries'
         head.set_named_target('neutral')
-        arm.set_named_target('go')
+        print('head listo')
+        #brazo.set_named_target('go')
+        print('brazo listo')
         rospy.sleep(0.8)
 
         return 'succ'
@@ -86,8 +87,9 @@ class Scan_face(smach.State):
         self.tries = 0
 
     def execute(self, userdata):
+        global  img_face, name_face
+
         rospy.loginfo('State : SCAN_FACE')
-        global img_face, name_face
         head.set_joint_values([0.0, 0.3])
         talk('I will scan your face, look at me, please')
         self.tries += 1
@@ -116,41 +118,13 @@ class Scan_face(smach.State):
                 talk('what do you want to drink?')
                 res = speech_recog_server()
                 drink = res.data
+                name_face=name
                 add_guest(name, drink)
                 return 'succ'
         else:
             return 'failed'
 
         # Is this really needed???
-                """points = rgbd.get_points()                              ##FACE POS FROM FACE RECOG
-                boundRect=np.asarray(res.Angs.data).astype(
-                    'int')       ##FACE POS FROM FACE RECOG
-                ##FACE POS FROM FACE RECOG
-                trans = bbox_3d_mean(points, boundRect)
-
-
-                # trans_dict=human_detect_server.call()                   ##FROM HUMAN FINDER OPEN POSE
-                # trans =[trans_dict.x,trans_dict.y,trans_dict.z]         ##FROM HUMAN FINDER OPEN POSE
-                # print( trans )                                          ##FROM HUMAN FINDER OPEN POSE
-
-                #############################################################################################
-                ##############################################################################################
-                tf_man.pub_static_tf(
-                    pos=trans, point_name=name, ref='head_rgbd_sensor_link')
-
-                rospy.sleep(0.4)
-                tf_man.change_ref_frame_tf(name)
-
-
-                try:
-                    trans,quat = tf_man.getTF(target_frame=name)
-                except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
-                    print ( 'No TF FOUND')
-                omni_base.move_d_to(1, name)
-                head.to_tf(name)
-
-                print (trans)
-                # head.absolute(*trans)"""
 
 # --------------------------------------------------
 
@@ -167,32 +141,31 @@ class New_face(smach.State):
         self.tries += 1
 
         rospy.loginfo('STATE : NEW_FACE')
-        num_waiting_guests, guest_name = get_waiting_guest()
-        if num_waiting_guests == 0:
-            if self.tries == 1:
-                talk('Please, tell me your name')
-            else:
-                talk('Im sorry, could you repeat it?')
-            res = speech_recog_server()
-            # self.new_name= res.data
-            name = res.data
-            talk(f'Is {name} your name?, Did I say it correctly?')
-            res = speech_recog_server()
-            answer = res.data
-            if answer == 'yes':
-                talk(f'Nice, {name}, what do you want to drink?')
-                res = speech_recog_server()
-                drink = res.data
-                add_guest(name, drink)
-                talk('Now, I will learn your face, please stare at me')
-                rospy.sleep(1.0)
-            else:
-                return 'tries'
+        #num_waiting_guests, guest_name = get_waiting_guests()
+        #if num_waiting_guests == 0:
+        if self.tries == 1:
+            talk('Please, tell me your name')
         else:
-            talk('Look at me again, please')
+            talk('Im sorry, could you repeat it?')
+        res = speech_recog_server()
+        # self.new_name= res.data
+        name = res.data
+        talk(f'Is {name} your name?, Did I say it correctly?')
+        res2 = speech_recog_server()
+        answer = res2.data
+        if answer == 'yes':
+            talk(f'Nice, {name}, what do you want to drink?')
+            res3 = speech_recog_server()
+            drink = res3.data
+            add_guest(name, drink)
+            talk('Now, I will learn your face, please stare at me')
+            rospy.sleep(1.0)
+        else:
+            return 'tries'
         # new face trainer
         img = rgbd.get_image()
-        res = train_face(img, guest_name)
+        print (name)
+        res = train_face(img, name)
         print(res)
         if res == False:
             talk('Something went wrong, retrying')
@@ -215,7 +188,7 @@ class Lead_to_living_room(smach.State):
         self.tries += 1
         if self.tries == 3:
             return 'tries'
-        _,guest_name = get_waiting_guest()
+        _,guest_name = get_waiting_guests()
         talk(f'{guest_name}... I will lead you to the living room, please follow me')
         # talk('Navigating to ,living room')
         res = omni_base.move_base(known_location='living_room')
@@ -258,19 +231,25 @@ class Find_sitting_place(smach.State):
         print('Try', self.tries, 'of 3 attempts')
         self.tries += 1
         place, loc = find_empty_places()
-        omni_base.move_base(*loc)
-        res , _ = wait_for_face(5)  # seconds
-        print (res)
+        omni_base.move_base(*loc, time_out = 15)
+        head.set_named_target("neutral")
+        rospy.sleep(1.0)
+        res=detect_human_to_tf()
+        print (res,'Human')
+        res , _ = wait_for_face()  # seconds
+        print (res,'face')
         if res == None:
-            _,guest = get_waiting_guest()
+
+            _,guest = get_waiting_guests()
             talk(f'{guest}, Here is a place to sit')
-            brazo.set_named_target('neutral')
-            assign_occupancy(who=guest, where=place):
+            #brazo.set_named_target('neutral')
+            assign_occupancy(who=guest, where=place)
             return 'succ'
 
         else:
             occupant_name = res.Ids.ids[0].data
-            update_occupancy(found='occupant_name', place=place)
+            #occupant_name = "someone"
+            update_occupancy(found=occupant_name, place=place)
             talk(f'I am sorry, here is {occupant_name}, I will find another place for you')
             return 'failed'
 
@@ -323,12 +302,12 @@ if __name__ == '__main__':
 
         smach.StateMachine.add("INITIAL",           Initial(),          transitions={'failed': 'INITIAL',       'succ': 'WAIT_PUSH_HAND',   'tries': 'END'})
         smach.StateMachine.add("WAIT_PUSH_HAND",    Wait_push_hand(),   transitions={'failed': 'WAIT_PUSH_HAND','succ': 'GOTO_DOOR',        'tries': 'END'})
-        smach.StateMachine.add("GOTO_DOOR",         Goto_door(),        transitions={'failed': 'GOTO_DOOR',     'succ': 'SCAN_FACE',        'tries': 'SCAN_FACE'})
         smach.StateMachine.add("SCAN_FACE",         Scan_face(),        transitions={'failed': 'SCAN_FACE',     'unknown': 'NEW_FACE',      'succ': 'LEAD_TO_LIVING_ROOM','tries': 'GOTO_DOOR'})
-        smach.StateMachine.add("NEW_FACE",          New_face(),         transitions={'failed': 'NEW_FACE',      'succ': 'LEAD_TO_LIVING_ROOM','tries': 'SCAN_FACE'})
+        smach.StateMachine.add("NEW_FACE",          New_face(),         transitions={'failed': 'NEW_FACE',      'succ': 'LEAD_TO_LIVING_ROOM','tries': 'NEW_FACE'})
+        smach.StateMachine.add("GOTO_DOOR",         Goto_door(),        transitions={'failed': 'GOTO_DOOR',     'succ': 'SCAN_FACE',        'tries': 'SCAN_FACE'})
         smach.StateMachine.add("GOTO_FACE",         Goto_face(),        transitions={'failed': 'GOTO_FACE',     'succ': 'LEAD_TO_LIVING_ROOM',   'tries': 'SCAN_FACE'})
         smach.StateMachine.add("LEAD_TO_LIVING_ROOM",Lead_to_living_room(), transitions={'failed': 'LEAD_TO_LIVING_ROOM','succ': 'FIND_SITTING_PLACE','tries': 'END'})
         smach.StateMachine.add("FIND_SITTING_PLACE", Find_sitting_place(),  transitions={'failed': 'FIND_SITTING_PLACE','succ': 'INTRODUCE_GUEST',    'tries': 'END'})
-        smach.StateMachine.add("INTRODUCE_GUEST",   Introduce_guest(),      transitions={'failed':'LEAD_TO_LIVING_ROOM','succ':'INTRODUCE_GUEST',    'tries':'END'})
+        smach.StateMachine.add("INTRODUCE_GUEST",   Introduce_guest(),      transitions={'failed':'LEAD_TO_LIVING_ROOM','succ':'END',    'tries':'END'})
 
     outcome = sm.execute()

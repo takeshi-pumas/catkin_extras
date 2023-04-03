@@ -1,8 +1,12 @@
 People:
-  Host:
+  Guest_0:
     drink: Coke
+    location: None
+    name: Oscar
+  Guest_1:
+    drink: coke
     location: Place_1
-    name: ruben
+    name: Rubin
 Places:
   Place_0:
     location:
@@ -15,13 +19,13 @@ Places:
       theta: 0.05
       x: 9.71
       y: -3.14
-    occupied: Host
+    occupied: Guest_1
   Place_2:
     location:
       theta: 4.72
       x: 9.76
       y: -3.31
-    occupied: Guest_3
+    occupied: Guest_1
   Place_3:
     location:
       theta: 0.06
