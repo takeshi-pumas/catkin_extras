@@ -36,7 +36,7 @@ class nav_status():
 # YAML reader
 
 ## PARAM  FILE
-def read_yaml(known_locations_file='/known_locations_storing.yaml'):
+def read_yaml(known_locations_file='/known_locations.yaml'):
     rospack = rospkg.RosPack()
     file_path = rospack.get_path('config_files') + known_locations_file
 

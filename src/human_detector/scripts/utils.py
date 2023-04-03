@@ -94,8 +94,10 @@ def probmap_to_3d_mean(points_data,probMap, thres_prob=0.3):
                 xyz.append(aux)
 
     xyz=np.asarray(xyz)
-    #print (xyz)
-    cent=xyz.mean(axis=0)
+    if (len(xyz)!=0):
+        cent=xyz.mean(axis=0)
+    else:
+        cent=np.zeros(3)
     return cent
 
 
@@ -123,6 +125,7 @@ def detect_human(points_msg):
     probMap = output[0, i, :, :]
     probMap = cv2.resize(probMap, (inWidth, inHeight))
     cent= probmap_to_3d_mean(points_data,probMap)
+    print (cent)
     if np.isnan(cent.any()):return Human_detectorResponse()
     print (cent)
     if np.isnan(cent.any()):cent=np.zeros(3)

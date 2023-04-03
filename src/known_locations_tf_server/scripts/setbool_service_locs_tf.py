@@ -48,13 +48,6 @@ def read_tf(t):
     
     return pose, quat
 
-def read_yaml(known_locations_file = '/known_locations.yaml'):
-    
-    file_path = rospack.get_path('config_files')  + known_locations_file
-
-    with open(file_path, 'r') as file:
-        content = yaml.safe_load(file)
-    return content
 
 def write_yaml(trans,req, known_locations_file = '/known_locations.yaml'):
     trans,quat=read_tf(trans)
@@ -78,6 +71,13 @@ def write_yaml(trans,req, known_locations_file = '/known_locations.yaml'):
         documents = yaml.dump(con, file, default_flow_style=False)
     return True
 
+def read_yaml(known_locations_file = '/known_locations.yaml'):
+    
+    file_path = rospack.get_path('config_files')  + known_locations_file
+
+    with open(file_path, 'r') as file:
+        content = yaml.safe_load(file)
+    return content
 
 def yaml_to_df():
     con = read_yaml(known_locations_file = file_name)

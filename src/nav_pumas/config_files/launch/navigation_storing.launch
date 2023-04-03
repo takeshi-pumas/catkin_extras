@@ -62,7 +62,7 @@
     <param name="point_cloud_topic" value="$(arg point_cloud_topic)"/>
     <param name="laser_scan_topic" value="$(arg laser_scan_topic)"/>
     <param name="cloud_downsampling" value="$(arg cloud_downsampling)"/>
-    <param name="inflation_radius" value="0.2"/>
+    <param name="inflation_radius" value="0.051"/>
     <param name="cost_radius" value="0.5"/>
     <!--###decay_factor-->
 
@@ -87,9 +87,9 @@
   <node pkg="human_detector"  name="human_detector" type="human_detector_server.py"/>  
 
 
-  <arg name="file_name" default="/known_locations_stickler.yaml"/>
+  <!--arg name="file_name" default="/known_locations_stickler.yaml"/-->
   <node name="known_locs"  pkg="known_locations_tf_server"  type="setbool_service_locs_tf.py"  output="screen">
-    <param name="file_name" value="$(arg file_name)"/>
+    <!--param name="file_name" value="$(arg file_name)"/-->
   </node>
     
   
