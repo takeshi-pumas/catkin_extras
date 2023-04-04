@@ -244,6 +244,8 @@ class Find_sitting_place(smach.State):
             _,guest = get_waiting_guests()
             talk(f'{guest}, Here is a place to sit')
             #brazo.set_named_target('neutral')
+            arm.set_named_target('neutral')
+            arm.go()
             assign_occupancy(who=guest, where=place)
             return 'succ'
 

@@ -77,7 +77,7 @@ omni_base=OMNIBASE()
 wrist= WRIST_SENSOR()
 head = GAZE()
 brazo = ARM()
-# arm =  moveit_commander.MoveGroupCommander('arm')
+arm =  moveit_commander.MoveGroupCommander('arm')
 
 
 #------------------------------------------------------

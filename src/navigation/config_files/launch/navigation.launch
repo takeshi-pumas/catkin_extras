@@ -1,15 +1,14 @@
 <launch>  
-  <remap from="/static_map" to="/get_distance_map"/>
+ <remap from="/static_map" to="/get_distance_map"/>
   <node name="killer_node" pkg="killer_node" type="killer_node.py" output="screen"/>
   <node name="fake_global_pose" pkg="killer_node" type="fake_global_pose.py" output="screen"/>
+<node name="sensor_scan_fix" pkg="sensor_scan_fix" type="sensor_scan_fix.py" output="screen"/>
 
-  <node name="sensor_scan_fix" pkg="sensor_scan_fix" type="sensor_scan_fix.py" output="screen"/>
-
-  <arg name="static_map_file"  default="$(find config_files)/maps/biorobotica.yaml"/>
-  <arg name="prohibition_map_file"  default="$(find config_files)/prohibition_maps/biorobotica.yaml"/>
-  <arg name="initial_pose_x" default="0.0"/>
-  <arg name="initial_pose_y" default="0.0"/>
-  <arg name="initial_pose_a" default="0.0"/>
+  <arg name="static_map_file"  default="$(find tmc_wrs_gazebo_worlds)/maps/moon/map.yaml"/>
+  <arg name="prohibition_map_file"  default="$(find tmc_wrs_gazebo_worlds)/maps/moon/map.yaml"/>
+  <arg name="initial_pose_x" default="-5.7"/>
+  <arg name="initial_pose_y" default="-6.0"/>
+  <arg name="initial_pose_a" default=" 90"/>
   <arg name="laser_scan_topic" default="/hsrb/base_scan/fix"/>
   <arg name="point_cloud_topic" default="/hsrb/head_rgbd_sensor/depth_registered/rectified_points"/>
   <arg name="use_lidar" default="True"/>
