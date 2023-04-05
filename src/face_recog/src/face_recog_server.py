@@ -169,10 +169,10 @@ def callback(req):
             for face_location in face_locations:
                 #print (face_location[0])
 
-                Angs.append( face_locations[0][0] )#Bounding Box
-                Angs.append( face_locations[0][1] )#Bounding Box
-                Angs.append( face_locations[0][2] )#Bounding Box
-                Angs.append( face_locations[0][3] )#Bounding Box
+                Angs.append( face_location[0] )#Bounding Box
+                Angs.append( face_location[1] )#Bounding Box
+                Angs.append( face_location[2] )#Bounding Box
+                Angs.append( face_location[3] )#Bounding Box
 
 
             face_encodings = face_recognition.face_encodings(image, face_locations)
@@ -256,17 +256,7 @@ def callback(req):
                 
                 
                 
-                
-
-
-
-
-
-
-    #print ('Predictions (top 3 for each class)',flo.data)
-
-    
-  
+      
     
     
     
