@@ -144,7 +144,7 @@ def train_face(image, name):
 
 
 #------------------------------------------------------
-def wait_for_face(timeout=10):
+def wait_for_face(timeout=10 , name=''):
     
     rospy.sleep(0.3)
     
@@ -165,8 +165,42 @@ def wait_for_face(timeout=10):
         if res.Ids.ids[0].data == 'NO_FACE':
             print ('No face FOund Keep scanning')
             return None, None
+
+
+
         
-        else:return res , img
+        else:
+            ds_to_faces=[]
+            for i , idface in enumerate(res.Ids.ids):
+                print (i,idface.data)
+                ds_to_faces.append(res.Ds.data[i])    ##
+                if (idface.data)==name :
+                    new_res= RecognizeFaceResponse()
+                    new_res.Ds.data= res.Ds.data[i]
+                    new_res.Angs.data= res.Angs.data[i:i+4]
+                    new_res.Ids.ids=res.Ids.ids[i].data
+                    print('return res,img',new_res)
+                    ds_to_faces=[]
+                    return new_res , img
+
+
+                    #print ('hit',idface.data, 'at' , res.Ds.data[i]  , 'meters')
+                    
+                    
+
+            if len (ds_to_faces)!=0:
+                i=np.argmin(ds_to_faces)
+                new_res= RecognizeFaceResponse()
+                new_res.Ds.data= res.Ds.data[i]
+                new_res.Angs.data= res.Angs.data[i:i+4]
+                new_res.Ids.ids='closest'
+                print('return res,img',new_res)
+                ds_to_faces=[]
+                return new_res , img
+
+
+
+            
 
 #------------------------------------------------------
 def wait_for_push_hand(time=10):

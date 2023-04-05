@@ -210,45 +210,9 @@ class Goto_face(smach.State):
 
         print('Try', self.tries, 'of 3 attempts')
         self.tries += 1
-        if self.tries == 6:
+        if self.tries == 3:
             return 'tries'
-        
-
-
-        points = rgbd.get_points()   
-        res, img_face = wait_for_face()  # default 10 secs
-        if res ==None:
-            print('no face found...')
-            return 'failed'
-                                                                ##FACE POS FROM FACE RECOG
-        
-
-
-
-        boundRect=np.asarray(res.Angs.data).astype('int')       ##FACE POS FROM FACE RECOG RESPONSE AND POINT CLOUD
-        trans = bbox_3d_mean(points, boundRect)                 ##FACE POS FROM FACE RECOG
-        
-
-        #trans_dict=human_detect_server.call()                   ##FROM HUMAN FINDER OPEN POSE
-        #trans =[trans_dict.x,trans_dict.y,trans_dict.z]         ##FROM HUMAN FINDER OPEN POSE
-        #print( trans )                                          ##FROM HUMAN FINDER OPEN POSE
-        
-        #############################################################################################
-        ##############################################################################################
-        tf_man.pub_static_tf(pos=trans, point_name=name, ref='head_rgbd_sensor_link')
-        
-        rospy.sleep(0.3)
-        tf_man.change_ref_frame_tf(name)
-        
-        
-        try:
-            trans,quat = tf_man.getTF(target_frame=name)
-        except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
-            print ( 'No face FOUND')
-            return 'failed'
-        omni_base.move_d_to(1, name,     )
-        head.to_tf(name)
-
+        # res= omni_base.move_D
 
         if res == 3:
             return 'succ'
