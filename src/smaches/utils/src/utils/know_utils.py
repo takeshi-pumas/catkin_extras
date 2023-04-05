@@ -125,3 +125,14 @@ def clean_knowledge():
     for i in range(1, len(knowledge['Places'])):
         knowledge['Places'][f'Place_{i}']['occupied'] = 'None'
     write_yaml(knowledge)
+
+def find_host():
+    knowledge = read_yaml()
+    host_name = knowledge['People']['Guest_0']['name']
+    host_place = knowledge['People']['Guest_0']['location']
+    if host_place != 'None':
+        loc = knowledge['Places'][host_place]['location'] 
+        XY = [loc['x'],loc['y']]
+    else:
+        loc = host_place
+    return host_name, loc
