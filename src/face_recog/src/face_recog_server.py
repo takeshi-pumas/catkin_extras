@@ -140,7 +140,7 @@ def callback(req):
     for i in range(len(req.in_.image_msgs)):
         images.append(bridge.imgmsg_to_cv2(req.in_.image_msgs[i]))
     for image in images:
-        print (image.shape)
+        #print (image.shape)
         face_locations = face_recognition.face_locations(image)
         distances = []
         Dstoface=[]
@@ -162,13 +162,17 @@ def callback(req):
 
 
         if len (face_locations)>0:
+
+
+            print ('faces found ->', len (face_locations))
             
+            for face_location in face_locations:
+                #print (face_location[0])
 
-
-            Angs.append( face_locations[0][0] )#Bounding Box
-            Angs.append( face_locations[0][1] )#Bounding Box
-            Angs.append( face_locations[0][2] )#Bounding Box
-            Angs.append( face_locations[0][3] )#Bounding Box
+                Angs.append( face_locations[0][0] )#Bounding Box
+                Angs.append( face_locations[0][1] )#Bounding Box
+                Angs.append( face_locations[0][2] )#Bounding Box
+                Angs.append( face_locations[0][3] )#Bounding Box
 
 
             face_encodings = face_recognition.face_encodings(image, face_locations)
@@ -185,7 +189,7 @@ def callback(req):
                  [0, 0, 1]], dtype="double"
             )
             dist_coeffs = np.zeros((4, 1))  # Assuming no lens distortion
-            print ("there are",len(face_landmarks))
+            
             for face_landmark in face_landmarks:
 
                 imgpoints = np.array([
@@ -208,7 +212,7 @@ def callback(req):
                 if np.linalg.norm(rotation_vector) < 5:
                     Dtoface = 40 * focal_length / \
                         (np.abs(imgpoints[2][0] - imgpoints[3][0])*1000 / 2)
-                    Dstoface.append(Dtoface-0.6)#################Hardcoded correction
+                    Dstoface.append(Dtoface)#################Hardcoded correction
                     print ("##############################")
                     print ("Dss", Dtoface)
                     
@@ -222,18 +226,19 @@ def callback(req):
                 Crect = sph2rect(Cpol)
                 Ang = np.arctan(xx / focal_length)
                 phi= np.arctan(yy/focal_length)
-                Angs.append(Ang)
-                
+                #Angs.append(Ang)
+########################################################################################
+                        
+
+
             names=[]
             for face_encoding in face_encodings:
+                
                 results = face_recognition.compare_faces(encodings, face_encoding)
-                print ('results',results)
                 if any(results) !=True: names.append('unknown')
                 else:names.append(np.unique(ids[results])[0])
-            print (names)
-            print('results',results)
-            if any(results) !=True: names.append('unknown')
-            else:names.append(np.unique(ids[results])[0])
+            
+            
             print (names)
             ############Write Response message
             Ds, Rots=Floats(),Floats()
