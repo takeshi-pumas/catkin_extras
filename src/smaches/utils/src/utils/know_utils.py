@@ -3,7 +3,7 @@ import rospkg
 import yaml
 from utils.grasp_utils import *
 from utils.nav_utils import *
-
+import math
 
 def read_yaml(known_locations_file='/receptionist_knowledge2.yaml'):
     rospack = rospkg.RosPack()
@@ -136,3 +136,17 @@ def find_host():
     else:
         loc = host_place
     return host_name, loc
+
+def find_room(pos):
+    known_loc = read_yaml('/known_locations.yaml')
+    rooms = ['bedroom','corridor','dining_room','kitchen','living_room']
+    min_dist = 100.0
+    closest = None
+    for room in rooms:
+        x = known_loc[room][0]['x']
+        y = known_loc[room][1]['y']
+        distance = math.sqrt((x-pos[0])**2+(y-pos[1])**2)
+        if distance < min_dist:
+            min_dist = distance
+            closest = room
+    return closest
