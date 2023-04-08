@@ -137,7 +137,7 @@ def find_host():
         loc = host_place
     return host_name, loc
 
-def find_room(pos):
+def get_location_room(pos):
     known_loc = read_yaml('/known_locations.yaml')
     rooms = ['bedroom','corridor','dining_room','kitchen','living_room']
     min_dist = 100.0
