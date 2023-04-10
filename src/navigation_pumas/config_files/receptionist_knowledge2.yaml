@@ -4,8 +4,12 @@ People:
     location: None
     name: Oscar
   Guest_1:
+    drink: use
+    location: Place_2
+    name: Rubin
+  Guest_2:
     drink: coke
-    location: Place_1
+    location: Waiting
     name: Rubin
 Places:
   Place_0:

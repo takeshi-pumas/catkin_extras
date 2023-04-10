@@ -26,7 +26,7 @@ def update_occupancy(found='None', place='None'):
     # Use: hsr found someone on a supposed empty place
     knowledge = read_yaml()
     # found is a name
-    if found != ' None' and place != 'None':
+    try:
         # get guest number of this someone
         guest = [key for key, person_dict in knowledge['People'].items()
                  if person_dict.get('name') == found]
@@ -39,7 +39,8 @@ def update_occupancy(found='None', place='None'):
         knowledge['Places'][place]['occupied'] = guest[0]
         write_yaml(knowledge)
         return True
-    else:
+    except:
+        knowledge['Places'][place]['occupied'] = 'someone'
         return False
 
 

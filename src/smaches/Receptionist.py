@@ -103,11 +103,14 @@ class Scan_face(smach.State):
 
         print('Checking for faces')
         if res != None:
-            print('RESPONSE', res.Ids.ids[0])
+            #return 0
+
             name = res.Ids.ids[0].data
+
+            print('RESPONSE', name)
             if name == 'NO_FACE':
                 print('No face Found, Keep scanning')
-                talk('I did not found you, I will try again')
+                talk('I can not see you , I will try again')
                 return 'failed'
             elif name == 'unknown':
                 print('A face was found.')
@@ -210,9 +213,45 @@ class Goto_face(smach.State):
 
         print('Try', self.tries, 'of 3 attempts')
         self.tries += 1
-        if self.tries == 3:
+        if self.tries == 6:
             return 'tries'
-        # res= omni_base.move_D
+        
+
+
+        points = rgbd.get_points()   
+        res, img_face = wait_for_face()  # default 10 secs
+        if res ==None:
+            print('no face found...')
+            return 'failed'
+                                                                ##FACE POS FROM FACE RECOG
+        
+
+
+
+        boundRect=np.asarray(res.Angs.data).astype('int')       ##FACE POS FROM FACE RECOG RESPONSE AND POINT CLOUD
+        trans = bbox_3d_mean(points, boundRect)                 ##FACE POS FROM FACE RECOG
+        
+
+        #trans_dict=human_detect_server.call()                   ##FROM HUMAN FINDER OPEN POSE
+        #trans =[trans_dict.x,trans_dict.y,trans_dict.z]         ##FROM HUMAN FINDER OPEN POSE
+        #print( trans )                                          ##FROM HUMAN FINDER OPEN POSE
+        
+        #############################################################################################
+        ##############################################################################################
+        tf_man.pub_static_tf(pos=trans, point_name=name, ref='head_rgbd_sensor_link')
+        
+        rospy.sleep(0.3)
+        tf_man.change_ref_frame_tf(name)
+        
+        
+        try:
+            trans,quat = tf_man.getTF(target_frame=name)
+        except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
+            print ( 'No face FOUND')
+            return 'failed'
+        omni_base.move_d_to(1, name,     )
+        head.to_tf(name)
+
 
         if res == 3:
             return 'succ'
@@ -243,7 +282,9 @@ class Find_sitting_place(smach.State):
 
             _,guest = get_waiting_guests()
             talk(f'{guest}, Here is a place to sit')
-            #brazo.set_named_target('neutral')
+            brazo.set_named_target('neutral')
+            #arm.set_named_target('neutral')
+            #arm.go()
             assign_occupancy(who=guest, where=place)
             return 'succ'
 
