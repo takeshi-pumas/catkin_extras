@@ -90,9 +90,10 @@ class Scan_face(smach.State):
     def execute(self, userdata):
         global  img_face, name_face
 
+
         rospy.loginfo('State : SCAN_FACE')
         head.set_joint_values([0.0, 0.3])
-        talk('I will scan your face, look at me, please')
+        talk('Scanning for faces, look at me, please')
         self.tries += 1
         if self.tries >= 4:
             self.tries = 0
@@ -147,15 +148,16 @@ class New_face(smach.State):
         if self.tries == 1:
             talk('Please, tell me your name')
         else:
-            talk('Im sorry, could you repeat it?')
+            talk('Im sorry, can you tell me your name again?')
         res = speech_recog_server()
         # self.new_name= res.data
         name = res.data
-        talk(f'Is {name} your name?, Did I say it correctly?')
+        talk(f'Is {name} your name?')
         res2 = speech_recog_server()
         answer = res2.data
         if answer == 'yes':
-            talk(f'Nice, {name}, what do you want to drink?')
+            talk(f'Niceto meet you {name}, what do you want to drink?')
+            name_face=name
             res3 = speech_recog_server()
             drink = res3.data
             add_guest(name, drink)
@@ -171,7 +173,9 @@ class New_face(smach.State):
         if res == False:
             talk('Something went wrong, retrying')
             return 'failed'
-        talk('I got you')
+        res = train_face(img_face, name)
+        print(res)
+        talk(name+' ... Wellcome')
         return 'succ'
 
 
