@@ -12,8 +12,7 @@ from object_classification.srv import *
 from segmentation.srv import *
 from human_detector.srv import Human_detector ,Human_detectorResponse 
 from ros_whisper_vosk.srv import GetSpeech
-from face_recog.msg import *
-from face_recog.srv import *
+  
 #import face_recognition 
 import cv2  
 import rospy 
@@ -180,11 +179,11 @@ def wait_for_face(timeout=10 , name=''):
                     new_res.Angs.data= res.Angs.data[i:i+4]
                     new_res.Ids.ids=res.Ids.ids[i].data
                     print('return res,img',new_res)
+                    print ('hit',idface.data, 'at' , res.Ds.data[i]  , 'meters')
                     ds_to_faces=[]
                     return new_res , img
 
 
-                    #print ('hit',idface.data, 'at' , res.Ds.data[i]  , 'meters')
                     
                     
 
@@ -193,7 +192,7 @@ def wait_for_face(timeout=10 , name=''):
                 new_res= RecognizeFaceResponse()
                 new_res.Ds.data= res.Ds.data[i]
                 new_res.Angs.data= res.Angs.data[i:i+4]
-                new_res.Ids.ids='closest'
+                new_res.Ids.ids=res.Ids.ids[i].data
                 print('return res,img',new_res)
                 ds_to_faces=[]
                 return new_res , img
