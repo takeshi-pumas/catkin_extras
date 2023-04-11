@@ -21,7 +21,7 @@ class Initial(smach.State):
         clean_knowledge()
         head.set_named_target('neutral')
         #print('head listo')
-        #brazo.set_named_target('go')
+        brazo.set_named_target('go')
         #print('brazo listo')
         rospy.sleep(0.8)
 
@@ -118,12 +118,14 @@ class Scan_face(smach.State):
                 return 'unknown'
 
             else:
-                talk(f'I found you, I Think you are. {name}.')
+                talk(f'I found you, I Think you are, {name}.')
                 talk('what do you want to drink?')
                 res = speech_recog_server()
                 drink = res.data
                 name_face=name
                 add_guest(name, drink)
+                takeshi_line = analyze_face_from_image(img_face, name)
+                add_description(name, takeshi_line)
                 return 'succ'
         else:
             return 'failed'
@@ -175,6 +177,7 @@ class New_face(smach.State):
             talk('Something went wrong, retrying')
             return 'failed'
         talk('I got you')
+        takeshi_line = analyze_face_from_image(img_face, name)
         return 'succ'
 
 
@@ -281,8 +284,8 @@ class Find_sitting_place(smach.State):
         if res == None:
 
             _,guest = get_waiting_guests()
-            talk(f'{guest}, Here is a place to sit')
             brazo.set_named_target('neutral')
+            talk(f'{guest}, Here is a place to sit')
             #arm.set_named_target('neutral')
             #arm.go()
             assign_occupancy(who=guest, where=place)
@@ -311,11 +314,12 @@ class Introduce_guest(smach.State):
         if self.tries == 3:
             return 'tries'
 
-        takeshi_line= analyze_face_from_image(img_face,name_face)         
+        #takeshi_line= analyze_face_from_image(img_face,name_face)         
+        takeshi_line = get_guest_description(name_face)
         print (takeshi_line)
         if (len(takeshi_line)!=0):
             talk(takeshi_line)
-            rospy.sleep(6.0)
+            rospy.sleep(5.0)
             return 'succ'
         else :
             print ('no face in img deep analyze')
@@ -350,6 +354,6 @@ if __name__ == '__main__':
         smach.StateMachine.add("GOTO_FACE",         Goto_face(),        transitions={'failed': 'GOTO_FACE',     'succ': 'LEAD_TO_LIVING_ROOM',   'tries': 'SCAN_FACE'})
         smach.StateMachine.add("LEAD_TO_LIVING_ROOM",Lead_to_living_room(), transitions={'failed': 'LEAD_TO_LIVING_ROOM','succ': 'FIND_SITTING_PLACE','tries': 'END'})
         smach.StateMachine.add("FIND_SITTING_PLACE", Find_sitting_place(),  transitions={'failed': 'FIND_SITTING_PLACE','succ': 'INTRODUCE_GUEST',    'tries': 'END'})
-        smach.StateMachine.add("INTRODUCE_GUEST",   Introduce_guest(),      transitions={'failed':'LEAD_TO_LIVING_ROOM','succ':'WAIT_PUSH_HAND',    'tries':'WAIT_PUSH_HAND'})
+        smach.StateMachine.add("INTRODUCE_GUEST",   Introduce_guest(),      transitions={'failed':'INTRODUCE_GUEST','succ':'WAIT_PUSH_HAND',    'tries':'WAIT_PUSH_HAND'})
 
     outcome = sm.execute()

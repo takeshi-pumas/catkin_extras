@@ -83,6 +83,7 @@ class pumas_navServer():
             execute_cb=self.execute_cb,
             auto_start=False)
         self.pumas_nav_server.start()
+        self.arm = ARM()
 
     def execute_cb(self, goal):
         #########
@@ -90,7 +91,7 @@ class pumas_navServer():
         #goal_corrected = goal_police(goal)
         #########
         success = False
-
+        self.arm.set_named_target('go')
         # Matching known location if given
         x, y, yaw = goal.x, goal.y, goal.yaw
         known_loc = goal.known_location.casefold()

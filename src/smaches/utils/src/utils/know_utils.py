@@ -85,7 +85,7 @@ def add_guest(name, drink='No drink'):
         guests_len = len(knowledge['People'])
         new_guest = f'Guest_{guests_len}'
         knowledge['People'][new_guest] = {
-            'drink': drink, 'location': 'Waiting', 'name': name.capitalize()}
+            'drink': drink, 'location': 'Waiting', 'name': name, 'description': None}
         write_yaml(knowledge)
         return True
     except:
@@ -151,3 +151,16 @@ def get_location_room(pos):
             min_dist = distance
             closest = room
     return closest
+
+def add_description(name, description):
+    knowledge = read_yaml()
+    guest = [key for key, person_dict in knowledge['People'].items()
+                 if person_dict.get('name') == name]
+    knowledge['People'][guest[0]]['description'] = description
+    write_yaml(knowledge)
+
+def get_guest_description(name):
+    knowledge = read_yaml()
+    guest = [key for key, person_dict in knowledge['People'].items()
+                 if person_dict.get('name') == name]
+    return knowledge['People'][guest[0]]['description']

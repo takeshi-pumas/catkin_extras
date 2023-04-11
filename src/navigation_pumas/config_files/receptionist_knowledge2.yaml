@@ -4,13 +4,11 @@ People:
     location: None
     name: Oscar
   Guest_1:
-    drink: use
-    location: Place_2
-    name: Rubin
-  Guest_2:
+    description: rubin has arrived... he is a Man... I believe he.is  around  35 years
+      old... I would say he is a bit  fear.And I might guess he is of latino hispanic.
     drink: coke
-    location: Waiting
-    name: Rubin
+    location: Place_1
+    name: rubin
 Places:
   Place_0:
     location:
@@ -29,7 +27,7 @@ Places:
       theta: 4.72
       x: 9.76
       y: -3.31
-    occupied: Guest_1
+    occupied: None
   Place_3:
     location:
       theta: 0.06
