@@ -107,6 +107,7 @@ def add_drink(drink):
 
 def add_place():
     try:
+        knowledge = read_yaml()
         tf_manager = TF_MANAGER()
         rospy.sleep(0.8)
         trans, rot = tf_manager.getTF(target_frame='base_link')

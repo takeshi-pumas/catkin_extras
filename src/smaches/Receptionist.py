@@ -338,7 +338,7 @@ class Introduce_guest(smach.State):
 
         #takeshi_line= analyze_face_from_image(img_face,name_face)         
         takeshi_line = get_guest_description(name_face)
-        print (takeshi_line)
+        print (takeeshi_line)
         if takeshi_line!=None:
             talk(takeshi_line)
             rospy.sleep(5.0)

@@ -11,6 +11,7 @@ from known_locations_tf_server.srv import *
 import pandas as pd
 from geometry_msgs.msg import TransformStamped
 from copy import deepcopy
+from utils.know_utils import *
 global path 
 #path = '/home/takeshi/Codes/known_locations.txt'
 def write_tf(pose, q, child_frame , parent_frame='map'):
@@ -49,7 +50,7 @@ def read_tf(t):
     return pose, quat
 
 
-def write_yaml(trans,req, known_locations_file = '/known_locations.yaml'):
+def write_yaml_locs(trans,req, known_locations_file = '/known_locations.yaml'):
     trans,quat=read_tf(trans)
     
 
@@ -96,8 +97,6 @@ def yaml_to_df():
     return df
 
 
-
-
 ###########################################################################################################################################################################
 def callback(req):
     ''' 
@@ -117,7 +116,7 @@ def callback(req):
         
         #####################################
         
-        succ=write_yaml(trans,req,file_name)
+        succ=write_yaml_locs(trans,req,file_name)
         print(succ)
         
 
@@ -142,7 +141,40 @@ def callback(req):
     
 
                  
+def callback2(req):
+    resp = Locations_serverResponse()
+    #print (resp)
+    try:
+        #trans = tfBuffer.lookup_transform('map', 'base_link', rospy.Time())
+        #trans.child_frame_id= req.location_name
+        #tf_static_broadcaster.sendTransform(trans)
+        
+        
+        
+        #####################################
+        
+        succ = add_place()
+        
+        print(succ)
+        
 
+        ###################################################
+        #with  open(path , 'a') as out:
+        #    out.write (req.location_name+np_to_str(trans)+np_to_str(quat)  +'\n' )
+        #print (trans,quat)
+        ####################### 
+
+
+        resp.success= succ
+        return resp
+
+
+
+
+    except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
+        print ( 'No TF FOUND')
+        resp.success= False
+        return resp
     
 
 global tfBuffer,tf_static_broadcaster ,known_locs , rospack
@@ -174,7 +206,7 @@ if len(df)!=0:
 
 
 rospy.loginfo("known locations detection service available")                    # initialize a ROS node
-rospy.Service('/known_location_add', Locations_server, callback         # type, and callback
-)
+rospy.Service('/known_location_add', Locations_server, callback)         # type, and callback
+rospy.Service('/knowledge_place_add', Locations_server, callback2)      #add to knowledge file
 
 rospy.spin()   
