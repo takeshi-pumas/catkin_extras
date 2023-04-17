@@ -23,8 +23,8 @@ class Initial(smach.State):
         #print('head listo')
         brazo.set_named_target('go')
         #print('brazo listo')
+        places_2_tf()
         rospy.sleep(0.8)
-
         return 'succ'
 
 # --------------------------------------------------
@@ -143,7 +143,7 @@ class New_face(smach.State):
         self.tries = 0
 
     def execute(self, userdata):
-        # global img_face,name_face
+        global name_face
         self.tries += 1
 
         rospy.loginfo('STATE : NEW_FACE')
@@ -152,19 +152,21 @@ class New_face(smach.State):
         if self.tries == 1:
             talk('Please, tell me your name')
         else:
-            talk('Im sorry, could you repeat it?')
+            talk('Im sorry, could you tell me your name again?')
         res = speech_recog_server()
         # self.new_name= res.data
         name = res.data
-        talk(f'Is {name} your name?, Did I say it correctly?')
+        talk(f'Is {name} your name?')
         res2 = speech_recog_server()
         answer = res2.data
         if answer == 'yes':
+            name_face=name
+            print (name_face)
             talk(f'Nice, {name}, what do you want to drink?')
             res3 = speech_recog_server()
             drink = res3.data
             add_guest(name, drink)
-            talk('Now, I will learn your face, please stare at me')
+            talk('Now, I am learning your face, please look at me')
             rospy.sleep(1.0)
         else:
             return 'tries'
@@ -178,6 +180,8 @@ class New_face(smach.State):
             return 'failed'
         talk('I got you')
         takeshi_line = analyze_face_from_image(img_face, name)
+        print(takeshi_line)
+        add_description(name, takeshi_line)
         return 'succ'
 
 
@@ -273,7 +277,9 @@ class Find_sitting_place(smach.State):
 
         print('Try', self.tries, 'of 3 attempts')
         self.tries += 1
+        talk('Looking for a place to sit')
         place, loc = find_empty_places()
+        print(place, loc)
         omni_base.move_base(*loc, time_out = 15)
         head.set_named_target("neutral")
         rospy.sleep(1.0)
@@ -294,6 +300,9 @@ class Find_sitting_place(smach.State):
         else:
             occupant_name = res.Ids.ids[0].data
             #occupant_name = "someone"
+            if occupant_name == 'unknown':
+                host_name, loc = find_host()
+                occupant_name = host_name
             update_occupancy(found=occupant_name, place=place)
             talk(f'I am sorry, here is {occupant_name}, I will find another place for you')
             return 'failed'
@@ -314,17 +323,30 @@ class Introduce_guest(smach.State):
         if self.tries == 3:
             return 'tries'
 
+
+        host_name, loc = find_host()
+        #host location is not known
+        if loc == "None":
+            talk("i dont know where the host is")
+        else:
+            [place,num]=loc.split("_")
+            tf_name = f'{place}_face{num}'
+            print(tf_name)
+            rospy.sleep(1.0)
+            head.to_tf(tf_name)
+
+
         #takeshi_line= analyze_face_from_image(img_face,name_face)         
         takeshi_line = get_guest_description(name_face)
         print (takeshi_line)
-        if (len(takeshi_line)!=0):
+        if takeshi_line!=None:
             talk(takeshi_line)
             rospy.sleep(5.0)
             return 'succ'
         else :
             print ('no face in img deep analyze')
-            talk('description found no face')
-            return 'failed'
+            talk(f'{name_face} has arrived')
+            return 'succ'
 
 # --------------------------------------------------
 def init(node_name):

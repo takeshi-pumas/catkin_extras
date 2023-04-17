@@ -41,6 +41,7 @@ def update_occupancy(found='None', place='None'):
         return True
     except:
         knowledge['Places'][place]['occupied'] = 'someone'
+        write_yaml(knowledge)
         return False
 
 
@@ -131,12 +132,12 @@ def find_host():
     knowledge = read_yaml()
     host_name = knowledge['People']['Guest_0']['name']
     host_place = knowledge['People']['Guest_0']['location']
-    if host_place != 'None':
-        loc = knowledge['Places'][host_place]['location'] 
-        XY = [loc['x'],loc['y']]
-    else:
-        loc = host_place
-    return host_name, loc
+    #if host_place != 'None':
+        #loc = knowledge['Places'][host_place]['location'] 
+        #XY = [loc['x'],loc['y']]
+    #else:
+    #    loc = host_place
+    return host_name, host_place
 
 def get_location_room(pos):
     known_loc = read_yaml('/known_locations.yaml')
@@ -164,3 +165,27 @@ def get_guest_description(name):
     guest = [key for key, person_dict in knowledge['People'].items()
                  if person_dict.get('name') == name]
     return knowledge['People'][guest[0]]['description']
+
+def return_places():
+    knowledge = read_yaml()
+    locs = []
+    num_places = len(knowledge['Places'].keys())
+    for i in range(1,num_places):
+        xyt = []
+        xyt.append(knowledge['Places'][f'Place_{i}']['location']['x'])
+        xyt.append(knowledge['Places'][f'Place_{i}']['location']['y'])
+        xyt.append(knowledge['Places'][f'Place_{i}']['location']['theta'])
+        locs.append(xyt)
+    return locs
+
+def places_2_tf():
+    tf_man = TF_MANAGER()
+    locs = return_places()
+    print(locs)
+    for i,loc in enumerate(locs):
+        pos = [loc[0],loc[1],1.0]
+        rot = tf.transformations.quaternion_from_euler(0.0,0.0, loc[2])
+        tf_man.pub_static_tf(pos=pos, rot=rot, point_name=f'Place_{i+1}')
+        tf_man.pub_static_tf(pos=[1.0,0,0], rot=rot, point_name=f'Place_face{i+1}', ref=f'Place_{i+1}')
+        print(f'done {i}')
+
