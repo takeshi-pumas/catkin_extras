@@ -171,8 +171,8 @@ class GAZE():
     def to_tf(self, target_frame='None'):
         if target_frame != 'None':
             xyz,_ = self._tf_man.getTF(target_frame=target_frame)
-            rospy.sleep(0.3)
-            if type(xyz[0]) is not bool:
+            rospy.sleep(0.8)
+            if type(xyz) is not bool:
                 self.absolute(*xyz)
 
     def _turn_base_gaze(self):

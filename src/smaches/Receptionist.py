@@ -285,6 +285,7 @@ class Find_sitting_place(smach.State):
         rospy.sleep(1.0)
         res=detect_human_to_tf()
         print (res,'Human')
+        talk('I will check if there is no people on this sit')
         res , _ = wait_for_face()  # seconds
         print (res,'face')
         if res == None:
@@ -327,7 +328,18 @@ class Introduce_guest(smach.State):
         host_name, loc = find_host()
         #host location is not known
         if loc == "None":
-            talk("i dont know where the host is")
+            #talk("i dont know where the host is")
+            num_places = len(return_places())
+            print(f'num_places: {num_places}')
+            for i in range (1, num_places):
+                head.to_tf(f'Place_face{i}')
+                talk(f'looking for host in place {i}')
+                res, _ = wait_for_face()
+                if res != None and res.Ids.ids[0].data == 'unknown':
+                    talk(f'I found the host {host_name}')
+                    break
+                #host_name = res.Ids.ids[0].data
+                rospy.sleep(2.0)
         else:
             [place,num]=loc.split("_")
             tf_name = f'{place}_face{num}'
@@ -338,10 +350,10 @@ class Introduce_guest(smach.State):
 
         #takeshi_line= analyze_face_from_image(img_face,name_face)         
         takeshi_line = get_guest_description(name_face)
-        print (takeeshi_line)
+        print (takeshi_line)
         if takeshi_line!=None:
             talk(takeshi_line)
-            rospy.sleep(5.0)
+            rospy.sleep(7.0)
             return 'succ'
         else :
             print ('no face in img deep analyze')

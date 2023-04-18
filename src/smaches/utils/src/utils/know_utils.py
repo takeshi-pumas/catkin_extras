@@ -124,6 +124,7 @@ def add_place():
 def clean_knowledge():
     knowledge = read_yaml()
     host = knowledge['People']['Guest_0']
+    host['location'] = 'None'
     knowledge['People'] = {'Guest_0': host}
     for i in range(1, len(knowledge['Places'])):
         knowledge['Places'][f'Place_{i}']['occupied'] = 'None'
