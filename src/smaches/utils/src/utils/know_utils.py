@@ -69,16 +69,19 @@ def get_waiting_guests():
 def assign_occupancy(who='None', where='None'):
     # Use: hsr found a empty place for the new guest
     knowledge = read_yaml()
-    if who != ' None' and where != 'None':
-        guest = [key for key, person_dict in knowledge['People'].items()
-                 if person_dict.get('name') == who]
-        knowledge['People'][guest[0]]['location'] = where
-        knowledge['Places'][where]['occupied'] = guest[0]
-        write_yaml(knowledge)
-        return True
-    else:
+    try:
+        if who != ' None' and where != 'None':
+            guest = [key for key, person_dict in knowledge['People'].items()
+                     if person_dict.get('name') == who]
+            if len(guest)>0:
+                knowledge['People'][guest[0]]['location'] = where
+                knowledge['Places'][where]['occupied'] = guest[0]
+                write_yaml(knowledge)
+                return True
+            else:
+                return False
+    except:
         return False
-
 
 def add_guest(name, drink='No drink'):
     try:

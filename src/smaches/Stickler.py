@@ -158,7 +158,7 @@ class Goto_human(smach.State):
         
         print('getting close to human')
         head.to_tf('human')
-        res = omni_base.move_d_to(1.6,'human')
+        res = omni_base.move_d_to(0.7,'human')
         head.to_tf('human')
         print ( "is he drinking?")
 

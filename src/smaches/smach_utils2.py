@@ -143,9 +143,8 @@ def train_face(image, name):
     
     return res.Ids.ids[0].data.split(' ')[0] == 'trained'
 
-
-#------------------------------------------------------
-def wait_for_face(timeout=10):
+    #------------------------------------------------------
+def wait_for_face(timeout=10 , name=''):
     
     rospy.sleep(0.3)
     
@@ -163,13 +162,68 @@ def wait_for_face(timeout=10):
 
         res= recognize_face(req)
 
+
+        #NO FACE FOUND
         if res.Ids.ids[0].data == 'NO_FACE':
             print ('No face FOund Keep scanning')
+            
             return None, None
-        
-        else:return res , img
+        #AT LEAST ONE FACE FOUND
+        else:
+            print('at least one face found')
+            ds_to_faces=[]
+            for i , idface in enumerate(res.Ids.ids):
+                print (i,idface.data)
+                ds_to_faces.append(res.Ds.data[i])    ##
+                if (idface.data)==name :
+                    new_res= RecognizeFaceResponse()
+                    new_res.Ds.data= res.Ds.data[i]
+                    new_res.Angs.data= res.Angs.data[i:i+4]
+                    new_res.Ids.ids=res.Ids.ids[i].data
+                    print('return res,img',new_res)
+                    print ('hit',idface.data, 'at' , res.Ds.data[i]  , 'meters')
+                    ds_to_faces=[]
+                    return new_res , img
+
+            if len (ds_to_faces)!=0:
+                i=np.argmin(ds_to_faces)
+                new_res= RecognizeFaceResponse()
+                new_res.Ds.data= res.Ds.data[i]
+                new_res.Angs.data= res.Angs.data[i:i+4]
+                new_res.Ids.ids=res.Ids.ids[i].data
+                print('return res,img',new_res)
+                ds_to_faces=[]
+                return new_res , img
+
+
+
+
 
 #------------------------------------------------------
+#def wait_for_face(timeout=10):
+#    
+#    rospy.sleep(0.3)
+#    
+#    start_time = rospy.get_time()
+#    strings=Strings()
+#    string_msg= String()
+#    string_msg.data='Anyone'
+#    while rospy.get_time() - start_time < timeout:
+#        img=rgbd.get_image()  
+#        req=RecognizeFaceRequest()
+#        print ('Got  image with shape',img.shape)
+#        req.Ids.ids.append(string_msg)
+#        img_msg=bridge.cv2_to_imgmsg(img)
+#        req.in_.image_msgs.append(img_msg)
+#
+#        res= recognize_face(req)
+#
+#        if res.Ids.ids[0].data == 'NO_FACE':
+#            print ('No face FOund Keep scanning')
+#            return None, None
+#        
+#        else:return res , img
+##------------------------------------------------------
 def wait_for_push_hand(time=10):
 
     start_time = rospy.get_time()
@@ -187,8 +241,8 @@ def wait_for_push_hand(time=10):
     if (rospy.get_time() - start_time >= time):
         print(time, 'secs have elapsed with no hand push')
         return False
-
-#------------------------------------------------------
+#
+##------------------------------------------------------
 def analyze_face_from_image(cv2_img,name=''):   
     #USING DEEP FACE SERVICE
     # FIND SOME CHARACTERISTICS FROM A FACE IMAGE
@@ -233,17 +287,7 @@ def bbox_3d_mean(points,boundRect):
     else:
         return np.ones(3)
 
-"""def bbox_3d_mean(points,bbox):
-    
-    xyz=[]
-    
-    for i in np.arange((int)(bbox[0]),(int)(bbox[0])+(int)(bbox[2])):
-        for j in np.arange((int)(bbox[1]),(int)(bbox[1])+(int)(bbox[3])):
-            aa=np.asarray(points[['x','y','z']][i,j])
-            if np.isnan(np.asarray((aa['x'],aa['y'],aa['z']))).sum() ==0:                   
-                xyz.append(np.asarray((aa['x'],aa['y'],aa['z'])) )
-    return np.asarray(xyz).mean(axis=0)
-"""
+
 
 #------------------------------------------------------
 def gaze_to_face():
