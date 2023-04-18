@@ -80,7 +80,7 @@ def read_yaml(known_locations_file = '/known_locations.yaml'):
     return content
 
 def yaml_to_df():
-    con = read_yaml(known_locations_file = file_name)
+    con = read_yaml(known_locations_file =file_name)
     values=[]
     locations=[]
     for c in con:

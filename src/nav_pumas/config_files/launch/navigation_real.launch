@@ -11,6 +11,8 @@
   <!-- MAP IS STORED IN ROBOT-->
   
   <arg name="prohibition_map_file"  default="$(find config_files)/prohibition_maps/Lab_arena_hor_blocked.yaml"/>
+  <!--arg name="prohibition_map_file"  default="$(find config_files)/prohibition_maps/apartment.yaml"/-->
+  
   <arg name="initial_pose_x" default="-5.7"/>
   <arg name="initial_pose_y" default="-6.0"/>
   <arg name="initial_pose_a" default=" 90"/>
@@ -102,6 +104,9 @@
    
 
   <node pkg="hmm_navigation"  name="pumas_nav_actionserver" type="pumas_nav_actionserver.py"/>
+
+
+
   <!--node pkg="face_recog"  name="face_recog_server" type="sos_service_waving.py"/-->
   
   
