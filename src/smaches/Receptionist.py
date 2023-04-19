@@ -330,14 +330,14 @@ class Introduce_guest(smach.State):
         # analyze = rospy.ServiceProxy('analyze_face', RecognizeFace)    
         self.tries += 1
         print('Try', self.tries, 'of 3 attempts')
-        if self.tries == 2:
-            omni_base.move_base(known_location='living_room')
-            rospy.sleep(1.0)
+        # if self.tries == 2:
+            # omni_base.move_base(known_location='living_room')
+            # rospy.sleep(1.0)
 
 
         host_name, loc = find_host()
         #host location is not known
-        name = ''
+        '''name = ''
         if loc == "None":
             #talk("i dont know where the host is")
             num_places = len(return_places())
@@ -373,7 +373,49 @@ class Introduce_guest(smach.State):
             tf_name = f'{place}_face{num}'
             print(tf_name)
             rospy.sleep(1.0)
+            head.to_tf(tf_name)'''
+        #host location is not known
+
+        if loc == "None":
+            #talk("i dont know where the host is")
+            num_places = len(return_places())
+            print(f'num_places: {num_places}')
+            for i in range(1, num_places + 1):
+                guest_loc = get_guest_location(name_face)
+                guest_face = guest_loc.replace('_','_face')
+                tf_name = f'Place_face{i}'
+                if guest_face != tf_name:
+                    head.to_tf(tf_name)
+                    talk(f'looking for host on sit {i}')
+                    res, _ = wait_for_face()
+
+                    if res is not None and res.Ids.ids != 'NO_FACE':
+                        name = res.Ids.ids
+                        takeshi_line = get_guest_description(name_face)                    
+
+                        if takeshi_line is not 'None':
+                            if name != 'unknown': 
+                                speech = f'{name}, {takeshi_line}'
+                            else: 
+                                speech = takeshi_line
+                            timeout = 7.0
+                        else:
+                            print('no face in img deep analyze')
+                            speech = f'{name_face} has arrived'
+                            timeout = 1.0
+                        talk(speech)
+                        rospy.sleep(timeout)
+                        self.tries = 0
+                        return 'succ'
+
+            # if the host is not found
+            return 'failed'
+
+        else:
+            tf_name = loc.replace('_','_face')
             head.to_tf(tf_name)
+            return 'succ'
+
 
 # --------------------------------------------------
 def init(node_name):

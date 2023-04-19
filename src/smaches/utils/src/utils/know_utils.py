@@ -89,7 +89,7 @@ def add_guest(name, drink='No drink'):
         guests_len = len(knowledge['People'])
         new_guest = f'Guest_{guests_len}'
         knowledge['People'][new_guest] = {
-            'drink': drink, 'location': 'Waiting', 'name': name, 'description': None}
+            'drink': drink, 'location': 'Waiting', 'name': name, 'description': 'None'}
         write_yaml(knowledge)
         return True
     except:
@@ -170,6 +170,12 @@ def get_guest_description(name):
     guest = [key for key, person_dict in knowledge['People'].items()
                  if person_dict.get('name') == name]
     return knowledge['People'][guest[0]]['description']
+    
+def get_guest_location(name):
+    knowledge = read_yaml()
+    guest = [key for key, person_dict in knowledge['People'].items()
+                 if person_dict.get('name') == name]
+    return knowledge['People'][guest[0]]['location']
 
 def return_places():
     knowledge = read_yaml()
