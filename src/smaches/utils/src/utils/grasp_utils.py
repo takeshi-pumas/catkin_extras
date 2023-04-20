@@ -117,7 +117,7 @@ class GAZE():
         if abs(pan_correct) > 0.5 * np.pi:
             print ('Exorcist alert')
             # pan_correct=0.5*np.pi
-            self._turn_base_gaze()
+            self.turn_base_gaze()
             return [0.0, tilt_correct]
             # return self._gaze_point()
         else:    
@@ -180,13 +180,17 @@ class GAZE():
             if type(xyz) is not bool:
                 self.absolute(*xyz)
 
-    def _turn_base_gaze(self):
-        self._tf_man.pub_static_tf(pos=[self._x,self._y,self._z], point_name='gaze')
+    def turn_base_gaze(self,tf='None'):
         base = OMNIBASE()
         succ = False
         THRESHOLD = 0.05
+        if tf != 'None':
+            target_frame = tf
+        else:
+            target_frame = 'gaze'
+            self._tf_man.pub_static_tf(pos=[self._x,self._y,self._z], point_name='gaze')
         while not succ:
-            xyz,_=self._tf_man.getTF(target_frame='gaze', ref_frame=self._base)
+            xyz,_=self._tf_man.getTF(target_frame=target_frame, ref_frame=self._base)
             eT = np.arctan2(xyz[1],xyz[0])
             succ = abs(eT) < THRESHOLD 
             if succ:

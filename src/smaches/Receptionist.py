@@ -286,8 +286,9 @@ class Find_sitting_place(smach.State):
         #head.set_named_target("neutral")
         
         #gaze each place, instead of navigating
-        [location,num]=place.split("_")
-        tf_name = f'{location}_face{num}'
+        #[location,num]=place.split("_")
+        #tf_name = f'{location}_face{num}'
+        tf_name = place.replace('_', '_face')
         print(tf_name)
         rospy.sleep(1.0)
         head.to_tf(tf_name)
@@ -300,6 +301,8 @@ class Find_sitting_place(smach.State):
         if res == None:
 
             _,guest = get_waiting_guests()
+            head.set_named_target('neutral')
+            head.turn_base_gaze(tf=place)
             brazo.set_named_target('neutral')
             talk(f'{guest}, Here is a place to sit')
             print(place)
@@ -393,7 +396,7 @@ class Introduce_guest(smach.State):
                         name = res.Ids.ids
                         takeshi_line = get_guest_description(name_face)                    
 
-                        if takeshi_line is not 'None':
+                        if takeshi_line != 'None':
                             if name != 'unknown': 
                                 speech = f'{name}, {takeshi_line}'
                             else: 
