@@ -29,10 +29,10 @@ from grasp_utils import *
 global listener, broadcaster, tfBuffer, tf_static_broadcaster, scene, rgbd  , head,whole_body,arm,gripper 
 global clear_octo_client, goal,navclient,segmentation_server ,df , tf_man , gaze ,speech_recog_server
 rospy.init_node('smach')
-head = moveit_commander.MoveGroupCommander('head')
+#head = moveit_commander.MoveGroupCommander('head')
 #gripper =  moveit_commander.MoveGroupCommander('gripper')
 #whole_body=moveit_commander.MoveGroupCommander('whole_body')
-arm =  moveit_commander.MoveGroupCommander('arm')
+#arm =  moveit_commander.MoveGroupCommander('arm')
 #broadcaster = tf.TransformBroadcaster()
 
 tfBuffer = tf2_ros.Buffer()
@@ -65,6 +65,7 @@ tf_man = TF_MANAGER()
 gaze = GAZE()
 gripper = GRIPPER()
 grasp_base=OMNIBASE()
+arm = ARM()
 
 def strmsg_to_float(s):
     cent_map=[]

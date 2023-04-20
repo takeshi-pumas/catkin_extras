@@ -28,7 +28,6 @@ import tf
 import time
 from cv_bridge import CvBridge, CvBridgeError
 from nav_msgs.msg import OccupancyGrid
-from hri_msgs.msg import RecognizedSpeech
 
 
 
@@ -41,7 +40,7 @@ global listener, broadcaster, tfBuffer, tf_static_broadcaster, scene, rgbd, head
 global clear_octo_client, goal,navclient,segmentation_server  , tf_man , omni_base, brazo, speech_recog_server, bridge, map_msg, pix_per_m, analyze_face
 
 rospy.init_node('smach')
-# head = moveit_commander.MoveGroupCommander('head')
+head = moveit_commander.MoveGroupCommander('head')
 #gripper =  moveit_commander.MoveGroupCommander('gripper')
 #whole_body=moveit_commander.MoveGroupCommander('whole_body')
 
@@ -77,7 +76,7 @@ tf_man = TF_MANAGER()
 gripper = GRIPPER()
 omni_base=OMNIBASE()
 wrist= WRIST_SENSOR()
-head = GAZE()
+gaze = GAZE()
 brazo = ARM()
 # arm =  moveit_commander.MoveGroupCommander('arm')
 

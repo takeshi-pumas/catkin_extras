@@ -22,7 +22,7 @@ class Initial(smach.State):
         head.set_named_target('neutral')
         #print('head listo')
         brazo.set_named_target('go')
-        #print('arm listo')
+        #print('brazo listo')
         places_2_tf()
         rospy.sleep(0.8)
         return 'succ'
@@ -125,7 +125,6 @@ class Scan_face(smach.State):
                 drink = res.data
                 name_face=name
                 add_guest(name, drink)
-                talk('nice')
                 takeshi_line = analyze_face_from_image(img_face, name)
                 add_description(name, takeshi_line)
                 return 'succ'
@@ -159,9 +158,7 @@ class New_face(smach.State):
         # self.new_name= res.data
         name = res.data
         talk(f'Is {name} your name?')
-        #res2 = speech_recog_server()
-        res2 = rospy.wait_for_message( '/recognizedSpeech',RecognizedSpeech)
-        print (res2.hypothesis)
+        res2 = speech_recog_server()
         answer = res2.data
         if answer == 'yes':
             name_face=name
@@ -284,36 +281,26 @@ class Find_sitting_place(smach.State):
         talk('I am looking for a place to sit')
         place, loc = find_empty_places()
         print(place, loc)
-        #omni_base.move_base(*loc, time_out = 15)
-        #head.set_named_target("neutral")
-        
-        #gaze each place, instead of navigating
-        #[location,num]=place.split("_")
-        #tf_name = f'{location}_face{num}'
-        tf_name = place.replace('_', '_face')
-        print(tf_name)
+        omni_base.move_base(*loc, time_out = 15)
+        head.set_named_target("neutral")
         rospy.sleep(1.0)
-        head.to_tf(tf_name)
-
         res=detect_human_to_tf()
-        #print (res,'Human')
+        print (res,'Human')
         #talk('I will check if there is no people on this sit')
         res , _ = wait_for_face()  # seconds
-        #print (res,'face')
+        print (res,'face')
         if res == None:
 
             _,guest = get_waiting_guests()
-            head.set_named_target('neutral')
-            head.turn_base_gaze(tf=place)
             brazo.set_named_target('neutral')
             talk(f'{guest}, Here is a place to sit')
-            print(place)
+            #arm.set_named_target('neutral')
+            #arm.go()
             assign_occupancy(who=guest, where=place)
             return 'succ'
 
         else:
-            occupant_name = res.Ids.ids
-            #print(occupant_name)
+            occupant_name = res.Ids.ids[0].data
             #occupant_name = "someone"
             if occupant_name == 'unknown':
                 host_name, loc = find_host()
@@ -335,14 +322,14 @@ class Introduce_guest(smach.State):
         # analyze = rospy.ServiceProxy('analyze_face', RecognizeFace)    
         self.tries += 1
         print('Try', self.tries, 'of 3 attempts')
-        # if self.tries == 2:
-            # omni_base.move_base(known_location='living_room')
-            # rospy.sleep(1.0)
+        if self.tries == 2:
+            omni_base.move_base(known_location='living_room')
+            rospy.sleep(1.0)
 
 
         host_name, loc = find_host()
         #host location is not known
-        '''name = ''
+        name = ''
         if loc == "None":
             #talk("i dont know where the host is")
             num_places = len(return_places())
@@ -353,7 +340,8 @@ class Introduce_guest(smach.State):
                 res, _ = wait_for_face()
 
                 if res != None:
-                    name = res.Ids.ids
+                    name = res.Ids.ids[0].data
+
                     #If someone is found
                     if name != 'NO_FACE':
                         takeshi_line = get_guest_description(name_face)
@@ -378,49 +366,7 @@ class Introduce_guest(smach.State):
             tf_name = f'{place}_face{num}'
             print(tf_name)
             rospy.sleep(1.0)
-            head.to_tf(tf_name)'''
-        #host location is not known
-
-        if loc == "None":
-            #talk("i dont know where the host is")
-            num_places = len(return_places())
-            print(f'num_places: {num_places}')
-            for i in range(1, num_places + 1):
-                guest_loc = get_guest_location(name_face)
-                guest_face = guest_loc.replace('_','_face')
-                tf_name = f'Place_face{i}'
-                if guest_face != tf_name:
-                    head.to_tf(tf_name)
-                    talk(f'looking for host on sit {i}')
-                    res, _ = wait_for_face()
-
-                    if res is not None and res.Ids.ids != 'NO_FACE':
-                        name = res.Ids.ids
-                        takeshi_line = get_guest_description(name_face)                    
-
-                        if takeshi_line != 'None':
-                            if name != 'unknown': 
-                                speech = f'{name}, {takeshi_line}'
-                            else: 
-                                speech = takeshi_line
-                            timeout = 7.0
-                        else:
-                            print('no face in img deep analyze')
-                            speech = f'{name_face} has arrived'
-                            timeout = 1.0
-                        talk(speech)
-                        rospy.sleep(timeout)
-                        self.tries = 0
-                        return 'succ'
-
-            # if the host is not found
-            return 'failed'
-
-        else:
-            tf_name = loc.replace('_','_face')
             head.to_tf(tf_name)
-            return 'succ'
-
 
 # --------------------------------------------------
 def init(node_name):

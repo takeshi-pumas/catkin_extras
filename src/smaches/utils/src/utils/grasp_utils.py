@@ -224,7 +224,7 @@ class ARM():
         goal.trajectory = traj
 
         # send message to the action server
-        print('message sent')
+        #print('message sent')
         self._cli.send_goal(goal)
 
         # wait for the action server to complete the order
@@ -238,7 +238,7 @@ class ARM():
         if pose == 'neutral':
             joint_values = [0.0, 0.0, 0.0, -1.6, 0.0]
         elif pose == 'grasp_floor':
-            joint_values = [0.0,-2.47,0.0,0.86,-0.032, 0.0]
+            joint_values = [0.6,-2.47,0.0,0.86,-0.032, 0.0]
         #go case
         else:   
             joint_values = [0.0, 0.0, -1.6, -1.6, 0.0]
