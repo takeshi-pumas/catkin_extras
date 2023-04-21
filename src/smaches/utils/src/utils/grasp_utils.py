@@ -212,6 +212,8 @@ class ARM():
         self._cli = actionlib.SimpleActionClient(
             '/hsrb/arm_trajectory_controller/follow_joint_trajectory',
             control_msgs.msg.FollowJointTrajectoryAction)
+        self._tf_man = TF_MANAGER()
+        self._grasp_base = OMNIBASE()
     def set_joint_values(self, joint_values = [0.0, 0.0, -1.6, -1.6, 0.0]):
         goal = control_msgs.msg.FollowJointTrajectoryGoal()
         traj = trajectory_msgs.msg.JointTrajectory()
@@ -243,3 +245,33 @@ class ARM():
         else:   
             joint_values = [0.0, 0.0, -1.6, -1.6, 0.0]
         self.set_joint_values(joint_values)
+    def move_hand_to_target(target_frame = 'target', offset=[0,0,0]):
+        succ = False
+        THRESHOLD = 0.05
+        THRESHOLD_T = 0.1
+
+        hand = 'hand_palm_link'
+        base = 'base_link'
+
+        while not succ:
+            try:
+                target_base, _ = self._tf_man.getTF(target_frame = hand, ref_frame=base)
+                dist, _ = self._tf_man.getTF(target_frame = target_frame, ref_frame=base)
+                e = np.array(dist) - np.array(target_base) - np.array(offset)
+                e[2] = 0
+                
+                rospy.loginfo("Distance to goal: {:.2f}, {:.2f}".format(e[0], e[1]))
+                if abs(e[0]) < THRESHOLD:
+                    e[0] = 0
+                if abs(e[1]) < THRESHOLD:
+                    e[1] = 0
+                #if abs(eT) < THRESHOLD_T:
+                #    eT = 0
+                e_norm = np.linalg.norm(e)
+                succ = e_norm < THRESHOLD #and abs(eT) < THRESHOLD_T
+                #grasp_base.tiny_move(velX=0.4*e[0], velY=0.6*e[1], velT=0.7*eT,  std_time=0.2, MAX_VEL=0.3, MAX_VEL_THETA=0.9)
+                self._grasp_base.tiny_move(velX=0.4*e[0], velY=0.6*e[1], std_time=0.2, MAX_VEL=0.3)
+            except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException) as e:
+                rospy.logwarn("Failed to get transform: {}".format(str(e)))
+                continue
+        return succ
