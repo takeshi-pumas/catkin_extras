@@ -208,6 +208,7 @@ def set_pose_goal(pos=[0,0,0], rot=[0,0,0,1]):
 
 class ARM():
     def __init__(self):
+        import tf2_ros
         self._joint_names = ["arm_lift_joint", "arm_flex_joint", "arm_roll_joint", "wrist_flex_joint", "wrist_roll_joint"]
         self._cli = actionlib.SimpleActionClient(
             '/hsrb/arm_trajectory_controller/follow_joint_trajectory',
@@ -240,15 +241,33 @@ class ARM():
         if pose == 'neutral':
             joint_values = [0.0, 0.0, 0.0, -1.6, 0.0]
         elif pose == 'grasp_floor':
-            joint_values = [0.6,-2.47,0.0,0.86,-0.032, 0.0]
+            joint_values = [0.27, -2.09, 0.0, -1.12, 0.0]
         #go case
         else:   
             joint_values = [0.0, 0.0, -1.6, -1.6, 0.0]
         self.set_joint_values(joint_values)
-    def move_hand_to_target(target_frame = 'target', offset=[0,0,0]):
+
+    def check_grasp(self, weight = 1.0):
+        wrist=WRIST_SENSOR()
+
+        force = wrist.get_force()
+        force = np.array(force)
+        if force > weight:
+            return True
+        else:
+            l_finger = 'hand_l_finger_tip_frame'
+            r_finger = 'hand_r_finger_tip_frame'
+            dist,_ = self._tf_man.getTF(target_frame=r_finger, ref_frame=l_finger)
+            np.array(dist)
+            dist = np.linalg.norm(dist)
+            if dist > 0.02:
+                return True
+            else:
+                return False
+    def move_hand_to_target(self, target_frame = 'target', offset=[0,0,0], THRESHOLD = 0.05):
         succ = False
-        THRESHOLD = 0.05
-        THRESHOLD_T = 0.1
+        #THRESHOLD = 0.05
+        #THRESHOLD_T = 0.1
 
         hand = 'hand_palm_link'
         base = 'base_link'

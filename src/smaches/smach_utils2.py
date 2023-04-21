@@ -269,7 +269,7 @@ def analyze_face_from_image(cv2_img,name=''):
     if gender=='Man':pronoun='he'
     takeshi_line = f'{name} has arrived... {pronoun} is a {gender}... I believe {pronoun}.' 
     takeshi_line += f'is  around  {age} years old... I would say he is a bit  {state}.'
-    takeshi_line += f'And I might guess {pronoun} is of {race}.'
+    takeshi_line += f'And I might guess {pronoun} is of {race} descent.'
     return takeshi_line
 
 #------------------------------------------------------

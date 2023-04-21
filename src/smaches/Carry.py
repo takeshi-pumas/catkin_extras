@@ -33,10 +33,8 @@ class Initial(smach.State):
         
         #scene.remove_world_object()
         #Takeshi neutral
-        #arm.set_named_target('go')
-        #arm.go()
-        head.set_named_target('neutral')
-        succ=head.go() 
+        gaze.set_named_target('neutral')
+        #succ=head.go() 
         
         #succ = True        
         if succ:
@@ -80,22 +78,20 @@ class Scan_face(smach.State):
         self.tries+=1        
         
         if self.tries==1:
-            head.set_named_target('neutral')
-            head.go() 
-        if self.tries==2:
-            hv= head.get_current_joint_values()
-            hv[0]= -0.6
-            hv[1]= 0.0
-            head.go(hv) 
-        if self.tries==3:
-            hv= head.get_current_joint_values()
-            hv[0]= 0.6
-            hv[1]= 0.0
-            head.go(hv) 
-        if self.tries>=9:
+            #gaze.set_named_target('neutral')
+            hv = [0.0, 0.0]
+            #head.go() 
+        elif self.tries==2:
+            #hv= head.get_current_joint_values()
+            hv = [-0.6, 0.0]
+            
+        elif self.tries==3:
+            hv = [0.6, 0.0]
+
+        elif self.tries>=9:
             self.tries=0
             return'tries'
-        
+        gaze.set_joint_value_target(hv)
         #img=rgbd.get_image()  
         #req=RecognizeFaceRequest()
         #print ('Got  image with shape',img.shape)
@@ -149,12 +145,13 @@ class Detect_action(smach.State):
             #head.set_named_target('neutral')
             #head.go() 
             print("")
-        if self.tries==2:
-            hv= head.get_current_joint_values()
+        elif self.tries==2:
+            hv= gaze.get_current_joint_values()
             hv[1]= hv[1]+0.2 
-            head.go(hv) 
+            gaze.set_joint_value_target(hv)
+            #head.go(hv) 
 
-        if self.tries>=9:
+        elif self.tries>=9:
             self.tries=0
             return'tries'
         rospy.sleep(1.0)
@@ -190,7 +187,7 @@ class Segment_object(smach.State):
         if self.tries==4:return 'tries'
 
         rospy.loginfo('STATE : SCAN_FLOOR')
-        hv= head.get_current_joint_values()
+        hv= gaze.get_current_joint_values()
  
         #rospy.sleep(1.0)
         print("SEGMENTANDO....")
@@ -208,6 +205,7 @@ class Segment_object(smach.State):
             tf_man.pub_static_tf(pos=goal_pose,point_name='Goal_D')
 
             return 'succ'
+        talk('I did not find any luggage, I will try again')
         return'failed'
         
 
@@ -245,57 +243,34 @@ class Grasp_from_floor(smach.State):
         smach.State.__init__(self,outcomes=['succ','failed','tries'])
         self.tries=0
     def execute(self,userdata):
-        #get close to goal
-        #succ = False
-        #THRESHOLD = 0.02
-        #while not succ:
-        #    trans,_ = tf_man.getTF(target_frame='Face', ref_frame='base_link')
-        #    if type(trans) is not bool:
-        #        eX, eY, _ = trans
-        #        eX -= 0.35
-        #        rospy.loginfo("Distance to goal: {:.3f}, {:.3f}".format(eX, eY))
-        #        if abs(eY) < THRESHOLD:
-        #            eY = 0
-        #        if abs(eX) < THRESHOLD:
-        #            eX = 0
-        #        succ =  eX == 0 and eY == 0
-        #        grasp_base.tiny_move(velX=0.2*eX, velY=-0.4*eY, std_time=0.2, MAX_VEL=0.3)
-        #prepare arm to grasp pose
-        clear_octo_client()
-        floor_pose = [0.0,-2.47,0.0,0.86,-0.032,0.0]
-        h_search = [0.0,-0.70]
-        AR_starter.call()
-        arm.set_joint_value_target(floor_pose)
-        arm.go()
-        head.set_joint_value_target(h_search)
-        head.go()
+        #turn to obj goal
+        self.tries += 1
+        if self.tries == 1:
+            gaze.set_named_target('neutral')
+            gaze.turn_base_gaze('Goal_D')
+            gaze.set_named_target('down')
+        #pre grasp pose
+        arm.set_named_target('grasp_floor')
         gripper.open()
+        rospy.sleep(0.8)
+        #get close to object
+        arm.move_hand_to_target(target_frame='Goal_D', THRESHOLD=0.01 )
+        #move down hand 
+        acp = arm.get_joint_values()
+        acp[0]-= 0.04
         #grasp
-        succ = False
-        THRESHOLD = 0.02
-        while not succ:
-            trans,_ = tf_man.getTF(target_frame='ar_marker/704', ref_frame='hand_palm_link')
-            if type(trans) is not bool:
-                _, eY, eX = trans
-                eX -= 0.05
-                rospy.loginfo("Distance to goal: {:.3f}, {:.3f}".format(eX, eY))
-                if abs(eY) < THRESHOLD:
-                    eY = 0
-                if abs(eX) < THRESHOLD:
-                    eX = 0
-                succ =  eX == 0 and eY == 0
-                grasp_base.tiny_move(velX=0.2*eX, velY=-0.4*eY, std_time=0.2, MAX_VEL=0.3)
         gripper.close()
-        grasp_base.tiny_move(velX=-0.5, std_time=0.5, MAX_VEL=0.1)
-        rospy.sleep(0.5)
-        clear_octo_client()
-        arm.set_named_target('neutral')
-        arm.go()
-        head.set_named_target('neutral')
-        head.go()
-        talk("Done, Thanks for your attention")
-        return 'succ'
-
+        #move up to check if grasped
+        #acp = arm.get_joint_values()
+        acp[0] += 0.07
+        arm.set_joint_values(acp)
+        if arm.check_grasp(weight = 1.0):
+            arm.set_named_target('neutral')
+            talk('I took the luggage')
+            return 'succ'
+        else:
+            talk('I could not take the luggage, i will try again')
+            return 'failed'
 
 
 def init(node_name):

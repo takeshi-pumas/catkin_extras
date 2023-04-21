@@ -158,12 +158,15 @@ class New_face(smach.State):
         res = speech_recog_server()
         # self.new_name= res.data
         name = res.data
+        print (name)
         talk(f'Is {name} your name?')
         #res2 = speech_recog_server()
-        res2 = rospy.wait_for_message( '/recognizedSpeech',RecognizedSpeech)
-        print (res2.hypothesis)
-        answer = res2.data
-        if answer == 'yes':
+        
+        res2 = rospy.wait_for_message( '/recognizedSpeech',RecognizedSpeech )
+        print ("POCKERT",res2.hypothesis[0],type(res2.hypothesis))
+        #answer = res2
+        answer = res2.hypothesis[0]
+        if (answer == 'YES') or (answer == 'yes') :
             name_face=name
             print (name_face)
             talk(f'Nice, {name}, what do you want to drink?')
@@ -175,6 +178,14 @@ class New_face(smach.State):
         else:
             return 'tries'
         # new face trainer
+        img = rgbd.get_image()
+        print (name)
+        res = train_face(img, name)
+        print(res)
+        img = rgbd.get_image()
+        print (name)
+        res = train_face(img, name)
+        print(res)
         img = rgbd.get_image()
         print (name)
         res = train_face(img, name)
