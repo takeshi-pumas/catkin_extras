@@ -28,6 +28,7 @@ import tf
 import time
 from cv_bridge import CvBridge, CvBridgeError
 from nav_msgs.msg import OccupancyGrid
+from act_recog.srv import Recognize,RecognizeResponse,RecognizeRequest
 
 
 
@@ -36,11 +37,11 @@ from utils.misc_utils import *
 from utils.nav_utils import *
 from utils.know_utils import *
 
-global listener, broadcaster, tfBuffer, tf_static_broadcaster, scene, rgbd, head,train_new_face, wrist, human_detect_server
-global clear_octo_client, goal,navclient,segmentation_server  , tf_man , omni_base, brazo, speech_recog_server, bridge, map_msg, pix_per_m, analyze_face
+global listener, broadcaster, tfBuffer, tf_static_broadcaster, scene, rgbd, head,train_new_face, wrist, human_detect_server, recognize_action, recognize_face
+global clear_octo_client, goal,navclient,segmentation_server, tf_man , omni_base, brazo, speech_recog_server, bridge, map_msg, pix_per_m, analyze_face
 
 rospy.init_node('smach')
-head = moveit_commander.MoveGroupCommander('head')
+#head = moveit_commander.MoveGroupCommander('head')
 #gripper =  moveit_commander.MoveGroupCommander('gripper')
 #whole_body=moveit_commander.MoveGroupCommander('whole_body')
 
@@ -60,7 +61,9 @@ speech_recog_server = rospy.ServiceProxy('/speech_recognition/vosk_service' ,Get
 recognize_face = rospy.ServiceProxy('recognize_face', RecognizeFace)                    #FACE RECOG
 train_new_face = rospy.ServiceProxy('new_face', RecognizeFace)                          #FACE RECOG
 analyze_face = rospy.ServiceProxy('analyze_face', RecognizeFace)    ###DEEP FACE ONLY
+recognize_action = rospy.ServiceProxy('recognize_act', Recognize) 
 
+#recognize_face = rospy.ServiceProxy('recognize_face', RecognizeFace)
 
 #map_msg= rospy.wait_for_message('/augmented_map', OccupancyGrid)####WAIT for nav pumas map
 #inflated_map= np.asarray(map_msg.data)
@@ -76,7 +79,7 @@ tf_man = TF_MANAGER()
 gripper = GRIPPER()
 omni_base=OMNIBASE()
 wrist= WRIST_SENSOR()
-gaze = GAZE()
+head = GAZE()
 brazo = ARM()
 # arm =  moveit_commander.MoveGroupCommander('arm')
 

@@ -18,6 +18,7 @@ class Initial(smach.State):
         print(f'Try {self.tries} of 5 attempts')
         if self.tries == 3:
             return 'tries'
+            
         clean_knowledge()
         head.set_named_target('neutral')
         #print('head listo')

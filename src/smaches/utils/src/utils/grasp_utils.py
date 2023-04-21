@@ -155,7 +155,12 @@ class GAZE():
             head_pose = [0.0, 0.0]
         self.set_joint_values(head_pose) 
 
-    def set_joint_values(self, head_pose):
+    def get_joint_values(self):
+        states = rospy.wait_for_message('/hsrb/joint_states', JointState)
+        st = states.position
+        return [st[9], st[10]]
+
+    def set_joint_values(self, head_pose = [0.0,0.0]):
         # fill ROS message
         traj = trajectory_msgs.msg.JointTrajectory()
         traj.joint_names = ["head_pan_joint", "head_tilt_joint"]

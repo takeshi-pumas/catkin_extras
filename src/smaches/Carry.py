@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from utils_takeshi import *
-from act_recog.srv import Recognize,RecognizeResponse,RecognizeRequest
+
 from smach_utils_carry import *
 def get_extrapolation(mano,codo,z=0):
 
@@ -14,54 +14,40 @@ def get_extrapolation(mano,codo,z=0):
 
 class Initial(smach.State):
     def __init__(self):
-        smach.State.__init__(self,outcomes=['succ','failed','tries'],input_keys=['global_counter'])
+        smach.State.__init__(self,outcomes=['succ','failed','tries'])
         self.tries=0
-
-        
     def execute(self,userdata):
 
-        
         rospy.loginfo('STATE : INITIAL')
-        print('robot neutral pose')
-
-        print('Try',self.tries,'of 5 attempts') 
+        print('Robot neutral pose')
         self.tries+=1
-        if self.tries==3:
+        print('Try',self.tries,'of 5 attempts') 
+        if self.tries == 3:
             return 'tries'
         
-        clear_octo_client()
-        
-        #scene.remove_world_object()
         #Takeshi neutral
-        gaze.set_named_target('neutral')
-        #succ=head.go() 
-        
-        #succ = True        
-        if succ:
-            return 'succ'
-        else:
-            return 'failed'
+        head.set_named_target('neutral')
+        #print('head listo')
+        brazo.set_named_target('go')
+        #print('arm listo')
+        rospy.sleep(0.8)
+        return 'succ'
 
 class Wait_push_hand(smach.State):
     def __init__(self):
         smach.State.__init__(self,outcomes=['succ','failed','tries'])
         self.tries=0
-
         
     def execute(self,userdata):
-
-        
         rospy.loginfo('STATE : INITIAL')
         print('robot neutral pose')
 
         print('Try',self.tries,'of 3 attempts') 
         self.tries+=1
-        if self.tries==3:
+        if self.tries==4:
             return 'tries'
-        #takeshi_talk_pub.publish(string_to_Voice('Gently, ...  push my hand to begin'))
         talk('Gently, ...  push my hand to begin')
         succ= wait_for_push_hand(100)
-        #succ = True        #HEY THIS MUST BE COMMENTED DEBUGUING
 
         if succ:
             return 'succ'
@@ -78,20 +64,15 @@ class Scan_face(smach.State):
         self.tries+=1        
         
         if self.tries==1:
-            #gaze.set_named_target('neutral')
             hv = [0.0, 0.0]
-            #head.go() 
         elif self.tries==2:
-            #hv= head.get_current_joint_values()
             hv = [-0.6, 0.0]
-            
         elif self.tries==3:
             hv = [0.6, 0.0]
-
         elif self.tries>=9:
             self.tries=0
             return'tries'
-        gaze.set_joint_value_target(hv)
+        head.set_joint_values(hv)
         #img=rgbd.get_image()  
         #req=RecognizeFaceRequest()
         #print ('Got  image with shape',img.shape)
@@ -138,18 +119,16 @@ class Detect_action(smach.State):
         #class_names=["wave_R","wave_L","neutral","drink","pointing"]
     def execute(self,userdata):
 
-        rospy.loginfo('State : SCAN_FACE')
+        rospy.loginfo('State : Detect_action')
         self.tries+=1        
         
         if self.tries==1:
-            #head.set_named_target('neutral')
-            #head.go() 
-            print("")
+            head.set_named_target('neutral')
+
         elif self.tries==2:
-            hv= gaze.get_current_joint_values()
+            hv= head.get_joint_values()
             hv[1]= hv[1]+0.2 
-            gaze.set_joint_value_target(hv)
-            #head.go(hv) 
+            head.set_joint_values(hv)
 
         elif self.tries>=9:
             self.tries=0
@@ -186,13 +165,13 @@ class Segment_object(smach.State):
         self.tries+=1
         if self.tries==4:return 'tries'
 
-        rospy.loginfo('STATE : SCAN_FLOOR')
-        hv= gaze.get_current_joint_values()
+        rospy.loginfo('STATE : Segment_object')
+        hv= head.get_joint_values()
  
         #rospy.sleep(1.0)
         print("SEGMENTANDO....")
-        res=segmentation_server.call()
-        print (res.poses.data)
+        res = segmentation_server.call()
+        '''print (res.poses.data)
         if len (res.poses.data)!=0:
             cents=np.asarray(res.poses.data).reshape((int(len (res.poses.data)/3),3 )   )
             print ('cents',cents)
@@ -204,9 +183,32 @@ class Segment_object(smach.State):
             goal_pose,yaw=move_D(trans,0.75)    
             tf_man.pub_static_tf(pos=goal_pose,point_name='Goal_D')
 
+            return 'succ'''
+        centroids = res.poses.data
+        closest = [100,100,100]
+        min_dist = 100
+        i = 0
+        while len(centroids) >= 3:
+            print(i)
+            centroid = centroids[:3]
+            tf_man.pub_static_tf(pos=centroid, point_name='target', ref='head_rgbd_sensor_rgb_frame')
+            pos,_=tf_man.getTF(target_frame='target', ref_frame='base_link')
+            dist = np.linalg.norm(np.array(pos))
+            if dist < min_dist:
+                min_dist = dist
+                closest = centroid
+            centroids = centroids[3:]
+            i +=1
+
+        if min_dist < 1.5:
+            tf_man.pub_static_tf(pos=closest, point_name='target', ref='head_rgbd_sensor_rgb_frame')
+            rospy.sleep(0.8)
+            tf_man.change_ref_frame_tf(point_name='target', new_frame='map')
             return 'succ'
-        talk('I did not find any luggage, I will try again')
-        return'failed'
+        else:
+            talk('I did not find any luggage, I will try again')
+            return 'failed'
+        
         
 
 
@@ -231,7 +233,7 @@ class Gaze_to_object(smach.State):
 
         print('Gazing at :',goal_pose[0], goal_pose[1], goal_pose[2])   #X Y YAW AND TIMEOUT
         rospy.sleep(1.0)
-        hcp = gaze.absolute(goal_pose[0], goal_pose[1], 0.0)
+        hcp = head.absolute(goal_pose[0], goal_pose[1], 0.0)
         #move_base(goal_pose[0],goal_pose[1], 0.0 ,20  )   #X Y YAW AND TIMEOUT
         #head.set_joint_value_target(hcp)
         #head.go()
@@ -246,26 +248,26 @@ class Grasp_from_floor(smach.State):
         #turn to obj goal
         self.tries += 1
         if self.tries == 1:
-            gaze.set_named_target('neutral')
-            gaze.turn_base_gaze('Goal_D')
-            gaze.set_named_target('down')
+            head.set_named_target('neutral')
+            head.turn_base_gaze('Goal_D')
+            head.set_named_target('down')
         #pre grasp pose
-        arm.set_named_target('grasp_floor')
+        brazo.set_named_target('grasp_floor')
         gripper.open()
         rospy.sleep(0.8)
         #get close to object
-        arm.move_hand_to_target(target_frame='Goal_D', THRESHOLD=0.01 )
+        brazo.move_hand_to_target(target_frame='Goal_D', THRESHOLD=0.01 )
         #move down hand 
-        acp = arm.get_joint_values()
+        acp = brazo.get_joint_values()
         acp[0]-= 0.04
         #grasp
         gripper.close()
         #move up to check if grasped
-        #acp = arm.get_joint_values()
+        #acp = brazo.get_joint_values()
         acp[0] += 0.07
-        arm.set_joint_values(acp)
-        if arm.check_grasp(weight = 1.0):
-            arm.set_named_target('neutral')
+        brazo.set_joint_values(acp)
+        if brazo.check_grasp(weight = 1.0):
+            brazo.set_named_target('neutral')
             talk('I took the luggage')
             return 'succ'
         else:
@@ -274,18 +276,17 @@ class Grasp_from_floor(smach.State):
 
 
 def init(node_name):
-    global reqAct,recognize_action
+    print('smach ready')
+    #global reqAct,recognize_action
 
 
-    rospy.wait_for_service('recognize_act')    
-    recognize_action = rospy.ServiceProxy('recognize_act', Recognize) 
+    #rospy.wait_for_service('recognize_act')    
+    #rospy.wait_for_service('recognize_face')
 
-    rospy.wait_for_service('recognize_face')
-    recognize_face = rospy.ServiceProxy('recognize_face', RecognizeFace)
+    #reqAct = RecognizeRequest()
     #train_new_face = rospy.ServiceProxy('new_face', RecognizeFace)    
-    base_vel_pub = rospy.Publisher('/hsrb/command_velocity', Twist, queue_size=10)
-    takeshi_talk_pub = rospy.Publisher('/talk_request', Voice, queue_size=10)
-    reqAct=RecognizeRequest()
+    #base_vel_pub = rospy.Publisher('/hsrb/command_velocity', Twist, queue_size=10)
+    #takeshi_talk_pub = rospy.Publisher('/talk_request', Voice, queue_size=10)
 #Entry point    
 if __name__== '__main__':
     print("Takeshi STATE MACHINE...")
@@ -293,18 +294,17 @@ if __name__== '__main__':
     sm = smach.StateMachine(outcomes = ['END'])     #State machine, final state "END"
     
     #sm.userdata.clear = False
-    sis = smach_ros.IntrospectionServer('SMACH_VIEW_SERVER', sm, '/SM_ROOT')
+    sis = smach_ros.IntrospectionServer('SMACH_VIEW_SERVER', sm, '/SM_CARRY_MY_LUGAGGE')
     sis.start()
 
 
     with sm:
         #State machine for Restaurant
-        smach.StateMachine.add("INITIAL",           Initial(),          transitions = {'failed':'INITIAL',          'succ':'WAIT_PUSH_HAND',           'tries':'END'}) 
-        smach.StateMachine.add("WAIT_PUSH_HAND",   Wait_push_hand(),  transitions = {'failed':'WAIT_PUSH_HAND',  'succ':'DETECT_POINT',    'tries':'END'}) 
-        smach.StateMachine.add("SCAN_FACE",   Scan_face(),  transitions = {'failed':'SCAN_FACE',  'succ':'DETECT_POINT',    'tries':'INITIAL'}) 
-        smach.StateMachine.add("DETECT_POINT",   Detect_action(),  transitions = {'failed':'DETECT_POINT',  'succ':'GAZE_OBJECT',    'tries':'INITIAL'}) 
-        
-        smach.StateMachine.add("GAZE_OBJECT",   Gaze_to_object(),  transitions = {'failed':'GAZE_OBJECT',  'succ':'SEGMENT_OBJECT',    'tries':'INITIAL'}) 
-        smach.StateMachine.add("SEGMENT_OBJECT",   Segment_object(),  transitions = {'failed':'SEGMENT_OBJECT',  'succ':'GRASP_FROM_FLOOR',    'tries':'INITIAL'}) 
-        smach.StateMachine.add("GRASP_FROM_FLOOR",   Grasp_from_floor(),  transitions = {'failed':'GRASP_FROM_FLOOR',  'succ':'END',    'tries':'GRASP_FROM_FLOOR'}) 
+        smach.StateMachine.add("INITIAL",           Initial(),          transitions = {'failed':'INITIAL',          'succ':'WAIT_PUSH_HAND',    'tries':'END'}) 
+        smach.StateMachine.add("WAIT_PUSH_HAND",    Wait_push_hand(),   transitions = {'failed':'WAIT_PUSH_HAND',   'succ':'DETECT_POINT',      'tries':'END'}) 
+        smach.StateMachine.add("SCAN_FACE",         Scan_face(),        transitions = {'failed':'SCAN_FACE',        'succ':'DETECT_POINT',      'tries':'INITIAL'}) 
+        smach.StateMachine.add("DETECT_POINT",      Detect_action(),    transitions = {'failed':'DETECT_POINT',     'succ':'GAZE_OBJECT',       'tries':'INITIAL'}) 
+        smach.StateMachine.add("GAZE_OBJECT",       Gaze_to_object(),   transitions = {'failed':'GAZE_OBJECT',      'succ':'SEGMENT_OBJECT',    'tries':'INITIAL'}) 
+        smach.StateMachine.add("SEGMENT_OBJECT",    Segment_object(),   transitions = {'failed':'DETECT_POINT',     'succ':'GRASP_FROM_FLOOR',  'tries':'INITIAL'}) 
+        smach.StateMachine.add("GRASP_FROM_FLOOR",  Grasp_from_floor(), transitions = {'failed':'GRASP_FROM_FLOOR', 'succ':'END',               'tries':'GRASP_FROM_FLOOR'}) 
     outcome = sm.execute()          
