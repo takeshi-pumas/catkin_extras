@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from act_recog.srv import Recognize,RecognizeResponse,RecognizeRequest
+import rospy
 
 
 from utils_inference import *
@@ -13,7 +14,7 @@ def callback(req):
 	cnt_acciones=0
 	last_act=-1
 	response=RecognizeResponse()
-	max_inf_it=100
+	max_inf_it=40
 	#----------------
 	if req.in_==1:
 		print("Opcion 1\n\tObteniendo imagenes...")
@@ -61,8 +62,8 @@ def callback(req):
 			            cnt_acciones=0
 			            last_act=np.argmax(probas[:])
 
-			im=draw_skeleton(dataout,h,w,im,bkground=True)
-			im=draw_skeleton(cb[symbol],h,w,im,bkground=True,centroid=True)
+			im=draw_skeleton(dataout,h,w,im,cnt_person=0,bkground=True)
+			im=draw_skeleton(cb[symbol],h,w,im,cnt_person=0,bkground=True,centroid=True)
 			if last_act==-1:
 			    cv2.putText(img=im, text="buffer size:"+str(len(buffer))+", symbol det:"+str(symbol)+" reps:"+str(cnt_acciones), 
 			    org=(5, 20),fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.6, color=(35, 255, 148),thickness=2)
@@ -83,7 +84,7 @@ def callback(req):
 			    print("Recibiendo imagen rgbd...")
 			    frameC,dataPC=get_coordinates()
 			    print("publicando...")
-			    frameC=draw_skeleton(dataout,h,w,frameC,bkground=True)  
+			    frameC=draw_skeleton(dataout,h,w,frameC,cnt_person=0,bkground=True)  
 			    #if req.visual!=0:  
 			    #    cv2.imshow("IMAGEN RGBD",frameC)
 			    #    cv2.waitKey(400)
@@ -142,14 +143,13 @@ def callback(req):
 			if datum.poseKeypoints is not None:
 			    cnt+=1
 			    dataout=np.copy(datum.poseKeypoints[0,:,:2])
-			    im=draw_skeleton(dataout,h,w,im,bkground=True)
+			    im=draw_skeleton(dataout,h,w,im,cnt_person=0,bkground=True)
 			    cv2.putText(img=im, text="Contador: "+str(cnt),org=(5, 20),fontFace=cv2.FONT_HERSHEY_SIMPLEX, 
 			                fontScale=0.6, color=(35, 255, 148),thickness=2)
 
 			    if req.visual!=0:
 			        cv2.imshow("Imagen RGB",im)
 			        cv2.waitKey(10)
-			    print(cnt)
 			    if cnt==50:
 			        
 			        print("Obteniendo rgbd...")
@@ -167,10 +167,70 @@ def callback(req):
 
 			        response.i_out=1
 			        break
+		print("Cerrando CV2")
+		if req.visual!=0:
+			print("SI")    
+			cv2.destroyAllWindows()
+			cv2.waitKey(1)
+
+		img_msg=bridge.cv2_to_imgmsg(im)
+		img_msg2=bridge.cv2_to_imgmsg(dataout)
+		if len(response.im_out.image_msgs)==0:
+		    response.im_out.image_msgs.append(img_msg)
+		else:
+		    response.im_out.image_msgs[0]=img_msg
+
+		if len(response.sk.image_msgs)==0:
+		    response.sk.image_msgs.append(img_msg2)
+		else:
+		    response.sk.image_msgs[0]=img_msg2
+
+		return response
+    #----------------
+	# Para pointing sin HMM
+	elif req.in_==3:
+		max_inf_it=40
+		print("Opcion {}, estimar brazo que esta apuntando".format(req.in_))
+		cnt=0
+		while True:
+
+			im=rgb.get_image()
+			dataout=np.zeros((25,2))
+			datum.cvInputData = im
+			opWrapper.emplaceAndPop(op.VectorDatum([datum]))
+			if datum.poseKeypoints is not None:
+			    cnt+=1
+			    dataout=np.copy(datum.poseKeypoints[0,:,:2])
+			    im=draw_skeleton(dataout,h,w,im,cnt_person=0,bkground=True)
+			    cv2.putText(img=im, text="Contador: "+str(cnt),org=(5, 20),fontFace=cv2.FONT_HERSHEY_SIMPLEX, 
+			                fontScale=0.6, color=(35, 255, 148),thickness=2)
+
+			    if req.visual!=0:
+			        cv2.imshow("Imagen RGB",im)
+			        cv2.waitKey(10)
+			    print(cnt)
+			    if cnt==max_inf_it:
+			        
+			        print("Obteniendo rgbd...")
+			        frameC,dataPC=get_coordinates()
+			        print("esqueleto encontrado")
+
+			        mano,codo=detect_pointing_arm(dataout,dataPC)
+			        #ob_xyz = get_extrapolation(mano,codo)
+			        tf_man.pub_static_tf(pos=codo,point_name='CODO',ref='head_rgbd_sensor_link')
+			        tf_man.pub_static_tf(pos=mano,point_name='MANO',ref='head_rgbd_sensor_link')
+			        print("cambiando referencia")
+			        tf_man.change_ref_frame_tf(point_name='CODO',new_frame='map')
+			        tf_man.change_ref_frame_tf(point_name='MANO',new_frame='map')
+
+			        print("tf publicada y referenciada a map")
+
+			        response.i_out=1
+			        break
 
 		if req.visual!=0:
-		    cv2.destroyAllWindows()
-		    cv2.waitKey(1)
+			cv2.destroyAllWindows()
+			cv2.waitKey(1)
 
 		img_msg=bridge.cv2_to_imgmsg(im)
 		img_msg2=bridge.cv2_to_imgmsg(dataout)
@@ -227,35 +287,33 @@ def callback(req):
 		return response    
 
 
-
+#global tf_man
 def recognition_server():
-    global tf_listener,rgb,rgbd, bridge,class_names,mA,mB,mPI,opWrapper,datum,cb,h,w,tf_man
-    
-    #---Parte para cargar lo necesario en inferencia con OpenPose y Markov---
-    class_names=["wave_R","wave_L","neutral","drink","pointing"]
-    mA,mB,mPI=loadModels(class_names)
-    cb=np.load("src/act_recog/scripts/codebooks/codebook_LBG_160_s30.npy")
-    opWrapper,datum=init_openPose(n_people=1,net_res="-1x192")
-    h=480
-    w=640
-    # ---
+	global tf_listener,rgb,rgbd, bridge,class_names,mA,mB,mPI,opWrapper,datum,cb,h,w
+	#---Parte para cargar lo necesario en inferencia con OpenPose y Markov---
+	class_names=["wave_R","wave_L","neutral","drink","pointing"]
+	mA,mB,mPI=loadModels(class_names)
+	cb=np.load("src/act_recog/scripts/codebooks/codebook_LBG_160_s30.npy")
+	opWrapper,datum=init_openPose(n_people=1)
+	h=480
+	w=640
+	# ---
 
-    #--- Parte para cargar lo necesario de ROS
-   
-    rospy.init_node('recognize_action_server')
-    rgb= RGB()
-    rgbd=RGBD()
-    bridge = CvBridge()
-    tf_listener = tf.TransformListener()
-    broadcaster= tf.TransformBroadcaster()
-    tf_man=TF_MANAGER()
-    tf_static_broadcaster= tf2.StaticTransformBroadcaster()
-    rospy.loginfo("Action recognition service available")                    # initialize a ROS node
-    s = rospy.Service('recognize_act', Recognize, callback) 
-    print("Reconition service available")
+	#--- Parte para cargar lo necesario de ROS
 
-    rospy.spin()
-    #---
+	#rospy.init_node('recognize_action_server')
+	rgb= RGB()
+
+	#bridge = CvBridge()
+	#tf_listener = tf.TransformListener()
+	#broadcaster= tf.TransformBroadcaster()
+	#tf_static_broadcaster= tf2.StaticTransformBroadcaster()
+	rospy.loginfo("Action recognition service available")                    # initialize a ROS node
+	s = rospy.Service('recognize_act', Recognize, callback) 
+	print("Reconition service available")
+
+	rospy.spin()
+#---
 
 #========================================
 if __name__ == "__main__":

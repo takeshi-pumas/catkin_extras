@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
 import numpy as np
+import rospy
+import ros_numpy
+import tf
+import tf2_ros as tf2
+from sensor_msgs.msg import Image ,PointCloud2
+
 import cv2
 
 #---------------------------------------------------
@@ -21,7 +27,8 @@ def draw_text_bkgn(img, text,
 
     return text_size
 
-    #---------------------------------------------------
+
+
 def draw_skeleton(joints,hh,wh,im,cnt_person=0,norm=False,bkground=False,centroid=False):
 
     """
