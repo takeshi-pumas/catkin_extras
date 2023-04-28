@@ -12,6 +12,9 @@ find_package(catkin REQUIRED COMPONENTS
 
 add_message_files(
   FILES
+  Keypoint.msg
+  HumanCoordinates.msg
+  HumanCoordinatesArray.msg
   VisionObject.msg
   VisionObjectList.msg
   VisionPlane.msg
@@ -40,6 +43,8 @@ add_message_files(
 
 add_service_files(
   FILES
+  FindPerson.srv
+  HumanPoseEstimatorResult.srv
   RecognizeObject.srv
   RecognizeObjects.srv
   DetectObjects.srv
