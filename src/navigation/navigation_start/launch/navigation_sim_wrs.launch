@@ -89,5 +89,5 @@
 
   <node name="action_nav_serv" pkg="hmm_navigation" type="pumas_nav_actionserver_rotfix.py" respawn="true" output="screen"/>
   <node name="smach_viewer" pkg="smach_viewer" type="smach_viewer.py" respawn="true" output="screen"/>
-  <node name="human_detector" pkg="human_detector" type="human_detector_server.py" respawn="true" output="screen"/> 
+  <!--node name="human_detector" pkg="human_detector" type="human_detector_server.py" respawn="true" output="screen"/--> 
 </launch>

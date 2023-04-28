@@ -51,8 +51,8 @@
     <group ns="obs_avoid">
       <!-- This is to normal navigation -->
       <!-- This is to detect the small objects and closest objects -->
-      <node name="obstacle_detector" pkg="obs_detect" type="obs_detect_node" respawn="true" output="screen" args="--max_x 0.55 --min_y -0.2 --max_y 0.2 --z_threshold 0.03"/>
-      <node name="pot_fields" pkg="pot_fields" type="pot_fields_node" respawn="true" output="screen"/>
+      
+      <!--node name="pot_fields" pkg="pot_fields" type="pot_fields_node" respawn="true" output="screen"/-->
       <node name="map_enhancer" pkg="augmented_gridmaps" type="augmented_gridmaps_node" output="screen">
         <remap from="point_obstacle" to="/clicked_point"/>
         <param name="obstacle_radius" value="0.05" type="double"/>
