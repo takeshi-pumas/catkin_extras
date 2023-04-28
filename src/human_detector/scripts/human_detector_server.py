@@ -14,9 +14,7 @@ def trigger_response(request):
     # image_data = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]   
     # image=cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
     # print (image.shape)
-    # cents,xyz, images, img = plane_seg( points_msg,lower=10    , higher=4000,reg_hy=350)
-    # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    
+    # cents,xyz, images, img = plane_seg( points_msg,lower=10    , hi
 
 
     res= detect_human(points_msg)

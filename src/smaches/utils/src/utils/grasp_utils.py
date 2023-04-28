@@ -220,6 +220,7 @@ class ARM():
             control_msgs.msg.FollowJointTrajectoryAction)
         self._tf_man = TF_MANAGER()
         self._grasp_base = OMNIBASE()
+        self._wrist=WRIST_SENSOR()
     def set_joint_values(self, joint_values = [0.0, 0.0, -1.6, -1.6, 0.0]):
         goal = control_msgs.msg.FollowJointTrajectoryGoal()
         traj = trajectory_msgs.msg.JointTrajectory()
@@ -253,10 +254,9 @@ class ARM():
         self.set_joint_values(joint_values)
 
     def check_grasp(self, weight = 1.0):
-        wrist=WRIST_SENSOR()
-
-        force = wrist.get_force()
-        force = np.array(force)
+        
+        force = self._wrist.get_force()
+        force = np.linalg.norm(np.array(force))
         if force > weight:
             return True
         else:

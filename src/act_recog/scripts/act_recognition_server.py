@@ -25,7 +25,7 @@ def callback(req):
 		    cb2=cb
 		while True:
 			# <<<<<<<<<<<<<<<< obtengo imagen >>>>>>>>>>>>>>>>>>>>>
-			im=rgb.get_image()
+			im=rgbd.get_image()
 			imgOut=np.copy(im)
 			#im=cv2.cvtColor(im, cv2.COLOR_BGR2RGB )
 
@@ -136,7 +136,7 @@ def callback(req):
 		cnt=0
 		while True:
 
-			im=rgb.get_image()
+			im=rgbd.get_image()
 			dataout=np.zeros((25,2))
 			datum.cvInputData = im
 			opWrapper.emplaceAndPop(op.VectorDatum([datum]))
@@ -189,34 +189,43 @@ def callback(req):
     #----------------
 	# Para pointing sin HMM
 	elif req.in_==3:
-		max_inf_it=40
+		max_inf_it=60
 		print("Opcion {}, estimar brazo que esta apuntando".format(req.in_))
 		cnt=0
 		while True:
 
-			im=rgb.get_image()
+			im=rgbd.get_image()
+			im=cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
+
+			dataPC=rgbd.get_points()
 			dataout=np.zeros((25,2))
+			skeletons_xyz=np.zeros((25,3))
 			datum.cvInputData = im
 			opWrapper.emplaceAndPop(op.VectorDatum([datum]))
 			if datum.poseKeypoints is not None:
 			    cnt+=1
 			    dataout=np.copy(datum.poseKeypoints[0,:,:2])
-			    im=draw_skeleton(dataout,h,w,im,cnt_person=0,bkground=True)
-			    cv2.putText(img=im, text="Contador: "+str(cnt),org=(5, 20),fontFace=cv2.FONT_HERSHEY_SIMPLEX, 
-			                fontScale=0.6, color=(35, 255, 148),thickness=2)
-
+			    
 			    if req.visual!=0:
-			        cv2.imshow("Imagen RGB",im)
-			        cv2.waitKey(10)
-			    print(cnt)
+			    	im=draw_skeleton(dataout,h,w,im,cnt_person=0,bkground=True)
+			    	cv2.putText(img=im, text="Contador: "+str(cnt),org=(5, 20),fontFace=cv2.FONT_HERSHEY_SIMPLEX, 
+			                fontScale=0.6, color=(35, 255, 148),thickness=2)
+			    	cv2.imshow("Imagen RGB",im)
+			    	cv2.waitKey(10)
+			    #print(cnt)
 			    if cnt==max_inf_it:
 			        
 			        print("Obteniendo rgbd...")
-			        frameC,dataPC=get_coordinates()
+			        #frameC,dataPC=get_coordinates()
 			        print("esqueleto encontrado")
+			      
 
+			        im_t=draw_skeleton(dataout,h,w,im,cnt_person=0,bkground=True)
+
+			        #cv2.imshow("Imagen y sk para extrapola y TF ",im_t)
+			        #cv2.waitKey(0)
 			        mano,codo=detect_pointing_arm(dataout,dataPC)
-			        #ob_xyz = get_extrapolation(mano,codo)
+			        ob_xyz = get_extrapolation(mano,codo)
 			        tf_man.pub_static_tf(pos=codo,point_name='CODO',ref='head_rgbd_sensor_link')
 			        tf_man.pub_static_tf(pos=mano,point_name='MANO',ref='head_rgbd_sensor_link')
 			        print("cambiando referencia")
@@ -224,6 +233,7 @@ def callback(req):
 			        tf_man.change_ref_frame_tf(point_name='MANO',new_frame='map')
 
 			        print("tf publicada y referenciada a map")
+			        rospy.sleep(0.8)
 
 			        response.i_out=1
 			        break
@@ -231,7 +241,8 @@ def callback(req):
 		if req.visual!=0:
 			cv2.destroyAllWindows()
 			cv2.waitKey(1)
-
+		print("DATA SK")
+		#print(dataout)
 		img_msg=bridge.cv2_to_imgmsg(im)
 		img_msg2=bridge.cv2_to_imgmsg(dataout)
 		if len(response.im_out.image_msgs)==0:
@@ -252,7 +263,7 @@ def callback(req):
 		print("Opcion {}, una sola imagen con openpose".format(req.in_))
 
 
-		im=rgb.get_image()
+		im=rgbd.get_image()
 		dataout=np.zeros((25,2))
 		datum.cvInputData = im
 		opWrapper.emplaceAndPop(op.VectorDatum([datum]))
@@ -302,8 +313,8 @@ def recognition_server():
 	#--- Parte para cargar lo necesario de ROS
 
 	#rospy.init_node('recognize_action_server')
+	rgbd= RGBD()
 	rgb= RGB()
-
 	#bridge = CvBridge()
 	#tf_listener = tf.TransformListener()
 	#broadcaster= tf.TransformBroadcaster()

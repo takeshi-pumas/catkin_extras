@@ -23,10 +23,10 @@ def trigger_response(request):
 
     print(len(cents))
 
-    #cv2.imshow("Aa",img)
-    #cv2.waitKey(0)
+    cv2.imshow("Aa",img)
+    cv2.waitKey(0)
+    #cv2.destroyAllWindows()
 
-    cv2.destroyAllWindows()
     for i,cent in enumerate(cents):
         print (cent)
         x,y,z=cent

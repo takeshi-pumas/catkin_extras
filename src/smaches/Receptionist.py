@@ -52,7 +52,33 @@ class Wait_push_hand(smach.State):
             return 'succ'
         else:
             return 'failed'
+# --------------------------------------------------
 
+class Wait_door_opened(smach.State):
+    def __init__(self):
+        smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
+        self.tries = 0
+
+    def execute(self, userdata):
+
+        rospy.loginfo('STATE : Wait for door to be opened')
+        print('Waiting for door to be opened')
+
+        self.tries += 1
+        print(f'Try {self.tries} of 4 attempts')
+
+        if self.tries == 100:
+            return 'tries'
+        talk('I am ready for receptionist task.')
+        rospy.sleep(0.8)
+        talk('I am waiting for the door to be opened')
+        succ = line_detector.line_found()
+        #succ = wait_for_push_hand(100)
+        rospy.sleep(1.0)
+        if succ:
+            return 'succ'
+        else:
+            return 'failed'
 # --------------------------------------------------
 
 
@@ -154,19 +180,29 @@ class New_face(smach.State):
         #if num_waiting_guests == 0:
         if self.tries == 1:
             talk('Please, tell me your name')
+            rospy.sleep(0.1)
         else:
             talk('Im sorry, could you tell me your name again?')
         res = speech_recog_server()
         # self.new_name= res.data
-        name = res.data
+        
+        try:
+            res2 = rospy.wait_for_message( '/recognizedSpeech',RecognizedSpeech, timeout = 5.0)
+            print ("POCKERT",res2.hypothesis[0],type(res2.hypothesis))
+            name = res.data = res2.hypothesis[0]
+        except Exception:   #answer = res2
+            return 'failed'
         print (name)
         talk(f'Is {name} your name?')
         #res2 = speech_recog_server()
-        
-        res2 = rospy.wait_for_message( '/recognizedSpeech',RecognizedSpeech )
-        print ("POCKERT",res2.hypothesis[0],type(res2.hypothesis))
-        #answer = res2
-        answer = res2.hypothesis[0]
+        rospy.sleep(1.0)
+        try:
+            res2 = rospy.wait_for_message( '/recognizedSpeech',RecognizedSpeech, timeout = 5.0)
+            print ("POCKERT",res2.hypothesis[0],type(res2.hypothesis))
+            answer = res2.hypothesis[0]
+        except Exception:   #answer = res2
+            answer='no'
+
         if (answer == 'YES') or (answer == 'yes') :
             name_face=name
             print (name_face)
@@ -455,7 +491,9 @@ if __name__ == '__main__':
         # State machine for Restaurant
 
         smach.StateMachine.add("INITIAL",           Initial(),          transitions={'failed': 'INITIAL',       'succ': 'WAIT_PUSH_HAND',   'tries': 'END'})
-        smach.StateMachine.add("WAIT_PUSH_HAND",    Wait_push_hand(),   transitions={'failed': 'WAIT_PUSH_HAND','succ': 'GOTO_DOOR',        'tries': 'END'})
+        smach.StateMachine.add("WAIT_PUSH_HAND",    Wait_push_hand(),   transitions={'failed': 'WAIT_PUSH_HAND','succ': 'GOTO_DOOR',        'tries': 'INITIAL'})
+        smach.StateMachine.add("WAIT_DOOR_OPENED",  Wait_door_opened(),   transitions={'failed': 'WAIT_DOOR_OPENED','succ': 'GOTO_DOOR',        'tries': 'INITIAL'})
+        
         smach.StateMachine.add("SCAN_FACE",         Scan_face(),        transitions={'failed': 'SCAN_FACE',     'unknown': 'NEW_FACE',      'succ': 'LEAD_TO_LIVING_ROOM','tries': 'GOTO_DOOR'})
         smach.StateMachine.add("NEW_FACE",          New_face(),         transitions={'failed': 'NEW_FACE',      'succ': 'LEAD_TO_LIVING_ROOM','tries': 'NEW_FACE'})
         smach.StateMachine.add("GOTO_DOOR",         Goto_door(),        transitions={'failed': 'GOTO_DOOR',     'succ': 'SCAN_FACE',        'tries': 'SCAN_FACE'})

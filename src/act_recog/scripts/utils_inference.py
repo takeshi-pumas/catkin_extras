@@ -46,6 +46,71 @@ class RGB():
 
 
 #---------------------------------------------------
+
+class RGBD():
+    def __init__(self):
+        self._br = tf.TransformBroadcaster()
+        self._cloud_sub = rospy.Subscriber(
+            "/hsrb/head_rgbd_sensor/depth_registered/rectified_points",
+            PointCloud2, self._cloud_cb)
+        self._points_data = None
+        self._image_data = None
+        self._h_image = None
+        self._region = None
+        self._h_min = 0
+        self._h_max = 0
+        self._xyz = [0, 0, 0]
+        self._frame_name = None
+
+    def _cloud_cb(self, msg):
+        self._points_data = ros_numpy.numpify(msg)
+        self._image_data = \
+        self._points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]
+        hsv_image = cv2.cvtColor(self._image_data, cv2.COLOR_RGB2HSV_FULL)
+        self._h_image = hsv_image[..., 0]
+        self._region = \
+        (self._h_image > self._h_min) & (self._h_image < self._h_max)
+        if not np.any(self._region):
+            return
+            
+        (y_idx, x_idx) = np.where(self._region)
+        x = np.average(self._points_data['x'][y_idx, x_idx])
+        y = np.average(self._points_data['y'][y_idx, x_idx])
+        z = np.average(self._points_data['z'][y_idx, x_idx])
+        self._xyz = [y, x, z]
+        if self._frame_name is None:
+            return
+
+        self._br.sendTransform(
+        (x, y, z), tf.transformations.quaternion_from_euler(0, 0, 0),
+        rospy.Time(msg.header.stamp.secs, msg.header.stamp.nsecs),
+        self._frame_name,
+        msg.header.frame_id)
+
+    def get_image(self):
+        return self._image_data
+
+    def get_points(self):
+        return self._points_data
+
+    def get_h_image(self):
+        return self._h_image
+
+    def get_region(self):
+        return self._region
+
+    def get_xyz(self):
+        return self._xyz
+
+    def set_h(self, h_min, h_max):
+        self._h_min = h_min
+        self._h_max = h_max
+
+    def set_coordinate_name(self, name):
+        self._frame_name = name
+
+#---------------------------------------------------
+        
 def loadModels(classes):
     # Para cargar los modelos en el codigo de HMM con Vit
     route="src/act_recog/scripts/models/"
@@ -135,7 +200,7 @@ def forward(V, a, b, initial_distribution):
     return alpha
 
  #---------------------------------------------------
-def init_openPose(n_people=-1,net_res="-1x208",model="BODY_25"):
+def init_openPose(n_people=-1,net_res="-1x208",model="BODY_25",heatmap=False):
     try:
         usr_url=path.expanduser( '~/' )
         params = dict()
@@ -146,7 +211,12 @@ def init_openPose(n_people=-1,net_res="-1x208",model="BODY_25"):
         params["net_resolution"]= net_res
         # -1 -> toda persona detectable
         params["number_people_max"]= n_people
-
+        if heatmap:
+            params["heatmaps_add_parts"] = True
+            params["heatmaps_add_bkg"] = True
+            params["heatmaps_add_PAFs"] = True
+            params["heatmaps_scale"] = 2
+        
         opWrapper = op.WrapperPython()
         opWrapper.configure(params)
         opWrapper.start()
@@ -159,8 +229,10 @@ def init_openPose(n_people=-1,net_res="-1x208",model="BODY_25"):
 
 #---------------------------------------------------    
 def get_coordinates():
-    data=rospy.wait_for_message("/hsrb/head_rgbd_sensor/depth_registered/rectified_points",
-            PointCloud2)
+
+    #data=rospy.wait_for_message("/camera/depth/image_raw",PointCloud2)
+    
+    data=rospy.wait_for_message("/hsrb/head_rgbd_sensor/depth_registered/rectified_points",PointCloud2)
     print("datos recibidos")
     # NO SE CORRIGE ( -> correct_points() ), SE OBSERVO QUE NO FUE NECESARIO
     np_data=ros_numpy.numpify(data)
@@ -211,6 +283,28 @@ def detect_pointing_arm(lastSK,cld_points):
     v1=[-(manoD[0]-codoD[0]),-1-(manoD[1]-codoD[1]),-(manoD[2]-codoD[2])]
     v2=[-(manoI[0]-codoI[0]),-1-(manoI[1]-codoI[1]),-(manoI[2]-codoI[2])]
     
+    """
+    # Prueba para recibir los esqueletos con coordenadas de mapa
+    tf_man.pub_tf(pos=lastSK_xyz[0,:],point_name='codoD_t',ref='head_rgbd_sensor_link')
+    tf_man.pub_tf(pos=lastSK_xyz[1,:],point_name='manoD_t',ref='head_rgbd_sensor_link')
+    tf_man.pub_tf(pos=lastSK_xyz[2,:],point_name='codoI_t',ref='head_rgbd_sensor_link')
+    tf_man.pub_tf(pos=lastSK_xyz[3,:],point_name='manoI_t',ref='head_rgbd_sensor_link')
+
+    # resta entre [0,-1,0] y vectores de codo a mano 
+    v1=[-(manoD[0]-codoD[0]),-1-(manoD[1]-codoD[1]),-(manoD[2]-codoD[2])]
+    v2=[-(manoI[0]-codoI[0]),-1-(manoI[1]-codoI[1]),-(manoI[2]-codoI[2])]
+    
+    if np.linalg.norm(v1)>np.linalg.norm(v2):
+        print("Mano izquierda levantada")
+        return manoI,codoI
+    else:
+        print("Mano derecha levantada")
+        return manoD,codoD
+    v1=[-(lastSK_xyz[2,:]-lastSK_xyz[0,:]),-1-(lastSK_xyz[2,:]-lastSK_xyz[0,:]),-(lastSK_xyz[2,:]-lastSK_xyz[0,:])]
+    v2=[-(lastSK_xyz[3,:]-lastSK_xyz[1,:]),-1-(lastSK_xyz[3,:]-lastSK_xyz[1,:]),-(lastSK_xyz[3,:]-lastSK_xyz[1,:])]
+    
+    """
+
     if np.linalg.norm(v1)>np.linalg.norm(v2):
         print("Mano izquierda levantada")
         return manoI,codoI
@@ -218,33 +312,9 @@ def detect_pointing_arm(lastSK,cld_points):
         print("Mano derecha levantada")
         return manoD,codoD
 
-#---------------------------------------------------           
-def pub_points(cld_points_corrected,lastSK,skPub=1):
-
-    if skPub==1:
-
-        mano,codo=detect_pointing_arm(lastSK,cld_points_corrected)
-
-        print(codo)
-        print("algo")
-        print(mano)
-        tf_man.pub_static_tf(pos=codo,point_name='CODO',ref='head_rgbd_sensor_link')
-        tf_man.pub_static_tf(pos=mano,point_name='MANO',ref='head_rgbd_sensor_link')
-        #print("cambiando referencia")
-        tf_man.change_ref_frame_tf(point_name='CODO',new_frame='map')
-        tf_man.change_ref_frame_tf(point_name='MANO',new_frame='map')
-        #print("referencia cambiada?")
-
-    else:
-        cabeza = [cld_points_corrected['x'][round(lastSK[0,1]), round(lastSK[0,0])],
-                cld_points_corrected['y'][round(lastSK[0,1]), round(lastSK[0,0])],
-                cld_points_corrected['z'][round(lastSK[0,1]), round(lastSK[0,0])]]
-        print(cabeza)
-        tf_man.pub_static_tf(pos=cabeza,point_name='cabeza',ref='head_rgbd_sensor_link')
-        tf_man.change_ref_frame_tf(point_name='cabeza',new_frame='map')
 
 #---------------------------------------------------
-"""
+
 def get_extrapolation(mano,codo,z=0):
 
     vectD=[mano[0]-codo[0],mano[1]-codo[1],mano[2]-codo[2]]
@@ -254,7 +324,7 @@ def get_extrapolation(mano,codo,z=0):
     
     return [x,y,z]
 
-"""
+
 #---------------------------------------------------
 
 bridge = CvBridge()

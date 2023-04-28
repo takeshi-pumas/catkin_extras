@@ -10,7 +10,9 @@
   <!--arg name="static_map_file"  default="$(find config_files)/maps/map.yaml"/-->
   <!-- MAP IS STORED IN ROBOT-->
   
-  <arg name="prohibition_map_file"  default="$(find config_files)/prohibition_maps/Lab_arena_hor_blocked.yaml"/>
+  <arg name="prohibition_map_file"  default="$(find config_files)/prohibition_maps/TMR_2023.yaml"/>
+  
+  <!--arg name="prohibition_map_file"  default="$(find config_files)/prohibition_maps/Lab_arena_hor_blocked.yaml"/-->
   <!--arg name="prohibition_map_file"  default="$(find config_files)/prohibition_maps/apartment.yaml"/-->
   
   <arg name="initial_pose_x" default="-5.7"/>
@@ -70,7 +72,7 @@
     <param name="point_cloud_topic" value="$(arg point_cloud_topic)"/>
     <param name="laser_scan_topic" value="$(arg laser_scan_topic)"/>
     <param name="cloud_downsampling" value="$(arg cloud_downsampling)"/>
-    <param name="inflation_radius" value="0.07"/>
+    <param name="inflation_radius" value="0.25"/>
     <param name="cost_radius" value="0.1"/>
     <!--###decay_factor-->
 

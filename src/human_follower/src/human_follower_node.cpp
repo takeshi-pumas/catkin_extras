@@ -108,7 +108,7 @@ int main(int argc, char** argv)
     std::cout << "INITIALIZING HUMAN FOLLOWER BY MARCOSOFT..." << std::endl;
     ros::init(argc, argv, "human_follower");
     n = new ros::NodeHandle();
-    std::string cmd_vel_topic   = "/cmd_vel";
+    std::string cmd_vel_topic   = "/hsrb_command_velocity";
     if(ros::param::has("~control_alpha"))
         ros::param::get("~control_alpha", control_alpha);
     if(ros::param::has("~control_beta"))

@@ -15,9 +15,11 @@
   <node pkg="segmentation"  name="segmentator_node" type="segment_floor.py"/>  
 
 <include file="$(find speech_recog)/launch/ros_vosk.launch">
+
   
 </include>
-  
+<include file="$(find pocketsphinx)/launch/pocketsphinx.launch">
+  </include>
 
 </launch>
 
