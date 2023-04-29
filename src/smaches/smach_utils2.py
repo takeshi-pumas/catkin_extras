@@ -35,7 +35,7 @@ from utils.misc_utils import *
 from utils.nav_utils import *
 from utils.know_utils import *
 
-global listener, broadcaster, tfBuffer, tf_static_broadcaster, scene, rgbd, head,train_new_face, wrist, human_detect_server
+global listener, broadcaster, tfBuffer, tf_static_broadcaster, scene, rgbd, head,train_new_face, wrist, human_detect_server, line_detector
 global clear_octo_client, goal,navclient,segmentation_server  , tf_man , omni_base, brazo, speech_recog_server, bridge, map_msg, pix_per_m, analyze_face
 rospy.init_node('smach')
 # head = moveit_commander.MoveGroupCommander('head')
@@ -54,10 +54,11 @@ human_detect_server = rospy.ServiceProxy('/detect_human' , Human_detector)  ####
 segmentation_server = rospy.ServiceProxy('/segment' , Segmentation)    ##### PLANE SEGMENTATION (PARALEL TO FLOOR)
 navclient=actionlib.SimpleActionClient('/navigate', NavigateAction)   ### PUMAS NAV ACTION LIB
 # scene = moveit_commander.PlanningSceneInterface()
-speech_recog_server = rospy.ServiceProxy('/speech_recognition/vosk_service' ,GetSpeech)##############TOYOTA
-recognize_face = rospy.ServiceProxy('recognize_face', RecognizeFace)                    #FACE RECOG
-train_new_face = rospy.ServiceProxy('new_face', RecognizeFace)                          #FACE RECOG
-analyze_face = rospy.ServiceProxy('analyze_face', RecognizeFace)    ###DEEP FACE ONLY
+
+#speech_recog_server = rospy.ServiceProxy('/speech_recognition/vosk_service' ,GetSpeech)##############TOYOTA
+#recognize_face = rospy.ServiceProxy('recognize_face', RecognizeFace)                    #FACE RECOG
+#train_new_face = rospy.ServiceProxy('new_face', RecognizeFace)                          #FACE RECOG
+#analyze_face = rospy.ServiceProxy('analyze_face', RecognizeFace)    ###DEEP FACE ONLY
 
 
 #map_msg= rospy.wait_for_message('/augmented_map', OccupancyGrid)####WAIT for nav pumas map
@@ -76,7 +77,8 @@ omni_base=OMNIBASE()
 wrist= WRIST_SENSOR()
 head = GAZE()
 brazo = ARM()
-arm =  moveit_commander.MoveGroupCommander('arm')
+line_detector = LineDetector()
+#arm =  moveit_commander.MoveGroupCommander('arm')
 
 
 #------------------------------------------------------
