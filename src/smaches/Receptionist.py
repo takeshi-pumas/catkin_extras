@@ -20,9 +20,9 @@ class Initial(smach.State):
             return 'tries'
             
         clean_knowledge()
-        head.set_named_target('neutral')
+        #head.set_named_target('neutral')
         #print('head listo')
-        brazo.set_named_target('go')
+        #brazo.set_named_target('go')
         #print('arm listo')
         places_2_tf()
         rospy.sleep(0.8)
@@ -45,6 +45,8 @@ class Wait_push_hand(smach.State):
         print(f'Try {self.tries} of 4 attempts')
         if self.tries == 4:
             return 'tries'
+        head.set_named_target('neutral')
+        brazo.set_named_target('go')
         talk('Gently... push my hand to begin')
         succ = wait_for_push_hand(100)
 
@@ -194,8 +196,9 @@ class New_face(smach.State):
             return 'failed'
         print (name)
         talk(f'Is {name} your name?')
-        #res2 = speech_recog_server()
-        rospy.sleep(1.0)
+        res2 = speech_recog_server()
+        print (res2)
+        rospy.sleep(15.0)
         try:
             res2 = rospy.wait_for_message( '/recognizedSpeech',RecognizedSpeech, timeout = 5.0)
             print ("POCKERT",res2.hypothesis[0],type(res2.hypothesis))
@@ -203,37 +206,6 @@ class New_face(smach.State):
         except Exception:   #answer = res2
             answer='no'
 
-        if (answer == 'YES') or (answer == 'yes') :
-            name_face=name
-            print (name_face)
-            talk(f'Nice, {name}, what do you want to drink?')
-            res3 = speech_recog_server()
-            drink = res3.data
-            add_guest(name, drink)
-            talk('Now, I am learning your face, please look at me')
-            rospy.sleep(1.0)
-        else:
-            return 'tries'
-        # new face trainer
-        img = rgbd.get_image()
-        print (name)
-        res = train_face(img, name)
-        print(res)
-        img = rgbd.get_image()
-        print (name)
-        res = train_face(img, name)
-        print(res)
-        img = rgbd.get_image()
-        print (name)
-        res = train_face(img, name)
-        print(res)
-        if res == False:
-            talk('Something went wrong, retrying')
-            return 'failed'
-        talk('I got you')
-        takeshi_line = analyze_face_from_image(img_face, name)
-        print(takeshi_line)
-        add_description(name, takeshi_line)
         return 'succ'
 
 

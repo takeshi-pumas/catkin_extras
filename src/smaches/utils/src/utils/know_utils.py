@@ -194,7 +194,7 @@ def places_2_tf():
     locs = return_places()
     print(locs)
     for i,loc in enumerate(locs):
-        pos = [loc[0],loc[1],1.0]
+        pos = [loc[0],loc[1],0.85]
         rot = tf.transformations.quaternion_from_euler(0.0,0.0, loc[2])
         tf_man.pub_static_tf(pos=pos, rot=rot, point_name=f'Place_{i+1}')
         tf_man.pub_static_tf(pos=[1.0,0,0], rot=rot, point_name=f'Place_face{i+1}', ref=f'Place_{i+1}')

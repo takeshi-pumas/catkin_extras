@@ -1,4 +1,5 @@
 #JSGF V1.0;
 grammar confirmation_g;
 public <confirmation_g> = (<confirmation>);
-<confirmation> =  (YES|NO|JACK|RUBEN|COKE|JUICE|BEER|WATER|MILK|WINE|COFFEE);
+<confirmation> =  (YES|NO);
+

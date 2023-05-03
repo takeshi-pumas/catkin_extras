@@ -1,0 +1,7 @@
+#JSGF V1.0;
+grammar confirmation_g;
+public <confirmation_g> = (<confirmation>);
+<confirmation> =  (GO TO  <locations>  );
+<locations> =   (KITCHEN|LIVING ROOM|BEDROOM|DINING ROOM) ;
+<person>=     (MORGAN|MICHAEL);
+<object>=     (COKE|MUG|APPLE|PITCHER);

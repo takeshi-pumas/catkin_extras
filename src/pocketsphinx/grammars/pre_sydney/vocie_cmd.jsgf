@@ -1,0 +1,5 @@
+#JSGF V1.0;
+grammar voice_cmd;
+public <move> = MOVE_FORWARD;
+
+
