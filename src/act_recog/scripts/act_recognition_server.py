@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from act_recog.srv import Recognize,RecognizeResponse,RecognizeRequest
+from act_recog.msg import Floats 
 import rospy
 
 
@@ -8,6 +9,8 @@ from utils_inference import *
 from utils_extras import *
 
 def callback(req):
+
+	flo=Floats()
 	buf_size=35
 	ctrlz=True
 	buffer=[]
@@ -121,11 +124,7 @@ def callback(req):
 		else:
 		    response.im_out.image_msgs[0]=img_msg
 
-		if len(response.sk.image_msgs)==0:
-		    response.sk.image_msgs.append(sk_msg)
-		else:
-		    response.sk.image_msgs=sk_msg
-
+		
 		response.i_out=np.argmax(probas[:])
 
 		return response
@@ -180,22 +179,18 @@ def callback(req):
 		else:
 		    response.im_out.image_msgs[0]=img_msg
 
-		if len(response.sk.image_msgs)==0:
-		    response.sk.image_msgs.append(img_msg2)
-		else:
-		    response.sk.image_msgs[0]=img_msg2
-
+		
 		return response
     #----------------
 	# Para pointing sin HMM
 	elif req.in_==3:
-		max_inf_it=60
+		max_inf_it=40
 		print("Opcion {}, estimar brazo que esta apuntando".format(req.in_))
 		cnt=0
 		while True:
 
-			im=rgbd.get_image()
-			im=cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
+			im=rgb.get_image()
+			#im=cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
 
 			dataPC=rgbd.get_points()
 			dataout=np.zeros((25,2))
@@ -214,47 +209,65 @@ def callback(req):
 			    	cv2.waitKey(10)
 			    #print(cnt)
 			    if cnt==max_inf_it:
-			        
+			        flg=0
 			        print("Obteniendo rgbd...")
-			        #frameC,dataPC=get_coordinates()
-			        print("esqueleto encontrado")
-			      
 
-			        im_t=draw_skeleton(dataout,h,w,im,cnt_person=0,bkground=True)
+			        # Para evitar lecturas nan y no retorne coordenadas nan
 
-			        #cv2.imshow("Imagen y sk para extrapola y TF ",im_t)
-			        #cv2.waitKey(0)
-			        mano,codo=detect_pointing_arm(dataout,dataPC)
-			        ob_xyz = get_extrapolation(mano,codo)
-			        tf_man.pub_static_tf(pos=codo,point_name='CODO',ref='head_rgbd_sensor_link')
-			        tf_man.pub_static_tf(pos=mano,point_name='MANO',ref='head_rgbd_sensor_link')
-			        print("cambiando referencia")
-			        tf_man.change_ref_frame_tf(point_name='CODO',new_frame='map')
-			        tf_man.change_ref_frame_tf(point_name='MANO',new_frame='map')
+			        while flg!=1:
+				        frameC,dataPC=get_coordinates()
+				        im=cv2.cvtColor(frameC, cv2.COLOR_BGR2RGB)
+				        print("esqueleto encontrado")
+				        # Calculo una ultima vez con openpose y la imagen que se obtiene de pointcloud
+				        datum.cvInputData = im
+				        opWrapper.emplaceAndPop(op.VectorDatum([datum]))
+				        if datum.poseKeypoints is not None:
+				        	dataout=np.copy(datum.poseKeypoints[0,:,:2])
+				    	# Y lo guardo
 
-			        print("tf publicada y referenciada a map")
+				        im_t=draw_skeleton(dataout,h,w,im,cnt_person=0,bkground=True)
+
+				        #cv2.imshow("Imagen y sk para extrapola y TF ",im_t)
+				        #cv2.waitKey(0)
+
+				        mano,codo,f=detect_pointing_arm(dataout,dataPC)
+				        print("MANO CODO",mano,codo)
+				        if f!=-1:
+					        tf_man.pub_static_tf(pos=codo,point_name='CODO',ref='head_rgbd_sensor_link')
+					        tf_man.pub_static_tf(pos=mano,point_name='MANO',ref='head_rgbd_sensor_link')
+					        #print("cambiando referencia")
+					        tf_man.change_ref_frame_tf(point_name='CODO',new_frame='map')
+					        tf_man.change_ref_frame_tf(point_name='MANO',new_frame='map')
+					        rospy.sleep(0.8)
+
+					        manoM,_ = tf_man.getTF(target_frame='MANO',ref_frame='map')
+        					codoM,_ = tf_man.getTF(target_frame='CODO',ref_frame='map')
+				        	ob_xyz = get_extrapolation(manoM,codoM)
+				        	flg=1
+				        else:
+				        	print("HAY UNA NAN. Recalcula PC...")
 			        rospy.sleep(0.8)
 
 			        response.i_out=1
 			        break
 
-		if req.visual!=0:
-			cv2.destroyAllWindows()
-			cv2.waitKey(1)
-		print("DATA SK")
+		#if req.visual!=0:
+		#	cv2.destroyAllWindows()
+		#	cv2.waitKey(1)
+		#print("DATA SK")
 		#print(dataout)
 		img_msg=bridge.cv2_to_imgmsg(im)
+		
+		flo.data=ob_xyz
+
+		response.d_xyz=flo
 		img_msg2=bridge.cv2_to_imgmsg(dataout)
 		if len(response.im_out.image_msgs)==0:
-		    response.im_out.image_msgs.append(img_msg)
+		    response.im_out.image_msgs.append(img_msg2)
 		else:
 		    response.im_out.image_msgs[0]=img_msg
 
-		if len(response.sk.image_msgs)==0:
-		    response.sk.image_msgs.append(img_msg2)
-		else:
-		    response.sk.image_msgs[0]=img_msg2
-
+		#print(response)
 		return response
 
 	#----------------
@@ -290,11 +303,7 @@ def callback(req):
 		else:
 		    response.im_out.image_msgs[0]=img_msg
 
-		if len(response.sk.image_msgs)==0:
-		    response.sk.image_msgs.append(img_msg2)
-		else:
-		    response.sk.image_msgs[0]=img_msg2
-
+		
 		return response    
 
 

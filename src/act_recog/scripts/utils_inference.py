@@ -272,46 +272,26 @@ def detect_pointing_arm(lastSK,cld_points):
     manoI[2]=np.nanmean(np.array(cld_points['z'][round(lastSK[7,1])-area:round(lastSK[7,1])+area+1, 
                                                 round(lastSK[7,0])-area:round(lastSK[7,0])+area+1]))
    
-    
-    tf_man.pub_tf(pos=codoD,point_name='codoD_t',ref='head_rgbd_sensor_link')
-    tf_man.pub_tf(pos=codoI,point_name='codoI_t',ref='head_rgbd_sensor_link')
-    tf_man.pub_tf(pos=manoD,point_name='manoD_t',ref='head_rgbd_sensor_link')
-    tf_man.pub_tf(pos=manoI,point_name='manoI_t',ref='head_rgbd_sensor_link')
+    if ~np.isnan(manoD).any() or ~np.isnan(codoD).any() or ~np.isnan(manoI).any() or ~np.isnan(codoI).any():
+        tf_man.pub_tf(pos=codoD,point_name='codoD_t',ref='head_rgbd_sensor_link')
+        tf_man.pub_tf(pos=codoI,point_name='codoI_t',ref='head_rgbd_sensor_link')
+        tf_man.pub_tf(pos=manoD,point_name='manoD_t',ref='head_rgbd_sensor_link')
+        tf_man.pub_tf(pos=manoI,point_name='manoI_t',ref='head_rgbd_sensor_link')
 
-    # resta entre [0,-1,0] y vectores de codo a mano 
-    
-    v1=[-(manoD[0]-codoD[0]),-1-(manoD[1]-codoD[1]),-(manoD[2]-codoD[2])]
-    v2=[-(manoI[0]-codoI[0]),-1-(manoI[1]-codoI[1]),-(manoI[2]-codoI[2])]
-    
-    """
-    # Prueba para recibir los esqueletos con coordenadas de mapa
-    tf_man.pub_tf(pos=lastSK_xyz[0,:],point_name='codoD_t',ref='head_rgbd_sensor_link')
-    tf_man.pub_tf(pos=lastSK_xyz[1,:],point_name='manoD_t',ref='head_rgbd_sensor_link')
-    tf_man.pub_tf(pos=lastSK_xyz[2,:],point_name='codoI_t',ref='head_rgbd_sensor_link')
-    tf_man.pub_tf(pos=lastSK_xyz[3,:],point_name='manoI_t',ref='head_rgbd_sensor_link')
+        # resta entre [0,-1,0] y vectores de codo a mano 
+        
+        v1=[-(manoD[0]-codoD[0]),-1-(manoD[1]-codoD[1]),-(manoD[2]-codoD[2])]
+        v2=[-(manoI[0]-codoI[0]),-1-(manoI[1]-codoI[1]),-(manoI[2]-codoI[2])]
+      
 
-    # resta entre [0,-1,0] y vectores de codo a mano 
-    v1=[-(manoD[0]-codoD[0]),-1-(manoD[1]-codoD[1]),-(manoD[2]-codoD[2])]
-    v2=[-(manoI[0]-codoI[0]),-1-(manoI[1]-codoI[1]),-(manoI[2]-codoI[2])]
-    
-    if np.linalg.norm(v1)>np.linalg.norm(v2):
-        print("Mano izquierda levantada")
-        return manoI,codoI
+        if np.linalg.norm(v1)>np.linalg.norm(v2):
+            print("Mano izquierda levantada")
+            return manoI,codoI,1
+        else:
+            print("Mano derecha levantada")
+            return manoD,codoD,1
     else:
-        print("Mano derecha levantada")
-        return manoD,codoD
-    v1=[-(lastSK_xyz[2,:]-lastSK_xyz[0,:]),-1-(lastSK_xyz[2,:]-lastSK_xyz[0,:]),-(lastSK_xyz[2,:]-lastSK_xyz[0,:])]
-    v2=[-(lastSK_xyz[3,:]-lastSK_xyz[1,:]),-1-(lastSK_xyz[3,:]-lastSK_xyz[1,:]),-(lastSK_xyz[3,:]-lastSK_xyz[1,:])]
-    
-    """
-
-    if np.linalg.norm(v1)>np.linalg.norm(v2):
-        print("Mano izquierda levantada")
-        return manoI,codoI
-    else:
-        print("Mano derecha levantada")
-        return manoD,codoD
-
+        return -1,-1,-1
 
 #---------------------------------------------------
 

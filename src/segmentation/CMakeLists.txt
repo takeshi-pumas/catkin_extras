@@ -54,8 +54,6 @@ add_message_files(
    Floats.msg
    Image.msg
    Strings.msg
-   
-   
  )
 
 ## Generate services in the 'srv' folder
