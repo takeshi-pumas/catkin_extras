@@ -23,10 +23,6 @@ def trigger_response(request):
 
     print(len(cents))
 
-    cv2.imshow("Aa",img)
-    cv2.waitKey(0)
-    #cv2.destroyAllWindows()
-
     for i,cent in enumerate(cents):
         print (cent)
         x,y,z=cent
@@ -52,6 +48,9 @@ def trigger_response(request):
     pose, quat=Floats(),Floats()
     res= SegmentationResponse()
     #pose.data=cents_map
+    img_msg=bridge.cv2_to_imgmsg(img)
+    if len(res.im_out.image_msgs)==0:
+        res.im_out.image_msgs.append(img_msg)
     pose.data=np.asarray(cents).ravel()
     #print ('##POSE',pose,trans,ccs_map,cents_map    )
     res.poses=pose
