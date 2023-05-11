@@ -159,10 +159,10 @@ class TF_MANAGER():
         static_ts = self._fillMsg(pos, rot, point_name, ref)
         self._tf_static_broad.sendTransform(static_ts)
 
-    def change_ref_frame_tf(self, point_name = '', new_frame = 'map'):
+    def change_ref_frame_tf(self, point_name = '', rotational = [0,0,0,1], new_frame = 'map'):
         try:
             traf = self._tfbuff.lookup_transform(new_frame, point_name, rospy.Time(0))
-            translation, rotational = self.tf2_obj_2_arr(traf)
+            translation, _ = self.tf2_obj_2_arr(traf)
             self.pub_static_tf(pos = translation, rot = rotational, point_name = point_name, ref = new_frame)
             return True
         except:

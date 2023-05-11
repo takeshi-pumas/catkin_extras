@@ -39,7 +39,8 @@ def update_occupancy(found='None', place='None'):
         knowledge['Places'][place]['occupied'] = guest[0]
         write_yaml(knowledge)
         return True
-    except:
+    except Exception as e:
+    	print(f"Error: {e}. Line {sys.exc_info()[-1].tb_lineno}")
         knowledge['Places'][place]['occupied'] = 'someone'
         write_yaml(knowledge)
         return False
@@ -70,7 +71,7 @@ def assign_occupancy(who='None', where='None'):
     # Use: hsr found a empty place for the new guest
     knowledge = read_yaml()
     try:
-        if who != ' None' and where != 'None':
+        if who != 'None' and where != 'None':
             guest = [key for key, person_dict in knowledge['People'].items()
                      if person_dict.get('name') == who]
             if len(guest)>0:

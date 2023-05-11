@@ -2,23 +2,17 @@
  <remap from="/static_obstacle_map_ref" to="/static_map"/>
  <remap from="/static_map" to="/get_distance_map"/>
  <remap from="/laser_2d_pose" to= "/global_pose"/>  
-  <!--node name="killer_node" pkg="killer_node" type="killer_node.py" output="screen"/-->
-  <!--node name="fake_global_pose" pkg="killer_node" type="fake_global_pose.py" output="screen"/--> 
-  <!--  fake global pose  AKA AMCL PUBLISH (UNNECESARY REDUNDANT AND KILLS EVERYTHING BUT WHAt you want to kill)  ....-->
-<node name="sensor_scan_fix" pkg="sensor_scan_fix" type="sensor_scan_fix.py" output="screen"/>
-
   <!--arg name="static_map_file"  default="$(find config_files)/maps/map.yaml"/-->
   <!-- MAP IS STORED IN ROBOT-->
   
   <!--arg name="prohibition_map_file"  default="$(find config_files)/prohibition_maps/TMR_2023.yaml"/-->
   
   <arg name="prohibition_map_file"  default="$(find config_files)/prohibition_maps/Lab_arena_hor_blocked.yaml"/>
-  <!--arg name="prohibition_map_file"  default="$(find config_files)/prohibition_maps/apartment.yaml"/-->
   
   <arg name="initial_pose_x" default="-5.7"/>
   <arg name="initial_pose_y" default="-6.0"/>
   <arg name="initial_pose_a" default=" 90"/>
-  <arg name="laser_scan_topic" default="/hsrb/base_scan/fix"/>
+  <arg name="laser_scan_topic" default="/hsrb/base_scan"/>
   <arg name="point_cloud_topic" default="/hsrb/head_rgbd_sensor/depth_registered/rectified_points"/>
   <arg name="use_lidar" default="True"/>
   <arg name="use_sonars" default="False"/>
@@ -104,13 +98,7 @@
     <param name="odom_model_type" value="omni-corrected"/>
     </node-->
    
-
   <node pkg="hmm_navigation"  name="pumas_nav_actionserver" type="pumas_nav_actionserver.py"/>
 
 
-
-  <!--node pkg="face_recog"  name="face_recog_server" type="sos_service_waving.py"/-->
-  
-  
-  <node name="known_location_reacher" pkg="location_reacher" type="known_location_parser.py"/>
 </launch>
