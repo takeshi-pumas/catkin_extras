@@ -12,6 +12,8 @@ import cv2
 import sys
 from glob import glob
 from os import path
+from rospkg import RosPack
+
 #from utils.misc_utils import *
 from smach_utils2 import *
 try:
@@ -24,7 +26,8 @@ except ImportError as e:
 	print('Error: OpenPose library could not be found. Did you enable `BUILD_PYTHON` in CMake and have this Python script in the right folder?')
 	raise e
 
-#global tf_man
+global rospack
+rospack = RosPack()
 #tf_man = TF_MANAGER()
 
 #========================================
@@ -112,8 +115,10 @@ class RGBD():
 #---------------------------------------------------
         
 def loadModels(classes):
+    
+    # get the file path for rospy_tutorials
     # Para cargar los modelos en el codigo de HMM con Vit
-    route="src/act_recog/scripts/models/"
+    route=path.join(rospack.get_path("act_recog"))+"/scripts/models/"
     modelsA=[]
     modelsB=[]
     modelsPI=[]
@@ -286,7 +291,7 @@ def detect_pointing_arm(lastSK,cld_points):
 
         if np.linalg.norm(v1)>np.linalg.norm(v2):
             print("Mano izquierda levantada")
-            return manoI,codoI,1
+            return manoI,codoI,0
         else:
             print("Mano derecha levantada")
             return manoD,codoD,1

@@ -248,7 +248,7 @@ def callback(req):
 				        	print("HAY UNA NAN. Recalcula PC...")
 			        rospy.sleep(0.8)
 
-			        response.i_out=1
+			        response.i_out=f
 			        break
 
 		#if req.visual!=0:
@@ -313,7 +313,8 @@ def recognition_server():
 	#---Parte para cargar lo necesario en inferencia con OpenPose y Markov---
 	class_names=["wave_R","wave_L","neutral","drink","pointing"]
 	mA,mB,mPI=loadModels(class_names)
-	cb=np.load("src/act_recog/scripts/codebooks/codebook_LBG_160_s30.npy")
+
+	cb=np.load(path.join(rospack.get_path("act_recog"))+"/scripts/codebooks/codebook_LBG_160_s30.npy")
 	opWrapper,datum=init_openPose(n_people=1)
 	h=480
 	w=640
