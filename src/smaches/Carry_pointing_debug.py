@@ -299,7 +299,6 @@ class Wait_push_hand(smach.State):
 
 class Detect_action(smach.State):
     
-    
     def __init__(self):
         smach.State.__init__(self,outcomes=['succ','failed','tries'])
         self.tries=0
@@ -312,14 +311,17 @@ class Detect_action(smach.State):
             head.set_named_target('neutral')
 
         elif self.tries==2:
-            hv= head.get_joint_values()
-            hv[1]= hv[1]+0.2 
-            head.set_joint_values(hv)
-
+            
         elif self.tries>=9:
             self.tries=0
             return'tries'''
+
+        pointing_h=['left','right']
         head.set_named_target('neutral')        
+        rospy.sleep(1.0)
+        hv= head.get_joint_values()
+        hv[1]= hv[1]+0.15
+        head.set_joint_values(hv)
         rospy.sleep(1.0)
         talk('Please start pointing at the object ')
         print("Detecting action...")
@@ -330,6 +332,8 @@ class Detect_action(smach.State):
         reqAct.in_=3
         resAct=recognize_action(reqAct)
         print("Response:",resAct.i_out)
+        talk('I detect the '+pointing_h[resAct.i_out]+' hand pointing')
+        rospy.sleep(0.8)
         # Retorna la coordenada xyz de mapa de la extrapolacion calculada al apuntar
         #print(resAct)
         obj_xyz=resAct.d_xyz.data
@@ -355,28 +359,16 @@ class Segment_object(smach.State):
         #rospy.sleep(1.0)
         print("SEGMENTANDO....")
         res = segmentation_server.call()
-        '''print (res.poses.data)
-        if len (res.poses.data)!=0:
-            cents=np.asarray(res.poses.data).reshape((int(len (res.poses.data)/3),3 )   )
-            print ('cents',cents)
-            for i , cent in enumerate(cents):
-                print(cent)
-                tf_man.pub_static_tf(pos=cent, point_name='SM_Object'+str(i), ref='head_rgbd_sensor_link')
-                tf_man.change_ref_frame_tf(point_name='SM_Object'+str(i), new_frame='map')
-            trans,quat = tf_man.getTF(target_frame='SM_Object0')
-            goal_pose,yaw=move_D(trans,0.75)    
-            tf_man.pub_static_tf(pos=goal_pose,point_name='Goal_D')
 
-            return 'succ'''
         im=bridge.imgmsg_to_cv2(res.im_out.image_msgs[0])
         cv2.imshow("Segmentacion",im)
         cv2.waitKey(0)
         cv2.destroyAllWindows()
+        
         centroids = res.poses.data
         closest = [100,100,100]
         min_dist = 100
         i = 0
-        cv2.destroyAllWindows()
 
         while len(centroids) >= 3:
             print(i)
@@ -410,107 +402,15 @@ class Gaze_to_object(smach.State):
 
 
         rospy.loginfo('State : GAZE_OBJECT')
-        #goal_pose, quat=listener.lookupTransform( 'map','Face', rospy.Time(0))
-        #obj_pose,_ = tf_man.getTF(target_frame='point_Obj',ref_frame='map')
-        #robot_pose,quat_r = tf_man.getTF(target_frame='base_link')
-        #yaw=tf.transformations.euler_from_quaternion(quat_r)[2]
 
-        #obj_pose=np.asarray(obj_pose)
-        #robot_pose=np.asarray(robot_pose)
-        #face_rob = obj_pose-robot_pose
-        #goal_pose= obj_pose-(face_rob*0.7/np.linalg.norm(face_rob))
         res = omni_base.move_d_to(0.7,'object_gaze')
         rospy.sleep(0.8)
         print('Gazing at : object_gaze')   #X Y YAW AND TIMEOUT
         #hcp = head.absolute(goal_pose[0], goal_pose[1], 0.0)
         head.to_tf('object_gaze')
         rospy.sleep(1.0)
-        #move_base(goal_pose[0],goal_pose[1], 0.0 ,20  )   #X Y YAW AND TIMEOUT
-        #head.set_joint_value_target(hcp)
-        #head.go()
-        #tf_man.pub_static_tf(pos=goal_pose, point_name='Goal_D', ref='map')
+
         return 'succ'
-
-class Grasp_from_floor(smach.State):
-    def __init__(self):
-        smach.State.__init__(self,outcomes=['succ','failed','tries'])
-        self.tries=0
-    def execute(self,userdata):
-        #turn to obj goal
-        self.tries += 1
-        if self.tries == 1:
-            head.set_named_target('neutral')
-            head.turn_base_gaze('Goal_D')
-            head.set_named_target('down')
-        #pre grasp pose
-        brazo.set_named_target('grasp_floor')
-        gripper.open()
-        rospy.sleep(0.8)
-        #get close to object
-        brazo.move_hand_to_target(target_frame='Goal_D', THRESHOLD=0.01 )
-        #move down hand 
-        acp = brazo.get_joint_values()
-        acp[0]-= 0.04
-        brazo.set_joint_values(acp)
-        rospy.sleep(0.5)
-        #grasp
-        gripper.close()
-        #move up to check if grasped
-        #acp = brazo.get_joint_values()
-        acp[0] += 0.09
-        brazo.set_joint_values(acp)
-        if brazo.check_grasp(weight = 1.0):
-            brazo.set_named_target('neutral')
-            talk('I took the luggage')
-            return 'succ'
-        else:
-            talk('I could not take the luggage, i will try again')
-            return 'failed'
-
-
-
-class Find_legs(smach.State):
-    def __init__(self):
-        smach.State.__init__(
-            self, outcomes=['succ', 'failed', 'tries'])
-        self.tries = 0
-
-    def execute(self, userdata):
-        self.tries+=1
-        if self.tries==5:
-            self.tries=0
-            return 'tries'
-        
-        #ENABLE LEG FINDER AND HUMAN FOLLOWER
-        msg_bool=Bool()
-        msg_bool.data= True
-        enable_legs.publish(msg_bool)
-        enable_follow.publish(msg_bool)
-        ############################
-        talk('Following ')
-        print ('Following')
-        if self.tries==1:print (follow_legs(0.1)         )
-        
-        result=follow_legs(5)
-        print (result)
-        
-
-        if result :         ##follow for 5 secs ( or less if confirmation)
-            
-            #talk('are we there yet')
-            #res= speech_recog_server()
-            #print (res)
-            
-
-            return 'succ'
-        else : 
-            
-            msg_bool.data= False
-            enable_legs.publish(msg_bool)
-            enable_follow.publish(msg_bool)
-
-            return 'failed'    
-
 
 def init(node_name):
     print('smach ready')
@@ -539,11 +439,8 @@ if __name__== '__main__':
         #State machine for Restaurant
         smach.StateMachine.add("INITIAL",           Initial(),          transitions = {'failed':'INITIAL',          'succ':'WAIT_PUSH_HAND',    'tries':'END'}) 
         smach.StateMachine.add("WAIT_PUSH_HAND",    Wait_push_hand(),   transitions = {'failed':'WAIT_PUSH_HAND',   'succ':'DETECT_POINT',      'tries':'END'}) 
-        #smach.StateMachine.add("SCAN_FACE",         Scan_face(),        transitions = {'failed':'SCAN_FACE',        'succ':'DETECT_POINT',      'tries':'INITIAL'}) 
         smach.StateMachine.add("DETECT_POINT",      Detect_action(),    transitions = {'failed':'DETECT_POINT',     'succ':'GAZE_OBJECT',       'tries':'INITIAL'}) 
         smach.StateMachine.add("GAZE_OBJECT",       Gaze_to_object(),   transitions = {'failed':'GAZE_OBJECT',      'succ':'SEGMENT_OBJECT',    'tries':'INITIAL'}) 
         smach.StateMachine.add("SEGMENT_OBJECT",    Segment_object(),   transitions = {'failed':'DETECT_POINT',     'succ':'END',  'tries':'INITIAL'}) 
-        smach.StateMachine.add("GRASP_FROM_FLOOR",  Grasp_from_floor(), transitions = {'failed':'GRASP_FROM_FLOOR', 'succ':'FIND_LEGS',         'tries':'GRASP_FROM_FLOOR'}) 
-        smach.StateMachine.add("FIND_LEGS",          Find_legs(),       transitions=  {'failed': 'FIND_LEGS',  'succ': 'END'    ,          'tries': 'END'})
-
+        
     outcome = sm.execute()          
