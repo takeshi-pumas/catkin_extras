@@ -308,3 +308,65 @@ def detect_human_to_tf():
         tf_man.pub_static_tf(np.asarray((humanpose.x,humanpose.x,humanpose.z)),point_name='human', ref='head_rgbd_sensor_link')
         succ=tf_man.change_ref_frame_tf('human')
         return succ
+
+#---------------------------------------------------
+
+def get_extrapolation(mano,codo,z=0):
+
+    vectD=[mano[0]-codo[0],mano[1]-codo[1],mano[2]-codo[2]]
+    alfa=z-mano[2]/vectD[2]
+    y=mano[1]+alfa*vectD[1]
+    x=mano[0]+alfa*vectD[0]
+    
+    return [x,y,z]
+#---------------------------------------------------        
+def detect_pointing_arm(lastSK,cld_points):
+    area=10
+    # CodoD -> 3, CodoI -> 6 
+    codoD = [cld_points['x'][round(lastSK[3,1]), round(lastSK[3,0])],
+            cld_points['y'][round(lastSK[3,1]), round(lastSK[3,0])],
+            cld_points['z'][round(lastSK[3,1]), round(lastSK[3,0])]]
+    codoD[2]=np.nanmean(np.array(cld_points['z'][round(lastSK[3,1])-area:round(lastSK[3,1])+area+1, 
+                                                round(lastSK[3,0])-area:round(lastSK[3,0])+area+1]))
+   
+    
+    # ManoD -> 4, ManoI -> 7
+    manoD = [cld_points['x'][round(lastSK[4,1]), round(lastSK[4,0])],
+            cld_points['y'][round(lastSK[4,1]), round(lastSK[4,0])],
+            cld_points['z'][round(lastSK[4,1]), round(lastSK[4,0])]]
+    manoD[2]=np.nanmean(np.array(cld_points['z'][round(lastSK[4,1])-area:round(lastSK[4,1])+area+1, 
+                                                round(lastSK[4,0])-area:round(lastSK[4,0])+area+1]))
+    
+  
+    codoI = [cld_points['x'][round(lastSK[6,1]), round(lastSK[6,0])],
+            cld_points['y'][round(lastSK[6,1]), round(lastSK[6,0])],
+            cld_points['z'][round(lastSK[6,1]), round(lastSK[6,0])]]
+    codoI[2]=np.nanmean(np.array(cld_points['z'][round(lastSK[6,1])-area:round(lastSK[6,1])+area+1, 
+                                                round(lastSK[6,0])-area:round(lastSK[6,0])+area+1]))
+    
+   
+    manoI = [cld_points['x'][round(lastSK[7,1]), round(lastSK[7,0])],
+            cld_points['y'][round(lastSK[7,1]), round(lastSK[7,0])],
+            cld_points['z'][round(lastSK[7,1]), round(lastSK[7,0])]]
+    manoI[2]=np.nanmean(np.array(cld_points['z'][round(lastSK[7,1])-area:round(lastSK[7,1])+area+1, 
+                                                round(lastSK[7,0])-area:round(lastSK[7,0])+area+1]))
+   
+    
+    tf_man.pub_tf(pos=codoD,point_name='codoD_t',ref='head_rgbd_sensor_link')
+    tf_man.pub_tf(pos=codoI,point_name='codoI_t',ref='head_rgbd_sensor_link')
+    tf_man.pub_tf(pos=manoD,point_name='manoD_t',ref='head_rgbd_sensor_link')
+    tf_man.pub_tf(pos=manoI,point_name='manoI_t',ref='head_rgbd_sensor_link')
+
+    # resta entre [0,-1,0] y vectores de codo a mano 
+    
+    v1=[-(manoD[0]-codoD[0]),-1-(manoD[1]-codoD[1]),-(manoD[2]-codoD[2])]
+    v2=[-(manoI[0]-codoI[0]),-1-(manoI[1]-codoI[1]),-(manoI[2]-codoI[2])]
+    
+    if np.linalg.norm(v1)<np.linalg.norm(v2):
+        print("Mano izquierda levantada")
+        return manoI,codoI
+    else:
+        print("Mano derecha levantada")
+        return manoD,codoD
+
+#---------------------------------------------------
