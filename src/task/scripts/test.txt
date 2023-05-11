@@ -1,0 +1,4 @@
+first line
+Bedroom, 1 ,2,3,4,5,6,7
+Kitchen,1,0,0,0,0,0,0
+Living_Room,2,0,0,0,0,0,0
