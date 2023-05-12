@@ -8,6 +8,7 @@ from rospkg import RosPack
 
 global rospack
 rospack = RosPack()
+
 """
     Conjunto de funciones requeridas para la inferencia de una
     secuencia usando HMM
@@ -15,10 +16,8 @@ rospack = RosPack()
 #---------------------------------------------------
 def loadModels(classes):
     # Para cargar los modelos en el codigo de HMM con Vit
-    
-    route=path.join(rospack.get_path("hmm_act_recog"))+"/scripts/models/"
-    
 
+    route=path.join(rospack.get_path("hmm_act_recog"))+"/scripts/models/"
     modelsA=[]
     modelsB=[]
     modelsPI=[]
@@ -36,17 +35,16 @@ def create_vk(data,cb,centralized=False):
         dataN=centralizaMatriz(dataN)
     else:
     	dataN=data
-    #data=flat_list(data)
     tmp=dataN[:,:].ravel(order='F')
 
     # se obtienen las distancias euclidianas comparando con todos los vectores del codebook
     # retorna la menor de estas distancias
-
     return np.argmin([np.linalg.norm(tmp-c) for c in cb])
 
 #------------------------------------------------------------------------------
 def reduce25_to_15(data):
     # assuming shape of 25,2
+    # Quita Joints de la parte inferior del esqueleto
     return np.vstack((data[:10,:],data[12,:],data[15:19,:]))
 
 #-------------------------------------------------------------
@@ -72,7 +70,6 @@ def centralizaMatriz(data):
     if data[1,0]!=0 and data[1,1]!=0:
         coordCentrada=data[1,:]
     else:
-        #print("No se encontró esqueleto en joint 1, se utiliza el joint 0")
         coordCentrada=data[0,:]
 
     for i in range(data.shape[0]):

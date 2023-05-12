@@ -30,19 +30,28 @@ def callback(req):
 	buffer=[]
 	response=RecogHMMActionResponse()
 
+	# ctrlz --> centraliza o no los esqueletos de la secuencia 
+	# 			por default = True ya que se observó un mejor desempeño
+	#			al centralizar los esqueletos
+	# centralizar -> mover la coordenadas de los esqueletos para que el
+	# 				 centro (0,0) sea el Joint del cuello
 	if ctrlz:
 	    cb2=centralizaSecuencia(cb,codebook=True)    
 	else:
 	    cb2=cb
+	# La secuencia de esqueletos que fueron recibidos fuera de este servicio
+	# Se asumen que tienen el formato de salida de una CNN (OpenPose)
 	sk=np.copy(req.sk_buffer.data)
+	# Asumiendo que es una matriz
 	a,b,c=req.buf_size.data
 	
 	sk=sk.reshape(int(a),int(b),int(c))
 
-	
+	# Se discretiza la secuencia
 	for s in sk:
 		buffer.append(create_vk(s,cb2,quitaJ=True,centralized=ctrlz))
 
+	# Se hace inferencia usando Forward Algorith
 	probas=inf_Secuence(np.asarray(buffer),mA,mB,mPI)
                 
 	
