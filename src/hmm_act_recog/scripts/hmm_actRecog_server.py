@@ -5,7 +5,7 @@ from hmm_act_recog.srv import RecogHMMAction, RecogHMMActionResponse,RecogHMMAct
 
 import rospy
 
-from utils_hmmAR import *
+from Utils.utils_hmmAR import *
 
 #---------------------------------------------------------------
 def callback(req):
@@ -46,7 +46,7 @@ def callback(req):
 	probas=inf_Secuence(np.asarray(buffer),mA,mB,mPI)
                 
 	
-	
+	# Retorna el indice de la accion inferida
 	response.i_out=np.argmax(probas[:])
 	return response
 
@@ -56,7 +56,7 @@ def hmm_act_recognition_server():
 	global cb,class_names,mA,mB,mPI
 	class_names=["wave_R","wave_L","neutral","drink","pointing"]
 	mA,mB,mPI=loadModels(class_names)
-	cb=np.load("src/hmm_act_recog/scripts/codebooks/codebook_LBG_160_s30.npy")
+	cb=np.load(path.join(rospack.get_path("hmm_act_recog"))+"/scripts/codebooks/codebook_LBG_160_s30.npy")
 
 	rospy.init_node('hmm_act_recognition_server')
 	rospy.loginfo("Action recognition HMM service available")                    # initialize a ROS node

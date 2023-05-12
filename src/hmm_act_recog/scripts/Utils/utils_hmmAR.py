@@ -4,7 +4,10 @@ import numpy as np
 
 from glob import glob
 from os import listdir,path
+from rospkg import RosPack
 
+global rospack
+rospack = RosPack()
 """
     Conjunto de funciones requeridas para la inferencia de una
     secuencia usando HMM
@@ -12,8 +15,9 @@ from os import listdir,path
 #---------------------------------------------------
 def loadModels(classes):
     # Para cargar los modelos en el codigo de HMM con Vit
- 
-    route="src/hmm_act_recog/scripts/models/"
+    
+    route=path.join(rospack.get_path("hmm_act_recog"))+"/scripts/models/"
+    
 
     modelsA=[]
     modelsB=[]
