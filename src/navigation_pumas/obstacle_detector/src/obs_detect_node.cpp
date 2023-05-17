@@ -15,6 +15,7 @@ bool use_lidar  = true;
 bool use_sonars = false;
 bool use_cloud  = false;
 bool use_cloud2 = false;
+bool use_bumper = false;
 float current_speed_linear  = 0;
 float current_speed_angular = 0;
 float minX =  0.3;
@@ -37,6 +38,7 @@ std::string point_cloud_frame2  = "/point_cloud_frame2";
 std::string laser_scan_topic    = "/scan";
 std::string laser_scan_frame    = "laser";
 std::string sonars_topic_prefix = "/sonar";
+std::string bumper_f_topic = "/bumper";
 int no_data_cloud_counter  = 0;
 int no_data_cloud_counter2 = 0;
 int no_data_lidar_counter  = 0;
@@ -49,6 +51,8 @@ ros::Subscriber sub_lidar;
 ros::Subscriber sub_sonar0;
 ros::Subscriber sub_sonar1;
 ros::Subscriber sub_sonar2;
+ros::Subscriber sub_bumper_f;
+bool bumper_pushed;
 sensor_msgs::PointCloud2::Ptr point_cloud_ptr ;
 sensor_msgs::PointCloud2::Ptr point_cloud_ptr2;
 sensor_msgs::LaserScan::Ptr   laser_scan_ptr  ;
@@ -76,6 +80,11 @@ void get_robot_pose(float& robot_x, float& robot_y, float& robot_t)
     robot_y = transform.getOrigin().y();
     tf::Quaternion q = transform.getRotation();
     robot_t = atan2((float)q.z(), (float)q.w()) * 2;
+}
+
+void callback_bumper(std_msgs::Bool::Ptr msg)
+{
+    bumper_pushed = msg->data;
 }
 
 void callback_lidar(sensor_msgs::LaserScan::Ptr msg)
@@ -122,6 +131,7 @@ void callbackEnable(const std_msgs::Bool::ConstPtr& msg)
     if(msg->data)
     {
         std::cout << "ObsDetector.->Starting obstacle detection using: " << (use_lidar ? "lidar " : "") << (use_sonars?"sonars ":"");
+        std::cout << (use_bumper ? "bumper_front " : "");
         std::cout << (use_cloud ? "point_cloud" : "") << (use_cloud2 ? "point_cloud2" : "") <<std::endl;
         if(use_cloud )  sub_point_cloud  = nh->subscribe(point_cloud_topic , 1, callback_point_cloud );
         if(use_cloud2)  sub_point_cloud2 = nh->subscribe(point_cloud_topic2, 1, callback_point_cloud2);
@@ -129,6 +139,8 @@ void callbackEnable(const std_msgs::Bool::ConstPtr& msg)
         if(use_sonars)  sub_sonar0       = nh->subscribe(sonars_topic_prefix + "0", 1, callback_sonar0);
         if(use_sonars)  sub_sonar1       = nh->subscribe(sonars_topic_prefix + "1", 1, callback_sonar1);
         if(use_sonars)  sub_sonar2       = nh->subscribe(sonars_topic_prefix + "2", 1, callback_sonar2);
+        if(use_bumper)  sub_bumper_f     = nh->subscribe(bumper_f_topic             , 1, callback_bumper);
+
     }
     else
     {
@@ -139,6 +151,7 @@ void callbackEnable(const std_msgs::Bool::ConstPtr& msg)
         if(use_sonars)  sub_sonar0      .shutdown();
         if(use_sonars)  sub_sonar1      .shutdown();
         if(use_sonars)  sub_sonar2      .shutdown();
+        if(use_bumper)  sub_bumper_f    .shutdown();
     }
     enable = msg->data;
 }
@@ -316,7 +329,8 @@ bool check_collision_risk(float sonar_angle_0, float sonar_angle_1, float sonar_
     return (use_lidar && collisionRiskWithLidar(collisionX, collisionY)) ||
         (use_sonars && collisionRiskWithSonars(collisionX, collisionY, sonar_angle_0, sonar_angle_1, sonar_angle_2)) ||
         (use_cloud && collisionRiskWithCloud(collisionX, collisionY)) ||
-        (use_cloud2 && collisionRiskWithCloud2(collisionX, collisionY));
+        (use_cloud2 && collisionRiskWithCloud2(collisionX, collisionY))||
+        (use_bumper && bumper_pushed);
 }
 
 void callback_cmd_vel(const geometry_msgs::Twist::ConstPtr& msg)
@@ -363,6 +377,8 @@ int main(int argc, char** argv)
         ros::param::get("~use_point_cloud", use_cloud);
     if(ros::param::has("~use_point_cloud2"))
         ros::param::get("~use_point_cloud2", use_cloud2);
+    if(ros::param::has("~use_bumper"))
+        ros::param::get("~use_bumper", use_bumper);
     if(ros::param::has("~min_x"))
         ros::param::get("~min_x", minX);
     if(ros::param::has("~max_x"))
@@ -381,6 +397,8 @@ int main(int argc, char** argv)
         ros::param::get("~point_cloud_topic2", point_cloud_topic2);
     if(ros::param::has("~laser_scan_topic"))
         ros::param::get("~laser_scan_topic",  laser_scan_topic);
+    if(ros::param::has("~bumper_f_topic"))
+        ros::param::get("~bumper_f_topic",  bumper_f_topic);
     if(ros::param::has("~sonars_topic_prefix"))
         ros::param::get("~sonars_topic_prefix", sonars_topic_prefix);
     if(ros::param::has("~cloud_points_threshold"))
@@ -403,6 +421,7 @@ int main(int argc, char** argv)
         ros::param::get("/base_link_name", base_link_name);
 
     std::cout << "ObsDetector.->Starting obstacle detection using: "<< (use_lidar ? "lidar " : "") << (use_sonars ? "sonars " : "");
+    std::cout << (use_bumper ? "bumper_front" : "") << (use_bumper ? "bumper_front": "") << std::endl;
     std::cout << (use_cloud ? "point_cloud" : "") << (use_cloud2 ? "point_cloud2": "") << std::endl;
     std::cout << "ObsDetector.->Using parameters: min_x=" << minX << "  max_x=" << maxX << "  min_y=" << minY << "  max_y=";
     std::cout << maxY << "  min_z=" << minZ << "  max_z=" << maxZ << std::endl;
@@ -431,6 +450,7 @@ int main(int argc, char** argv)
     if(use_sonars) ptr0     = ros::topic::waitForMessage<sensor_msgs::Range>(sonars_topic_prefix+"0", ros::Duration(10000.0));
     if(use_sonars) ptr1     = ros::topic::waitForMessage<sensor_msgs::Range>(sonars_topic_prefix+"1", ros::Duration(10000.0));
     if(use_sonars) ptr2     = ros::topic::waitForMessage<sensor_msgs::Range>(sonars_topic_prefix+"2", ros::Duration(10000.0));
+    //if(use_bumper) ptrb     = ros::topic::waitForMessage<std_msgs::Bool>(bumper_f_topic             , ros::Duration(10000.0));
     std::cout << "ObsDetector.->First messages received..." << std::endl;
     if(use_cloud  && ptr_c1   != NULL) point_cloud_frame  = ptr_c1->header.frame_id;
     if(use_cloud2 && ptr_c2   != NULL) point_cloud_frame2 = ptr_c2->header.frame_id;

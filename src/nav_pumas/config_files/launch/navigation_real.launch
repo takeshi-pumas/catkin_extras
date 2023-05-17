@@ -14,15 +14,24 @@
   <arg name="initial_pose_a" default=" 90"/>
   <arg name="laser_scan_topic" default="/hsrb/base_scan"/>
   <arg name="point_cloud_topic" default="/hsrb/head_rgbd_sensor/depth_registered/rectified_points"/>
+  <arg name="bumper_f_topic" default="hsrb/base_f_bumper_sensor"/>
   <arg name="use_lidar" default="True"/>
   <arg name="use_sonars" default="False"/>
-  <arg name="use_point_cloud" default="True"/>
-  <arg name="cloud_downsampling" default="9"/>
-  <arg name="lidar_downsampling" default="2"/>
+  <arg name="use_point_cloud" default="False"/>
+  <arg name="use_bumper" default="True"/>
+  <arg name="cloud_downsampling" default="1"/>
+  <arg name="lidar_downsampling" default="1"/>
   <arg name="cloud_points_threshold" default="100"/>
   <arg name="lidar_points_threshold" default="20"/>
   <arg name="cmd_vel_name" default="/hsrb/command_velocity"/>
+  <arg name="min_x" default="0.27"/>
+  <arg name="max_x" default="0.85"/>
+  <arg name="min_y" default="-0.30"/>
+  <arg name="max_y" default="0.30"/>
+  <arg name="min_z" default="0.05"/>
+  <arg name="max_z" default="1.30"/>
 
+ <remap from="/cmd_vel" to="/hsrb/command_velocity"/>
 
   <node name="path_planner" pkg="path_planner" type="path_planner_node" output="screen">
     <param name="diagonal_paths" value="False"/>
@@ -43,8 +52,10 @@
     <param name="use_sonars" value="$(arg use_sonars)"/>
     <param name="use_point_cloud" value="$(arg use_point_cloud)"/>
     <param name="use_point_cloud2" value="False"/>
+    <param name="use_bumper" value="True"/>
     <param name="point_cloud_topic" value="$(arg point_cloud_topic)"/>
     <param name="laser_scan_topic" value="$(arg laser_scan_topic)"/>
+    <param name="bumper_f_topic" value="$(arg bumper_f_topic)"/>
     <param name="cloud_downsampling" value="$(arg cloud_downsampling)"/>
     <param name="lidar_points_threshold" value="$(arg lidar_points_threshold)"/>
     <param name="cloud_points_threshold" value="$(arg cloud_points_threshold)"/>
