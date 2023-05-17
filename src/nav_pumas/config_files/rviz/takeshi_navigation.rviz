@@ -7,6 +7,7 @@ Panels:
         - /Global Options1
         - /Status1
         - /Map1
+        - /Path1
       Splitter Ratio: 0.5
     Tree Height: 719
   - Class: rviz/Selection
@@ -541,7 +542,7 @@ Visualization Manager:
     - Alpha: 1
       Buffer Length: 1
       Class: rviz/Path
-      Color: 25; 255; 0
+      Color: 255; 25; 25
       Enabled: true
       Head Diameter: 0.30000001192092896
       Head Length: 0.20000000298023224
@@ -634,9 +635,9 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.9853973388671875
+      Pitch: 0.8803974390029907
       Target Frame: <Fixed Frame>
-      Yaw: 1.575397253036499
+      Yaw: 2.200395107269287
     Saved: ~
 Window Geometry:
   Displays:
