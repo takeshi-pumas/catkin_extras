@@ -17,7 +17,7 @@
   <arg name="bumper_f_topic" default="hsrb/base_f_bumper_sensor"/>
   <arg name="use_lidar" default="True"/>
   <arg name="use_sonars" default="False"/>
-  <arg name="use_point_cloud" default="False"/>
+  <arg name="use_point_cloud" default="True"/>
   <arg name="use_bumper" default="True"/>
   <arg name="cloud_downsampling" default="1"/>
   <arg name="lidar_downsampling" default="1"/>
