@@ -7,7 +7,8 @@
   
   <!--arg name="prohibition_map_file"  default="$(find config_files)/prohibition_maps/TMR_2023.yaml"/-->
   
-  <arg name="prohibition_map_file"  default="$(find config_files)/prohibition_maps/Lab_arena_hor_blocked.yaml"/>
+  <!--arg name="prohibition_map_file"  default="$(find config_files)/prohibition_maps/Lab_arena_hor_blocked.yaml"/-->
+    <arg name="prohibition_map_file"  default="$(find config_files)/prohibition_maps/map_lab_2023.yaml"/>
   
   <arg name="initial_pose_x" default="-5.7"/>
   <arg name="initial_pose_y" default="-6.0"/>
@@ -32,7 +33,13 @@
   <arg name="max_z" default="1.30"/>
 
  <remap from="/cmd_vel" to="/hsrb/command_velocity"/>
+ <remap from="/initialpose" to="/laser_2d_correct_pose"/>
 
+ <!--group ns="hardware">
+ 	<node name="head" pkg="head" type="head_node" output="screen"/>
+ 	<node name="harware_mng" pkg="nav_pumas" type="hardware_mng" output="screen"/>
+ 	
+ </group-->
   <node name="path_planner" pkg="path_planner" type="path_planner_node" output="screen">
     <param name="diagonal_paths" value="False"/>
   </node>
