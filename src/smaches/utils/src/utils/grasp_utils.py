@@ -178,8 +178,9 @@ class GAZE():
             xyz,_ = self._tf_man.getTF(target_frame=target_frame)
             rospy.sleep(0.5)
             tries = 1
-            while type(xyz) is bool or tries <= 5:
+            while (type(xyz) is bool) or (tries <= 5):
                 tries += 1
+                print(tries)
                 xyz,_ = self._tf_man.getTF(target_frame=target_frame)
                 rospy.sleep(0.3)
             if type(xyz) is not bool:

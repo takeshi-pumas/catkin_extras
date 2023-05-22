@@ -126,7 +126,7 @@ class Scan_face(smach.State):
         if self.tries >= 4:
             self.tries = 0
             return'tries'
-
+        name_face = ""
         res, img_face = wait_for_face()  # default 10 secs
         rospy.sleep(0.7)
         print (res)
@@ -155,8 +155,10 @@ class Scan_face(smach.State):
                 name_face=name
                 add_guest(name, drink)
                 talk('nice')
+                talk("analyzing face")
                 takeshi_line = analyze_face_from_image(img_face, name)
                 add_description(name, takeshi_line)
+                talk("done")
                 return 'succ'
         else:
             return 'failed'
@@ -174,7 +176,7 @@ class New_face(smach.State):
         self.tries = 0
 
     def execute(self, userdata):
-        global name_face
+        
         self.tries += 1
 
         rospy.loginfo('STATE : NEW_FACE')
@@ -198,14 +200,16 @@ class New_face(smach.State):
         talk(f'Is {name} your name?')
         res2 = speech_recog_server()
         print (res2)
-        rospy.sleep(15.0)
         try:
             res2 = rospy.wait_for_message( '/recognizedSpeech',RecognizedSpeech, timeout = 5.0)
             print ("POCKERT",res2.hypothesis[0],type(res2.hypothesis))
             answer = res2.hypothesis[0]
         except Exception:   #answer = res2
             answer='no'
-
+        talk("analyzing face")
+        takeshi_line = analyze_face_from_image(img_face, name)
+        add_description(name, takeshi_line)
+        talk("done")
         return 'succ'
 
 
@@ -317,7 +321,7 @@ class Find_sitting_place(smach.State):
 
         res=detect_human_to_tf()
         #print (res,'Human')
-        #talk('I will check if there is no people on this sit')
+        talk('I will check if there is no people on this sit')
         res , _ = wait_for_face()  # seconds
         #print (res,'face')
         if res == None:
