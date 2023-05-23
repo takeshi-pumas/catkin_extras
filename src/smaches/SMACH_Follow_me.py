@@ -170,7 +170,7 @@ class Follow_human(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'arrived', 'lost'])
         self.tries = 0
-        self.last_xy=[]
+        self.last_legs=[]
 
     def execute(self, userdata):
 
@@ -182,33 +182,39 @@ class Follow_human(smach.State):
 
 
 
-        x,y=punto.point.x,    punto.point.y
-
-        xys_legs.append((x,y))
-
-        last_legs=np.asarray(xys_legs)
-            #   print ( 'Here 2' , last_legs)
-            #print(  "(##########################3",np.var(last_legs,axis=0).mean())
-        if len(xys_legs)>=5:
-            xys_legs.pop(0)
-            last_legs=np.asarray(xys_legs)
-            if (np.var(last_legs,axis=0).mean() < 0.0001):
-                cont+=1
-                if cont>=20:
-                    print('there yet?')
-
-
-                    msg_bool.data= False
-                    enable_legs.publish(msg_bool)
-                    enable_follow.publish(msg_bool)
-
-                    return 'arrived'
+        
 
 
         try :
             punto=rospy.wait_for_message("/hri/leg_finder/leg_pose", PointStamped , timeout=timeout)
-            print ('legs found, Cruising')
-            return 'succ'
+            
+            x,y=punto.point.x,    punto.point.y
+            xys_legs.append((x,y))
+            last_legs=np.asarray(xys_legs)
+              
+            if len(xys_legs)>=5:
+                xys_legs.pop(0)
+                last_legs=np.asarray(xys_legs)
+                if (np.var(last_legs,axis=0).mean() < 0.0001):
+                    cont+=1
+                    if cont>=20:
+                        print('there yet?')
+
+
+                        msg_bool.data= False
+                        enable_legs.publish(msg_bool)
+                        enable_follow.publish(msg_bool)
+
+                        return 'arrived'
+
+
+
+
+
+            else:
+
+                print ('legs found, Cruising')
+                return 'succ'
         except Exception:
             
             print ('No legs found')
