@@ -225,9 +225,9 @@ class Segment_object(smach.State):
         res = segmentation_server.call()
         im=bridge.imgmsg_to_cv2(res.im_out.image_msgs[0])
 
-        cv2.imshow("Segmentacion",im)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+        #cv2.imshow("Segmentacion",im)
+        #cv2.waitKey(0)
+        #cv2.destroyAllWindows()
         
         centroids = res.poses.data
         closest = [100,100,100]
@@ -365,6 +365,10 @@ class Find_legs(smach.State):
 def init(node_name):
     print('smach ready')
     global reqAct,recognize_action
+    global enable_legs,enable_follow
+
+    enable_legs=  rospy.Publisher('/hri/leg_finder/enable', Bool, queue_size=1)
+    enable_follow=rospy.Publisher('/hri/human_following/start_follow', Bool, queue_size=1) 
 
 
     #rospy.wait_for_service('recognize_act')    
@@ -388,7 +392,7 @@ if __name__== '__main__':
     with sm:
         #State machine for Restaurant
         smach.StateMachine.add("INITIAL",           Initial(),          transitions = {'failed':'INITIAL',          'succ':'WAIT_PUSH_HAND',    'tries':'END'}) 
-        smach.StateMachine.add("WAIT_PUSH_HAND",    Wait_push_hand(),   transitions = {'failed':'WAIT_PUSH_HAND',   'succ':'SCAN_FACE',         'tries':'END'}) 
+        smach.StateMachine.add("WAIT_PUSH_HAND",    Wait_push_hand(),   transitions = {'failed':'WAIT_PUSH_HAND',   'succ':'DETECT_POINT',         'tries':'END'}) 
         smach.StateMachine.add("SCAN_FACE",         Scan_face(),        transitions = {'failed':'SCAN_FACE',        'succ':'DETECT_POINT',      'tries':'INITIAL'}) 
         smach.StateMachine.add("DETECT_POINT",      Detect_action(),    transitions = {'failed':'DETECT_POINT',     'succ':'GAZE_OBJECT',       'tries':'INITIAL'}) 
         smach.StateMachine.add("GAZE_OBJECT",       Gaze_to_object(),   transitions = {'failed':'GAZE_OBJECT',      'succ':'SEGMENT_OBJECT',    'tries':'INITIAL'}) 
