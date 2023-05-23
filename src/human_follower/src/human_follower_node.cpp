@@ -25,7 +25,7 @@ float control_alpha  = 0.6548;// 0.6548 ;//= 0.9; // = 1.2
 float control_beta   = 0.3;
 float max_linear     = 0.3;
 float max_angular    = 0.7;//0.7 // 0.8 // 0.7
-float dist_to_human  = 0.9;
+float dist_to_human  = 0.5;
 bool  move_backwards = false;
 
 bool new_legs_pose = false;

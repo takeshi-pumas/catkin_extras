@@ -140,7 +140,7 @@ class Find_legs(smach.State):
         enable_follow.publish(msg_bool)
         ############################
         talk('Leg finder activated')
-        print ('Following')
+        print ('Leg finder activated ')
         
         timeout=2
         if self.tries==1:timeout=0.1####FIRST ENABLE TAKES A WHILE
@@ -156,7 +156,7 @@ class Find_legs(smach.State):
         except Exception:
             
             print ('No legs found')
-            talk( 'I lost you, please stand in front of me')
+            talk( 'I can not  find you, please stand in front of me')
       
             
             msg_bool.data= False
@@ -180,57 +180,30 @@ class Follow_human(smach.State):
             print('Legs Found, Following')
             talk('Human found, Following')
 
-
-
-        
-
-
         try :
-            punto=rospy.wait_for_message("/hri/leg_finder/leg_pose", PointStamped , timeout=timeout)
+            punto=rospy.wait_for_message("/hri/leg_finder/leg_pose", PointStamped , timeout=2.0)
             
-            x,y=punto.point.x,    punto.point.y
-            xys_legs.append((x,y))
-            last_legs=np.asarray(xys_legs)
-              
-            if len(xys_legs)>=5:
-                xys_legs.pop(0)
-                last_legs=np.asarray(xys_legs)
-                if (np.var(last_legs,axis=0).mean() < 0.0001):
-                    cont+=1
-                    if cont>=20:
-                        print('there yet?')
-
-
-
-
-                        msg_bool.data= False
-                        enable_legs.publish(msg_bool)
-                        enable_follow.publish(msg_bool)
-
-                        return 'arrived'
-
-
-
-
-
-            else:
-
-                print ('legs moving... Cruising')
-                return 'succ'
         except Exception:
             
-            print ('No legs found')
+            print ('legs _lost')
             talk( 'I lost you, please stand in front of me')
             return 'lost'
 
-
-
+        x,y=punto.point.x,    punto.point.y
+        
+        self.last_legs.append((x,y))
+        if len (self.last_legs)>=50:
+            if (np.var(self.last_legs,axis=0).mean() < 0.001):
+                print ('legs stopped... Are we there yet?',   np.var(self.last_legs,axis=0).mean()   )       
+                return 'arrived'
+            self.last_legs.pop(0)
         
 
+        
+            
+        print ('legs moving... Cruising',   np.var(self.last_legs,axis=0).mean()   )          #if (np.var(last_legs,axis=0).mean() < 0.0001):
 
-        
-        
-        
+        return 'succ'
 
 #########################################################################################################
 class Goto_next_room(smach.State):  # ADD KNONW LOCATION DOOR
