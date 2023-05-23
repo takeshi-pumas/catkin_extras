@@ -215,7 +215,7 @@ class Follow_human(smach.State):
 
             else:
 
-                print ('legs found, Cruising')
+                print ('legs moving... Cruising')
                 return 'succ'
         except Exception:
             
@@ -225,18 +225,13 @@ class Follow_human(smach.State):
 
 
 
-        #head.to_tf('human')
-        #res = omni_base.move_d_to(1.5,'human')
-        #head.to_tf('human')
-        #print ( "is he drinking?")
-
         
 
 
         
-        return 'succ'
         
-###########################################################################################################
+        
+
 #########################################################################################################
 class Goto_next_room(smach.State):  # ADD KNONW LOCATION DOOR
     def __init__(self):
