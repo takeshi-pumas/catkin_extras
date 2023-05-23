@@ -1,8 +1,0 @@
-geometry_msgs/Pose pose
-string move_group
-
-------------------------
-
-bool succes
-
-

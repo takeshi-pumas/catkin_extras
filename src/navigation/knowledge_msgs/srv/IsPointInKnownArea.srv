@@ -1,4 +1,0 @@
-string location
-geometry_msgs/Point32 point
----
-bool isInLocation

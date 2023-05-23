@@ -1,18 +1,22 @@
 <launch>  
  <remap from="/static_map" to="/get_distance_map"/>
-  <node name="killer_node" pkg="killer_node" type="killer_node.py" output="screen"/>
-  <node name="fake_global_pose" pkg="killer_node" type="fake_global_pose.py" output="screen"/>
-<node name="sensor_scan_fix" pkg="sensor_scan_fix" type="sensor_scan_fix.py" output="screen"/>
+ <remap from="/laser_2d_pose" to= "/global_pose"/>
+ 
+  <!--node name="killer_node" pkg="killer_node" type="killer_node.py" output="screen"/-->
+  <!--node name="fake_global_pose" pkg="killer_node" type="fake_global_pose.py" output="screen"/-->
 
-  <arg name="static_map_file"  default="$(find tmc_wrs_gazebo_worlds)/maps/moon/map.yaml"/>
-  <arg name="prohibition_map_file"  default="$(find tmc_wrs_gazebo_worlds)/maps/moon/map.yaml"/>
+
+  <!--arg name="static_map_file"  default="$(find tmc_wrs_gazebo_worlds)/maps/moon/map.yaml"/-->
+  <!--arg name="prohibition_map_file"  default="$(find tmc_wrs_gazebo_worlds)/maps/moon/map.yaml"/-->
+  <arg name="static_map_file"  default="$(find tmc_potential_maps)/maps/apartment/map.yaml"/>
+  <arg name="prohibition_map_file"  default="$(find tmc_potential_maps)/maps/apartment/map.yaml "/>
 
 
 
   <arg name="initial_pose_x" default="0.0"/>
   <arg name="initial_pose_y" default="0.0"/>
   <arg name="initial_pose_a" default="0.0"/>
-  <arg name="laser_scan_topic" default="/hsrb/base_scan/fix"/>
+  <arg name="laser_scan_topic" default="/hsrb/base_scan"/>
   <arg name="point_cloud_topic" default="/hsrb/head_rgbd_sensor/depth_registered/rectified_points"/>
   <arg name="use_lidar" default="True"/>
   <arg name="use_sonars" default="False"/>
@@ -78,21 +82,11 @@
  
   <!--node name="map_server" pkg="map_server" type="map_server" output="screen" args="$(arg static_map_file)"/-->
 
-  <node name="amcl" pkg="amcl" type="amcl" output="screen" args="scan:=$(arg laser_scan_topic) static_map:=/get_distance_map">
-    <param name="initial_pose_x" value="$(arg initial_pose_x)"/>
-    <param name="initial_pose_y" value="$(arg initial_pose_y)"/>
-    <param name="initial_pose_a" value="$(arg initial_pose_a)"/>
-    <param name="odom_alpha1" value="0.01"/>
-    <param name="odom_alpha2" value="0.01"/>
-    <param name="odom_alpha3" value="0.01"/>
-    <param name="odom_alpha4" value="0.01"/>
-    <param name="odom_alpha5" value="0.01"/>
-    <param name="update_min_a" value="0.1"/>
-    <param name="laser_min_range" value="0.3"/>
-    <param name="odom_model_type" value="omni-corrected"/>
+  
 
-
-  </node>
-
+  <node pkg="hmm_navigation"  name="pumas_nav_actionserver" type="pumas_nav_actionserver.py"/>
+  <!--node pkg="face_recog"  name="wave_recog_server" type="sos_service_waving.py"/-->
+    
   
 </launch>
+ 
