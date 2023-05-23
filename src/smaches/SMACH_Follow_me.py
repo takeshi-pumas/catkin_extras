@@ -148,6 +148,7 @@ class Find_legs(smach.State):
         try :
             punto=rospy.wait_for_message("/hri/leg_finder/leg_pose", PointStamped , timeout=timeout)
             print (punto)
+            self.tries=0
             return 'succ'
             
             
@@ -167,33 +168,66 @@ class Find_legs(smach.State):
 #########################################################################################################
 class Follow_human(smach.State):
     def __init__(self):
-        smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
+        smach.State.__init__(self, outcomes=['succ', 'arrived', 'lost'])
         self.tries = 0
+        self.last_xy=[]
 
     def execute(self, userdata):
 
-        rospy.loginfo('STATE : navigate to known location')
-
-        print('Try', self.tries, 'of 3 attempts')
-        self.tries += 1
-        if self.tries == 3:
-            return 'tries'
-        
-        print('getting close to human')
-        head.to_tf('human')
-        res = omni_base.move_d_to(1.5,'human')
-        head.to_tf('human')
-        print ( "is he drinking?")
-
-        
+        rospy.loginfo('STATE : Legs_found,following')
+        self.tries+=1
+        if self.tries == 1: 
+            print('Legs Found, Following')
+            talk('Human found, Following')
 
 
-        if res == 3:
+
+        x,y=punto.point.x,    punto.point.y
+
+        xys_legs.append((x,y))
+
+        last_legs=np.asarray(xys_legs)
+            #   print ( 'Here 2' , last_legs)
+            #print(  "(##########################3",np.var(last_legs,axis=0).mean())
+        if len(xys_legs)>=5:
+            xys_legs.pop(0)
+            last_legs=np.asarray(xys_legs)
+            if (np.var(last_legs,axis=0).mean() < 0.0001):
+                cont+=1
+                if cont>=20:
+                    print('there yet?')
+
+
+                    msg_bool.data= False
+                    enable_legs.publish(msg_bool)
+                    enable_follow.publish(msg_bool)
+
+                    return 'arrived'
+
+
+        try :
+            punto=rospy.wait_for_message("/hri/leg_finder/leg_pose", PointStamped , timeout=timeout)
+            print ('legs found, Cruising')
             return 'succ'
-        else:
-            talk('Navigation Failed, retrying')
-            return 'failed'
+        except Exception:
+            
+            print ('No legs found')
+            talk( 'I lost you, please stand in front of me')
+            return 'lost'
 
+
+
+        #head.to_tf('human')
+        #res = omni_base.move_d_to(1.5,'human')
+        #head.to_tf('human')
+        #print ( "is he drinking?")
+
+        
+
+
+        
+        return 'succ'
+        
 ###########################################################################################################
 #########################################################################################################
 class Goto_next_room(smach.State):  # ADD KNONW LOCATION DOOR
@@ -317,7 +351,7 @@ if __name__ == '__main__':
     with sm:
         # State machine for Restaurant
         smach.StateMachine.add("FIND_LEGS",          Find_legs(),           transitions={'failed': 'FIND_LEGS',    'succ': 'FOLLOW_HUMAN'    , 'tries': 'END'})
-        smach.StateMachine.add("FOLLOW_HUMAN",         Follow_human(),          transitions={'failed': 'FOLLOW_HUMAN',    'succ': 'END' , 'tries': 'FIND_LEGS'})
+        smach.StateMachine.add("FOLLOW_HUMAN",         Follow_human(),          transitions={'arrived': 'END',    'succ': 'FOLLOW_HUMAN'   , 'lost': 'FIND_LEGS'})
         #################################################################################################################################################################
         smach.StateMachine.add("FIND_HUMAN",         Find_human(),          transitions={'failed': 'FIND_HUMAN',    'succ': 'GOTO_HUMAN'    , 'tries': 'FIND_LEGS'})
         smach.StateMachine.add("GOTO_HUMAN",         Goto_human(),          transitions={'failed': 'FIND_LEGS',    'succ': 'FIND_LEGS' , 'tries': 'FIND_HUMAN'})
