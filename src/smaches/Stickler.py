@@ -93,9 +93,17 @@ class Find_human(smach.State):
         rospy.loginfo('State : Find_human')
         talk('Scanning the room for humans')
         self.tries += 1
+<<<<<<< HEAD
         if self.tries >= 4:
             self.tries = 0
             return'tries'
+=======
+        #if self.tries >= 4:
+        if self.tries==2:
+            self.tries = 0
+            return'tries'
+        
+>>>>>>> nav_beta
         if self.tries==1:head.set_joint_values([ 0.0, 0.3])
         if self.tries==2:head.set_joint_values([ 0.3, 0.1])
         if self.tries==3:head.set_joint_values([-0.3, 0.1])
@@ -130,11 +138,20 @@ class Goto_next_room(smach.State):  # ADD KNONW LOCATION DOOR
         if self.tries == 3:
             return 'tries'
         if self.tries == 1: talk('Navigating to, room'+str(self.next_room))
+<<<<<<< HEAD
+=======
+        print ('navigating to room'+str(self.next_room))
+>>>>>>> nav_beta
         res = omni_base.move_base(known_location='room'+str(self.next_room))
         print(res)
 
         if res == 3:
+<<<<<<< HEAD
             (self.tries + 1)%2   #there are 2 rooms <__________________param
+=======
+            self.next_room+=1
+            if self.next_room==3:self.next_room=1
+>>>>>>> nav_beta
             return 'succ'
 
         else:
@@ -158,7 +175,11 @@ class Goto_human(smach.State):
         
         print('getting close to human')
         head.to_tf('human')
+<<<<<<< HEAD
         res = omni_base.move_d_to(0.7,'human')
+=======
+        res = omni_base.move_d_to(1.6,'human')
+>>>>>>> nav_beta
         head.to_tf('human')
         print ( "is he drinking?")
 

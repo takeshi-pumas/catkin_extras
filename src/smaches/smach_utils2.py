@@ -12,8 +12,7 @@ from object_classification.srv import *
 from segmentation.srv import *
 from human_detector.srv import Human_detector ,Human_detectorResponse 
 from ros_whisper_vosk.srv import GetSpeech
-from face_recog.msg import *
-from face_recog.srv import *
+  
 #import face_recognition 
 import cv2  
 import rospy 
@@ -39,7 +38,11 @@ from utils.misc_utils import *
 from utils.nav_utils import *
 from utils.know_utils import *
 
+<<<<<<< HEAD
 global listener, broadcaster, tfBuffer, tf_static_broadcaster, scene, rgbd, head,train_new_face, wrist, human_detect_server, line_detector, clothes_color
+=======
+global listener, broadcaster, tfBuffer, tf_static_broadcaster, scene, rgbd, head,train_new_face, wrist, human_detect_server, line_detector
+>>>>>>> nav_beta
 global clear_octo_client, goal,navclient,segmentation_server  , tf_man , omni_base, brazo, speech_recog_server, bridge, map_msg, pix_per_m, analyze_face
 
 rospy.init_node('smach')
@@ -59,11 +62,20 @@ human_detect_server = rospy.ServiceProxy('/detect_human' , Human_detector)  ####
 segmentation_server = rospy.ServiceProxy('/segment' , Segmentation)    ##### PLANE SEGMENTATION (PARALEL TO FLOOR)
 navclient=actionlib.SimpleActionClient('/navigate', NavigateAction)   ### PUMAS NAV ACTION LIB
 # scene = moveit_commander.PlanningSceneInterface()
+<<<<<<< HEAD
 speech_recog_server = rospy.ServiceProxy('/speech_recognition/vosk_service' ,GetSpeech)##############TOYOTA
 recognize_face = rospy.ServiceProxy('recognize_face', RecognizeFace)                    #FACE RECOG
 train_new_face = rospy.ServiceProxy('new_face', RecognizeFace)                          #FACE RECOG
 analyze_face = rospy.ServiceProxy('analyze_face', RecognizeFace)    ###DEEP FACE ONLY
 clothes_color = rospy.ServiceProxy('/vision/obj_segmentation_and_pose/clothes_color', FindPerson)
+=======
+
+#speech_recog_server = rospy.ServiceProxy('/speech_recognition/vosk_service' ,GetSpeech)##############TOYOTA
+#recognize_face = rospy.ServiceProxy('recognize_face', RecognizeFace)                    #FACE RECOG
+#train_new_face = rospy.ServiceProxy('new_face', RecognizeFace)                          #FACE RECOG
+#analyze_face = rospy.ServiceProxy('analyze_face', RecognizeFace)    ###DEEP FACE ONLY
+
+>>>>>>> nav_beta
 
 #map_msg= rospy.wait_for_message('/augmented_map', OccupancyGrid)####WAIT for nav pumas map
 #inflated_map= np.asarray(map_msg.data)
@@ -82,7 +94,11 @@ wrist= WRIST_SENSOR()
 head = GAZE()
 brazo = ARM()
 line_detector = LineDetector()
+<<<<<<< HEAD
 # arm =  moveit_commander.MoveGroupCommander('arm')
+=======
+#arm =  moveit_commander.MoveGroupCommander('arm')
+>>>>>>> nav_beta
 
 
 #------------------------------------------------------
@@ -147,7 +163,12 @@ def train_face(image, name):
     
     return res.Ids.ids[0].data.split(' ')[0] == 'trained'
 
+<<<<<<< HEAD
     #------------------------------------------------------
+=======
+
+#------------------------------------------------------
+>>>>>>> nav_beta
 def wait_for_face(timeout=10 , name=''):
     
     rospy.sleep(0.3)
@@ -172,9 +193,17 @@ def wait_for_face(timeout=10 , name=''):
             print ('No face FOund Keep scanning')
             
             return None, None
+<<<<<<< HEAD
         #AT LEAST ONE FACE FOUND
         else:
             print('at least one face found')
+=======
+
+
+
+        
+        else:
+>>>>>>> nav_beta
             ds_to_faces=[]
             for i , idface in enumerate(res.Ids.ids):
                 print (i,idface.data)
@@ -189,6 +218,13 @@ def wait_for_face(timeout=10 , name=''):
                     ds_to_faces=[]
                     return new_res , img
 
+<<<<<<< HEAD
+=======
+
+                    
+                    
+
+>>>>>>> nav_beta
             if len (ds_to_faces)!=0:
                 i=np.argmin(ds_to_faces)
                 new_res= RecognizeFaceResponse()
@@ -201,7 +237,11 @@ def wait_for_face(timeout=10 , name=''):
 
 
 
+<<<<<<< HEAD
 
+=======
+            
+>>>>>>> nav_beta
 
 #------------------------------------------------------
 #def wait_for_face(timeout=10):
@@ -272,7 +312,11 @@ def analyze_face_from_image(cv2_img,name=''):
     if gender=='Man':pronoun='he'
     takeshi_line = f'{name} has arrived... {pronoun} is a {gender}... I believe {pronoun}.' 
     takeshi_line += f'is  around  {age} years old... I would say he is a bit  {state}.'
+<<<<<<< HEAD
     takeshi_line += f'And I might guess {pronoun} is of {race} descent.'
+=======
+    takeshi_line += f'And I might guess {pronoun} is of {race}  descent.'
+>>>>>>> nav_beta
     return takeshi_line
 
 #------------------------------------------------------

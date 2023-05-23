@@ -1,0 +1,17 @@
+*.pyc
+*.py~
+*.launch~
+*.cpp~
+*.h~
+*.srv~
+*.msg~
+*.xml~
+*.txt~
+*.swp
+*.swo
+*.swn
+*.#*
+*#
+
+devel/
+build/

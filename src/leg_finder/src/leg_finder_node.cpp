@@ -34,7 +34,11 @@
 #define IS_LEG_THRESHOLD 0.5
 //Constants to check if there are legs in front of the robot
 #define IN_FRONT_MIN_X  0.25
+<<<<<<< HEAD
 #define IN_FRONT_MAX_X  2.5
+=======
+#define IN_FRONT_MAX_X  1.5
+>>>>>>> nav_beta
 #define IN_FRONT_MIN_Y -0.5
 #define IN_FRONT_MAX_Y  0.5
 //BUTTERWORTH FILTER A Ó B EN X O Y
