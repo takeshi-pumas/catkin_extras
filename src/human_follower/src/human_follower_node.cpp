@@ -24,12 +24,9 @@ bool usePotFields = false;
 float control_alpha  = 0.6548;// 0.6548 ;//= 0.9; // = 1.2
 float control_beta   = 0.3;
 float max_linear     = 0.3;
-float max_angular    = 0.7;//0.7 // 0.8 // 0.7
-<<<<<<< HEAD
-float dist_to_human  = 0.5;
-=======
+float max_angular    = 0.5;
 float dist_to_human  = 0.9;
->>>>>>> nav_beta
+
 bool  move_backwards = false;
 
 bool new_legs_pose = false;
@@ -112,11 +109,9 @@ int main(int argc, char** argv)
     std::cout << "INITIALIZING HUMAN FOLLOWER BY MARCOSOFT..." << std::endl;
     ros::init(argc, argv, "human_follower");
     n = new ros::NodeHandle();
-<<<<<<< HEAD
+
     std::string cmd_vel_topic   = "/hsrb/command_velocity";
-=======
-    std::string cmd_vel_topic   = "/cmd_vel";
->>>>>>> nav_beta
+
     if(ros::param::has("~control_alpha"))
         ros::param::get("~control_alpha", control_alpha);
     if(ros::param::has("~control_beta"))
