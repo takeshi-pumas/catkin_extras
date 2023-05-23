@@ -192,9 +192,18 @@ class Follow_human(smach.State):
         x,y=punto.point.x,    punto.point.y
         
         self.last_legs.append((x,y))
-        if len (self.last_legs)>=50:
-            if (np.var(self.last_legs,axis=0).mean() < 0.001):
-                print ('legs stopped... Are we there yet?',   np.var(self.last_legs,axis=0).mean()   )       
+        print(np.linalg.norm(np.asarray(self.last_legs).mean(axis=0)))
+        if len (self.last_legs)>=6:
+            #if (np.var(self.last_legs,axis=0).mean() < 0.001):
+            if (np.linalg.norm(np.asarray(self.last_legs).mean(axis=0)) < 1.0):
+                print ('legs stopped... Are we there yet?')#,   np.var(self.last_legs,axis=0).mean()   )     
+
+                talk ('are we there yet ?')
+                msg_bool=Bool()
+                msg_bool.data= False
+                enable_legs.publish(msg_bool)
+                enable_follow.publish(msg_bool)
+                rospy.sleep(2)
                 return 'arrived'
             self.last_legs.pop(0)
         
@@ -326,6 +335,9 @@ if __name__ == '__main__':
 
     with sm:
         # State machine for Restaurant
+        smach.StateMachine.add("INITIAL",           Initial(),              transitions={'failed': 'INITIAL',       'succ': 'WAIT_PUSH_HAND',   'tries': 'END'})
+        smach.StateMachine.add("WAIT_PUSH_HAND",    Wait_push_hand(),       transitions={'failed': 'WAIT_PUSH_HAND','succ': 'FIND_LEGS',        'tries': 'END'})
+        smach.StateMachine.add("GOTO_NEXT_ROOM",     Goto_next_room(),      transitions={'failed': 'GOTO_NEXT_ROOM','succ': 'FIND_LEGS'    , 'tries': 'FIND_HUMAN'})
         smach.StateMachine.add("FIND_LEGS",          Find_legs(),           transitions={'failed': 'FIND_LEGS',    'succ': 'FOLLOW_HUMAN'    , 'tries': 'END'})
         smach.StateMachine.add("FOLLOW_HUMAN",         Follow_human(),          transitions={'arrived': 'END',    'succ': 'FOLLOW_HUMAN'   , 'lost': 'FIND_LEGS'})
         #################################################################################################################################################################
@@ -333,9 +345,6 @@ if __name__ == '__main__':
         smach.StateMachine.add("GOTO_HUMAN",         Goto_human(),          transitions={'failed': 'FIND_LEGS',    'succ': 'FIND_LEGS' , 'tries': 'FIND_HUMAN'})
         smach.StateMachine.add("ANALYZE_HUMAN",      Analyze_human(),       transitions={'failed': 'FIND_HUMAN',    'succ': 'GOTO_NEXT_ROOM'})
         #################################################################################################################################################################
-        smach.StateMachine.add("INITIAL",           Initial(),              transitions={'failed': 'INITIAL',       'succ': 'WAIT_PUSH_HAND',   'tries': 'END'})
-        smach.StateMachine.add("WAIT_PUSH_HAND",    Wait_push_hand(),       transitions={'failed': 'WAIT_PUSH_HAND','succ': 'FIND_LEGS',        'tries': 'END'})
-        smach.StateMachine.add("GOTO_NEXT_ROOM",     Goto_next_room(),      transitions={'failed': 'GOTO_NEXT_ROOM','succ': 'FIND_LEGS'    , 'tries': 'FIND_HUMAN'})
         ##################################################################################################################################################################
         
 

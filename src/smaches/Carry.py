@@ -10,58 +10,7 @@ from geometry_msgs.msg import Twist , PointStamped
 
     
 
-def follow_legs(timeout=30.0):
 
-    start_time = rospy.get_time()
-
-
-    cont=0
-    cont_a=0
-    cont_b=0
-    xys_legs=[]
-    while rospy.get_time() - start_time < timeout:
-        
-
-
-
-        
-        try :
-            punto=rospy.wait_for_message("/hri/leg_finder/leg_pose", PointStamped , timeout=2)
-            
-            x,y=punto.point.x,    punto.point.y
-            
-            xys_legs.append((x,y))
-            
-            last_legs=np.asarray(xys_legs)
-            #   print ( 'Here 2' , last_legs)
-            #print(  "(##########################3",np.var(last_legs,axis=0).mean())
-            if len(xys_legs)>=5:
-                xys_legs.pop(0)
-                last_legs=np.asarray(xys_legs)
-                if (np.var(last_legs,axis=0).mean() < 0.0001):
-                
-                    cont+=1
-                    if cont>=10:
-                        print('there yet?')
-                        
-                        cont_b+=1                   #FOR SIM
-                        if cont_b==5:return False   #TUNE
-                        
-                        #res3 = speech_recog_server()
-                        #if res3 =='yes':return False
-                else:print(np.var(last_legs,axis=0).mean())
-
-        except Exception:
-            x,y=0,0
-            cont_a+=1
-            if cont_a>=3:
-                print ('I lost you')
-                talk( 'I lost you, please stand in front of me')
-                cont_a=0
-    
-    
-    print ('are we there yet? timed out')
-    return True
 
 #---------------------------------------------------
 class Initial(smach.State):
@@ -194,16 +143,37 @@ class Detect_action(smach.State):
         # reqAct.in_ --> 3  para detectar pointing sin usar hmm, puro uso de vectores
         reqAct.in_=3
         resAct=recognize_action(reqAct)
-        talk('I detect the '+pointing_h[resAct.i_out]+' hand pointing')
-        rospy.sleep(0.8)
-        # Retorna la coordenada xyz de mapa de la extrapolacion calculada al apuntar
-        #print(resAct)
+        talk('I detect the '+pointing_h[resAct.i_out]+' hand pointing, is it correct?')
+        """
+        # PARA CONFIRMAR SI ESTA APUNTANDO BIEN, TIENE ERRORES
+        rospy.sleep(0.1)
+        res_sp=speech_recog_server()
+        try:
+            res2 = rospy.wait_for_message( '/recognizedSpeech',RecognizedSpeech, timeout = 5.0)
+            print ("POCKET",res2.hypothesis[0],type(res2.hypothesis))
+            name = res_sp.data = res2.hypothesis[0]
+            print("NAME,",name)
+        except Exception:   
+            return 'failed'
+        print(name)
+        if name=="yes" or name=="Yes":
+            # Retorna la coordenada xyz de mapa de la extrapolacion calculada al apuntar
+            #print(resAct)
+            obj_xyz=resAct.d_xyz.data
+            print(obj_xyz)
+            tf_man.pub_static_tf(pos=obj_xyz,point_name='object_gaze',ref='map')
+            
+            return 'succ'
+        else:
+            talk('Ok, I will try again')
+            rospy.sleep(0.8)
+            return 'failed'
+        """
         obj_xyz=resAct.d_xyz.data
         print(obj_xyz)
         tf_man.pub_static_tf(pos=obj_xyz,point_name='object_gaze',ref='map')
         
         return 'succ'
-        
 
 #---------------------------------------------------
 class Segment_object(smach.State):
@@ -318,6 +288,7 @@ class Grasp_from_floor(smach.State):
 
 
 #---------------------------------------------------
+######################################################################################################
 class Find_legs(smach.State):
     def __init__(self):
         smach.State.__init__(
@@ -326,7 +297,7 @@ class Find_legs(smach.State):
 
     def execute(self, userdata):
         self.tries+=1
-        if self.tries==5:
+        if self.tries==6:
             self.tries=0
             return 'tries'
         
@@ -336,29 +307,82 @@ class Find_legs(smach.State):
         enable_legs.publish(msg_bool)
         enable_follow.publish(msg_bool)
         ############################
-        talk('Following ')
-        print ('Following')
-        if self.tries==1:print (follow_legs(0.1)         )
+        talk('Leg finder activated')
+        print ('Leg finder activated ')
         
-        result=follow_legs(5)
-        print (result)
+        timeout=2
+        if self.tries==1:timeout=0.1####FIRST ENABLE TAKES A WHILE
         
-
-        if result :         ##follow for 5 secs ( or less if confirmation)
-            
-            #talk('are we there yet')
-            #res= speech_recog_server()
-            #print (res)
-            
-
+        try :
+            punto=rospy.wait_for_message("/hri/leg_finder/leg_pose", PointStamped , timeout=timeout)
+            print (punto)
+            self.tries=0
             return 'succ'
-        else : 
+            
+            
+
+        except Exception:
+            
+            print ('No legs found')
+            talk( 'I can not  find you, please stand in front of me')
+      
             
             msg_bool.data= False
             enable_legs.publish(msg_bool)
             enable_follow.publish(msg_bool)
 
             return 'failed'    
+
+#########################################################################################################
+class Follow_human(smach.State):
+    def __init__(self):
+        smach.State.__init__(self, outcomes=['succ', 'arrived', 'lost'])
+        self.tries = 0
+        self.last_legs=[]
+
+    def execute(self, userdata):
+
+        rospy.loginfo('STATE : Legs_found,following')
+        self.tries+=1
+        if self.tries == 1: 
+            print('Legs Found, Following')
+            talk('Human found, Following')
+
+        try :
+            punto=rospy.wait_for_message("/hri/leg_finder/leg_pose", PointStamped , timeout=2.0)
+            
+        except Exception:
+            
+            print ('legs _lost')
+            talk( 'I lost you, please stand in front of me')
+            return 'lost'
+
+        x,y=punto.point.x,    punto.point.y
+        
+        self.last_legs.append((x,y))
+        print(np.linalg.norm(np.asarray(self.last_legs).mean(axis=0)))
+        if len (self.last_legs)>=6:
+            #if (np.var(self.last_legs,axis=0).mean() < 0.001):
+            if (np.linalg.norm(np.asarray(self.last_legs).mean(axis=0)) < 1.0):
+                print ('legs stopped... Are we there yet?')#,   np.var(self.last_legs,axis=0).mean()   )     
+
+                talk ('are we there yet ?')
+                msg_bool=Bool()
+                msg_bool.data= False
+                enable_legs.publish(msg_bool)
+                enable_follow.publish(msg_bool)
+                rospy.sleep(2)
+                return 'arrived'
+            self.last_legs.pop(0)
+        
+
+        
+            
+        print ('legs moving... Cruising',   np.var(self.last_legs,axis=0).mean()   )          #if (np.var(last_legs,axis=0).mean() < 0.0001):
+
+        return 'succ'
+
+#########################################################################################################
 
 
 #========================================================================
@@ -398,6 +422,7 @@ if __name__== '__main__':
         smach.StateMachine.add("GAZE_OBJECT",       Gaze_to_object(),   transitions = {'failed':'GAZE_OBJECT',      'succ':'SEGMENT_OBJECT',    'tries':'INITIAL'}) 
         smach.StateMachine.add("SEGMENT_OBJECT",    Segment_object(),   transitions = {'failed':'SEGMENT_OBJECT',   'succ':'GRASP_FROM_FLOOR',  'tries':'INITIAL'}) 
         smach.StateMachine.add("GRASP_FROM_FLOOR",  Grasp_from_floor(), transitions = {'failed':'GRASP_FROM_FLOOR', 'succ':'FIND_LEGS',         'tries':'GRASP_FROM_FLOOR'}) 
-        smach.StateMachine.add("FIND_LEGS",          Find_legs(),       transitions=  {'failed': 'FIND_LEGS',       'succ': 'END'    ,          'tries': 'END'})
-
+        smach.StateMachine.add("FIND_LEGS",          Find_legs(),           transitions={'failed': 'FIND_LEGS',    'succ': 'FOLLOW_HUMAN'    , 'tries': 'END'})
+        smach.StateMachine.add("FOLLOW_HUMAN",         Follow_human(),          transitions={'arrived': 'END',    'succ': 'FOLLOW_HUMAN'   , 'lost': 'FIND_LEGS'})
+        
     outcome = sm.execute()          
