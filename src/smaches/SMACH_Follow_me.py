@@ -201,6 +201,8 @@ class Follow_human(smach.State):
                         print('there yet?')
 
 
+
+
                         msg_bool.data= False
                         enable_legs.publish(msg_bool)
                         enable_follow.publish(msg_bool)
