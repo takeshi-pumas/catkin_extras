@@ -9,59 +9,6 @@ from geometry_msgs.msg import Twist , PointStamped
 
     
 
-def follow_legs(timeout=30.0):
-
-    start_time = rospy.get_time()
-
-
-    cont=0
-    cont_a=0
-    cont_b=0
-    xys_legs=[]
-    while rospy.get_time() - start_time < timeout:
-        
-
-
-
-        
-        try :
-            punto=rospy.wait_for_message("/hri/leg_finder/leg_pose", PointStamped , timeout=2)
-            
-            x,y=punto.point.x,    punto.point.y
-            
-            xys_legs.append((x,y))
-            
-            last_legs=np.asarray(xys_legs)
-            #   print ( 'Here 2' , last_legs)
-            #print(  "(##########################3",np.var(last_legs,axis=0).mean())
-            if len(xys_legs)>=5:
-                xys_legs.pop(0)
-                last_legs=np.asarray(xys_legs)
-                if (np.var(last_legs,axis=0).mean() < 0.0001):
-                
-                    cont+=1
-                    if cont>=10:
-                        print('there yet?')
-                        
-                        cont_b+=1                   #FOR SIM
-                        if cont_b==5:return False   #TUNE
-                        
-                        #res3 = speech_recog_server()
-                        #if res3 =='yes':return False
-                else:print(np.var(last_legs,axis=0).mean())
-
-        except Exception:
-            x,y=0,0
-            cont_a+=1
-            if cont_a>=3:
-                print ('I lost you')
-                talk( 'I lost you, please stand in front of me')
-                cont_a=0
-    
-    
-    print ('are we there yet? timed out')
-    return True
-
 ##### Define state INITIAL #####
 
 # --------------------------------------------------
@@ -182,7 +129,7 @@ class Find_legs(smach.State):
 
     def execute(self, userdata):
         self.tries+=1
-        if self.tries==5:
+        if self.tries==6:
             self.tries=0
             return 'tries'
         
@@ -192,23 +139,24 @@ class Find_legs(smach.State):
         enable_legs.publish(msg_bool)
         enable_follow.publish(msg_bool)
         ############################
-        talk('Following ')
+        talk('Leg finder activated')
         print ('Following')
-        if self.tries==1:print (follow_legs(0.1)         )
         
-        result=follow_legs(5)
-        print (result)
+        timeout=2
+        if self.tries==1:timeout=0.1####FIRST ENABLE TAKES A WHILE
         
-
-        if result :         ##follow for 5 secs ( or less if confirmation)
-            
-            #talk('are we there yet')
-            #res= speech_recog_server()
-            #print (res)
-            
-
+        try :
+            punto=rospy.wait_for_message("/hri/leg_finder/leg_pose", PointStamped , timeout=timeout)
+            print (punto)
             return 'succ'
-        else : 
+            
+            
+
+        except Exception:
+            
+            print ('No legs found')
+            talk( 'I lost you, please stand in front of me')
+      
             
             msg_bool.data= False
             enable_legs.publish(msg_bool)
@@ -216,6 +164,37 @@ class Find_legs(smach.State):
 
             return 'failed'    
 
+#########################################################################################################
+class Follow_human(smach.State):
+    def __init__(self):
+        smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
+        self.tries = 0
+
+    def execute(self, userdata):
+
+        rospy.loginfo('STATE : navigate to known location')
+
+        print('Try', self.tries, 'of 3 attempts')
+        self.tries += 1
+        if self.tries == 3:
+            return 'tries'
+        
+        print('getting close to human')
+        head.to_tf('human')
+        res = omni_base.move_d_to(1.5,'human')
+        head.to_tf('human')
+        print ( "is he drinking?")
+
+        
+
+
+        if res == 3:
+            return 'succ'
+        else:
+            talk('Navigation Failed, retrying')
+            return 'failed'
+
+###########################################################################################################
 #########################################################################################################
 class Goto_next_room(smach.State):  # ADD KNONW LOCATION DOOR
     def __init__(self):
@@ -275,6 +254,7 @@ class Goto_human(smach.State):
 
 ###########################################################################################################
 
+
 #########################################################################################################
 class Analyze_human(smach.State):
     def __init__(self):
@@ -331,12 +311,13 @@ if __name__ == '__main__':
     sm = smach.StateMachine(outcomes=['END'])
 
     # sm.userdata.clear = False
-    sis = smach_ros.IntrospectionServer('SMACH_VIEW_SERVER', sm, '/SM_STICKLER')
+    sis = smach_ros.IntrospectionServer('SMACH_VIEW_SERVER', sm, '/SM_FOLLOW_LEGS')
     sis.start()
 
     with sm:
         # State machine for Restaurant
-        smach.StateMachine.add("FIND_LEGS",          Find_legs(),           transitions={'failed': 'GOTO_NEXT_ROOM',    'succ': 'FIND_LEGS'    , 'tries': 'END'})
+        smach.StateMachine.add("FIND_LEGS",          Find_legs(),           transitions={'failed': 'FIND_LEGS',    'succ': 'FOLLOW_HUMAN'    , 'tries': 'END'})
+        smach.StateMachine.add("FOLLOW_HUMAN",         Follow_human(),          transitions={'failed': 'FOLLOW_HUMAN',    'succ': 'END' , 'tries': 'FIND_LEGS'})
         #################################################################################################################################################################
         smach.StateMachine.add("FIND_HUMAN",         Find_human(),          transitions={'failed': 'FIND_HUMAN',    'succ': 'GOTO_HUMAN'    , 'tries': 'FIND_LEGS'})
         smach.StateMachine.add("GOTO_HUMAN",         Goto_human(),          transitions={'failed': 'FIND_LEGS',    'succ': 'FIND_LEGS' , 'tries': 'FIND_HUMAN'})
