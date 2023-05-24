@@ -1,0 +1,33 @@
+People:
+  Guest_0:
+    description: Oscar has arrived... he is a Man... I believe he.is  around  29 years
+      old... I would say he is a bit  neutral.And I might guess he is of latino hispanic
+      descent.
+    drink: Coke
+    location: None
+    name: Oscar
+Places:
+  Place_0:
+    location:
+      theta: -0.0
+      x: -0.0
+      y: -0.0
+    occupied: occupied
+  Place_1:
+    location:
+      theta: 0.05
+      x: 10.05
+      y: -2.15
+    occupied: None
+  Place_2:
+    location:
+      theta: 0.15
+      x: 10.14
+      y: -3.08
+    occupied: None
+  Place_3:
+    location:
+      theta: 4.8
+      x: 9.52
+      y: -3.18
+    occupied: None
