@@ -76,20 +76,15 @@ def goal_police(goal):
 ##################################################
 
 
-class pumas_navServer():
+class PumasNavServer():
     def __init__(self):
         self.pumas_nav_server = actionlib.SimpleActionServer(
             "navigate", NavigateAction,
             execute_cb=self.execute_cb,
             auto_start=False)
         self.pumas_nav_server.start()
-        #self.
 
     def execute_cb(self, goal):
-        #########
-        # goal police
-        #goal_corrected = goal_police(goal)
-        #########
         success = False
         arm.set_named_target('go')
         # Matching known location if given
@@ -99,10 +94,10 @@ class pumas_navServer():
             succ, loc = match_location(file_name, known_loc)
             if succ:
                 XYT = loc[:3]
-                # it could change
                 x, y, yaw = XYT[0]['x'], XYT[1]['y'], XYT[2]['theta']
                 goal.x, goal.y, goal.yaw = x, y, yaw
 
+        #publish head and arm movements instead of making them here
         head.set_joint_values(head_pose=[0.0, -0.5])
         # Fill result message (could be modified)
         result = NavigateActionResult()
@@ -176,5 +171,5 @@ if __name__ == "__main__":
     pub_stop = rospy.Publisher('/navigation/stop', Empty, queue_size=10)
     print('pumas nav action server available')
     # NS = nav_status()
-    s = pumas_navServer()
+    s = PumasNavServer()
     rospy.spin()
