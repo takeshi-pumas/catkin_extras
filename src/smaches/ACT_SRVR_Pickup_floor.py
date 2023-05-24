@@ -229,6 +229,7 @@ class Move_arm_pregrasp(smach.State):
             arm_grasp_from_above = [0.2, -1.57, -0.13 , -1.57, 0.0, 0.0]
             wb_v=whole_body.get_current_joint_values()
             wb_v[3:]=arm_grasp_from_above
+            print(self.tries)
             succ = whole_body.go(wb_v)   
         
         if succ:
@@ -381,11 +382,12 @@ def init(node_name):
 # --------------------------------------------------
 # Entry point
 if __name__ == '__main__':
+    global whole_body
     print("Takeshi STATE MACHINE...")
     init("takeshi_smach")
     # State machine, final state "END"
     sm = smach.StateMachine(outcomes=['SUCCESS','PREEMPTED','FAILED'])
-
+    whole_body=moveit_commander.MoveGroupCommander('whole_body_weighted')
     # sm.userdata.clear = False
     sis = smach_ros.IntrospectionServer('SMACH_VIEW_SERVER', sm, '/SM_PICKUP_FLOOR')
     sis.start()
