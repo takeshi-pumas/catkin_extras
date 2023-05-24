@@ -187,7 +187,7 @@ class New_face(smach.State):
             talk('Please, tell me your name')
             rospy.sleep(0.1)
         else:
-<<<<<<< HEAD
+
             talk('Im sorry, could you tell me your name again?')
         res = speech_recog_server()
         # self.new_name= res.data
@@ -212,36 +212,7 @@ class New_face(smach.State):
         takeshi_line = analyze_face_from_image(img_face, name)
         add_description(name, takeshi_line)
         talk("done")
-=======
-            talk('Im sorry, can you tell me your name again?')
-        res = speech_recog_server()
-        # self.new_name= res.data
-        name = res.data
-        talk(f'Is {name} your name?')
-        res2 = speech_recog_server()
-        answer = res2.data
-        if answer == 'yes':
-            talk(f'Niceto meet you {name}, what do you want to drink?')
-            name_face=name
-            res3 = speech_recog_server()
-            drink = res3.data
-            add_guest(name, drink)
-            talk('Now, I will learn your face, please stare at me')
-            rospy.sleep(1.0)
-        else:
-            return 'tries'
-        # new face trainer
-        img = rgbd.get_image()
-        print (name)
-        res = train_face(img, name)
-        print(res)
-        if res == False:
-            talk('Something went wrong, retrying')
-            return 'failed'
-        res = train_face(img_face, name)
-        print(res)
-        talk(name+' ... Wellcome')
->>>>>>> nav_beta
+
         return 'succ'
 
 
@@ -363,13 +334,9 @@ class Find_sitting_place(smach.State):
             head.turn_base_gaze(tf=place)
             brazo.set_named_target('neutral')
             talk(f'{guest}, Here is a place to sit')
-<<<<<<< HEAD
+
             print(place)
-=======
-            #brazo.set_named_target('neutral')
-            arm.set_named_target('neutral')
-            arm.go()
->>>>>>> nav_beta
+
             assign_occupancy(who=guest, where=place)
             return 'succ'
 
