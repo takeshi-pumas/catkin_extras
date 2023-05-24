@@ -127,7 +127,6 @@ class Find_object(smach.State):  # ADD KNONW LOCATION DOOR
         if self.tries==2:head.set_joint_values([0.3, -0.77])
         if self.tries==3:head.set_joint_values([-0.3, -0.77])
         res=segmentation_server.call()
-        print (res)
         if len(res.poses.data)==0: return 'failed'
         else:
 
