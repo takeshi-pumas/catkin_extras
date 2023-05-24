@@ -40,7 +40,7 @@ from utils.nav_utils import *
 from utils.know_utils import *
 
 global listener, broadcaster, tfBuffer, tf_static_broadcaster, scene, rgbd, head,train_new_face, wrist, human_detect_server, line_detector, clothes_color
-global clear_octo_client, goal,navclient,segmentation_server  , tf_man , omni_base, brazo, speech_recog_server, bridge, map_msg, pix_per_m, analyze_face
+global clear_octo_client, goal,navclient,segmentation_server  , tf_man , omni_base, brazo, speech_recog_server, bridge, map_msg, pix_per_m, analyze_face , arm
 
 rospy.init_node('smach')
 # head = moveit_commander.MoveGroupCommander('head')
@@ -48,7 +48,7 @@ rospy.init_node('smach')
 #whole_body=moveit_commander.MoveGroupCommander('whole_body')
 
 #broadcaster = tf.TransformBroadcaster()
-
+arm =  moveit_commander.MoveGroupCommander('arm')
 tfBuffer = tf2_ros.Buffer()
 
 listener = tf2_ros.TransformListener(tfBuffer)

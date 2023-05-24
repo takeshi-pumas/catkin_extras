@@ -2,10 +2,10 @@
 <launch>
   <arg name="robot_name" default="$(optenv ROBOT_NAME hsrb)" />
 
-<!-- <include file="$(find hsrb_moveit_config)/launch/hsrb_demo_with_controller.launch"> -->
-  <!-- <arg name="use_gui" value="false"/> -->
+<include file="$(find hsrb_moveit_config)/launch/hsrb_demo_with_controller.launch"> 
+  <arg name="use_gui" value="true"/> 
   <!--arg name="load_robot_description" value="false"/-->
-<!-- </include> -->
+ </include> 
 
 
   <include file="$(find hsrb_gazebo_launch)/launch/include/hsrb_gazebo_common.xml" pass_all_args="true" >
@@ -25,7 +25,7 @@
   <node pkg="hmm_navigation"  name="PotFIELDSreal" type="potfields_takeshi.py"/>  
   <!--node pkg="hmm_navigation"  name="PotFIELDSreal" type="potfields_takeshi_real.py"/-->  
   <node pkg="hmm_navigation"  name="HMM actionn server" type="hmm_nav_actionserver.py"/>  
-  
+  <node pkg="segmentation"  name="segmentator_node" type="segment_floor.py"/>  
   
   <!--node pkg="known_locations_tf_server"  name="Known_locations_tf_server" type="setbool_service_locs_tf.py"/-->  
   <!--node pkg="object_classification"  name="Object_classification" type="segment_pca_kmeans_2_tf.py"/-->  

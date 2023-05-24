@@ -124,12 +124,12 @@ class Find_object(smach.State):  # ADD KNONW LOCATION DOOR
         #if self.tries == 1: talk('Looking for object')
         brazo.set_named_target('go')
         if self.tries==1:head.set_joint_values([0.0, -0.77])
-        if self.tries==2:head.set_joint_values([0.3, -0.77])
-        if self.tries==3:head.set_joint_values([-0.3, -0.77])
+        
+        rospy.sleep(0.8)
         res=segmentation_server.call()
         if len(res.poses.data)==0: return 'failed'
         else:
-
+            print('object found')
             poses=np.asarray(res.poses.data)
             poses=poses.reshape((int(len(poses)/3) ,3     )      )  
 
@@ -167,7 +167,7 @@ class Get_close_to_object(smach.State):  # ADD KNONW LOCATION DOOR
         if self.tries == 1: talk('Getting Close')
         print('getting close to Target')
         head.to_tf('Target')
-        res = omni_base.move_d_to(1.0,'Target')
+        res = omni_base.move_d_to(0.66,'Target')
         head.set_named_target('neutral')
 
         print(res)
@@ -200,37 +200,10 @@ class Move_arm_pregrasp(smach.State):
 
 
         clear_octo_client()
-        if self.tries ==1:
-            wb_gp=whole_body.get_current_pose()            
-            wb_gp.header.frame_id="Target"
-            wb_gp.pose.position.x=0.02669
-            wb_gp.pose.position.y=0.045
-            wb_gp.pose.position.z= 0.233
-            wb_gp.pose.orientation.w=-0.990
-            wb_gp.pose.orientation.x= 0.0246
-            wb_gp.pose.orientation.y= -0.0085
-            wb_gp.pose.orientation.z= 0.1345
-            whole_body.set_pose_target(wb_gp)
-            plan=whole_body.plan()
-            if plan[0]:return 'plan'
-            return 'failed'
-
-
-            
-
-
-
-            
-
-        
-
-        else:
-            #############################10 * 2 *np.pi / 360 ####pi /2
-            arm_grasp_from_above = [0.2, -1.57, -0.13 , -1.57, 0.0, 0.0]
-            wb_v=whole_body.get_current_joint_values()
-            wb_v[3:]=arm_grasp_from_above
-            succ = whole_body.go(wb_v)   
-        
+    
+        arm_grasp_from_above = [0.2, -1.57, -0.13 , -1.57, 0.0, 0.0]
+        succ = arm.go(arm_grasp_from_above)   
+    
         if succ:
             return 'succ'
         else:
@@ -245,28 +218,41 @@ class Move_arm_grasp(smach.State):
 
     def execute(self, userdata):
 
-        rospy.loginfo('STATE : FK to pregrasp from above floor')
+        rospy.loginfo('STATE : Proportional... (POTFIELDS) to pregrasp from above floor')
         
 
         self.tries += 1
-        print(f'Try {self.tries} of 4 attempts')
-        if self.tries == 4:
-            self.tries=0
-            return 'tries'  
-        return 'succ'
-        #t=tfBuffer.lookup_transform('hand_palm_link', 'Target',rospy.Time())
-       
-        #gv=gripper.get_current_joint_values()
-        #gv[2]=0.8
-        #succ=gripper.go(gv)
-
-
-        
-        
-        if succ:
+        if self.tries == 1:
+            head.set_named_target('neutral')
+            head.turn_base_gaze('target')
+            head.set_named_target('down')
+        #pre grasp pose
+        brazo.set_named_target('grasp_floor')
+        gripper.open()
+        rospy.sleep(0.8)
+        #get close to object
+        brazo.move_hand_to_target(target_frame='target', THRESHOLD=0.01 )
+        #move down hand 
+        acp = brazo.get_joint_values()
+        acp[0]-= 0.04
+        brazo.set_joint_values(acp)
+        rospy.sleep(0.5)
+        #grasp
+        gripper.close()
+        #move up to check if grasped
+        #acp = brazo.get_joint_values()
+        acp[0] += 0.09
+        brazo.set_joint_values(acp)
+        if brazo.check_grasp(weight = 1.0):
+            brazo.set_named_target('neutral')
+            talk('I took the object')
+            rospy.sleep(0.8)
             return 'succ'
         else:
+            talk('I could not take the object, i will try again')
             return 'failed'
+
+        
 #########################################################################################################
         
 #########################################################################################################
@@ -381,11 +367,12 @@ def init(node_name):
 # --------------------------------------------------
 # Entry point
 if __name__ == '__main__':
+    global whole_body
     print("Takeshi STATE MACHINE...")
     init("takeshi_smach")
     # State machine, final state "END"
     sm = smach.StateMachine(outcomes=['SUCCESS','PREEMPTED','FAILED'])
-
+    whole_body=moveit_commander.MoveGroupCommander('whole_body')
     # sm.userdata.clear = False
     sis = smach_ros.IntrospectionServer('SMACH_VIEW_SERVER', sm, '/SM_PICKUP_FLOOR')
     sis.start()
@@ -399,8 +386,8 @@ if __name__ == '__main__':
         smach.StateMachine.add("GET_CLOSE_TO_OBJECT",  Get_close_to_object(),   transitions={'failed': 'GET_CLOSE_TO_OBJECT',       'succ': 'MOVE_ARM_PREGRASP',       'tries': 'INITIAL'})
         
         smach.StateMachine.add("MOVE_ARM_PREGRASP",  Move_arm_pregrasp(),   transitions={      'failed': 'MOVE_ARM_PREGRASP', 'succ': 'MOVE_ARM_GRASP',      'tries': 'INITIAL','plan':'EXECUTE_PLAN'})
+        smach.StateMachine.add("MOVE_ARM_GRASP",  Move_arm_grasp(),   transitions={      'failed': 'FAILED', 'succ': 'SUCCESS',      'tries': 'INITIAL'})
 
-        smach.StateMachine.add("MOVE_ARM_GRASP",  Move_arm_grasp(),   transitions={      'failed': 'MOVE_ARM_GRASP', 'succ': 'PLAN_ARM',      'tries': 'INITIAL'})
         smach.StateMachine.add("PLAN_ARM",           Plan_arm(),      transitions={      'failed': 'PLAN_ARM', 'succ': 'EXECUTE_PLAN',      'tries': 'FIND_OBJECT'})
         smach.StateMachine.add("EXECUTE_PLAN",      Execute_plan(),   transitions={      'failed': 'EXECUTE_PLAN', 'succ': 'SUCCESS',      'tries': 'FAILED'})
 
