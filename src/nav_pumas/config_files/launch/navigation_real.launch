@@ -40,9 +40,6 @@
  <group ns="hardware">
  	<node name="head" pkg="head" type="head_node" output="screen"/>
  	<node name="arm" pkg="arm" type="arm_node" output="screen"/>
- 	<!--node name="kill_node" pkg="rosnode" type="rosnode" args="/hsrb/status_led_node" output="screen" /-->
- 	<node name="led_indicator" pkg="leds" type="leds_node" output="screen"/>
- 	<!--node name="xtion" pkg="xtion" type="xtion_node" output="screen"/-->
  	<!--node name="harware_mng" pkg="nav_pumas" type="hardware_mng" output="screen"/-->
  </group>
  
