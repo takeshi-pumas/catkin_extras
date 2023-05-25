@@ -322,4 +322,4 @@ def get_keywords_speech(timeout=5):
             
     except ROSException:
         rospy.loginfo('timeout')
-        return False
+        return 'timeout'
