@@ -39,6 +39,7 @@
 
  <group ns="hardware">
  	<node name="head" pkg="head" type="head_node" output="screen"/>
+  <node name="led" pkg="head" type="led_node" output="screen"/>
  	<node name="arm" pkg="arm" type="arm_node" output="screen"/>
  	<!--node name="harware_mng" pkg="nav_pumas" type="hardware_mng" output="screen"/-->
  </group>

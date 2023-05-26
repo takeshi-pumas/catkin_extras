@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from smach_utils2 import *
+from smach_utils_receptionist import *
 
 ##### Define state INITIAL #####
 
@@ -108,7 +108,7 @@ class Goto_door(smach.State):  # ADD KNONW LOCATION DOOR
         res = omni_base.move_base(known_location='door')
         print(res)
 
-        if res == 3:
+        if res:
             return 'succ'
         else:
             talk('Navigation Failed, retrying')
@@ -174,14 +174,12 @@ class Scan_face(smach.State):
                 add_guest(name, drink)
                 talk('nice')
                 talk("analyzing face")
-                takeshi_line = analyze_face_from_image(img_face, name)
+                # takeshi_line = analyze_face_from_image(img_face, name)
                 add_description(name, takeshi_line)
                 talk("done")
                 return 'succ'
         else:
             return 'failed'
-
-        # Is this really needed???
 
 # --------------------------------------------------
 
