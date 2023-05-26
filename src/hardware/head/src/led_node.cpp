@@ -1,5 +1,6 @@
 #include <ros/ros.h>
-#include <std_msgs/Float32MultiArray.h>
+#include <std_msgs/String.h>
+// #include <std_msgs/Float32MultiArray.h>
 #include <tmc_msgs/SetColor.h>
 #include <iostream>
 #include "actionlib_msgs/GoalStatus.h"
@@ -7,15 +8,31 @@
 #define RATE 30
 
 ros::ServiceClient client;
+bool talk_flag = true;
 
 float mapToFloat(short int value)
 {
   return static_cast<float>(value) / 255.0;
 }
 
+void service_caller(float r, float g, float b)
+{
+  // Create a request message for the service
+  tmc_msgs::SetColor srv;
+  srv.request.color.r = r;
+  srv.request.color.g = g;
+  srv.request.color.b = b;
+
+  // Call the service
+  if (client.call(srv))
+    std::cout << "Led color changed" << std::endl;
+  else
+    std::cout << "Failed changing led color" << std::endl;
+}
+
 void nav_msg_Callback(const actionlib_msgs::GoalStatus::ConstPtr& msg)
 {
-  tmc_msgs::SetColor srv;
+  
   float r;
   float g;
   float b;
@@ -41,27 +58,27 @@ void nav_msg_Callback(const actionlib_msgs::GoalStatus::ConstPtr& msg)
       g = r;
       b = r;
       break;
-  } 
-  // Create a request message for the service
-  srv.request.color.r = r;
-  srv.request.color.g = g;
-  srv.request.color.b = b;
-
-  // Call the service
-  if (client.call(srv))
-  {
-    // Handle the response
-    // You can access the response using 'srv.response' and its fields
-
-    // Example:
-    std::cout << "Success" << std::endl;
-    // ROS_INFO("Success!!");
   }
-  else
-  {
-    // Handle the case when the service call failed
-    std::cout << "Failed" << std::endl;
+  service_caller(r,g,b);
+
+}
+
+void talk_now_Callback(const std_msgs::String::ConstPtr& msg)
+{
+  if(talk_flag){
+    float r = mapToFloat(102);
+    float g = mapToFloat(204);
+    float b = mapToFloat(255);
+    service_caller(r,g,b);
   }
+  else{
+    float r = 1.0;
+    float g = 0.0;
+    float b = 0.0;
+    service_caller(r,g,b);
+  }
+  talk_flag = !talk_flag;
+
 }
 
 int main(int argc, char** argv)
@@ -72,7 +89,8 @@ int main(int argc, char** argv)
 
   client = n.serviceClient<tmc_msgs::SetColor>("/hsrb/status_led_node/set_color");
 
-  ros::Subscriber sub = n.subscribe("/navigation/status", 10, nav_msg_Callback);
+  ros::Subscriber sub_nav_status  = n.subscribe("/navigation/status", 10, nav_msg_Callback);
+  ros::Subscriber sub_talk_now    = n.subscribe("/talk_now", 10, talk_now_Callback);
 
   ros::Rate loop(RATE);
   while(ros::ok())

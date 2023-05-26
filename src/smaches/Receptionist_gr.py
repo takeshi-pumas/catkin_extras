@@ -175,7 +175,7 @@ class Scan_face(smach.State):
                 talk('nice')
                 talk("analyzing face")
                 # takeshi_line = analyze_face_from_image(img_face, name)
-                add_description(name, takeshi_line)
+                # add_description(name, takeshi_line)
                 talk("done")
                 return 'succ'
         else:
@@ -262,7 +262,7 @@ class Lead_to_living_room(smach.State):
         talk(f'{guest_name}... I will lead you to the living room, please follow me')
         # talk('Navigating to ,living room')
         res = omni_base.move_base(known_location='living_room')
-        if res == 3:
+        if res:
             return 'succ'
         else:
             talk('Navigation Failed, retrying')

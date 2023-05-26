@@ -157,6 +157,7 @@ class NAVIGATION():
         self.time_up = False
 
     def _nav_status_cb(self, msg):
+        print("Navigation status: ", msg.status)
         self.arrived = msg.status == 3
 
     def _move_base_vel(self):
@@ -214,7 +215,7 @@ class NAVIGATION():
         self.timeout = True
 
     def move_base(self, goal_x = 0.0, goal_y = 0.0, goal_theta = 0.0, known_location = 'None', timeout=30):
-
+        self.arrived = False
         if known_location != 'None':
             x,y,theta = self.get_known_location(known_location)
         else:

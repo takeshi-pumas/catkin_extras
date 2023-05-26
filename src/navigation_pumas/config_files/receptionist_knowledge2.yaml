@@ -6,11 +6,6 @@ People:
     drink: Coke
     location: None
     name: Oscar
-  Guest_1:
-    description: None
-    drink: juice
-    location: Waiting
-    name: Michael
 Places:
   Place_0:
     location:

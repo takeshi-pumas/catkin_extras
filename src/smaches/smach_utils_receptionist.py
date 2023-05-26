@@ -283,10 +283,14 @@ def detect_human_to_tf():
 
 def get_keywords_speech(timeout=5):
     try:
+        pub = rospy.Publisher('/talk_now', String, queue_size=10)
+        pub.publish(String())
         msg = rospy.wait_for_message('/speech_recognition/final_result', String, timeout)
         result = msg.data
+        pub.publish(String())
         return result
             
     except ROSException:
         rospy.loginfo('timeout')
+        pub.publish(String())
         return 'timeout'
