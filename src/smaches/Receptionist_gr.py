@@ -161,9 +161,16 @@ class Scan_face(smach.State):
             else:
                 talk(f'I found you, I Think you are, {name}.')
                 talk('what do you want to drink?')
-                res = speech_recog_server()
-                drink = res.data
-                name_face=name
+                rospy.sleep(0.9)
+                speech=get_keywords(6)
+                if len(speech.split(' '))>1: drink=(speech.split(' ')[-1])  # in case things like I would like a
+                else: drink=speech
+
+                #res = speech_recog_server()  ## FULL DICT VOSK I STILL AVAILABLE
+                #drink = res.data             ## Note that set gramnmmar takes some time (may cause unex. crashes)  
+                #name_face=name
+                
+
                 add_guest(name, drink)
                 talk('nice')
                 talk("analyzing face")
