@@ -1,7 +1,14 @@
 #!/usr/bin/env python3
 
 from smach_utils2 import *
-
+import torch
+import clip
+from PIL import Image
+################################################(TO UTILS?)
+global model , preprocess
+device = "cuda" if torch.cuda.is_available() else "cpu"
+model, preprocess = clip.load("ViT-B/32", device=device)
+    
 ##### Define state INITIAL #####
 
 # --------------------------------------------------
@@ -93,17 +100,10 @@ class Find_human(smach.State):
         rospy.loginfo('State : Find_human')
         talk('Scanning the room for humans')
         self.tries += 1
-<<<<<<< HEAD
         if self.tries >= 4:
             self.tries = 0
             return'tries'
-=======
-        #if self.tries >= 4:
-        if self.tries==2:
-            self.tries = 0
-            return'tries'
-        
->>>>>>> nav_beta
+
         if self.tries==1:head.set_joint_values([ 0.0, 0.3])
         if self.tries==2:head.set_joint_values([ 0.3, 0.1])
         if self.tries==3:head.set_joint_values([-0.3, 0.1])
@@ -138,20 +138,14 @@ class Goto_next_room(smach.State):  # ADD KNONW LOCATION DOOR
         if self.tries == 3:
             return 'tries'
         if self.tries == 1: talk('Navigating to, room'+str(self.next_room))
-<<<<<<< HEAD
-=======
         print ('navigating to room'+str(self.next_room))
->>>>>>> nav_beta
         res = omni_base.move_base(known_location='room'+str(self.next_room))
         print(res)
 
         if res == 3:
-<<<<<<< HEAD
+
             (self.tries + 1)%2   #there are 2 rooms <__________________param
-=======
-            self.next_room+=1
-            if self.next_room==3:self.next_room=1
->>>>>>> nav_beta
+
             return 'succ'
 
         else:
@@ -175,18 +169,15 @@ class Goto_human(smach.State):
         
         print('getting close to human')
         head.to_tf('human')
-<<<<<<< HEAD
-        res = omni_base.move_d_to(0.7,'human')
-=======
-        res = omni_base.move_d_to(1.6,'human')
->>>>>>> nav_beta
+        res = omni_base.move_d_to(1.7,'human')
+
         head.to_tf('human')
-        print ( "is he drinking?")
 
-        
-
+        print (res)
+        return 'succ'
 
         if res == 3:
+            print ( "is he drinking?")
             return 'succ'
         else:
             talk('Navigation Failed, retrying')
@@ -217,15 +208,31 @@ class Analyze_human(smach.State):
         human_pos,_=tf_man.getTF('human')
         head.absolute(human_pos[0],human_pos[1],0.1)
 
-        res=segmentation_server.call()
-        ##### SHOES NO SHOES DETECTOR
 
-        human_pos,_=tf_man.getTF('human')
-        head.absolute(human_pos[0]+0.1  ,human_pos[1]+0.1,0.1)
-        ################### Rubbish on floor nearby?
+        ##### SHOES NO SHOES DETECTOR
+        img=rgbd.get_image()
+        print ('got image for feet analysis')
+        keys=["foot", "feet", "shoes",'socks','sandals']
+        image = preprocess(Image.fromarray(img)).unsqueeze(0).to(device) #img array from grbd get image
+        text = clip.tokenize(keys).to(device)
+
+        with torch.no_grad():
+            image_features = model.encode_image(image)
+            text_features = model.encode_text(text)
+            
+            logits_per_image, logits_per_text = model(image, text)
+            probs = logits_per_image.softmax(dim=-1).cpu().numpy()
+
+        print("Label probs:", probs,keys[np.argmax(probs)] )  # prints: [[0.9927937  0.00421068 0.00299572]]
+        if keys[np.argmax(probs)] in ['foot','feet','socks']:print ('Not wearing shoes')
+        else: 
+            talk('Rule number 1... no shoes please...')
+            ##
+            return 'succ'
+
 
     
-        return 'succ'
+        
     
 ###########################################################################################################
 
