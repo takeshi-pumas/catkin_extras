@@ -27,7 +27,7 @@ class Initial(smach.State):
         places_2_tf()
         drinks=['coke','juice','beer', 'water', 'soda', 'wine']                                                             ### INIT GRAMMAR FOR VOSK
         names=['rebeca','ana','jack', 'michael', ' my name is' , 'i am','george','mary','ruben','oscar','yolo','mitzi']       ###         SPEECH REC
-        confirmation=['yes','no']                                                                                           ###        Use with get_keywords()
+        confirmation=['yes','no']                                                                                           ###        Use with get_keywords_speech()
         gram=drinks+names+confirmation                                                                                      ####
 
         set_grammar(gram)  ##PRESET DRINKS
@@ -162,7 +162,7 @@ class Scan_face(smach.State):
                 talk(f'I found you, I Think you are, {name}.')
                 talk('what do you want to drink?')
                 rospy.sleep(0.9)
-                speech=get_keywords(6)
+                speech=get_keywords_speech(6)
                 if len(speech.split(' '))>1: drink=(speech.split(' ')[-1])  # in case things like I would like a
                 else: drink=speech
 
@@ -214,14 +214,14 @@ class New_face(smach.State):
 
         talk('Please, tell me your name')
         rospy.sleep(0.5)
-        speech=get_keywords(6)
+        speech=get_keywords_speech(6)
         if len(speech.split(' '))>1: name=(speech.split(' ')[-1])  # in case thinks like I am , my name is . etc
         else: name=speech
         
 
         print (name)
         talk(f'Is {name} your name?')
-        res2 = get_keywords(5)
+        res2 = get_keywords_speech(5)
         print (res2)
         res2 = get_keywords_speech(10)
         
