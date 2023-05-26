@@ -16,7 +16,7 @@ from face_recog.srv import *
 import cv2  
 import rospy 
 import numpy as np
-import actionlib
+import actionlib0
 from hmm_navigation.msg import NavigateActionGoal, NavigateAction
 from cv_bridge import CvBridge, CvBridgeError
 import pandas as pd
@@ -62,7 +62,7 @@ set_grammar = rospy.ServiceProxy('set_grammar_vosk', SetGrammarVosk)            
 
 recognize_face = rospy.ServiceProxy('recognize_face', RecognizeFace)                    #FACE RECOG
 train_new_face = rospy.ServiceProxy('new_face', RecognizeFace)                          #FACE RECOG
-# analyze_face = rospy.ServiceProxy('analyze_face', RecognizeFace)    ###DEEP FACE ONLY
+analyze_face = rospy.ServiceProxy('analyze_face', RecognizeFace)    ###DEEP FACE ONLY
 
 
 #map_msg= rospy.wait_for_message('/augmented_map', OccupancyGrid)####WAIT for nav pumas map
@@ -284,10 +284,12 @@ def detect_human_to_tf():
 def get_keywords_speech(timeout=5):
     try:
         pub = rospy.Publisher('/talk_now', String, queue_size=10)
+        rospy.sleep(0.8)
         pub.publish(String())
         msg = rospy.wait_for_message('/speech_recognition/final_result', String, timeout)
         result = msg.data
         pub.publish(String())
+        rospy.sleep(0.8)
         return result
             
     except ROSException:

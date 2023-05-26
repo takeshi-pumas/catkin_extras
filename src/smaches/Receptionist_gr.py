@@ -174,8 +174,8 @@ class Scan_face(smach.State):
                 add_guest(name, drink)
                 talk('nice')
                 talk("analyzing face")
-                # takeshi_line = analyze_face_from_image(img_face, name)
-                # add_description(name, takeshi_line)
+                takeshi_line = analyze_face_from_image(img_face, name)
+                add_description(name, takeshi_line)
                 talk("done")
                 return 'succ'
         else:

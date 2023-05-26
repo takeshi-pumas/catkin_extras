@@ -6,6 +6,13 @@ People:
     drink: Coke
     location: None
     name: Oscar
+  Guest_1:
+    description: Michael has arrived... he is a Man... I believe he.is  around  30
+      years old... I would say he is a bit  neutral.And I might guess he is of black
+      descent.
+    drink: juice
+    location: Place_1
+    name: Michael
 Places:
   Place_0:
     location:
@@ -18,7 +25,7 @@ Places:
       theta: 0.05
       x: 10.05
       y: -2.15
-    occupied: None
+    occupied: Guest_1
   Place_2:
     location:
       theta: 0.15
