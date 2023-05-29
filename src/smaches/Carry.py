@@ -28,9 +28,10 @@ class Initial(smach.State):
         
         #Takeshi neutral
         head.set_named_target('neutral')
-        #print('head listo')
-        #brazo.set_named_target('go')
-        #print('arm listo')
+
+        confirmation=['yes','no','yeah','No'] ###        Use with get_keywords_speech()
+
+        set_grammar(confirmation)  ##PRESET DRINKS
         rospy.sleep(0.8)
         return 'succ'
 
@@ -58,62 +59,6 @@ class Wait_push_hand(smach.State):
         else:
             return 'failed'
 
-#---------------------------------------------------
-class Scan_face(smach.State):
-    def __init__(self):
-        smach.State.__init__(self,outcomes=['succ','failed','tries'])
-        self.tries=0
-    def execute(self,userdata):
-
-        rospy.loginfo('State : SCAN_FACE')
-        self.tries+=1        
-        
-        if self.tries==1:
-            hv = [0.0, 0.0]
-        elif self.tries==2:
-            hv = [-0.6, 0.0]
-        elif self.tries==3:
-            hv = [0.6, 0.0]
-        elif self.tries>=9:
-            self.tries=0
-            return'tries'
-        head.set_joint_values(hv)
-        #img=rgbd.get_image()  
-        #req=RecognizeFaceRequest()
-        #print ('Got  image with shape',img.shape)
-        #strings=Strings()
-        #string_msg= String()
-        #string_msg.data='Anyone'
-        #req.Ids.ids.append(string_msg)
-        #img_msg=bridge.cv2_to_imgmsg(img)
-        #req.in_.image_msgs.append(img_msg)
-        #res= recognize_face(req)
-        res=wait_for_face()##default 10 secs
-        
-        print('Cheking for faces')
-        if res== None:
-            return 'failed'
-        if res != None:
-            print('RESPONSE',res.Ids.ids[0]      )
-            if res.Ids.ids[0].data == 'NO_FACE':
-                print ('No face Found Keep scanning')
-                return 'failed'
-            else:
-                print ('A face was found.')
-                talk('I found you, I believe you are'+ res.Ids.ids[0].data)
-                
-                try:
-                    trans,quat = tf_man.getTF(target_frame='head_rgbd_sensor_link')
-                except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
-                    print ( 'No TF FOUND')
-                trans= np.zeros(3)
-
-                trans[2]+= res.Ds.data[0]##HALF DISTANCE
-
-                #tf_man.pub_static_tf(pos=trans, point_name='Face', ref='head_rgbd_sensor_link')
-                
-                rospy.sleep(0.9)
-                return 'succ'
 
 #---------------------------------------------------
 class Detect_action(smach.State):
@@ -144,36 +89,27 @@ class Detect_action(smach.State):
         reqAct.in_=3
         resAct=recognize_action(reqAct)
         talk('I detect the '+pointing_h[resAct.i_out]+' hand pointing, is it correct?')
-        """
-        # PARA CONFIRMAR SI ESTA APUNTANDO BIEN, TIENE ERRORES
-        rospy.sleep(0.1)
-        res_sp=speech_recog_server()
-        try:
-            res2 = rospy.wait_for_message( '/recognizedSpeech',RecognizedSpeech, timeout = 5.0)
-            print ("POCKET",res2.hypothesis[0],type(res2.hypothesis))
-            name = res_sp.data = res2.hypothesis[0]
-            print("NAME,",name)
-        except Exception:   
-            return 'failed'
-        print(name)
-        if name=="yes" or name=="Yes":
-            # Retorna la coordenada xyz de mapa de la extrapolacion calculada al apuntar
-            #print(resAct)
+        
+        rospy.sleep(2.0)
+        
+        res2 = get_keywords_speech(10)
+        print ("RESPUESTA",res2)
+        
+        print(res2.split(" "),res2.split(" ")[-1],type(res2),len(res2))
+
+        if res2.split(" ")[-1] in['yes',"yeah"]:
+            talk("Nice")
+            rospy.sleep(0.8)
+
             obj_xyz=resAct.d_xyz.data
             print(obj_xyz)
             tf_man.pub_static_tf(pos=obj_xyz,point_name='object_gaze',ref='map')
             
             return 'succ'
         else:
-            talk('Ok, I will try again')
+            talk("Ok, I will try again")
             rospy.sleep(0.8)
             return 'failed'
-        """
-        obj_xyz=resAct.d_xyz.data
-        print(obj_xyz)
-        tf_man.pub_static_tf(pos=obj_xyz,point_name='object_gaze',ref='map')
-        
-        return 'succ'
 
 #---------------------------------------------------
 class Segment_object(smach.State):
@@ -238,7 +174,7 @@ class Gaze_to_object(smach.State):
 
 
         rospy.loginfo('State : GAZE_OBJECT')
-        res = omni_base.move_d_to(0.7,'object_gaze')
+        res = omni_base.move_d_to(0.75,'object_gaze')
         rospy.sleep(0.8)
 
         print('Gazing at : point_Obj')   #X Y YAW AND TIMEOUT
@@ -260,6 +196,9 @@ class Grasp_from_floor(smach.State):
             head.set_named_target('neutral')
             head.turn_base_gaze('target')
             head.set_named_target('down')
+
+        talk('Object segmented, I will try to grab it')
+        rospy.sleep(0.8)
         #pre grasp pose
         brazo.set_named_target('grasp_floor')
         gripper.open()
@@ -367,12 +306,22 @@ class Follow_human(smach.State):
                 print ('legs stopped... Are we there yet?')#,   np.var(self.last_legs,axis=0).mean()   )     
 
                 talk ('are we there yet ?')
-                msg_bool=Bool()
-                msg_bool.data= False
-                enable_legs.publish(msg_bool)
-                enable_follow.publish(msg_bool)
-                rospy.sleep(2)
-                return 'arrived'
+                rospy.sleep(2.0)
+                
+                res2 = get_keywords_speech(10)
+                print ("RESPUESTA",res2)
+
+                if res2 in['yes','yeah']:
+                    msg_bool=Bool()
+                    msg_bool.data= False
+                    enable_legs.publish(msg_bool)
+                    enable_follow.publish(msg_bool)
+                    rospy.sleep(2)
+                    talk('Good, finishing task.')
+                    rospy.sleep(0.8)
+                    return 'arrived'
+                else:
+                    return 'succ'
             self.last_legs.pop(0)
         
 
@@ -417,7 +366,6 @@ if __name__== '__main__':
         #State machine for Restaurant
         smach.StateMachine.add("INITIAL",           Initial(),          transitions = {'failed':'INITIAL',          'succ':'WAIT_PUSH_HAND',    'tries':'END'}) 
         smach.StateMachine.add("WAIT_PUSH_HAND",    Wait_push_hand(),   transitions = {'failed':'WAIT_PUSH_HAND',   'succ':'DETECT_POINT',         'tries':'END'}) 
-        smach.StateMachine.add("SCAN_FACE",         Scan_face(),        transitions = {'failed':'SCAN_FACE',        'succ':'DETECT_POINT',      'tries':'INITIAL'}) 
         smach.StateMachine.add("DETECT_POINT",      Detect_action(),    transitions = {'failed':'DETECT_POINT',     'succ':'GAZE_OBJECT',       'tries':'INITIAL'}) 
         smach.StateMachine.add("GAZE_OBJECT",       Gaze_to_object(),   transitions = {'failed':'GAZE_OBJECT',      'succ':'SEGMENT_OBJECT',    'tries':'INITIAL'}) 
         smach.StateMachine.add("SEGMENT_OBJECT",    Segment_object(),   transitions = {'failed':'SEGMENT_OBJECT',   'succ':'GRASP_FROM_FLOOR',  'tries':'INITIAL'}) 

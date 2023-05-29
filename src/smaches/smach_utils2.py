@@ -312,7 +312,7 @@ def detect_human_to_tf():
         tf_man.pub_static_tf(np.asarray((humanpose.x,humanpose.x,humanpose.z)),point_name='human', ref='head_rgbd_sensor_link')
         succ=tf_man.change_ref_frame_tf('human')
         return succ
-
+#------------------------------------------------------
 
 def get_keywords_speech(timeout=5):
     try:

@@ -1,16 +1,11 @@
 <?xml version="1.0"?>
 <launch>
 
-<include file="$(find hsrb_moveit_config)/launch/hsrb_demo_with_controller.launch">
-  <arg name="use_gui" value="false"/>
-  <!--arg name="load_robot_description" value="false"/-->
-</include>
+
   
    
   
   <node pkg="human_detector"  name="human_detector" type="human_detector_server.py"/>  
-  <node pkg="face_recog"  name="face_recog" type="face_recog_server.py"/>
-  <!--node pkg="face_recog"  name="face_recog_deep" type="face_recog_server_deep.py"/-->  
   <node pkg="smach_viewer"  name="smach_viewer" type="smach_viewer.py"/>  
   <node pkg="segmentation"  name="segmentator_node" type="segment_floor.py"/>  
 
@@ -25,12 +20,8 @@
 
   <node pkg="act_recog"  name="action_recog_node" type="act_recognition_server.py"/>  
 
-<include file="$(find speech_recog)/launch/ros_vosk.launch">
-
-  
+<include file="$(find speech_recog)/launch/ros_vosk.launch">  
 </include>
-<include file="$(find pocketsphinx)/launch/pocketsphinx.launch">
-  </include>
 
 </launch>
 

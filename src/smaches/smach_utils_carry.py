@@ -29,6 +29,8 @@ import time
 from cv_bridge import CvBridge, CvBridgeError
 from nav_msgs.msg import OccupancyGrid
 from act_recog.srv import Recognize,RecognizeResponse,RecognizeRequest
+from ros_whisper_vosk.srv import SetGrammarVosk
+from rospy.exceptions import ROSException
 
 
 
@@ -38,7 +40,7 @@ from utils.nav_utils import *
 #from utils.know_utils import *
 
 global listener, broadcaster, tfBuffer, tf_static_broadcaster, scene, rgbd, head,train_new_face, wrist, human_detect_server, recognize_action, recognize_face
-global clear_octo_client, goal,navclient,segmentation_server, tf_man , omni_base, brazo, speech_recog_server, bridge, map_msg, pix_per_m, analyze_face
+global clear_octo_client, goal,navclient,segmentation_server, tf_man , omni_base, brazo, speech_recog_server, bridge, map_msg, pix_per_m, analyze_face,set_grammar
 
 rospy.init_node('smach')
 #head = moveit_commander.MoveGroupCommander('head')
@@ -57,11 +59,12 @@ human_detect_server = rospy.ServiceProxy('/detect_human' , Human_detector)  ####
 segmentation_server = rospy.ServiceProxy('/segment' , Segmentation)    ##### PLANE SEGMENTATION (PARALEL TO FLOOR)
 navclient=actionlib.SimpleActionClient('/navigate', NavigateAction)   ### PUMAS NAV ACTION LIB
 # scene = moveit_commander.PlanningSceneInterface()
-speech_recog_server = rospy.ServiceProxy('/speech_recognition/vosk_service' ,GetSpeech)##############TOYOTA
+#speech_recog_server = rospy.ServiceProxy('/speech_recognition/vosk_service' ,GetSpeech)##############TOYOTA
 recognize_face = rospy.ServiceProxy('recognize_face', RecognizeFace)                    #FACE RECOG
 train_new_face = rospy.ServiceProxy('new_face', RecognizeFace)                          #FACE RECOG
 analyze_face = rospy.ServiceProxy('analyze_face', RecognizeFace)    ###DEEP FACE ONLY
 recognize_action = rospy.ServiceProxy('recognize_act', Recognize) 
+set_grammar = rospy.ServiceProxy('set_grammar_vosk', SetGrammarVosk)                   ###### Get speech vosk keywords from grammar (function get_keywords)         
 
 #recognize_face = rospy.ServiceProxy('recognize_face', RecognizeFace)
 
@@ -370,3 +373,31 @@ def detect_pointing_arm(lastSK,cld_points):
         return manoD,codoD
 
 #---------------------------------------------------
+'''def get_keywords_speech(timeout=5):
+    try:
+        msg = rospy.wait_for_message('/speech_recognition/final_result', String, timeout)
+        result = msg.data
+        return result
+            
+    except ROSException:
+        rospy.loginfo('timeout')
+        return 'timeout' '''
+
+def get_keywords_speech(timeout=5):
+    pub = rospy.Publisher('/talk_now', String, queue_size=10)
+    rospy.sleep(1.0)
+    msg = String()
+    msg.data='start'
+    pub.publish(msg)
+    try:
+        
+        msg = rospy.wait_for_message('/speech_recognition/final_result', String, timeout)
+        result = msg.data
+        pub.publish(String())
+        rospy.sleep(1.0)
+        return result
+            
+    except ROSException:
+        rospy.loginfo('timeout')
+        pub.publish(String())
+        return 'timeout'
