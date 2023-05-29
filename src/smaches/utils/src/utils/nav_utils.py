@@ -207,7 +207,7 @@ class NAVIGATION():
         x_goal = target[0] - target_distance * np.cos(theta_goal)
         y_goal = target[1] - target_distance * np.sin(theta_goal)
         succ = self.move_base(
-            goal_x=x_goal, goal_y=y_goal, goal_yaw=theta_goal)
+            goal_x=x_goal, goal_y=y_goal, goal_theta=theta_goal)
         return True
 
 
