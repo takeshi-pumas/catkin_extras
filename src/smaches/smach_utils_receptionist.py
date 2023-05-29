@@ -16,7 +16,7 @@ from face_recog.srv import *
 import cv2  
 import rospy 
 import numpy as np
-import actionlib0
+import actionlib
 from hmm_navigation.msg import NavigateActionGoal, NavigateAction
 from cv_bridge import CvBridge, CvBridgeError
 import pandas as pd
@@ -282,14 +282,17 @@ def detect_human_to_tf():
 
 
 def get_keywords_speech(timeout=5):
+    pub = rospy.Publisher('/talk_now', String, queue_size=10)
+    rospy.sleep(1.0)
+    msg = String()
+    msg.data='start'
+    pub.publish(msg)
     try:
-        pub = rospy.Publisher('/talk_now', String, queue_size=10)
-        rospy.sleep(0.8)
-        pub.publish(String())
+        
         msg = rospy.wait_for_message('/speech_recognition/final_result', String, timeout)
         result = msg.data
         pub.publish(String())
-        rospy.sleep(0.8)
+        rospy.sleep(1.0)
         return result
             
     except ROSException:

@@ -168,9 +168,8 @@ class Scan_face(smach.State):
 
                 #res = speech_recog_server()  ## FULL DICT VOSK I STILL AVAILABLE
                 #drink = res.data             ## Note that set gramnmmar takes some time (may cause unex. crashes)  
-                #name_face=name
                 
-
+                name_face=name
                 add_guest(name, drink)
                 talk('nice')
                 talk("analyzing face")
@@ -192,15 +191,17 @@ class New_face(smach.State):
         self.tries = 0
 
     def execute(self, userdata):
-        
+        global name_face
         self.tries += 1
 
         rospy.loginfo('STATE : NEW_FACE')
         
              
-        if self.tries == 5:
+        if self.tries == 3:
             talk ('I am having trouble understanding your name, lets keep going')
             name = 'someone'
+            name_face=name
+            add_guest(name,'beer')
             train_face(img_face, name)
             talk("analyzing face , give me a second")
             takeshi_line = analyze_face_from_image(img_face, name)
@@ -211,21 +212,26 @@ class New_face(smach.State):
         
 
         talk('Please, tell me your name')
-        rospy.sleep(0.5)
-        speech=get_keywords_speech(6)
+        rospy.sleep(2.0)
+        speech=get_keywords_speech(10)
         if len(speech.split(' '))>1: name=(speech.split(' ')[-1])  # in case thinks like I am , my name is . etc
-        else: name=speech
+        else: name = speech
+        
+        name_face=name
         
 
         print (name)
         talk(f'Is {name} your name?')
-        res2 = get_keywords_speech(5)
-        print (res2)
+        rospy.sleep(3.0)
+        
         res2 = get_keywords_speech(10)
+        print (res2)
+        #res2 = get_keywords_speech(10)
         
         if res2 in['yes','jack','juice']:   ### YES AND MOST COMMON MISREADS
             talk (f'Nice to Meet You {name}')
             train_face(img_face, name)
+            add_guest(name, "beer")
             talk("analyzing face , give me a second")
             takeshi_line = analyze_face_from_image(img_face, name)
             add_description(name, takeshi_line)

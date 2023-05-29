@@ -65,7 +65,9 @@ void nav_msg_Callback(const actionlib_msgs::GoalStatus::ConstPtr& msg)
 
 void talk_now_Callback(const std_msgs::String::ConstPtr& msg)
 {
-  if(talk_flag){
+  std::string data;
+  data = msg -> data;
+  if(data == "start"){
     float r = mapToFloat(102);
     float g = mapToFloat(204);
     float b = mapToFloat(255);
