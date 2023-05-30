@@ -1,16 +1,15 @@
 People:
   Guest_0:
-    description: Oscar has arrived... he is a Man... I believe he.is  around  29 years
-      old... I would say he is a bit  neutral.And I might guess he is of latino hispanic
-      descent.
+    description: Oscar has arrived... he is a Man... I believe he.is  around  30 years
+      old... I would say he is a bit  neutral.And I might guess he is of asian descent.
     drink: Coke
     location: None
     name: Oscar
   Guest_1:
-    description: Michael has arrived... he is a Man... I believe he.is  around  30
-      years old... I would say he is a bit  neutral.And I might guess he is of black
-      descent.
-    drink: juice
+    description: Michael has arrived... he is a Man... I believe he.is  around  31
+      years old... I would say he is a bit  angry.And I might guess he is of middle
+      eastern descent.
+    drink: coke
     location: Place_1
     name: Michael
 Places:
@@ -25,7 +24,7 @@ Places:
       theta: 0.05
       x: 10.05
       y: -2.15
-    occupied: Guest_1
+    occupied: someone
   Place_2:
     location:
       theta: 0.15

@@ -4,8 +4,6 @@ import smach
 import smach_ros
 from geometry_msgs.msg import PoseStamped, Point , PointStamped , Quaternion , TransformStamped , Twist
 from std_srvs.srv import Trigger, TriggerResponse 
-import moveit_commander
-import moveit_msgs.msg
 import tf2_ros
 from tf2_sensor_msgs.tf2_sensor_msgs import do_transform_cloud
 from object_classification.srv import *
@@ -29,10 +27,11 @@ import time
 from cv_bridge import CvBridge, CvBridgeError
 from nav_msgs.msg import OccupancyGrid
 from hri_msgs.msg import RecognizedSpeech
-
+from rospy.exceptions import ROSException
 from vision_msgs.srv import *
 
 
+from ros_whisper_vosk.srv import SetGrammarVosk
 
 from utils.grasp_utils import *
 from utils.misc_utils import *
@@ -40,7 +39,7 @@ from utils.nav_utils import *
 from utils.know_utils import *
 
 global listener, broadcaster, tfBuffer, tf_static_broadcaster, scene, rgbd, head,train_new_face, wrist, human_detect_server, line_detector, clothes_color
-global clear_octo_client, goal,navclient,segmentation_server  , tf_man , omni_base, brazo, speech_recog_server, bridge, map_msg, pix_per_m, analyze_face
+global clear_octo_client, goal,navclient,segmentation_server  , tf_man , omni_base, brazo, speech_recog_server, bridge, map_msg, pix_per_m, analyze_face , arm , set_grammar
 
 rospy.init_node('smach')
 # head = moveit_commander.MoveGroupCommander('head')
@@ -48,22 +47,23 @@ rospy.init_node('smach')
 #whole_body=moveit_commander.MoveGroupCommander('whole_body')
 
 #broadcaster = tf.TransformBroadcaster()
-
 tfBuffer = tf2_ros.Buffer()
 
 listener = tf2_ros.TransformListener(tfBuffer)
 broadcaster = tf2_ros.TransformBroadcaster()
 tf_static_broadcaster = tf2_ros.StaticTransformBroadcaster()
-clear_octo_client = rospy.ServiceProxy('/clear_octomap', Empty)   ###OGRASPING OBSTACLE 
+# clear_octo_client = rospy.ServiceProxy('/clear_octomap', Empty)   ###OGRASPING OBSTACLE 
 human_detect_server = rospy.ServiceProxy('/detect_human' , Human_detector)  ####HUMAN FINDER OPPOSEBASED
-segmentation_server = rospy.ServiceProxy('/segment' , Segmentation)    ##### PLANE SEGMENTATION (PARALEL TO FLOOR)
-navclient=actionlib.SimpleActionClient('/navigate', NavigateAction)   ### PUMAS NAV ACTION LIB
+# segmentation_server = rospy.ServiceProxy('/segment' , Segmentation)    ##### PLANE SEGMENTATION (PARALEL TO FLOOR)
+# navclient=actionlib.SimpleActionClient('/navigate', NavigateAction)   ### PUMAS NAV ACTION LIB
 # scene = moveit_commander.PlanningSceneInterface()
-speech_recog_server = rospy.ServiceProxy('/speech_recognition/vosk_service' ,GetSpeech)##############TOYOTA
+speech_recog_server = rospy.ServiceProxy('/speech_recognition/vosk_service' ,GetSpeech)##############SPEECH VOSK RECOG FULL DICT
+set_grammar = rospy.ServiceProxy('set_grammar_vosk', SetGrammarVosk)                   ###### Get speech vosk keywords from grammar (function get_keywords)         
+
 recognize_face = rospy.ServiceProxy('recognize_face', RecognizeFace)                    #FACE RECOG
 train_new_face = rospy.ServiceProxy('new_face', RecognizeFace)                          #FACE RECOG
 analyze_face = rospy.ServiceProxy('analyze_face', RecognizeFace)    ###DEEP FACE ONLY
-clothes_color = rospy.ServiceProxy('/vision/obj_segmentation_and_pose/clothes_color', FindPerson)
+
 
 #map_msg= rospy.wait_for_message('/augmented_map', OccupancyGrid)####WAIT for nav pumas map
 #inflated_map= np.asarray(map_msg.data)
@@ -77,7 +77,7 @@ bridge = CvBridge()
 #segmentation_server = rospy.ServiceProxy('/segment_2_tf', Trigger) 
 tf_man = TF_MANAGER()
 gripper = GRIPPER()
-omni_base=OMNIBASE()
+omni_base=NAVIGATION()
 wrist= WRIST_SENSOR()
 head = GAZE()
 brazo = ARM()
@@ -204,30 +204,7 @@ def wait_for_face(timeout=10 , name=''):
 
 
 #------------------------------------------------------
-#def wait_for_face(timeout=10):
-#    
-#    rospy.sleep(0.3)
-#    
-#    start_time = rospy.get_time()
-#    strings=Strings()
-#    string_msg= String()
-#    string_msg.data='Anyone'
-#    while rospy.get_time() - start_time < timeout:
-#        img=rgbd.get_image()  
-#        req=RecognizeFaceRequest()
-#        print ('Got  image with shape',img.shape)
-#        req.Ids.ids.append(string_msg)
-#        img_msg=bridge.cv2_to_imgmsg(img)
-#        req.in_.image_msgs.append(img_msg)
-#
-#        res= recognize_face(req)
-#
-#        if res.Ids.ids[0].data == 'NO_FACE':
-#            print ('No face FOund Keep scanning')
-#            return None, None
-#        
-#        else:return res , img
-##------------------------------------------------------
+
 def wait_for_push_hand(time=10):
 
     start_time = rospy.get_time()
@@ -291,13 +268,6 @@ def bbox_3d_mean(points,boundRect):
     else:
         return np.ones(3)
 
-
-
-#------------------------------------------------------
-def gaze_to_face():
-
-    return False
-
 #------------------------------------------------------
 def detect_human_to_tf():
     humanpose=human_detect_server.call()
@@ -309,3 +279,23 @@ def detect_human_to_tf():
         tf_man.pub_static_tf(np.asarray((humanpose.x,humanpose.x,humanpose.z)),point_name='human', ref='head_rgbd_sensor_link')
         succ=tf_man.change_ref_frame_tf('human')
         return succ
+
+
+def get_keywords_speech(timeout=5):
+    pub = rospy.Publisher('/talk_now', String, queue_size=10)
+    rospy.sleep(1.0)
+    msg = String()
+    msg.data='start'
+    pub.publish(msg)
+    try:
+        
+        msg = rospy.wait_for_message('/speech_recognition/final_result', String, timeout)
+        result = msg.data
+        pub.publish(String())
+        rospy.sleep(1.0)
+        return result
+            
+    except ROSException:
+        rospy.loginfo('timeout')
+        pub.publish(String())
+        return 'timeout'

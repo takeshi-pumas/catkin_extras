@@ -74,9 +74,9 @@ void talk_now_Callback(const std_msgs::String::ConstPtr& msg)
     service_caller(r,g,b);
   }
   else{
-    float r = 1.0;
+    float r = 0.0;
     float g = 0.0;
-    float b = 0.0;
+    float b = 1.0;
     service_caller(r,g,b);
   }
   talk_flag = !talk_flag;

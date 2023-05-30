@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+import sys
+import rospkg
+import yaml
 import cv2 
 import tf as tf
 import tf2_ros as tf2
@@ -15,6 +18,7 @@ import trajectory_msgs.msg
 import control_msgs.msg
 from tmc_msgs.msg import TalkRequestActionGoal, TalkRequestAction 
 import actionlib
+from actionlib_msgs.msg import GoalStatus
 from hmm_navigation.msg import NavigateActionGoal, NavigateAction
 from sensor_msgs.msg import LaserScan
 

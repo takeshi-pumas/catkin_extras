@@ -6,6 +6,7 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
+        - /TF1
       Splitter Ratio: 0.5
     Tree Height: 719
   - Class: rviz/Selection
@@ -310,9 +311,15 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: false
-        ar_marker/1799:
+        CODO:
           Value: true
-        ar_marker/2231:
+        MANO:
+          Value: true
+        Object0:
+          Value: true
+        Object1:
+          Value: true
+        Object2:
           Value: true
         arm_flex_link:
           Value: false
@@ -352,6 +359,10 @@ Visualization Manager:
           Value: false
         base_roll_link:
           Value: false
+        codoD_t:
+          Value: true
+        codoI_t:
+          Value: true
         hand_camera_frame:
           Value: false
         hand_camera_gazebo_frame:
@@ -406,10 +417,18 @@ Visualization Manager:
           Value: false
         head_tilt_link:
           Value: false
+        manoD_t:
+          Value: true
+        manoI_t:
+          Value: true
         map:
-          Value: false
+          Value: true
+        object_gaze:
+          Value: true
         odom:
           Value: false
+        target:
+          Value: true
         torso_lift_link:
           Value: false
         wrist_flex_link:
@@ -428,6 +447,12 @@ Visualization Manager:
       Show Names: true
       Tree:
         map:
+          CODO:
+            {}
+          MANO:
+            {}
+          object_gaze:
+            {}
           odom:
             base_footprint:
               base_link:
@@ -487,10 +512,6 @@ Visualization Manager:
                           {}
                       head_l_stereo_camera_link:
                         head_l_stereo_camera_frame:
-                          ar_marker/1799:
-                            {}
-                          ar_marker/2231:
-                            {}
                           head_rgbd_sensor_rgb_frame:
                             {}
                         head_l_stereo_camera_gazebo_frame:
@@ -503,6 +524,8 @@ Visualization Manager:
                           {}
             base_footprint_wheel:
               {}
+          target:
+            {}
       Update Interval: 0
       Value: true
     - Alpha: 1
@@ -579,7 +602,7 @@ Visualization Manager:
       Color: 255; 255; 255
       Color Transformer: RGB8
       Decay Time: 0
-      Enabled: false
+      Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
       Min Color: 0; 0; 0
@@ -594,7 +617,7 @@ Visualization Manager:
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
-      Value: false
+      Value: true
     - Alpha: 1
       Class: rviz/PointStamped
       Color: 204; 41; 204
@@ -634,7 +657,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 12.936616897583008
+      Distance: 10.559186935424805
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -642,17 +665,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 10.355000495910645
-        Y: -5.955133438110352
-        Z: -2.3314216136932373
+        X: 10.16756534576416
+        Y: -6.389283180236816
+        Z: -5.239044666290283
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.6903972625732422
+      Pitch: 1.155396580696106
       Target Frame: <Fixed Frame>
-      Yaw: 1.9253937005996704
+      Yaw: 1.3453904390335083
     Saved: ~
 Window Geometry:
   Displays:

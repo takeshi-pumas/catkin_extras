@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
+import sys
 import rospkg
 import yaml
 from utils.grasp_utils import *
 from utils.nav_utils import *
 import math
+
 
 def read_yaml(known_locations_file='/receptionist_knowledge2.yaml'):
     rospack = rospkg.RosPack()
@@ -40,7 +42,39 @@ def update_occupancy(found='None', place='None'):
         write_yaml(knowledge)
         return True
     except Exception as e:
-    	print(f"Error: {e}. Line {sys.exc_info()[-1].tb_lineno}")
+        print(f"Error: {e}. Line {sys.exc_info()[-1].tb_lineno}")
+        knowledge['Places'][place]['occupied'] = 'someone'
+        write_yaml(knowledge)
+        return False
+
+
+# Chat GPT generated
+
+
+def update_occupancy_gpt(found='unknown', place='None'):
+    # Use: hsr found someone on a supposed empty place
+    knowledge = read_yaml()
+
+    try:
+        if found != 'unknown':
+            guest = [key for key, person_dict in knowledge['People'].items()
+                     if person_dict.get('name') == found]
+        else:
+            guest = ['unknown']
+
+        seat = [key for key, places_dict in knowledge['Places'].items()
+                if places_dict.get('occupied') == guest[0]]
+
+        if guest[0] != 'unknown':
+            knowledge['People'][guest[0]]['location'] = place
+
+        knowledge['Places'][seat[0]]['occupied'] = 'none'
+        knowledge['Places'][place]['occupied'] = guest[0]
+
+        write_yaml(knowledge)
+        return True
+    except Exception as e:
+        print(f"Error: {e}. Line {sys.exc_info()[-1].tb_lineno}")
         knowledge['Places'][place]['occupied'] = 'someone'
         write_yaml(knowledge)
         return False
@@ -74,7 +108,7 @@ def assign_occupancy(who='None', where='None'):
         if who != 'None' and where != 'None':
             guest = [key for key, person_dict in knowledge['People'].items()
                      if person_dict.get('name') == who]
-            if len(guest)>0:
+            if len(guest) > 0:
                 knowledge['People'][guest[0]]['location'] = where
                 knowledge['Places'][where]['occupied'] = guest[0]
                 write_yaml(knowledge)
@@ -83,6 +117,7 @@ def assign_occupancy(who='None', where='None'):
                 return False
     except:
         return False
+
 
 def add_guest(name, drink='No drink'):
     try:
@@ -125,6 +160,7 @@ def add_place():
     except:
         return False
 
+
 def clean_knowledge():
     knowledge = read_yaml()
     host = knowledge['People']['Guest_0']
@@ -134,20 +170,22 @@ def clean_knowledge():
         knowledge['Places'][f'Place_{i}']['occupied'] = 'None'
     write_yaml(knowledge)
 
+
 def find_host():
     knowledge = read_yaml()
     host_name = knowledge['People']['Guest_0']['name']
     host_place = knowledge['People']['Guest_0']['location']
-    #if host_place != 'None':
-        #loc = knowledge['Places'][host_place]['location'] 
-        #XY = [loc['x'],loc['y']]
-    #else:
+    # if host_place != 'None':
+    #loc = knowledge['Places'][host_place]['location']
+    #XY = [loc['x'],loc['y']]
+    # else:
     #    loc = host_place
     return host_name, host_place
 
+
 def get_location_room(pos):
     known_loc = read_yaml('/known_locations.yaml')
-    rooms = ['bedroom','corridor','dining_room','kitchen','living_room']
+    rooms = ['bedroom', 'corridor', 'dining_room', 'kitchen', 'living_room']
     min_dist = 100.0
     closest = None
     for room in rooms:
@@ -159,30 +197,34 @@ def get_location_room(pos):
             closest = room
     return closest
 
+
 def add_description(name, description):
     knowledge = read_yaml()
     guest = [key for key, person_dict in knowledge['People'].items()
-                 if person_dict.get('name') == name]
+             if person_dict.get('name') == name]
     knowledge['People'][guest[0]]['description'] = description
     write_yaml(knowledge)
+
 
 def get_guest_description(name):
     knowledge = read_yaml()
     guest = [key for key, person_dict in knowledge['People'].items()
-                 if person_dict.get('name') == name]
+             if person_dict.get('name') == name]
     return knowledge['People'][guest[0]]['description']
-    
+
+
 def get_guest_location(name):
     knowledge = read_yaml()
     guest = [key for key, person_dict in knowledge['People'].items()
-                 if person_dict.get('name') == name]
+             if person_dict.get('name') == name]
     return knowledge['People'][guest[0]]['location']
+
 
 def return_places():
     knowledge = read_yaml()
     locs = []
     num_places = len(knowledge['Places'].keys())
-    for i in range(1,num_places):
+    for i in range(1, num_places):
         xyt = []
         xyt.append(knowledge['Places'][f'Place_{i}']['location']['x'])
         xyt.append(knowledge['Places'][f'Place_{i}']['location']['y'])
@@ -190,14 +232,14 @@ def return_places():
         locs.append(xyt)
     return locs
 
+
 def places_2_tf():
     tf_man = TF_MANAGER()
     locs = return_places()
     print(locs)
-    for i,loc in enumerate(locs):
-        pos = [loc[0],loc[1],0.85]
-        rot = tf.transformations.quaternion_from_euler(0.0,0.0, loc[2])
+    for i, loc in enumerate(locs):
+        pos = [loc[0], loc[1], 0.85]
+        rot = tf.transformations.quaternion_from_euler(0.0, 0.0, loc[2])
         tf_man.pub_static_tf(pos=pos, rot=rot, point_name=f'Place_{i+1}')
-        tf_man.pub_static_tf(pos=[1.0,0,0], rot=rot, point_name=f'Place_face{i+1}', ref=f'Place_{i+1}')
+        tf_man.pub_static_tf(pos=[1.0, 0, 0], rot=rot, point_name=f'Place_face{i+1}', ref=f'Place_{i+1}')
         print(f'done {i}')
-

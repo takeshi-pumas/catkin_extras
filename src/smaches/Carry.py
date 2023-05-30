@@ -90,7 +90,7 @@ class Detect_action(smach.State):
         resAct=recognize_action(reqAct)
         talk('I detect the '+pointing_h[resAct.i_out]+' hand pointing, is it correct?')
         
-        rospy.sleep(2.0)
+        rospy.sleep(1.0)
         
         res2 = get_keywords_speech(10)
         print ("RESPUESTA",res2)
@@ -197,7 +197,7 @@ class Grasp_from_floor(smach.State):
             head.turn_base_gaze('target')
             head.set_named_target('down')
 
-        talk('Object segmented, I will try to grab it')
+        talk('Object detected, I will try to pick it up')
         rospy.sleep(0.8)
         #pre grasp pose
         brazo.set_named_target('grasp_floor')
@@ -216,7 +216,7 @@ class Grasp_from_floor(smach.State):
         #acp = brazo.get_joint_values()
         acp[0] += 0.09
         brazo.set_joint_values(acp)
-        if brazo.check_grasp(weight = 1.0):
+        if brazo.check_grasp(weight = 0.5):
             brazo.set_named_target('neutral')
             talk('I took the object')
             rospy.sleep(0.8)
@@ -306,7 +306,7 @@ class Follow_human(smach.State):
                 print ('legs stopped... Are we there yet?')#,   np.var(self.last_legs,axis=0).mean()   )     
 
                 talk ('are we there yet ?')
-                rospy.sleep(2.0)
+                rospy.sleep(1.0)
                 
                 res2 = get_keywords_speech(10)
                 print ("RESPUESTA",res2)

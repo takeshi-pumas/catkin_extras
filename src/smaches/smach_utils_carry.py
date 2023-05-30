@@ -386,7 +386,7 @@ def detect_pointing_arm(lastSK,cld_points):
 
 def get_keywords_speech(timeout=5):
     pub = rospy.Publisher('/talk_now', String, queue_size=10)
-    rospy.sleep(1.0)
+    rospy.sleep(0.8)
     msg = String()
     msg.data='start'
     pub.publish(msg)
