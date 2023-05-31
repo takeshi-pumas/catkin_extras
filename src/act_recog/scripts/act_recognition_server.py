@@ -7,6 +7,8 @@ import rospy
 
 from utils_inference import *
 from utils_extras import *
+from utils.misc_utils import RGBD
+
 
 def callback(req):
 
@@ -184,7 +186,7 @@ def callback(req):
     #----------------
 	# Para pointing sin HMM
 	elif req.in_==3:
-		max_inf_it=40
+		max_inf_it=30
 		print("Opcion {}, estimar brazo que esta apuntando".format(req.in_))
 		cnt=0
 		while True:
@@ -309,7 +311,7 @@ def callback(req):
 
 #global tf_man
 def recognition_server():
-	global tf_listener,rgb,rgbd, bridge,class_names,mA,mB,mPI,opWrapper,datum,cb,h,w
+	global tf_listener,rgb,rgbd,bridge,class_names,mA,mB,mPI,opWrapper,datum,cb,h,w
 	#---Parte para cargar lo necesario en inferencia con OpenPose y Markov---
 	class_names=["wave_R","wave_L","neutral","drink","pointing"]
 	mA,mB,mPI=loadModels(class_names)
@@ -326,6 +328,8 @@ def recognition_server():
 	rgbd= RGBD()
 	rgb= RGB()
 	#bridge = CvBridge()
+	#tf_man = TF_MANAGER()
+	#bridge = CvBridge()
 	#tf_listener = tf.TransformListener()
 	#broadcaster= tf.TransformBroadcaster()
 	#tf_static_broadcaster= tf2.StaticTransformBroadcaster()
@@ -338,4 +342,5 @@ def recognition_server():
 
 #========================================
 if __name__ == "__main__":
+	#rospy.init_node('recognize_action_server')	
     recognition_server()

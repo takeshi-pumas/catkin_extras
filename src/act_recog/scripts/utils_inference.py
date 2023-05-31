@@ -13,9 +13,9 @@ import sys
 from glob import glob
 from os import path
 from rospkg import RosPack
+from utils.misc_utils import TF_MANAGER
 
-#from utils.misc_utils import *
-from smach_utils2 import *
+#---
 try:
 	usr_url=path.expanduser( '~' )
 	# OJO a este path, cambiarlo desde donde esté la carpeta openpose
@@ -25,10 +25,14 @@ try:
 except ImportError as e:
 	print('Error: OpenPose library could not be found. Did you enable `BUILD_PYTHON` in CMake and have this Python script in the right folder?')
 	raise e
+#---
 
-global rospack
+
+global rospack,bridge,tf_man
+rospy.init_node('recognize_action_server')
 rospack = RosPack()
-#tf_man = TF_MANAGER()
+tf_man = TF_MANAGER()
+bridge = CvBridge()
 
 #========================================
 class RGB():
@@ -48,72 +52,7 @@ class RGB():
         return self._image_data
 
 
-#---------------------------------------------------
-
-class RGBD():
-    def __init__(self):
-        self._br = tf.TransformBroadcaster()
-        self._cloud_sub = rospy.Subscriber(
-            "/hsrb/head_rgbd_sensor/depth_registered/rectified_points",
-            PointCloud2, self._cloud_cb)
-        self._points_data = None
-        self._image_data = None
-        self._h_image = None
-        self._region = None
-        self._h_min = 0
-        self._h_max = 0
-        self._xyz = [0, 0, 0]
-        self._frame_name = None
-
-    def _cloud_cb(self, msg):
-        self._points_data = ros_numpy.numpify(msg)
-        self._image_data = \
-        self._points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]
-        hsv_image = cv2.cvtColor(self._image_data, cv2.COLOR_RGB2HSV_FULL)
-        self._h_image = hsv_image[..., 0]
-        self._region = \
-        (self._h_image > self._h_min) & (self._h_image < self._h_max)
-        if not np.any(self._region):
-            return
-            
-        (y_idx, x_idx) = np.where(self._region)
-        x = np.average(self._points_data['x'][y_idx, x_idx])
-        y = np.average(self._points_data['y'][y_idx, x_idx])
-        z = np.average(self._points_data['z'][y_idx, x_idx])
-        self._xyz = [y, x, z]
-        if self._frame_name is None:
-            return
-
-        self._br.sendTransform(
-        (x, y, z), tf.transformations.quaternion_from_euler(0, 0, 0),
-        rospy.Time(msg.header.stamp.secs, msg.header.stamp.nsecs),
-        self._frame_name,
-        msg.header.frame_id)
-
-    def get_image(self):
-        return self._image_data
-
-    def get_points(self):
-        return self._points_data
-
-    def get_h_image(self):
-        return self._h_image
-
-    def get_region(self):
-        return self._region
-
-    def get_xyz(self):
-        return self._xyz
-
-    def set_h(self, h_min, h_max):
-        self._h_min = h_min
-        self._h_max = h_max
-
-    def set_coordinate_name(self, name):
-        self._frame_name = name
-
-#---------------------------------------------------
-        
+#---------------------------------------------------        
 def loadModels(classes):
     
     # get the file path for rospy_tutorials
@@ -129,6 +68,7 @@ def loadModels(classes):
         modelsPI.append(np.load(glob(path.join(route,'modelPI_'+cl+"*"))[0]))
 
     return modelsA,modelsB,modelsPI
+
 #---------------------------------------------------
 def create_vk(data,cb,quitaJ=False,centralized=False):
     # Se crean listas vacias para vk
@@ -166,7 +106,6 @@ def centralizaSecuencia(secuencia,codebook=False):
     return tmp
 
 #-------------------------------------------------------------
-
 def centralizaMatriz(data):
     
     nuevoSK=np.zeros(data.shape)
@@ -180,6 +119,7 @@ def centralizaMatriz(data):
         if data[i,0]!=0 and data[i,1]!=0:
             nuevoSK[i,:]=coordCentrada[:]-data[i,:]
     return nuevoSK
+
 #---------------------------------------------------
 def inf_Secuence(data,modelsA,modelsB,modelsPI):
     
@@ -299,7 +239,6 @@ def detect_pointing_arm(lastSK,cld_points):
         return -1,-1,-1
 
 #---------------------------------------------------
-
 def get_extrapolation(mano,codo,z=0):
 
     vectD=[mano[0]-codo[0],mano[1]-codo[1],mano[2]-codo[2]]
@@ -311,5 +250,3 @@ def get_extrapolation(mano,codo,z=0):
 
 
 #---------------------------------------------------
-
-bridge = CvBridge()
