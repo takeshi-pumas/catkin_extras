@@ -20,6 +20,13 @@ def callback(req):
 	last_act=-1
 	response=RecognizeResponse()
 	max_inf_it=40
+	n_people_max=3
+
+	if req.in_!=4:
+		opWrapper,datum=init_openPose(n_people=1)
+	else:
+		opWrapper,datum=init_openPose(n_people=n_people_max)
+
 	#----------------
 	if req.in_==1:
 		print("Opcion 1\n\tObteniendo imagenes...")
@@ -193,7 +200,7 @@ def callback(req):
 
 			im=rgb.get_image()
 			#im=cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
-
+			#h,w,_=im.shape
 			dataPC=rgbd.get_points()
 			dataout=np.zeros((25,2))
 			skeletons_xyz=np.zeros((25,3))
@@ -273,6 +280,73 @@ def callback(req):
 		return response
 
 	#----------------
+	elif req.in_==4:
+		conteo_sin_bebida=np.zeros(n_people_max)
+		max_drink_cnt=25
+		flg_out=False
+		while True:
+		    
+		    image,dataPC=get_coordinates()
+		    #print(image.shape)
+		    #h,w,_=image.shape
+		    datum.cvInputData = image
+		    opWrapper.emplaceAndPop(op.VectorDatum([datum]))
+		    #print("Body keypoints: \n" + str(datum.poseKeypoints))
+
+		    if datum.poseKeypoints is not None:
+		        dataout=np.copy(datum.poseKeypoints[:,:,:2])
+		        order=np.argsort(np.argsort(dataout[:,0,0]))
+		        for i in range(dataout.shape[0]):
+		            image=draw_skeleton(dataout[i],h,w,image,bkground=True)
+		            draw_text_bkgn(image,text="Person:"+str(i),pos=(int(dataout[i,0,0]), int(dataout[i,0,1])-40),
+		                   font_scale=1.3,text_color=(255, 255, 32))
+		            draw_rect_sk(dataout[i],image)
+
+		            if detect_drinking(dataout[i]):
+		                conteo_sin_bebida[i]=0
+		                draw_text_bkgn(image,text="Person "+str(i)+": ",pos=(int(dataout[i,0,0]), int(dataout[i,0,1])-40),
+		                           font_scale=1.3,text_color=(32, 255, 255))
+		                draw_text_bkgn(image,text="Con bebida",pos=(int(dataout[i,0,0]), int(dataout[i,0,1])-20),
+		                           font_scale=1.3,text_color=(32, 255, 255))
+
+		            else:
+		                draw_text_bkgn(image,text="Person "+str(i)+":",pos=(int(dataout[i,0,0]), int(dataout[i,0,1])-40),
+		                           font_scale=1.3,text_color=(32, 255, 255))
+		                draw_text_bkgn(image,text="Sin bebida",pos=(int(dataout[i,0,0]), int(dataout[i,0,1])-20),
+		                           font_scale=1.3,text_color=(32, 255, 255))
+		                conteo_sin_bebida[i]+=1
+
+		    print(conteo_sin_bebida)
+		    cv2.imshow("RES",image)
+		    cv2.waitKey(10)
+		    for c in range(n_people_max):
+		        if conteo_sin_bebida[c]==max_drink_cnt:
+		            print("\n\nNO TIENE BEBIDA LA PERSONA :{}, PROCEDO A OFRECER UNA\n".format(c))
+		            flg_out=True
+		            head,f=return_xyz_sk(dataout,c,dataPC)
+		            if f!=-1:
+		            	print(head)
+		            	response.i_out=1
+		            	tf_man.pub_static_tf(pos=head,point_name='head_xyz',ref='head_rgbd_sensor_link')
+		            	
+		            	tf_man.change_ref_frame_tf(point_name='head_xyz',new_frame='map')
+
+		            	rospy.sleep(0.8)
+		            	ob_xyz,_ = tf_man.getTF(target_frame='head_xyz',ref_frame='map')
+		            	print(ob_xyz)
+		            	#flo.data=ob_xyz
+		            	#response.d_xyz=flo
+		            	break
+		            else: 
+		            	response.i_out=0
+		            	print("DATOS NAN, no se retorna datos")
+
+		    if flg_out:
+		        break
+		cv2.destroyAllWindows()
+
+		return response
+	#----------------
 	# Para obtener la imagen y esqueleto 1 vez y trabajar con ella fuera del servicio
 	else:
 		print("Opcion {}, una sola imagen con openpose".format(req.in_))
@@ -317,7 +391,7 @@ def recognition_server():
 	mA,mB,mPI=loadModels(class_names)
 
 	cb=np.load(path.join(rospack.get_path("act_recog"))+"/scripts/codebooks/codebook_LBG_160_s30.npy")
-	opWrapper,datum=init_openPose(n_people=1)
+	#opWrapper,datum=init_openPose(n_people=1)
 	h=480
 	w=640
 	# ---

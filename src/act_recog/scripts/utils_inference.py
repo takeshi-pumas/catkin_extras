@@ -11,6 +11,7 @@ import numpy as np
 import cv2
 import sys
 from glob import glob
+from math import ceil,floor
 from os import path
 from rospkg import RosPack
 from utils.misc_utils import TF_MANAGER
@@ -178,12 +179,39 @@ def get_coordinates():
     #data=rospy.wait_for_message("/camera/depth/image_raw",PointCloud2)
     
     data=rospy.wait_for_message("/hsrb/head_rgbd_sensor/depth_registered/rectified_points",PointCloud2)
-    print("datos recibidos")
+    #print("datos recibidos")
     # NO SE CORRIGE ( -> correct_points() ), SE OBSERVO QUE NO FUE NECESARIO
     np_data=ros_numpy.numpify(data)
     frame=np_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]
     frame=cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     return frame,np_data
+#---------------------------------------------------
+
+def return_xyz_sk(lastSK,indx,cld_points):
+
+    if lastSK[indx,0,0]==0 or lastSK[indx,0,1]==0:
+        if lastSK[indx,17,0]!=0 and lastSK[indx,17,1]!=0:
+            sk=17
+        elif lastSK[indx,18,0]!=0 and lastSK[indx,18,1]!=0:
+            sk=18
+    else:
+        sk=0
+    print("SK:::",sk)
+    
+
+
+    head_xyz=[cld_points['x'][round(lastSK[indx,sk,1]), round(lastSK[indx,sk,0])],
+            cld_points['y'][round(lastSK[indx,sk,1]), round(lastSK[indx,sk,0])],
+            cld_points['z'][round(lastSK[indx,sk,1]), round(lastSK[indx,sk,0])]]
+
+    if ~np.isnan(head_xyz).any():
+
+        return head_xyz,1
+
+    else:
+        print("datos nan")
+        #print(head_xyz)
+        return -1,-1
 
 #---------------------------------------------------        
 def detect_pointing_arm(lastSK,cld_points):
@@ -250,3 +278,80 @@ def get_extrapolation(mano,codo,z=0):
 
 
 #---------------------------------------------------
+
+def detect_drinking(data):
+    """
+        Brazo derecho: 2,3,4 (hombro,codo,mano) 
+        Brazo izquierdo: 5,6,7 (hombro,codo,mano)
+    """
+    if data[2,:].any()!=0 or data[3,:].any()!=0 or data[4,:].any()!=0:
+        cos_A=np.dot((data[2,:]-data[3,:]),(data[4,:]-data[3,:]))/(np.linalg.norm((data[2,:]-data[3,:]))*np.linalg.norm((data[4,:]-data[3,:])))
+        ang_der=np.rad2deg(np.arccos(cos_A))
+    else:
+        ang_der=130
+    
+    if data[5,:].any()!=0 or data[6,:].any()!=0 or data[7,:].any()!=0:
+        cos_B=np.dot((data[5,:]-data[6,:]),(data[7,:]-data[6,:]))/(np.linalg.norm((data[5,:]-data[6,:]))*np.linalg.norm((data[7,:]-data[6,:])))
+        ang_izq=np.rad2deg(np.arccos(cos_B))
+    else:
+        ang_izq=130
+        
+    if abs(ang_der)<=120 or abs(ang_izq)<=120:
+        #print("Se detecta que tiene una bebida")
+        return True
+    else:
+        #print("No se detecta brazo con bebida")
+        return False
+#------------------------------------------
+def draw_text_bkgn(img, text,
+          font=cv2.FONT_HERSHEY_PLAIN,
+          pos=(0, 0),
+          font_scale=1,
+          font_thickness=2,
+          text_color=(0, 255, 0),
+          text_color_bg=(0, 0, 0)
+          ):
+
+    x, y = pos
+    text_size, _ = cv2.getTextSize(text, font, font_scale, font_thickness)
+    text_w, text_h = text_size
+    cv2.rectangle(img, pos, (x + text_w, y + text_h), text_color_bg, -1)
+    cv2.putText(img, text, (x, y + text_h + int(font_scale) - 1), font, font_scale, text_color, font_thickness)
+
+    return text_size
+
+#------------------------------------------
+def draw_rect_sk(dataout,im,mask=False):
+    f=2
+    color=(255,255,0)
+    if mask:
+        f=-1
+        color=(255,255,255)
+    
+    bbox=get_rect_bbox(dataout,im)
+    cv2.rectangle(im,bbox[0],bbox[-1],color,f)
+    
+    return im
+
+#------------------------------------------
+def get_rect_bbox(dataout,im):
+    h,w,_=im.shape
+
+    bbox=np.array([[floor(np.min(dataout[:,0][np.nonzero(dataout[:,0])])),floor(np.min(dataout[:,1][np.nonzero(dataout[:,1])]))],
+                  [ceil(np.max(dataout[:,0][np.nonzero(dataout[:,0])])),ceil(np.max(dataout[:,1][np.nonzero(dataout[:,1])]))]
+                 ])
+    if bbox[0,0]>50:
+        bbox[0,0]-=50
+
+    if bbox[0,1]>50:
+        bbox[0,1]-=50
+
+    if w-bbox[1,0]>50:
+        bbox[1,0]+=50
+    else:
+        bbox[1,0]+=(w-bbox[1,0]-1)
+    if h-bbox[1,1]>50:
+        bbox[1,1]+=50
+    else:
+        bbox[1,1]+=(h-bbox[1,1]-1)    
+    return bbox

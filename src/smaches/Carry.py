@@ -319,6 +319,9 @@ class Follow_human(smach.State):
                     rospy.sleep(2)
                     talk('Good, finishing task.')
                     rospy.sleep(0.8)
+                    head.set_named_target('neutral')
+                    rospy.sleep(0.8)
+
                     return 'arrived'
                 else:
                     return 'succ'

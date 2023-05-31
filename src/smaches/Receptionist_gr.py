@@ -50,7 +50,7 @@ class Wait_push_hand(smach.State):
 
         self.tries += 1
         print(f'Try {self.tries} of 4 attempts')
-        if self.tries == 4:
+        if self.tries == 10:
             return 'tries'
         head.set_named_target('neutral')
         brazo.set_named_target('go')
@@ -105,7 +105,7 @@ class Goto_door(smach.State):  # ADD KNONW LOCATION DOOR
         if self.tries == 3:
             return 'tries'
         if self.tries == 1: talk('Navigating to, door')
-        res = omni_base.move_base(known_location='door')
+        res = omni_base.move_base(known_location='door_lab')
         print(res)
 
         if res:
@@ -506,8 +506,8 @@ if __name__ == '__main__':
         # State machine for Restaurant
 
         smach.StateMachine.add("INITIAL",           Initial(),          transitions={'failed': 'INITIAL',       'succ': 'WAIT_PUSH_HAND',   'tries': 'END'})
-        smach.StateMachine.add("WAIT_PUSH_HAND",    Wait_push_hand(),   transitions={'failed': 'WAIT_PUSH_HAND','succ': 'GOTO_DOOR',        'tries': 'INITIAL'})
-        smach.StateMachine.add("WAIT_DOOR_OPENED",  Wait_door_opened(),   transitions={'failed': 'WAIT_DOOR_OPENED','succ': 'GOTO_DOOR',        'tries': 'INITIAL'})
+        smach.StateMachine.add("WAIT_PUSH_HAND",    Wait_push_hand(),   transitions={'failed': 'WAIT_PUSH_HAND','succ': 'GOTO_DOOR',        'tries': 'WAIT_PUSH_HAND'})
+        smach.StateMachine.add("WAIT_DOOR_OPENED",  Wait_door_opened(),   transitions={'failed': 'WAIT_DOOR_OPENED','succ': 'GOTO_DOOR',        'tries': 'WAIT_DOOR_OPENED'})
         
         smach.StateMachine.add("SCAN_FACE",         Scan_face(),        transitions={'failed': 'SCAN_FACE',     'unknown': 'NEW_FACE',      'succ': 'LEAD_TO_LIVING_ROOM','tries': 'GOTO_DOOR'})
         smach.StateMachine.add("NEW_FACE",          New_face(),         transitions={'failed': 'NEW_FACE',      'succ': 'LEAD_TO_LIVING_ROOM','tries': 'NEW_FACE'})
