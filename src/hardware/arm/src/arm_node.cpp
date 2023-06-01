@@ -27,6 +27,7 @@ bool msg_gripp_torq_recived = false;
 bool msg_suction_recived    = false;
 bool wait_for_arm_goal_pose = false;
 bool wait_for_torso_goal_pose = false;
+bool nav_request_received     = true;
 
 tmc_control_msgs::GripperApplyEffortGoal goal;
 //tmc_suction::SuctionControlGoal goal_suction;
@@ -98,7 +99,15 @@ void armCurrentPoseCallback(const control_msgs::JointTrajectoryControllerState::
   arm_complete_cp[4] = msg->actual.positions[4];
 }
 
-
+void nav_msg_Callback(const actionlib_msgs::GoalStatus::ConstPtr& msg)
+{
+  switch(msg -> status)
+  {
+    case actionlib_msgs::GoalStatus::ACTIVE:
+      nav_request_received = true;
+      break;
+  }
+}
 
 int main(int argc, char **argv)
 {
@@ -126,6 +135,7 @@ int main(int argc, char **argv)
   //ros::Subscriber  sub_pumas_suction_gripp;
   ros::Subscriber  sub_torso_goal_pose;
   ros::Subscriber  sub_hsr_arm_cp;
+  ros::Subscriber  sub_start_nav;
 
 
 
@@ -152,6 +162,7 @@ int main(int argc, char **argv)
   //sub_pumas_suction_gripp = n.subscribe("/hardware/arm/gripper_suction", 10, armSuctionCallback);
   sub_torso_goal_pose     = n.subscribe("/hardware/torso/goal_pose", 10, torsoGoalPoseCallback);
   sub_hsr_arm_cp          = n.subscribe("/hsrb/arm_trajectory_controller/state", 10, armCurrentPoseCallback);
+  sub_start_nav           = n.subscribe("/navigation/status", 10, nav_msg_Callback);
 
     // wait for the action server to start
   gripperActionClient.waitForServer();
@@ -278,6 +289,12 @@ int main(int argc, char **argv)
     {
       gripperActionClient.sendGoalAndWait(goal);
       msg_gripp_torq_recived = false;
+    }
+
+    if(nav_request_received)
+    {
+      pub_hsr_arm_gp.publish(traj_arm);
+      nav_request_received = false;
     }
 
     /*if(msg_suction_recived)

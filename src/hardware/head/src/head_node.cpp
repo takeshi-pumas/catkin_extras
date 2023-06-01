@@ -5,6 +5,7 @@
 #include <trajectory_msgs/JointTrajectory.h>
 #include <std_msgs/Float32MultiArray.h>
 #include <ros/ros.h>
+#include "actionlib_msgs/GoalStatus.h"
 
 float goalTilt;
 float goalPan;
@@ -43,7 +44,18 @@ void headCurrentPoseCallback(const control_msgs::JointTrajectoryControllerState:
         msg_hd_cp.data[1] = msg->actual.positions[0]; // current tilt pose
 }
 
-
+void nav_msg_Callback(const actionlib_msgs::GoalStatus::ConstPtr& msg)
+{
+  switch(msg -> status)
+  {
+    case actionlib_msgs::GoalStatus::ACTIVE:
+      break;
+    default:
+        isNewData = true;
+        goalPan = 0.0;
+        goalTilt = 0.0;
+  }
+}
 
 
 int main(int argc, char **argv)
@@ -62,6 +74,7 @@ int main(int argc, char **argv)
         ros::Publisher pub_hsr_head_gp;
         ros::Subscriber sub_pumas_head_gp;
         ros::Subscriber sub_hsr_head_cp;
+        ros::Subscriber sub_nav_finished;
 
         ros::ServiceClient client;
         ros::Rate loop(30);
@@ -72,6 +85,7 @@ int main(int argc, char **argv)
 
         sub_pumas_head_gp = n.subscribe("/hardware/head/goal_pose", 10, headGoalPoseCallback);
         sub_hsr_head_cp = n.subscribe("/hsrb/head_trajectory_controller/state", 10, headCurrentPoseCallback);
+        sub_nav_finished = n.subscribe("/navigation/status", 10, nav_msg_Callback);
 
         // make sure the controller is running
         client = n.serviceClient<controller_manager_msgs::ListControllers>("/hsrb/controller_manager/list_controllers");

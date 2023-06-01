@@ -218,16 +218,16 @@ std_msgs::Float32MultiArray get_next_goal_head_angles(float robot_x, float robot
     msg.data.push_back(-1.0);
     return msg;
 }
-
+/*
 std_msgs::Float32MultiArray head_to_neutral()
 {
     std_msgs::Float32MultiArray msg;
     msg.data.push_back(0.0);
     msg.data.push_back(0.0);
     return msg;
-}
+}*/
 
-std_msgs::Float32MultiArray arm_to_go()
+/*std_msgs::Float32MultiArray arm_to_go()
 {
     std_msgs::Float32MultiArray msg;
     msg.data.push_back(0.0);
@@ -235,7 +235,7 @@ std_msgs::Float32MultiArray arm_to_go()
     msg.data.push_back(-1.5707);
     msg.data.push_back(0.0);
     return msg;
-}
+}*/
 
 int main(int argc, char** argv)
 {
@@ -440,7 +440,7 @@ int main(int argc, char** argv)
             error = fabs(error);
             if(error < angle_tolerance)
                 state = SM_GOAL_POSE_FINISH;
-            if(move_head) pub_head_goal_pose.publish(head_to_neutral());
+            //if(move_head) pub_head_goal_pose.publish(head_to_neutral());
             pub_cmd_vel.publish(calculate_speeds(robot_t, goal_t, max_angular_speed, beta));
             if(--attempts <= 0)
             {
@@ -472,7 +472,7 @@ int main(int argc, char** argv)
             
         case SM_GOAL_PATH_FIRST_POINT:
             find_nearest_path_point(robot_x, robot_y, robot_t, goal_x, goal_y, next_pose_idx, tf_listener);
-            pub_arm_goal_pose.publish(arm_to_go());
+            //pub_arm_goal_pose.publish(arm_to_go());
             state = SM_GOAL_PATH_ACCEL;
             break;
 
