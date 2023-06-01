@@ -5,7 +5,7 @@
   
    
   
-  <node pkg="human_detector"  name="human_detector" type="human_detector_server.py"/>  
+  <!--node pkg="human_detector"  name="human_detector" type="human_detector_server.py"/-->  
   <node pkg="smach_viewer"  name="smach_viewer" type="smach_viewer.py"/>  
   <node pkg="segmentation"  name="segmentator_node" type="segment_floor.py"/>  
 
