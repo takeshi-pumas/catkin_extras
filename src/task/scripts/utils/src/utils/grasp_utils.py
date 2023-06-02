@@ -117,6 +117,7 @@ class GAZE():
         if abs(pan_correct) > 0.5 * np.pi:
             print ('Exorcist alert')
             # pan_correct=0.5*np.pi
+            self.set_joint_values([0.0, tilt_correct])
             self.turn_base_gaze()
             return [0.0, tilt_correct]
             # return self._gaze_point()
@@ -202,7 +203,7 @@ class GAZE():
             succ = abs(eT) < THRESHOLD 
             if succ:
                 eT = 0
-            base.tiny_move(velT = eT)
+            base.tiny_move(velT = eT, MAX_VEL_THETA=0.9)
         return True
 
 
