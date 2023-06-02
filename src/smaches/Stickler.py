@@ -79,7 +79,7 @@ class Goto_door(smach.State):  # ADD KNONW LOCATION DOOR
         res = omni_base.move_base(known_location='door')
         print(res)
 
-        if res == 3:
+        if res:
             return 'succ'
         else:
             talk('Navigation Failed, retrying')
@@ -104,7 +104,7 @@ class Find_human(smach.State):
             self.tries = 0
             return'tries'
 
-        if self.tries==1:head.set_joint_values([ 0.0, 0.3])
+        if self.tries==1:head.set_joint_values([ 0.0, 0.0])
         if self.tries==2:head.set_joint_values([ 0.3, 0.1])
         if self.tries==3:head.set_joint_values([-0.3, 0.1])
 
@@ -119,6 +119,7 @@ class Find_human(smach.State):
             print ('no human ')
             return 'failed'
         else : 
+            talk('Human Found, Getting close ')
             head.to_tf('human')
             return 'succ'    
 
@@ -142,7 +143,7 @@ class Goto_next_room(smach.State):  # ADD KNONW LOCATION DOOR
         res = omni_base.move_base(known_location='room'+str(self.next_room))
         print(res)
 
-        if res == 3:
+        if res :
 
             (self.tries + 1)%2   #there are 2 rooms <__________________param
 
@@ -169,7 +170,7 @@ class Goto_human(smach.State):
         
         print('getting close to human')
         head.to_tf('human')
-        res = omni_base.move_d_to(1.7,'human')
+        res = omni_base.move_d_to(1.0,'human')
 
         head.to_tf('human')
 
@@ -208,11 +209,11 @@ class Analyze_human(smach.State):
         human_pos,_=tf_man.getTF('human')
         head.absolute(human_pos[0],human_pos[1],0.1)
 
-
+        rospy.sleep(0.9)
         ##### SHOES NO SHOES DETECTOR
         img=rgbd.get_image()
         print ('got image for feet analysis')
-        keys=["foot", "feet", "shoes",'socks','sandals']
+        keys=[ "feet", "shoes",'socks','sock','sandals']
         image = preprocess(Image.fromarray(img)).unsqueeze(0).to(device) #img array from grbd get image
         text = clip.tokenize(keys).to(device)
 
@@ -223,8 +224,10 @@ class Analyze_human(smach.State):
             logits_per_image, logits_per_text = model(image, text)
             probs = logits_per_image.softmax(dim=-1).cpu().numpy()
 
-        print("Label probs:", probs,keys[np.argmax(probs)] )  # prints: [[0.9927937  0.00421068 0.00299572]]
-        if keys[np.argmax(probs)] in ['foot','feet','socks']:print ('Not wearing shoes')
+        print("Label probs:", probs,keys[np.argmax(probs)] , probs)  # prints: [[0.9927937  0.00421068 0.00299572]]
+        if keys[np.argmax(probs)] in ['sandals','feet','socks']:
+            talk ('Thanks for not wearing shoes.... Rule 1 is observed')
+            print ('Not wearing shoes')
         else: 
             talk('Rule number 1... no shoes please...')
             ##
@@ -259,7 +262,7 @@ if __name__ == '__main__':
         smach.StateMachine.add("INITIAL",           Initial(),              transitions={'failed': 'INITIAL',       'succ': 'WAIT_PUSH_HAND',   'tries': 'END'})
         smach.StateMachine.add("WAIT_PUSH_HAND",    Wait_push_hand(),       transitions={'failed': 'WAIT_PUSH_HAND','succ': 'FIND_HUMAN',        'tries': 'END'})
         #################################################################################################################################################################
-        smach.StateMachine.add("ANALYZE_HUMAN",      Analyze_human(),       transitions={'failed': 'FIND_HUMAN',    'succ': 'GOTO_NEXT_ROOM'})
+        smach.StateMachine.add("ANALYZE_HUMAN",      Analyze_human(),       transitions={'failed': 'FIND_HUMAN',    'succ': 'END'})
         smach.StateMachine.add("GOTO_NEXT_ROOM",     Goto_next_room(),      transitions={'failed': 'GOTO_NEXT_ROOM','succ': 'FIND_HUMAN'    , 'tries': 'FIND_HUMAN'})
         smach.StateMachine.add("GOTO_HUMAN",         Goto_human(),          transitions={'failed': 'GOTO_HUMAN',    'succ': 'ANALYZE_HUMAN' , 'tries': 'FIND_HUMAN'})
         ##################################################################################################################################################################
