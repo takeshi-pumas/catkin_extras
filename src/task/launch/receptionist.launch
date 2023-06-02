@@ -1,6 +1,7 @@
 <?xml version="1.0"?>
 <launch>
 
+  <!--include file="$(find nav_pumas)/config_files/launch/navigation_real.launch"/-->
   <node pkg="human_detector"  name="human_detector" type="human_detector_server.py"/>  
   <node pkg="face_recog"  name="face_recog" type="face_recog_server.py"/>
   <node pkg="face_recog"  name="face_recog_deep" type="face_recog_server_deep.py"/>  
@@ -16,7 +17,7 @@
 <!-- </include> -->
 <!-- <include file="$(find pocketsphinx)/launch/pocketsphinx.launch"> -->
   <!-- </include> -->
-
+<!--node pkg="task" name="receptionist" type="Receptionist_gr.py"/-->
 </launch>
 
  
