@@ -221,6 +221,10 @@ class New_face(smach.State):
         
 
         print (name)
+        if  name=='timeout':
+            talk('I could not hear you , lets try again')
+            talk ('lets try again')
+            return 'failed'
         talk(f'Is {name} your name?')
         rospy.sleep(3.0)
         

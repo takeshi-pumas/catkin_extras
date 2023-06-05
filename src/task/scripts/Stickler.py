@@ -121,6 +121,7 @@ class Find_human(smach.State):
         else : 
             talk('Human Found, Getting close ')
             head.to_tf('human')
+            self.tries=0
             return 'succ'    
 
 #########################################################################################################
@@ -136,16 +137,30 @@ class Goto_next_room(smach.State):  # ADD KNONW LOCATION DOOR
 
         print(f'Try {self.tries} of 3 attempts')
         self.tries += 1
-        if self.tries == 3:
-            return 'tries'
-        if self.tries == 1: talk('Navigating to, room'+str(self.next_room))
-        print ('navigating to room'+str(self.next_room))
-        res = omni_base.move_base(known_location='room'+str(self.next_room))
+        if self.tries == 5:
+            self.tries=0
+            #return 'tries'
+        elif self.tries == 1: 
+            talk('Navigating to  living room')
+            next_room='living_room'
+        elif self.tries == 2: 
+                    talk('Navigating to dining room')
+                    next_room='dining_room'
+        elif self.tries == 3: 
+                    talk('Navigating to bedroom')
+                    next_room='bedroom'
+        elif self.tries == 4: 
+                    talk('Navigating to kitchen')
+                    next_room='kitchen'
+
+       
+       
+
+        res = omni_base.move_base(known_location=next_room)
         print(res)
 
         if res :
 
-            (self.tries + 1)%2   #there are 2 rooms <__________________param
 
             return 'succ'
 
@@ -186,7 +201,12 @@ class Goto_human(smach.State):
 
 ###########################################################################################################
 
-#########################################################################################################
+
+
+    
+        
+    
+###########################################################################################################
 class Analyze_human(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed'])
@@ -194,7 +214,7 @@ class Analyze_human(smach.State):
 
     def execute(self, userdata):
 
-        rospy.loginfo('STATE : Analyze_human')
+        rospy.loginfo('STATE : Analyze area close to human')
 
         print('Try', self.tries, 'of 3 attempts')
         self.tries += 1
@@ -207,11 +227,14 @@ class Analyze_human(smach.State):
         
 
         human_pos,_=tf_man.getTF('human')
-        head.absolute(human_pos[0],human_pos[1],0.1)
 
-        rospy.sleep(0.9)
+
+        human_pos,_=tf_man.getTF('human')
+        head.absolute(human_pos[0],human_pos[1],0.1)
+        rospy.sleep(2.9)
         ##### SHOES NO SHOES DETECTOR
         img=rgbd.get_image()
+        cv2.imwrite('feet.png',img)
         print ('got image for feet analysis')
         keys=[ "feet", "shoes",'socks','sock','sandals']
         image = preprocess(Image.fromarray(img)).unsqueeze(0).to(device) #img array from grbd get image
@@ -229,12 +252,56 @@ class Analyze_human(smach.State):
             talk ('Thanks for not wearing shoes.... Rule 1 is observed')
             print ('Not wearing shoes')
         else: 
-            talk('Rule number 1... no shoes please...')
+            talk('Rule number 1... no shoes please... Would you mind taking them off?.... thank you ')
             ##
-            return 'succ'
+        return 'succ'
 
 
     
+#########################################################################################################
+class Analyze_area(smach.State):
+    def __init__(self):
+        smach.State.__init__(self, outcomes=['succ', 'failed'])
+        self.tries = 0
+
+    def execute(self, userdata):
+
+        rospy.loginfo('STATE : Analyze_human')
+
+        print('Try', self.tries, 'of 3 attempts')
+        self.tries += 1
+        if self.tries == 3:
+            return 'tries'
+        
+        
+        hv=head_mvit.get_current_joint_values()
+        hv[0]=1.0
+        head_mvit.go(hv)
+        
+        rospy.sleep(0.9)
+        ##### SHOES NO SHOES DETECTOR
+        img=rgbd.get_image()
+        cv2.imwrite('rubb.png',img)
+        print ('got image for feet analysis')
+        keys=[ "trash", "paper",'rubbish','foot','feet']
+        image = preprocess(Image.fromarray(img)).unsqueeze(0).to(device) #img array from grbd get image
+        text = clip.tokenize(keys).to(device)
+
+        with torch.no_grad():
+            image_features = model.encode_image(image)
+            text_features = model.encode_text(text)
+            
+            logits_per_image, logits_per_text = model(image, text)
+            probs = logits_per_image.softmax(dim=-1).cpu().numpy()
+
+        print("Label probs:", probs,keys[np.argmax(probs)] , probs)  # prints: [[0.9927937  0.00421068 0.00299572]]
+        if keys[np.argmax(probs)] not in ['foot','feet']:
+            talk ('Something detected. Myabe trash?')
+            print ('Not wearing shoes')
+        else: 
+            talk('Rule number 2 Observed. .. no Trash next to human.... thank you ')
+            ##
+        return 'succ'
         
     
 ###########################################################################################################
@@ -256,15 +323,16 @@ if __name__ == '__main__':
     sis.start()
 
     with sm:
-        # State machine for Restaurant
-        smach.StateMachine.add("FIND_HUMAN",         Find_human(),          transitions={'failed': 'FIND_HUMAN',    'succ': 'GOTO_HUMAN'    , 'tries': 'GOTO_NEXT_ROOM'})
-        #################################################################################################################################################################
+        # State machine STICKLER
         smach.StateMachine.add("INITIAL",           Initial(),              transitions={'failed': 'INITIAL',       'succ': 'WAIT_PUSH_HAND',   'tries': 'END'})
         smach.StateMachine.add("WAIT_PUSH_HAND",    Wait_push_hand(),       transitions={'failed': 'WAIT_PUSH_HAND','succ': 'FIND_HUMAN',        'tries': 'END'})
-        #################################################################################################################################################################
-        smach.StateMachine.add("ANALYZE_HUMAN",      Analyze_human(),       transitions={'failed': 'FIND_HUMAN',    'succ': 'END'})
-        smach.StateMachine.add("GOTO_NEXT_ROOM",     Goto_next_room(),      transitions={'failed': 'GOTO_NEXT_ROOM','succ': 'FIND_HUMAN'    , 'tries': 'FIND_HUMAN'})
+        smach.StateMachine.add("FIND_HUMAN",         Find_human(),          transitions={'failed': 'FIND_HUMAN',    'succ': 'GOTO_HUMAN'    , 'tries': 'GOTO_NEXT_ROOM'})
         smach.StateMachine.add("GOTO_HUMAN",         Goto_human(),          transitions={'failed': 'GOTO_HUMAN',    'succ': 'ANALYZE_HUMAN' , 'tries': 'FIND_HUMAN'})
+        smach.StateMachine.add("ANALYZE_HUMAN",      Analyze_human(),       transitions={'failed': 'FIND_HUMAN',    'succ': 'ANALYZE_AREA'})
+        smach.StateMachine.add("ANALYZE_AREA",      Analyze_area(),       transitions={'failed': 'FIND_HUMAN',    'succ': 'GOTO_NEXT_ROOM'})   #
+        smach.StateMachine.add("GOTO_NEXT_ROOM",     Goto_next_room(),      transitions={'failed': 'GOTO_NEXT_ROOM','succ': 'FIND_HUMAN'    , 'tries': 'FIND_HUMAN'})
+        #################################################################################################################################################################
+        #################################################################################################################################################################
         ##################################################################################################################################################################
         
 
