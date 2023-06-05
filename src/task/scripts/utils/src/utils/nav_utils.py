@@ -210,8 +210,7 @@ class NAVIGATION():
             goal_x=x_goal, goal_y=y_goal, goal_theta=theta_goal)
         return True
 
-
-    def timeout_cb(event):
+    def timeout_cb(self, event):
         self.timeout = True
 
     def move_base(self, goal_x = 0.0, goal_y = 0.0, goal_theta = 0.0, known_location = 'None', timeout=30):
