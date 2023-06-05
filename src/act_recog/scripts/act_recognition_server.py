@@ -284,6 +284,7 @@ def callback(req):
 		conteo_sin_bebida=np.zeros(n_people_max)
 		max_drink_cnt=15
 		cnt_normal=0
+		no_person=0
 		flg_out=False
 		while True:
 		    
@@ -295,6 +296,8 @@ def callback(req):
 		    #print("Body keypoints: \n" + str(datum.poseKeypoints))
 
 		    if datum.poseKeypoints is not None:
+
+		        no_person=0
 		        dataout=np.copy(datum.poseKeypoints[:,:,:2])
 		        order=np.argsort(np.argsort(dataout[:,0,0]))
 		        for i in range(dataout.shape[0]):
@@ -318,12 +321,17 @@ def callback(req):
 		            	draw_text_bkgn(image,text="Sin bebida",pos=(int(dataout[i,0,0]), int(dataout[i,0,1])-20),
 		                           font_scale=1.3,text_color=(32, 255, 255))
 		            	conteo_sin_bebida[i]+=1
+		    else:
+		    	no_person+=1
 
 		    print(conteo_sin_bebida)
 		    # -----------------------
 		    cv2.imshow("RES",image)
 		    cv2.waitKey(10)
 		    # --------------------------
+		    if no_person==30:
+		    	response.i_out=3
+		    	break
 		    if cnt_normal==40:
 		    	print("TODOS CON BEBIDA DURANTE UN TIEMPO RAZONABLE")
 		    	response.i_out=2

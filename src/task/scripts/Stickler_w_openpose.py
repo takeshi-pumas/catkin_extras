@@ -135,6 +135,7 @@ class Goto_next_room(smach.State):  # ADD KNONW LOCATION DOOR
         self.tries += 1
         if self.tries == 3:
             return 'tries'
+        current_room=str(self.next_room)
         if self.tries == 1: talk('Navigating to, room'+str(self.next_room))
         print ('navigating to room'+str(self.next_room))
         res = omni_base.move_base(known_location='room'+str(self.next_room))
@@ -151,6 +152,37 @@ class Goto_next_room(smach.State):  # ADD KNONW LOCATION DOOR
             return 'failed'
 
 #########################################################################################################
+class Goto_kitchen(smach.State):  # ADD KNONW LOCATION DOOR
+    def __init__(self):
+        smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
+        self.tries = 0
+        self.next_room=1
+
+    def execute(self, userdata):
+
+        rospy.loginfo('STATE : Navigate to kitchen')
+
+        print(f'Try {self.tries} of 3 attempts')
+        self.tries += 1
+        if self.tries == 3:
+            return 'tries'
+        if self.tries == 1: talk('Navigating to, kitchen')
+        print ('navigating to kitchen')
+        res = omni_base.move_base(known_location='kitchen')
+        print(res)
+
+        if res :
+
+            (self.tries + 1)%2   #there are 2 rooms <__________________param
+
+            return 'succ'
+
+        else:
+            talk('Navigation Failed, retrying')
+            return 'failed'
+
+#########################################################################################################
+
 class Goto_human(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
@@ -240,15 +272,22 @@ class Detect_drink(smach.State):
         print('Try', self.tries, 'of 3 attempts')
         self.tries += 1
         if self.tries == 3:
-            return 'tries'
+            talk('Number of tries reached, moving to the next task')
+            rospy.sleep(0.8)
+            return 'failed'
 
+        trans, quat=tf_man.getTF('base_link')
+        print("Current",trans)
+
+        rospy.sleep(0.4)
         head.set_named_target('neutral')        
         rospy.sleep(1.0)
         hv= head.get_joint_values()
         hv[1]= hv[1]+0.15
         head.set_joint_values(hv)
         rospy.sleep(1.0)
-
+        talk('Detecting drinking')
+        rospy.sleep(0.8)
         reqAct.visual=0
         # reqAct.in_ --> 4  para detectar Drinking
         reqAct.in_=4
@@ -264,16 +303,30 @@ class Detect_drink(smach.State):
             head.to_tf('head_xyz')
             rospy.sleep(1.0)
 
-            talk('I detect that you do not have a drink, I will do something later') # ? resolver que hacer despues
+            talk('I detect that you do not have a drink. I will guide you to the kitchen, please follow me') 
             rospy.sleep(0.8)
-
-            return 'succ'
+            talk('Navigating to, kitchen')
+            rospy.sleep(0.8)
+            print ('navigating to kitchen')
+            res = omni_base.move_base(known_location='kitchen')
+            print(res)
+            if res :
+                talk('Arrived, you can grab a drink here. I will come back to the room.')# AGREGAR POINTING A LA TF DONDE ESTAN LAS BEBIDAS (?)
+                rospy.sleep(0.8)
+                res = omni_base.move_base(trans[0],trans[1],tf.transformations.euler_from_quaternion(quat)[2])
+                rospy.sleep(0.8)
+                return 'tries'
         # 2 -> todos tienen bebida
         elif resAct.i_out==2:
             talk('I detect that everyone has a drink')
             rospy.sleep(0.8)
+            cv2.destroyAllWindows()
             return 'succ'
         # 1 -> La tf salió con NaN, vuelve a calcular y obtener tf de la persona sin drink
+        elif resAct.i_out==3:
+            talk('No person detected')
+            rospy.sleep(0.8)
+            return 'tries'
         else:
             talk('I will scan again')
             return 'tries'
