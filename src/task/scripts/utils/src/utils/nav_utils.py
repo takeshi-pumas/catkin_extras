@@ -161,6 +161,7 @@ class NAVIGATION():
         self.arrived = msg.status == 3
         self.failed = msg.status == 4
 
+    #--------No navigation movement------------
     def _move_base_vel(self):
         twist = Twist()
         twist.linear.x = self.velX
@@ -172,7 +173,7 @@ class NAVIGATION():
         start_time = rospy.Time.now().to_sec()
         while rospy.Time.now().to_sec() - start_time < self.timeout:
             self._move_base_vel()
-    # Move base using relative movements
+    
 
     def tiny_move(self, velX=0, velY=0, velT=0, std_time=0.5, MAX_VEL=0.03, MAX_VEL_THETA=0.5):
         self.MAX_VEL = MAX_VEL
@@ -191,6 +192,8 @@ class NAVIGATION():
         else:
             self.velT = velT
         self._move_base_time()
+    #-------------------------------------------
+
     # Move base using navigation (absolute movement)
 
     def move_d_to(self, target_distance=0.5, target_link='None'):
@@ -210,30 +213,43 @@ class NAVIGATION():
         succ = self.move_base(
             goal_x=x_goal, goal_y=y_goal, goal_theta=theta_goal)
         return True
-    '''@staticmethod
-    def timeout_cb(event):
-        self.time_up = True'''
+
+    def _fill_nav_request(x,y,theta):
+        position = Point(x,y,0.0)
+        orientation = Quaternion(*tf.transformations.quaternion_from_euler(0.0, 0.0, theta))
+        msg = PoseStamped()
+        msg.pose.position = position
+        msg.pose.orientation = orientation
+        return msg
 
     def move_base(self, goal_x = 0.0, goal_y = 0.0, goal_theta = 0.0, known_location = 'None', timeout=30):
+        #process new request
         self.arrived = False
-        if known_location != 'None':
-            x,y,theta = self.get_known_location(known_location)
-        else:
-            x,y,theta = goal_x,goal_y,goal_theta
-
-        goal_position = Point(x,y,0.0)
-        goal_orientation = Quaternion(*tf.transformations.quaternion_from_euler(0.0, 0.0, theta))
-        goal_msg = PoseStamped()
-        goal_msg.pose.position = goal_position
-        goal_msg.pose.orientation = goal_orientation
-        self.nav_goal_pub.publish(goal_msg)
         self.failed = False
-        #timer = rospy.Timer(rospy.Duration(timeout), self.timeout_cb)
-        while (not self.arrived) and (not self.failed):
-            rospy.sleep(0.5)
-        #timer.shutdown()
-        return self.arrived
+        if known_location != 'None':
+            x, y, theta = self.get_known_location(known_location)
+        else:
+            x, y, theta = goal_x, goal_y, goal_theta
 
+        #fill message and publish it
+        goal_msg = self._fill_nav_request(x, y, theta)
+        self.nav_goal_pub.publish(goal_msg)
+        
+        rate = rospy.Rate(10)
+        start_time = rospy.Time.now()
+
+        while not rospy.is_shutdown():
+            current_time = rospy.Time.now()
+            elapsed_time = current_time - start_time
+            if self.arrived:
+                return True
+            elif self.failed:
+                return False
+            elif elapsed_time.to_sec() > timeout:
+                return False
+            rate.sleep()
+
+    #-----Known location parser-------
     def _read_yaml(self, known_locations_file='/known_locations.yaml'):
         rospack = rospkg.RosPack()
         file_path = rospack.get_path('config_files') + known_locations_file
@@ -257,3 +273,4 @@ class NAVIGATION():
             # it could change
             x, y, theta = XYT[0]['x'], XYT[1]['y'], XYT[2]['theta']
             return x, y, theta
+    #------------------------------------
