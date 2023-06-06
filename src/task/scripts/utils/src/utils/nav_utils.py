@@ -154,11 +154,12 @@ class NAVIGATION():
             '/move_base_simple/goal', PoseStamped, queue_size=10)
         self.nav_status_sub = rospy.Subscriber('/navigation/status', GoalStatus, self._nav_status_cb)
         self.arrived = False
-        self.time_up = False
+        self.failed = False
 
     def _nav_status_cb(self, msg):
         print("Navigation status: ", msg.status)
         self.arrived = msg.status == 3
+        self.failed = msg.status == 4
 
     def _move_base_vel(self):
         twist = Twist()
@@ -209,9 +210,9 @@ class NAVIGATION():
         succ = self.move_base(
             goal_x=x_goal, goal_y=y_goal, goal_theta=theta_goal)
         return True
-    @staticmethod
+    '''@staticmethod
     def timeout_cb(event):
-        self.time_up = True
+        self.time_up = True'''
 
     def move_base(self, goal_x = 0.0, goal_y = 0.0, goal_theta = 0.0, known_location = 'None', timeout=30):
         self.arrived = False
@@ -226,11 +227,11 @@ class NAVIGATION():
         goal_msg.pose.position = goal_position
         goal_msg.pose.orientation = goal_orientation
         self.nav_goal_pub.publish(goal_msg)
-        self.time_up = False
-        timer = rospy.Timer(rospy.Duration(timeout), self.timeout_cb)
-        while (not self.arrived) and (not self.time_up):
+        self.failed = False
+        #timer = rospy.Timer(rospy.Duration(timeout), self.timeout_cb)
+        while (not self.arrived) and (not self.failed):
             rospy.sleep(0.5)
-        timer.shutdown()
+        #timer.shutdown()
         return self.arrived
 
     def _read_yaml(self, known_locations_file='/known_locations.yaml'):
