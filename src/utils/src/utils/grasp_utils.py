@@ -197,10 +197,13 @@ class GAZE():
         else:
             target_frame = 'gaze'
             self._tf_man.pub_static_tf(pos=[self._x,self._y,self._z], point_name='gaze')
+            rospy.sleep(0.8)
         while not succ:
             xyz,_=self._tf_man.getTF(target_frame=target_frame, ref_frame=self._base)
-            eT = np.arctan2(xyz[1],xyz[0])
-            succ = abs(eT) < THRESHOLD 
+            eT = 0
+            if type(xyz) is not bool:
+            	eT = np.arctan2(xyz[1],xyz[0])
+            	succ = abs(eT) < THRESHOLD 
             if succ:
                 eT = 0
             base.tiny_move(velT = eT, MAX_VEL_THETA=0.9)

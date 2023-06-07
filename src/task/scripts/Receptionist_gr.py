@@ -16,8 +16,7 @@ class Initial(smach.State):
         print('Robot neutral pose')
         self.tries += 1
         print(f'Try {self.tries} of 5 attempts')
-        if self.tries == 3:
-            return 'tries'
+
             
         clean_knowledge()
         #head.set_named_target('neutral')
@@ -25,12 +24,16 @@ class Initial(smach.State):
         #brazo.set_named_target('go')
         #print('arm listo')
         places_2_tf()
-        drinks=['coke','juice','beer', 'water', 'soda', 'wine']                                                             ### INIT GRAMMAR FOR VOSK
+        drinks=['coke','juice','beer', 'water', 'soda', 'wine', 'i want a', 'i would like a']                                                             ### INIT GRAMMAR FOR VOSK
         names=['rebeca','ana','jack', 'michael', ' my name is' , 'i am','george','mary','ruben','oscar','yolo','mitzi']       ###         SPEECH REC
         confirmation=['yes','no']                                                                                           ###        Use with get_keywords_speech()
         gram=drinks+names+confirmation                                                                                      ####
+        if self.tries == 1:
+            set_grammar(gram)  ##PRESET DRINKS
+        elif self.tries == 3:
+            return 'tries'
 
-        set_grammar(gram)  ##PRESET DRINKS
+        
 
         rospy.sleep(0.8)
         return 'succ'
@@ -161,8 +164,8 @@ class Scan_face(smach.State):
             else:
                 talk(f'I found you, I Think you are, {name}.')
                 talk('what do you want to drink?')
-                rospy.sleep(0.9)
-                speech=get_keywords_speech(6)
+                rospy.sleep(0.8)
+                speech=get_keywords_speech(7)
                 if len(speech.split(' '))>1: drink=(speech.split(' ')[-1])  # in case things like I would like a
                 else: drink=speech
 
@@ -224,23 +227,19 @@ class New_face(smach.State):
         print (name)
         if  name=='timeout':
             talk('I could not hear you , lets try again')
-            talk ('lets try again')
+            #talk ('lets try again')
             return 'failed'
         talk(f'Is {name} your name?')
-        rospy.sleep(3.0)
+        rospy.sleep(2.0)
         
-        res2 = get_keywords_speech(10)
-        print (res2)
+        confirmation = get_keywords_speech(10)
+        print (confirmation)
         #res2 = get_keywords_speech(10)
         
-        if res2 in['yes','jack','juice']:   ### YES AND MOST COMMON MISREADS
+        if confirmation in['yes','jack','juice']:   ### YES AND MOST COMMON MISREADS
             talk (f'Nice to Meet You {name}')
             train_face(img_face, name)
-            add_guest(name, "beer")
-            talk("analyzing face , give me a second")
-            takeshi_line = analyze_face_from_image(img_face, name)
-            add_description(name, takeshi_line)
-            talk("done")
+            
             self.tries=0
             return 'succ'
             
@@ -251,7 +250,42 @@ class New_face(smach.State):
         
 
 
+class New_face_drink(smach.State):
+    def __init__(self):
+        smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
+        self.new_name = ''
+        self.num_faces = 0
+        self.tries = 0
 
+    def execute(self, userdata):
+        global name_face
+        self.tries += 1
+
+        rospy.loginfo('STATE : NEW_FACE')
+
+        talk('What would you like to drink?')
+        rospy.sleep(2.0)
+        drink=get_keywords_speech(10)
+
+        if len(drink.split(' '))>1: drink=(drink.split(' ')[-1])
+
+        rospy.sleep(0.5)
+        talk(f'Did you say {drink}?')
+        rospy.sleep(2.0)
+        
+        confirmation = get_keywords_speech(10)
+        print (confirmation)
+            
+        if confirmation not in['yes','jack','juice']:
+            return 'failed'
+
+
+
+        add_guest(name_face, drink)
+        analyze_face_background(img_face, name_face)
+        talk("Nice")
+
+        return 'succ'
 
 
 
@@ -516,7 +550,9 @@ if __name__ == '__main__':
         smach.StateMachine.add("WAIT_DOOR_OPENED",  Wait_door_opened(),   transitions={'failed': 'WAIT_DOOR_OPENED','succ': 'GOTO_DOOR',        'tries': 'INITIAL'})
         
         smach.StateMachine.add("SCAN_FACE",         Scan_face(),        transitions={'failed': 'SCAN_FACE',     'unknown': 'NEW_FACE',      'succ': 'LEAD_TO_LIVING_ROOM','tries': 'GOTO_DOOR'})
-        smach.StateMachine.add("NEW_FACE",          New_face(),         transitions={'failed': 'NEW_FACE',      'succ': 'LEAD_TO_LIVING_ROOM','tries': 'NEW_FACE'})
+        smach.StateMachine.add("NEW_FACE",          New_face(),         transitions={'failed': 'NEW_FACE',      'succ': 'NEW_FACE_DRINK','tries': 'NEW_FACE'})
+        smach.StateMachine.add("NEW_FACE_DRINK",    New_face_drink(),   transitions={'failed': 'NEW_FACE_DRINK',      'succ': 'LEAD_TO_LIVING_ROOM','tries': 'NEW_FACE_DRINK'})
+
         smach.StateMachine.add("GOTO_DOOR",         Goto_door(),        transitions={'failed': 'GOTO_DOOR',     'succ': 'SCAN_FACE',        'tries': 'SCAN_FACE'})
         smach.StateMachine.add("GOTO_FACE",         Goto_face(),        transitions={'failed': 'GOTO_FACE',     'succ': 'LEAD_TO_LIVING_ROOM',   'tries': 'SCAN_FACE'})
         smach.StateMachine.add("LEAD_TO_LIVING_ROOM",Lead_to_living_room(), transitions={'failed': 'LEAD_TO_LIVING_ROOM','succ': 'FIND_SITTING_PLACE','tries': 'END'})
