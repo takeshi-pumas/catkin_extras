@@ -257,11 +257,12 @@ def analyze_face_from_image(cv2_img,name=''):
 def analyze_face_background(img, name=" "):
     name_pub = rospy.Publisher('/name_face', String, queue_size=10)
     img_pub = rospy.Publisher('/image_to_analyze', Image, queue_size=10)
-    str_msg.data = name
-    name_pub.publish(str_msg)
-    img_msg=bridge.cv2_to_imgmsg(img)
-    img_pub.publish(img_msg)
     str_msg = String()
+    str_msg.data = name
+    rospy.sleep(0.5)
+    name_pub.publish(str_msg)
+    img_msg = bridge.cv2_to_imgmsg(img)
+    img_pub.publish(img_msg)
 
 
 

@@ -30,12 +30,47 @@ std::string service_caller(const sensor_msgs::Image::ConstPtr& img){
 
     if(analyzeFaceSrv.call(srv))
     {
+        std::cout<<"Analyze face background service called"<<std::endl;
         //srv.response.
-        std::vector<std::string> results;
+        //std::vector<std::string> results;
+        int i = 0;
+        std::string pronoun = "she";
+        std::string gender;
+        std::string age;
+        std::string state;
+        std::string race;
         for (const auto& chars : srv.response.Ids.ids){
-            results.push_back(chars.data);
+
+            std::cout<<"Data: "<<chars.data<<std::endl;
+            //results.push_back(chars.data);
+            switch(i){
+            case 0:
+                gender = chars.data;
+                i++;
+                break;
+            case 1:
+                race = chars.data;
+                i++;
+                break;
+            case 2:
+                state = chars.data;
+                i++;
+                break;
+            case 3:
+                age = chars.data;
+                i++;
+                break;
+            default:
+                break;
+            }
         }
-        if (results.size() > 1){
+        if (gender == "Man")
+                pronoun = "he";
+            std::string takeshi_line = face_name+ " has arrived... " +pronoun+  " is a " + gender +"... I believe " +pronoun; 
+            takeshi_line += " is  around " +age+ " years old... I would say he is a bit " +state;
+            takeshi_line += ". And I might guess "+ pronoun+ " is of " +race+ " descent.";
+            return takeshi_line;
+        /*if (results.size() > 1){
             std::string pronoun = "she";
             std::string gender  = results[0];
             std::string age     = results[-1];
@@ -49,11 +84,11 @@ std::string service_caller(const sensor_msgs::Image::ConstPtr& img){
             return takeshi_line;
         }
         else
-            return "";
+            return "1";*/
         
     }
     else
-        return "";
+        return "2";
 }
 
 
@@ -77,7 +112,7 @@ int main(int argc, char** argv) {
 
     // Create a subscriber to receive the image
     //sub_image   = n.subscribe("/image_to_analyze", 10, img_msg_Callback);
-    sub_image   = n.subscribe<sensor_msgs::Image>("/image_to_analyze", 1, img_msg_Callback);
+    sub_image   = n.subscribe<sensor_msgs::Image>("/image_to_analyze", 10, img_msg_Callback);
     sub_name    = n.subscribe<std_msgs::String>("/name_face", 10, name_msg_Callback);
 
 

@@ -105,7 +105,7 @@ class Goto_door(smach.State):  # ADD KNONW LOCATION DOOR
         if self.tries == 3:
             return 'tries'
         if self.tries == 1: talk('Navigating to, door')
-        res = omni_base.move_base(known_location='door_lab')
+        res = omni_base.move_base(known_location='door')
         print(res)
 
         if res:
@@ -172,10 +172,11 @@ class Scan_face(smach.State):
                 name_face=name
                 add_guest(name, drink)
                 talk('nice')
-                talk("analyzing face")
-                takeshi_line = analyze_face_from_image(img_face, name)
-                add_description(name, takeshi_line)
-                talk("done")
+                #talk("analyzing face")
+                #takeshi_line = analyze_face_from_image(img_face, name)
+                #add_description(name, takeshi_line)
+                analyze_face_background(img_face, name)
+                #talk("done")
                 return 'succ'
         else:
             return 'failed'
@@ -367,13 +368,14 @@ class Find_sitting_place(smach.State):
         #print (res,'face')
         if res == None:
 
+            print("Place is: ",place)
             _,guest = get_waiting_guests()
             head.set_named_target('neutral')
+            rospy.sleep(0.8)
             head.turn_base_gaze(tf=place)
             brazo.set_named_target('neutral')
             talk(f'{guest}, Here is a place to sit')
 
-            print(place)
 
             assign_occupancy(who=guest, where=place)
             return 'succ'

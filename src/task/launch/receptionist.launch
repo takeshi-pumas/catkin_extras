@@ -6,8 +6,8 @@
   <node pkg="face_recog"  name="face_recog" type="face_recog_server.py"/>
   <node pkg="face_recog"  name="face_recog_deep" type="face_recog_server_deep.py"/>
 
-  <node pkg="face_recog"  name="analyze_face_backgnd" type="analyze_face_backgnd_node"/>
-  <node pkg="task"        name="write_analyze_result" type="write_analyze_result.py"/>
+  <node pkg="face_recog"  name="analyze_face_backgnd" type="analyze_face_backgnd_node" output="screen"/>
+  <node pkg="task"        name="write_analyze_result" type="write_analyze_result.py" output="screen"/>
 
   <!-- <node pkg="smach_viewer"  name="smach_viewer" type="smach_viewer.py"/>   -->
   <!-- <node pkg="segmentation"  name="segmentator_node" type="segment_floor.py"/>   -->
