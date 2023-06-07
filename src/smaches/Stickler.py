@@ -18,7 +18,7 @@ class Initial(smach.State):
         self.tries = 0
 
     def execute(self, userdata):
-
+        global rooms
         rospy.loginfo('STATE : INITIAL')
         print('Robot neutral pose')
         self.tries += 1
@@ -26,6 +26,9 @@ class Initial(smach.State):
         if self.tries == 3:
             return 'tries'
         clean_knowledge()
+        ##############
+
+        ##########
         head.set_named_target('neutral')
         #print('head listo')
         #brazo.set_named_target('go')
@@ -136,16 +139,30 @@ class Goto_next_room(smach.State):  # ADD KNONW LOCATION DOOR
 
         print(f'Try {self.tries} of 3 attempts')
         self.tries += 1
-        if self.tries == 3:
-            return 'tries'
-        if self.tries == 1: talk('Navigating to, room'+str(self.next_room))
-        print ('navigating to room'+str(self.next_room))
-        res = omni_base.move_base(known_location='room'+str(self.next_room))
+        if self.tries == 5:
+            self.tries=0
+            #return 'tries'
+        elif self.tries == 1: 
+            talk('Navigating to bedroom')
+            next_room='bedroom'
+        elif self.tries == 2: 
+                    talk('Navigating to bedroom')
+                    next_room='bedroom'
+        elif self.tries == 3: 
+                    talk('Navigating to dining room')
+                    next_room='dining_room'
+        elif self.tries == 4: 
+                    talk('Navigating to kitchen')
+                    next_room='kitchen'
+
+       
+       
+
+        res = omni_base.move_base(known_location=next_room)
         print(res)
 
         if res :
 
-            (self.tries + 1)%2   #there are 2 rooms <__________________param
 
             return 'succ'
 
@@ -224,7 +241,7 @@ class Analyze_human(smach.State):
             logits_per_image, logits_per_text = model(image, text)
             probs = logits_per_image.softmax(dim=-1).cpu().numpy()
 
-        print("Label probs:", probs,keys[np.argmax(probs)] , probs)  # prints: [[0.9927937  0.00421068 0.00299572]]
+        print("Label probs:", probs,keys[np.argmax(probs)] , probs,keys)  # prints: [[0.9927937  0.00421068 0.00299572]]
         if keys[np.argmax(probs)] in ['sandals','feet','socks']:
             talk ('Thanks for not wearing shoes.... Rule 1 is observed')
             print ('Not wearing shoes')
@@ -257,15 +274,14 @@ if __name__ == '__main__':
 
     with sm:
         # State machine for Restaurant
-        smach.StateMachine.add("FIND_HUMAN",         Find_human(),          transitions={'failed': 'FIND_HUMAN',    'succ': 'GOTO_HUMAN'    , 'tries': 'GOTO_NEXT_ROOM'})
         #################################################################################################################################################################
         smach.StateMachine.add("INITIAL",           Initial(),              transitions={'failed': 'INITIAL',       'succ': 'WAIT_PUSH_HAND',   'tries': 'END'})
         smach.StateMachine.add("WAIT_PUSH_HAND",    Wait_push_hand(),       transitions={'failed': 'WAIT_PUSH_HAND','succ': 'FIND_HUMAN',        'tries': 'END'})
-        #################################################################################################################################################################
-        smach.StateMachine.add("ANALYZE_HUMAN",      Analyze_human(),       transitions={'failed': 'FIND_HUMAN',    'succ': 'END'})
-        smach.StateMachine.add("GOTO_NEXT_ROOM",     Goto_next_room(),      transitions={'failed': 'GOTO_NEXT_ROOM','succ': 'FIND_HUMAN'    , 'tries': 'FIND_HUMAN'})
+        smach.StateMachine.add("FIND_HUMAN",         Find_human(),          transitions={'failed': 'FIND_HUMAN',    'succ': 'GOTO_HUMAN'    , 'tries': 'GOTO_NEXT_ROOM'})
         smach.StateMachine.add("GOTO_HUMAN",         Goto_human(),          transitions={'failed': 'GOTO_HUMAN',    'succ': 'ANALYZE_HUMAN' , 'tries': 'FIND_HUMAN'})
-        ##################################################################################################################################################################
+        smach.StateMachine.add("ANALYZE_HUMAN",      Analyze_human(),       transitions={'failed': 'FIND_HUMAN',    'succ': 'GOTO_NEXT_ROOM'})
+        smach.StateMachine.add("GOTO_NEXT_ROOM",     Goto_next_room(),      transitions={'failed': 'GOTO_NEXT_ROOM','succ': 'FIND_HUMAN'    , 'tries': 'FIND_HUMAN'})
+        #################################################################################################################################################################
         
 
 
