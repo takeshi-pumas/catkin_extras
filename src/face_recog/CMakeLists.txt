@@ -171,6 +171,14 @@ catkin_install_python(PROGRAMS
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
  )
 
+add_executable(analyze_face_backgnd_node
+  src/analyze_face_background.cpp)
+  
+target_link_libraries(analyze_face_backgnd_node
+  ${catkin_LIBRARIES}
+  ${roscpp_LIBRARIES}
+  )
+
 ## Mark executables for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_executables.html
 # install(TARGETS ${PROJECT_NAME}_node

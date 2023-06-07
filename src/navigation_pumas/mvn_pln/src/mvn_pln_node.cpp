@@ -156,7 +156,8 @@ int main(int argc, char** argv)
     ros::ServiceClient clt_is_in_obstacles = n.serviceClient<std_srvs::Trigger>("/map_augmenter/is_inside_obstacles");
     
     ros::Rate loop(RATE);
-    ros::Rate slow_loop(1);
+    //ros::Rate slow_loop(1);
+    ros::Rate slow_loop(5);
 
     float robot_x = 0;
     float robot_y = 0;

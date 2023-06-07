@@ -235,6 +235,8 @@ def analyze_face_from_image(cv2_img,name=''):
     img_msg=bridge.cv2_to_imgmsg(cv2_img)
     req.in_.image_msgs.append(img_msg)
     #res=recognize(req)
+
+    #service call
     res = analyze_face(req)
     results=[]
     for chars in res.Ids.ids:
@@ -251,6 +253,17 @@ def analyze_face_from_image(cv2_img,name=''):
     takeshi_line += f'is  around  {age} years old... I would say he is a bit  {state}.'
     takeshi_line += f'And I might guess {pronoun} is of {race} descent.'
     return takeshi_line
+#------------------------------------------------------
+def analyze_face_background(img, name=" "):
+    name_pub = rospy.Publisher('/name_face', String, queue_size=10)
+    img_pub = rospy.Publisher('/image_to_analyze', Image, queue_size=10)
+    str_msg.data = name
+    name_pub.publish(str_msg)
+    img_msg=bridge.cv2_to_imgmsg(img)
+    img_pub.publish(img_msg)
+    str_msg = String()
+
+
 
 #------------------------------------------------------
 def bbox_3d_mean(points,boundRect):
