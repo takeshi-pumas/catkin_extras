@@ -31,7 +31,8 @@ from nav_msgs.msg import OccupancyGrid
 from hri_msgs.msg import RecognizedSpeech
 from rospy.exceptions import ROSException
 from vision_msgs.srv import *
-
+import rospkg
+import yaml
 
 from ros_whisper_vosk.srv import SetGrammarVosk
 
@@ -40,11 +41,11 @@ from utils.misc_utils import *
 from utils.nav_utils import *
 from utils.know_utils import *
 
-global listener, broadcaster, tfBuffer, tf_static_broadcaster, scene, rgbd, head,train_new_face, wrist, human_detect_server, line_detector, clothes_color
+global listener, broadcaster, tfBuffer, tf_static_broadcaster, scene, rgbd, head,train_new_face, wrist, human_detect_server, line_detector, clothes_color , head_mvit
 global clear_octo_client, goal,navclient,segmentation_server  , tf_man , omni_base, brazo, speech_recog_server, bridge, map_msg, pix_per_m, analyze_face , arm , set_grammar
 
 rospy.init_node('smach')
-# head = moveit_commander.MoveGroupCommander('head')
+head_mvit = moveit_commander.MoveGroupCommander('head')
 #gripper =  moveit_commander.MoveGroupCommander('gripper')
 #whole_body=moveit_commander.MoveGroupCommander('whole_body')
 
@@ -68,12 +69,12 @@ train_new_face = rospy.ServiceProxy('new_face', RecognizeFace)                  
 analyze_face = rospy.ServiceProxy('analyze_face', RecognizeFace)    ###DEEP FACE ONLY
 
 
-#map_msg= rospy.wait_for_message('/augmented_map', OccupancyGrid)####WAIT for nav pumas map
-#inflated_map= np.asarray(map_msg.data)
-#img_map=inflated_map.reshape((map_msg.info.width,map_msg.info.height))
-#pix_per_m=map_msg.info.resolution
-#contours, hierarchy = cv2.findContours(img_map.astype('uint8'),cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
-#contoured=cv2.drawContours(img_map.astype('uint8'), contours, 1, (255,255,255), 1)
+map_msg= rospy.wait_for_message('/augmented_map', OccupancyGrid)####WAIT for nav pumas map
+inflated_map= np.asarray(map_msg.data)
+img_map=inflated_map.reshape((map_msg.info.width,map_msg.info.height))
+pix_per_m=map_msg.info.resolution
+contours, hierarchy = cv2.findContours(img_map.astype('uint8'),cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+contoured=cv2.drawContours(img_map.astype('uint8'), contours, 1, (255,255,255), 1)
 
 rgbd= RGBD()
 bridge = CvBridge()
@@ -295,6 +296,15 @@ def bbox_3d_mean(points,boundRect):
         return np.ones(3)
 
 
+
+#------------------------------------------------------
+def read_yaml(known_locations_file='/known_locations.yaml'):
+    rospack = rospkg.RosPack()
+    file_path = rospack.get_path('config_files') + known_locations_file
+
+    with open(file_path, 'r') as file:
+        content = yaml.safe_load(file)
+    return content
 
 #------------------------------------------------------
 def gaze_to_face():
