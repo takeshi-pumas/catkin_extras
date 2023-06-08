@@ -137,23 +137,22 @@ class Goto_next_room(smach.State):  # ADD KNONW LOCATION DOOR
 
         print(f'Try {self.tries} of 3 attempts')
         self.tries += 1
-        if self.tries == 5:
-            self.tries=0
-            #return 'tries'
-        elif self.tries == 1: 
+        
+        
+        
+        if self.tries   <= 1: 
             talk('Navigating to  living room')
             next_room='living_room'
         elif self.tries == 2: 
                     talk('Navigating to dining room')
                     next_room='dining_room'
         elif self.tries == 3: 
-                    talk('Navigating to bedroom')
-                    next_room='bedroom'
-        elif self.tries == 4: 
                     talk('Navigating to kitchen')
                     next_room='kitchen'
-
-       
+        elif self.tries == 4: 
+                    talk('Navigating to bedroom')
+                    next_room='bedroom'
+                    self.tries=0
        
 
         res = omni_base.move_base(known_location=next_room)
@@ -189,12 +188,13 @@ class Goto_human(smach.State):
 
         head.to_tf('human')
 
-        print (res)
-        return 'succ'
+        
+        
 
-        if res == 3:
-            print ( "is he drinking?")
+        if res :
+            self.tries=0
             return 'succ'
+            
         else:
             talk('Navigation Failed, retrying')
             return 'failed'
@@ -216,17 +216,13 @@ class Analyze_human(smach.State):
 
         rospy.loginfo('STATE : Analyze area close to human')
 
-        print('Try', self.tries, 'of 3 attempts')
-        self.tries += 1
-        if self.tries == 3:
-            return 'tries'
-        
+       
         
         head.to_tf('human')
         ###image open pose tocayo magic.... #DRINKS
         
 
-        human_pos,_=tf_man.getTF('human')
+        
 
 
         human_pos,_=tf_man.getTF('human')
@@ -247,8 +243,9 @@ class Analyze_human(smach.State):
             logits_per_image, logits_per_text = model(image, text)
             probs = logits_per_image.softmax(dim=-1).cpu().numpy()
 
-        print("Label probs:", probs,keys[np.argmax(probs)] , probs)  # prints: [[0.9927937  0.00421068 0.00299572]]
-        if keys[np.argmax(probs)] in ['sandals','feet','socks']:
+        print("Label probs:", probs,keys[np.argmax(probs)] ,keys, probs[0][1] ) # prints: [[0.9927937  0.00421068 0.00299572]]
+        if (keys[np.argmax(probs)] in ['sandals','feet','socks', 'sock' ]   ) or ( probs[0][1]  < 0.36) :  
+
             talk ('Thanks for not wearing shoes.... Rule 1 is observed')
             print ('Not wearing shoes')
         else: 
@@ -261,29 +258,80 @@ class Analyze_human(smach.State):
 #########################################################################################################
 class Analyze_area(smach.State):
     def __init__(self):
-        smach.State.__init__(self, outcomes=['succ', 'failed'])
+        smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
         self.tries = 0
+        
 
     def execute(self, userdata):
 
         rospy.loginfo('STATE : Analyze_human')
 
-        print('Try', self.tries, 'of 3 attempts')
-        self.tries += 1
-        if self.tries == 3:
+        
+        self.tries+=1
+        #NO MOVEIT
+        #hv=head_mvit.get_current_joint_values()
+        #hv[0]=1.0
+        #head_mvit.go(hv)
+
+        
+        
+        if self.tries==1: head.set_joint_values([0.9,-1])
+        elif self.tries==2: head.set_joint_values([-0.9,-1])
+        elif self.tries==3:
+            self.tries=0
             return 'tries'
-        
-        
-        hv=head_mvit.get_current_joint_values()
-        hv[0]=1.0
-        head_mvit.go(hv)
-        
-        rospy.sleep(0.9)
-        ##### SHOES NO SHOES DETECTOR
+        rospy.sleep(1.9)
+        ##### Segment and analyze
         img=rgbd.get_image()
         cv2.imwrite('rubb.png',img)
-        print ('got image for feet analysis')
-        keys=[ "trash", "paper",'rubbish','foot','feet']
+        print ('got image for segmentation')
+        res=segmentation_server.call()
+
+        if len(res.poses.data)==0: 
+            talk('Rule no littering Observed. .. no Trash  in area next to human....')
+            return 'failed'
+
+            
+        else:
+            print('object found')
+
+
+
+            talk ('Something detected. Maybe trash Rule broken. NO littering')
+
+
+            ### TFS FOR OBJECTS using segmentation server
+            poses=np.asarray(res.poses.data)
+            poses=poses.reshape((int(len(poses)/3) ,3     )      )  
+            print (poses.shape)
+            for i,pose in enumerate(poses):
+                point_name=f'object_{i}'
+                print (point_name)
+                tf_man.pub_static_tf(pos=pose, point_name=point_name, ref='head_rgbd_sensor_rgb_frame')## which object to choose   #TODO
+                rospy.sleep(0.3)
+                tf_man.change_ref_frame_tf(point_name=point_name, new_frame='map')
+                rospy.sleep(0.3)
+            #####################
+
+
+            head.to_tf('human')
+            rospy.sleep(1.9)
+            talk ('Would you mind picking it up')
+            self.tries=0
+            return 'succ'
+            #### TODO  CHECK FOR COMPLIANCE OF RULE
+
+        #if len (res.im_out.image_msgs)>0: 
+        #    print ('multiple images')
+        #else: 
+        
+
+
+
+"""
+
+
+        keys=[ "trash", "paper",'rubbish', 'floor']
         image = preprocess(Image.fromarray(img)).unsqueeze(0).to(device) #img array from grbd get image
         text = clip.tokenize(keys).to(device)
 
@@ -295,14 +343,14 @@ class Analyze_area(smach.State):
             probs = logits_per_image.softmax(dim=-1).cpu().numpy()
 
         print("Label probs:", probs,keys[np.argmax(probs)] , probs)  # prints: [[0.9927937  0.00421068 0.00299572]]
-        if keys[np.argmax(probs)] not in ['foot','feet']:
+        if keys[np.argmax(probs)]  in ['trash ','paper', 'rubbish']:
             talk ('Something detected. Myabe trash?')
             print ('Not wearing shoes')
         else: 
             talk('Rule number 2 Observed. .. no Trash next to human.... thank you ')
-            ##
+
         return 'succ'
-        
+        """
     
 ###########################################################################################################
 
@@ -329,7 +377,7 @@ if __name__ == '__main__':
         smach.StateMachine.add("FIND_HUMAN",         Find_human(),          transitions={'failed': 'FIND_HUMAN',    'succ': 'GOTO_HUMAN'    , 'tries': 'GOTO_NEXT_ROOM'})
         smach.StateMachine.add("GOTO_HUMAN",         Goto_human(),          transitions={'failed': 'GOTO_HUMAN',    'succ': 'ANALYZE_HUMAN' , 'tries': 'FIND_HUMAN'})
         smach.StateMachine.add("ANALYZE_HUMAN",      Analyze_human(),       transitions={'failed': 'FIND_HUMAN',    'succ': 'ANALYZE_AREA'})
-        smach.StateMachine.add("ANALYZE_AREA",      Analyze_area(),       transitions={'failed': 'FIND_HUMAN',    'succ': 'GOTO_NEXT_ROOM'})   #
+        smach.StateMachine.add("ANALYZE_AREA",      Analyze_area(),         transitions={'failed': 'ANALYZE_AREA' , 'succ': 'GOTO_NEXT_ROOM' , 'tries': 'GOTO_NEXT_ROOM'})   #
         smach.StateMachine.add("GOTO_NEXT_ROOM",     Goto_next_room(),      transitions={'failed': 'GOTO_NEXT_ROOM','succ': 'FIND_HUMAN'    , 'tries': 'FIND_HUMAN'})
         #################################################################################################################################################################
         #################################################################################################################################################################
