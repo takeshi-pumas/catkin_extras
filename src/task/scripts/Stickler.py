@@ -317,6 +317,8 @@ class Analyze_area(smach.State):
                     talk ('Would you mind picking it up')
                     self.tries=0
                     return 'succ'
+
+                return 'failed'
                     #### TODO  CHECK FOR COMPLIANCE OF RULE
 
                 
