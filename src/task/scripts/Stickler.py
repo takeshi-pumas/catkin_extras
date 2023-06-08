@@ -286,44 +286,65 @@ class Analyze_area(smach.State):
         cv2.imwrite('rubb.png',img)
         print ('got image for segmentation')
         res=segmentation_server.call()
+        origin_map_img=[round(contoured.shape[0]*0.5) ,round(contoured.shape[1]*0.5)]
 
-        if len(res.poses.data)==0: 
+        if len(res.poses.data)==0:
             talk('Rule no littering Observed. .. no Trash  in area next to human....')
             return 'failed'
 
-            
         else:
             print('object found')
-
-
-
-            talk ('Something detected. Maybe trash Rule broken. NO littering')
-
-
-            ### TFS FOR OBJECTS using segmentation server
+            
             poses=np.asarray(res.poses.data)
             poses=poses.reshape((int(len(poses)/3) ,3     )      )  
-            print (poses.shape)
+            
             for i,pose in enumerate(poses):
+                #print (f'Occupancy map at point object {i}->', contoured[origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m)])
                 point_name=f'object_{i}'
-                print (point_name)
-                tf_man.pub_static_tf(pos=pose, point_name=point_name, ref='head_rgbd_sensor_rgb_frame')## which object to choose   #TODO
-                rospy.sleep(0.3)
-                tf_man.change_ref_frame_tf(point_name=point_name, new_frame='map')
-                rospy.sleep(0.3)
-            #####################
+            
+                if contoured[origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m)]!=0:#### Yes axes seem to be "flipped" !=0:
+                    print ('reject point, most likely part of arena, occupied inflated map')
+                else:
+
+                    talk('Rule no littering Observed. .. no Trash  in area next to human....')
+                    tf_man.pub_static_tf(pos=pose, point_name=point_name, ref='head_rgbd_sensor_rgb_frame')## which object to choose   #TODO
+                    rospy.sleep(0.3)
+                    tf_man.change_ref_frame_tf(point_name=point_name, new_frame='map')
+                    rospy.sleep(0.3)
+                    print (f"object found at map coords.{pose} ")
+                    head.to_tf('human')
+                    rospy.sleep(1.9)
+                    talk ('Would you mind picking it up')
+                    self.tries=0
+                    return 'succ'
+                    #### TODO  CHECK FOR COMPLIANCE OF RULE
+
+                
+        
 
 
-            head.to_tf('human')
-            rospy.sleep(1.9)
-            talk ('Would you mind picking it up')
-            self.tries=0
-            return 'succ'
-            #### TODO  CHECK FOR COMPLIANCE OF RULE
+        #res=segmentation_server.call()
+        #if len(res.poses.data)==0: 
+        #    talk('Rule no littering Observed. .. no Trash  in area next to human....')
+        #    return 'failed'
+        #else:
+        #    print('object found')
+        #    talk ('Something detected. Maybe trash Rule broken. NO littering')
+        #    poses=np.asarray(res.poses.data)
+        #    ### TFS FOR OBJECTS using segmentation server
+        #    poses=poses.reshape((int(len(poses)/3) ,3     )      )  
+        #    print (poses.shape)
+        #    for i,pose in enumerate(poses):
+        #        point_name=f'object_{i}'
+        #        print (point_name)
+        #        tf_man.pub_static_tf(pos=pose, point_name=point_name, ref='head_rgbd_sensor_rgb_frame')## which object to choose   #TODO
+        #        rospy.sleep(0.3)
+        #        tf_man.change_ref_frame_tf(point_name=point_name, new_frame='map')
+        #        rospy.sleep(0.3)
+        #    #####################
 
-        #if len (res.im_out.image_msgs)>0: 
-        #    print ('multiple images')
-        #else: 
+
+            
         
 
 
