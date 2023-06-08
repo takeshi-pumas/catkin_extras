@@ -1,16 +1,9 @@
 People:
   Guest_0:
     description: None
-    drink: Coke
-    location: None
-    name: Jack
-  Guest_1:
-    description: jack has arrived... he is a Man... I believe he is  around 33 years
-      old... I would say he is a bit neutral. And I might guess he is of middle eastern
-      descent.
-    drink: beer
-    location: Waiting
-    name: jack
+    drink: coke
+    location: Place_1
+    name: Michael
 Places:
   Place_0:
     location:
