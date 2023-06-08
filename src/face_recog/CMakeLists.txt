@@ -179,6 +179,11 @@ target_link_libraries(analyze_face_backgnd_node
   ${roscpp_LIBRARIES}
   )
 
+add_dependencies(analyze_face_backgnd_node 
+  face_recog_gencpp
+  )
+
+
 ## Mark executables for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_executables.html
 # install(TARGETS ${PROJECT_NAME}_node
