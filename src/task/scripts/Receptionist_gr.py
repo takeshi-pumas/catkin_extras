@@ -100,7 +100,7 @@ class Goto_door(smach.State):  # ADD KNONW LOCATION DOOR
 
     def execute(self, userdata):
 
-        rospy.loginfo('STATE : Navigate to known location')
+        rospy.loginfo('STATE : Navigate to known location: Door')
 
         print(f'Try {self.tries} of 3 attempts')
         self.tries += 1
@@ -127,7 +127,7 @@ class Scan_face(smach.State):
     def execute(self, userdata):
         global  img_face, name_face
 
-        rospy.loginfo('State : SCAN_FACE')
+        rospy.loginfo('State : Scan face')
         head.set_joint_values([0.0, 0.3])
         talk('Scanning for faces, look at me, please')
         self.tries += 1
@@ -159,27 +159,30 @@ class Scan_face(smach.State):
             else:
                 talk(f'I found you, I Think you are, {name}.')
                 talk('Is it correct?')
-                rospy.sleep(0.8)
+                rospy.sleep(1.5)
                 confirmation = get_keywords_speech(10)
                 print (confirmation)
 
                 if confirmation not in ['yes','jack','juice']:
                     return 'unknown'
-
-                talk('what do you want to drink?')
+                elif confirmation == "timeout":
+                    talk('I could not hear you')
+                    return "failed"
+                
+                name_face = name
+                return 'succ'
+                '''talk('what do you want to drink?')
                 rospy.sleep(0.8)
                 speech=get_keywords_speech(7)
                 if len(speech.split(' '))>1: drink=(speech.split(' ')[-1])  # in case things like I would like a
                 else: drink=speech
-
-                #res = speech_recog_server()  ## FULL DICT VOSK I STILL AVAILABLE
-                #drink = res.data             ## Note that set gramnmmar takes some time (may cause unex. crashes)  
                 
-                name_face=name
+                
                 add_guest(name, drink)
                 talk('nice')
                 analyze_face_background(img_face, name)
                 return 'succ'
+                '''
         else:
             return 'failed'
 
@@ -224,7 +227,7 @@ class New_face(smach.State):
             return 'failed'
 
         talk(f'Is {name} your name?')
-        rospy.sleep(1.0)
+        rospy.sleep(2.0)
         confirmation = get_keywords_speech(10)
         print (confirmation)
         
@@ -239,7 +242,7 @@ class New_face(smach.State):
 
 # --------------------------------------------------
 
-class New_face_drink(smach.State):
+class Get_drink(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
         self.new_name = ''
@@ -314,8 +317,12 @@ class Find_sitting_place(smach.State):
         print('Try', self.tries, 'of 3 attempts')
         self.tries += 1
         talk('I am looking for a place to sit')
-        place, loc = find_empty_places()
-        print(place, loc)
+        try:
+            place, loc = find_empty_places()
+            print(place, loc)
+        except:
+            talk('Sorry, there is no more places to sit')
+            return 'succ'
 
         tf_name = place.replace('_', '_face')
         print(tf_name)
@@ -377,6 +384,7 @@ class Introduce_guest(smach.State):
                 tf_name = f'Place_face{i}'
                 if guest_face != tf_name:
                     head.to_tf(tf_name)
+                    rospy.sleep(1.0)
                     talk(f'looking for host on sit {i}')
                     res, _ = wait_for_face()
 
@@ -428,18 +436,17 @@ if __name__ == '__main__':
     with sm:
         # State machine for Receptionist task
 
-        smach.StateMachine.add("INITIAL",           Initial(),          transitions={'failed': 'INITIAL',       'succ': 'WAIT_PUSH_HAND',   'tries': 'END'})
-        smach.StateMachine.add("WAIT_PUSH_HAND",    Wait_push_hand(),   transitions={'failed': 'WAIT_PUSH_HAND','succ': 'GOTO_DOOR',        'tries': 'WAIT_PUSH_HAND'})
-        smach.StateMachine.add("WAIT_DOOR_OPENED",  Wait_door_opened(),   transitions={'failed': 'WAIT_DOOR_OPENED','succ': 'GOTO_DOOR',        'tries': 'WAIT_DOOR_OPENED'})
+        smach.StateMachine.add("INITIAL",           Initial(),              transitions={'failed': 'INITIAL',           'succ': 'WAIT_PUSH_HAND',   'tries': 'END'})
+        smach.StateMachine.add("WAIT_PUSH_HAND",    Wait_push_hand(),       transitions={'failed': 'WAIT_PUSH_HAND',    'succ': 'GOTO_DOOR',        'tries': 'WAIT_PUSH_HAND'})
+        smach.StateMachine.add("WAIT_DOOR_OPENED",  Wait_door_opened(),     transitions={'failed': 'WAIT_DOOR_OPENED',  'succ': 'GOTO_DOOR',        'tries': 'WAIT_DOOR_OPENED'})
         
-        smach.StateMachine.add("SCAN_FACE",         Scan_face(),        transitions={'failed': 'SCAN_FACE',     'unknown': 'NEW_FACE',      'succ': 'LEAD_TO_LIVING_ROOM','tries': 'GOTO_DOOR'})
-        smach.StateMachine.add("NEW_FACE",          New_face(),         transitions={'failed': 'NEW_FACE',      'succ': 'NEW_FACE_DRINK','tries': 'NEW_FACE'})
-        smach.StateMachine.add("NEW_FACE_DRINK",    New_face_drink(),   transitions={'failed': 'NEW_FACE_DRINK',      'succ': 'LEAD_TO_LIVING_ROOM','tries': 'NEW_FACE_DRINK'})
+        smach.StateMachine.add("SCAN_FACE",         Scan_face(),    transitions={'failed': 'SCAN_FACE',     'succ': 'GET_DRINK',            'tries': 'GOTO_DOOR', 'unknown': 'NEW_FACE',})
+        smach.StateMachine.add("NEW_FACE",          New_face(),     transitions={'failed': 'NEW_FACE',      'succ': 'GET_DRINK',            'tries': 'NEW_FACE'})
+        smach.StateMachine.add("GET_DRINK",         Get_drink(),    transitions={'failed': 'GET_DRINK',     'succ': 'LEAD_TO_LIVING_ROOM',  'tries': 'GET_DRINK'})
 
-        smach.StateMachine.add("GOTO_DOOR",         Goto_door(),        transitions={'failed': 'GOTO_DOOR',     'succ': 'SCAN_FACE',        'tries': 'SCAN_FACE'})
-        #smach.StateMachine.add("GOTO_FACE",         Goto_face(),        transitions={'failed': 'GOTO_FACE',     'succ': 'LEAD_TO_LIVING_ROOM',   'tries': 'SCAN_FACE'})
-        smach.StateMachine.add("LEAD_TO_LIVING_ROOM",Lead_to_living_room(), transitions={'failed': 'LEAD_TO_LIVING_ROOM','succ': 'FIND_SITTING_PLACE','tries': 'END'})
-        smach.StateMachine.add("FIND_SITTING_PLACE", Find_sitting_place(),  transitions={'failed': 'FIND_SITTING_PLACE','succ': 'INTRODUCE_GUEST',    'tries': 'END'})
-        smach.StateMachine.add("INTRODUCE_GUEST",   Introduce_guest(),      transitions={'failed':'INTRODUCE_GUEST','succ':'WAIT_PUSH_HAND',    'tries':'WAIT_PUSH_HAND'})
+        smach.StateMachine.add("GOTO_DOOR",             Goto_door(),            transitions={'failed': 'GOTO_DOOR',             'succ': 'SCAN_FACE',            'tries': 'SCAN_FACE'})
+        smach.StateMachine.add("LEAD_TO_LIVING_ROOM",   Lead_to_living_room(),  transitions={'failed': 'LEAD_TO_LIVING_ROOM',   'succ': 'FIND_SITTING_PLACE',   'tries': 'END'})
+        smach.StateMachine.add("FIND_SITTING_PLACE",    Find_sitting_place(),   transitions={'failed': 'FIND_SITTING_PLACE',    'succ': 'INTRODUCE_GUEST',      'tries': 'END'})
+        smach.StateMachine.add("INTRODUCE_GUEST",       Introduce_guest(),      transitions={'failed':'INTRODUCE_GUEST',        'succ':'WAIT_PUSH_HAND',        'tries':'WAIT_PUSH_HAND'})
 
     outcome = sm.execute()

@@ -177,7 +177,7 @@ class GAZE():
     def to_tf(self, target_frame='None'):
         if target_frame != 'None':
             xyz,_ = self._tf_man.getTF(target_frame=target_frame)
-            rospy.sleep(0.5)
+            rospy.sleep(0.7)
             tries = 1
             #type(xyz) is bool --> tf no encontrada
             while (type(xyz) is bool) and (tries <= 5):
@@ -192,13 +192,16 @@ class GAZE():
         base = OMNIBASE()
         succ = False
         THRESHOLD = 0.05
+        tries = 0
         if tf != 'None':
             target_frame = tf
         else:
             target_frame = 'gaze'
             self._tf_man.pub_static_tf(pos=[self._x,self._y,self._z], point_name='gaze')
             rospy.sleep(0.8)
-        while not succ:
+        while (not succ) and (tries <=25):
+            tries += 1
+            rospy.sleep(0.8)
             xyz,_=self._tf_man.getTF(target_frame=target_frame, ref_frame=self._base)
             eT = 0
             if type(xyz) is not bool:
@@ -209,7 +212,7 @@ class GAZE():
             base.tiny_move(velT = eT, MAX_VEL_THETA=0.9)
         return True
 
-class HEAD():
+'''class HEAD():
     def __init__(self):
         self._x = 0
         self._y = 0
@@ -344,7 +347,7 @@ class HEAD():
             if succ:
                 eT = 0
             base.tiny_move(velT = eT, MAX_VEL_THETA=0.9)
-        return True
+        return True '''
 
 def set_pose_goal(pos=[0,0,0], rot=[0,0,0,1]):
     pose_goal = Pose()
