@@ -10,6 +10,7 @@ project(utils)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
+  tf
 )
 
 catkin_python_setup()
