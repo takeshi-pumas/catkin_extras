@@ -158,6 +158,14 @@ class Scan_face(smach.State):
 
             else:
                 talk(f'I found you, I Think you are, {name}.')
+                talk('Is it correct?')
+                rospy.sleep(0.8)
+                confirmation = get_keywords_speech(10)
+                print (confirmation)
+
+                if confirmation not in ['yes','jack','juice']:
+                    return 'unknown'
+
                 talk('what do you want to drink?')
                 rospy.sleep(0.8)
                 speech=get_keywords_speech(7)
