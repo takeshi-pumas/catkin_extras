@@ -28,7 +28,11 @@ def callback(req):
 	cnt_acciones=0
 	last_act=-1
 	response=RecognizeResponse()
-	
+	n_people_max=3
+	if req.in_!=4:
+		opWrapper,datum=init_openPose(n_people=1)
+	else:
+		opWrapper,datum=init_openPose(n_people=n_people_max)
 	print("HOLA MUNDO")
 
 	if req.in_==1: 	# Para utilizar otra camara, por ejemplo usb_cam
@@ -65,10 +69,12 @@ def callback(req):
 
 		while True:
 
-			#im=rgbd.get_image()
-			data = rospy.wait_for_message("/usb_cam/image_raw",Image,timeout=5) #
-			cv2_img = bridge.imgmsg_to_cv2(data)
-			im=np.copy(cv2_img)
+			im=rgbd.get_image()
+			#################### USE WITH USB_CAM #############################
+			#data = rospy.wait_for_message("/usb_cam/image_raw",Image,timeout=5) #
+			#cv2_img = bridge.imgmsg_to_cv2(data)
+			#im=np.copy(cv2_img)
+			#######################################################################
 
 			dataout=np.zeros((25,2))
 			datum.cvInputData = im
@@ -122,7 +128,7 @@ def callback(req):
 
 			im=rgb.get_image()
 			#im=cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
-			#h,w,_=im.shape
+			h,w,_=im.shape
 			dataPC=rgbd.get_points()
 			dataout=np.zeros((25,2))
 			skeletons_xyz=np.zeros((25,3))
@@ -212,7 +218,7 @@ def callback(req):
 		    
 		    image,dataPC=get_coordinates()
 		    #print(image.shape)
-		    #h,w,_=image.shape
+		    h,w,_=image.shape
 		    datum.cvInputData = image
 		    opWrapper.emplaceAndPop(op.VectorDatum([datum]))
 		    #print("Body keypoints: \n" + str(datum.poseKeypoints))
@@ -327,9 +333,8 @@ def callback(req):
 
 def recognition_server():
 	global tf_listener,rgb,rgbd,bridge,class_names,opWrapper,datum,h,w
-	opWrapper,datum=init_openPose(n_people=1)
-	h=480
-	w=640
+	#opWrapper,datum=init_openPose(n_people=1)
+
 	# ---
 
 	#rospy.init_node('recognize_action_server')

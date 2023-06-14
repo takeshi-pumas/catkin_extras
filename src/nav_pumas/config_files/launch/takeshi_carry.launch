@@ -14,12 +14,6 @@
   <node name="human_follower"  pkg="human_follower"  type="human_follower_node"  output="screen"/>
 
 
-
-
-
-
-  <node pkg="act_recog"  name="action_recog_node" type="act_recognition_server.py"/>  
-
 <include file="$(find speech_recog)/launch/ros_vosk.launch">  
 </include>
 

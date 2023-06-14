@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from cv_bridge import CvBridge
 from sensor_msgs.msg import Image ,PointCloud2
-from geometry_msgs.msg import TransformStamped
+from geometry_msgs.msg import  TransformStamped, Point, Quaternion
 from tf2_sensor_msgs.tf2_sensor_msgs import do_transform_cloud
 import rospy
 import ros_numpy
@@ -11,10 +11,8 @@ import numpy as np
 import cv2
 import sys
 from glob import glob
-from math import ceil,floor
 from os import path
 from rospkg import RosPack
-
 #---
 try:
     sys.path.append('/openpose/build/python');
@@ -30,7 +28,6 @@ except ImportError as e:
 global rospack,bridge,tf_man
 rospy.init_node('recognize_action_server')
 rospack = RosPack()
-#tf_man = TF_MANAGER()
 bridge = CvBridge()
 
 #========================================
@@ -325,3 +322,5 @@ def detect_drinking(data):
         return False
 
 #------------------------------------------
+
+tf_man = TF_MANAGER()
