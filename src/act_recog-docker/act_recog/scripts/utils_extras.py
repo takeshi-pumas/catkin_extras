@@ -27,7 +27,7 @@ def draw_text_bkgn(img, text,
 
     return text_size
 
-
+#---------------------------------------------------
 
 def draw_skeleton(joints,hh,wh,im,cnt_person=0,norm=False,bkground=False,centroid=False):
 
@@ -157,4 +157,59 @@ def draw_skeleton(joints,hh,wh,im,cnt_person=0,norm=False,bkground=False,centroi
         draw_text_bkgn(bkgn,text="Person:"+str(cnt_person),pos=(int(joints[0,0]), int(joints[0,1])-40),
                    font_scale=1.3,text_color=(255, 255, 32))
         return bkgn
+
+#---------------------------------------------------
+def draw_text_bkgn(img, text,
+          font=cv2.FONT_HERSHEY_PLAIN,
+          pos=(0, 0),
+          font_scale=1,
+          font_thickness=2,
+          text_color=(0, 255, 0),
+          text_color_bg=(0, 0, 0)
+          ):
+
+    x, y = pos
+    text_size, _ = cv2.getTextSize(text, font, font_scale, font_thickness)
+    text_w, text_h = text_size
+    cv2.rectangle(img, pos, (x + text_w, y + text_h), text_color_bg, -1)
+    cv2.putText(img, text, (x, y + text_h + int(font_scale) - 1), font, font_scale, text_color, font_thickness)
+
+    return text_size
+
+#------------------------------------------
+def draw_rect_sk(dataout,im,mask=False):
+    f=2
+    color=(255,255,0)
+    if mask:
+        f=-1
+        color=(255,255,255)
+    
+    bbox=get_rect_bbox(dataout,im)
+    cv2.rectangle(im,bbox[0],bbox[-1],color,f)
+    
+    return im
+
+#------------------------------------------
+def get_rect_bbox(dataout,im):
+    h,w,_=im.shape
+
+    bbox=np.array([[floor(np.min(dataout[:,0][np.nonzero(dataout[:,0])])),floor(np.min(dataout[:,1][np.nonzero(dataout[:,1])]))],
+                  [ceil(np.max(dataout[:,0][np.nonzero(dataout[:,0])])),ceil(np.max(dataout[:,1][np.nonzero(dataout[:,1])]))]
+                 ])
+    if bbox[0,0]>50:
+        bbox[0,0]-=50
+
+    if bbox[0,1]>50:
+        bbox[0,1]-=50
+
+    if w-bbox[1,0]>50:
+        bbox[1,0]+=50
+    else:
+        bbox[1,0]+=(w-bbox[1,0]-1)
+    if h-bbox[1,1]>50:
+        bbox[1,1]+=50
+    else:
+        bbox[1,1]+=(h-bbox[1,1]-1)    
+    return bbox
+
 #---------------------------------------------------

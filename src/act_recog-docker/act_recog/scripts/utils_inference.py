@@ -14,25 +14,23 @@ from glob import glob
 from math import ceil,floor
 from os import path
 from rospkg import RosPack
-from utils.misc_utils import TF_MANAGER
 
 #---
 try:
-	usr_url=path.expanduser( '~' )
-	# OJO a este path, cambiarlo desde donde esté la carpeta openpose
-    #print(usr_url+'/openpose/build/python')
-	sys.path.append(usr_url+'/openpose/build/python');
-	from openpose import pyopenpose as op
+    sys.path.append('/openpose/build/python');
+    #sys.path.append('/home/roboworks/openpose/build/python');
+    from openpose import pyopenpose as op
 except ImportError as e:
-	print('Error: OpenPose library could not be found. Did you enable `BUILD_PYTHON` in CMake and have this Python script in the right folder?')
-	raise e
+    print('Error: OpenPose library could not be found. Did you enable `BUILD_PYTHON` in CMake and have this Python script in the right folder?')
+    raise e
+
 #---
 
 
 global rospack,bridge,tf_man
 rospy.init_node('recognize_action_server')
 rospack = RosPack()
-tf_man = TF_MANAGER()
+#tf_man = TF_MANAGER()
 bridge = CvBridge()
 
 #========================================
@@ -51,99 +49,125 @@ class RGB():
     
     def get_image(self):
         return self._image_data
-
-
+       
 #---------------------------------------------------        
-def loadModels(classes):
+class RGBD():
+    def __init__(self):
+        self._br = tf.TransformBroadcaster()
+        self._cloud_sub = rospy.Subscriber(
+            "/hsrb/head_rgbd_sensor/depth_registered/rectified_points",
+            PointCloud2, self._cloud_cb)
+        self._points_data = None
+        self._image_data = None
+        self._h_image = None
+        self._region = None
+        self._h_min = 0
+        self._h_max = 0
+        self._xyz = [0, 0, 0]
+        self._frame_name = None
+
+    def _cloud_cb(self, msg):
+        self._points_data = ros_numpy.numpify(msg)
+        self._image_data = \
+        self._points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]
+        hsv_image = cv2.cvtColor(self._image_data, cv2.COLOR_RGB2HSV_FULL)
+        self._h_image = hsv_image[..., 0]
+        self._region = \
+        (self._h_image > self._h_min) & (self._h_image < self._h_max)
+        if not np.any(self._region):
+            return
+            
+        (y_idx, x_idx) = np.where(self._region)
+        x = np.average(self._points_data['x'][y_idx, x_idx])
+        y = np.average(self._points_data['y'][y_idx, x_idx])
+        z = np.average(self._points_data['z'][y_idx, x_idx])
+        self._xyz = [y, x, z]
+        if self._frame_name is None:
+            return
+
+        self._br.sendTransform(
+        (x, y, z), tf.transformations.quaternion_from_euler(0, 0, 0),
+        rospy.Time(msg.header.stamp.secs, msg.header.stamp.nsecs),
+        self._frame_name,
+        msg.header.frame_id)
+
+    def get_image(self):
+        return self._image_data
+
+    def get_points(self):
+        return self._points_data
+
+    def get_h_image(self):
+        return self._h_image
+
+    def get_region(self):
+        return self._region
+
+    def get_xyz(self):
+        return self._xyz
+
+    def set_h(self, h_min, h_max):
+        self._h_min = h_min
+        self._h_max = h_max
+
+    def set_coordinate_name(self, name):
+        self._frame_name = name
     
-    # get the file path for rospy_tutorials
-    # Para cargar los modelos en el codigo de HMM con Vit
-    route=path.join(rospack.get_path("act_recog"))+"/scripts/models/"
-    modelsA=[]
-    modelsB=[]
-    modelsPI=[]
+#---------------------------------------------------     
+class TF_MANAGER():
+    def __init__(self):
+        self._tfbuff = tf2.Buffer()
+        self._lis = tf2.TransformListener(self._tfbuff)
+        self._tf_static_broad = tf2.StaticTransformBroadcaster()
+        self._broad = tf2.TransformBroadcaster()
 
-    for cl in classes:
-        modelsA.append(np.load(glob(path.join(route,'modelA_'+cl+"*"))[0]))
-        modelsB.append(np.load(glob(path.join(route,'modelB_'+cl+"*"))[0]))
-        modelsPI.append(np.load(glob(path.join(route,'modelPI_'+cl+"*"))[0]))
+    def _fillMsg(self, pos = [0,0,0], rot = [0,0,0,1] ,point_name ='', ref="map"):
+        TS = TransformStamped()
+        TS.header.stamp = rospy.Time.now()
+        TS.header.frame_id = ref
+        TS.child_frame_id = point_name
+        TS.transform.translation = Point(*pos)
+        TS.transform.rotation = Quaternion(*rot)
+        return TS
 
-    return modelsA,modelsB,modelsPI
+    def pub_tf(self, pos = [0,0,0], rot = [0,0,0,1] ,point_name ='', ref="map"):
+        dinamic_ts = self._fillMsg(pos, rot, point_name, ref)
+        self._broad.sendTransform(dinamic_ts)
 
-#---------------------------------------------------
-def create_vk(data,cb,quitaJ=False,centralized=False):
-    # Se crean listas vacias para vk
-    if quitaJ:
-        data=reduce25_to_15(data)
-        
-    if centralized:
-        data=centralizaMatriz(data)
-    #data=flat_list(data)
-    tmp=data[:,:].ravel(order='F')
+    def pub_static_tf(self, pos = [0,0,0], rot = [0,0,0,1] ,point_name ='', ref="map"):
+        static_ts = self._fillMsg(pos, rot, point_name, ref)
+        self._tf_static_broad.sendTransform(static_ts)
 
-    # se obtienen las distancias euclidianas comparando con todos los vectores del codebook
-    # retorna la menor de estas distancias
+    def change_ref_frame_tf(self, point_name = '', rotational = [0,0,0,1], new_frame = 'map'):
+        try:
+            traf = self._tfbuff.lookup_transform(new_frame, point_name, rospy.Time(0))
+            translation, _ = self.tf2_obj_2_arr(traf)
+            self.pub_static_tf(pos = translation, rot = rotational, point_name = point_name, ref = new_frame)
+            return True
+        except:
+            return False
 
-    return np.argmin([np.linalg.norm(tmp-c) for c in cb])
+    def getTF(self, target_frame='', ref_frame='map'):
+        try:
+            tf = self._tfbuff.lookup_transform(ref_frame, target_frame, rospy.Time(0))
+            return self.tf2_obj_2_arr(tf)
+        except:
+            return [False,False]
 
-#------------------------------------------------------------------------------
-def reduce25_to_15(data):
-    # assuming shape of 25,2
-    return np.vstack((data[:10,:],data[12,:],data[15:19,:]))
-
-#-------------------------------------------------------------
-def centralizaSecuencia(secuencia,codebook=False):
-    tmp=np.zeros(secuencia.shape)
-    if secuencia.ndim==2:
-        for i in range(tmp.shape[0]):
-            x=secuencia[i,1]
-            y=secuencia[i,int(secuencia[i,:].shape[0]/2)+1]
-            tmp[i,:int(secuencia[i,:].shape[0]/2)]=x-secuencia[i,:int(secuencia[i,:].shape[0]/2)]
-            tmp[i,int(secuencia[i,:].shape[0]/2):]=y-secuencia[i,int(secuencia[i,:].shape[0]/2):]
-
-    else:
-        for i in range(tmp.shape[0]):
-            tmp[i,:]=centralizaMatriz(secuencia[i,:])
-    return tmp
-
-#-------------------------------------------------------------
-def centralizaMatriz(data):
+    def tf2_obj_2_arr(self, transf):
+        pos = []
+        pos.append(transf.transform.translation.x)
+        pos.append(transf.transform.translation.y)
+        pos.append(transf.transform.translation.z)
     
-    nuevoSK=np.zeros(data.shape)
-    if data[1,0]!=0 and data[1,1]!=0:
-        coordCentrada=data[1,:]
-    else:
-        #print("No se encontró esqueleto en joint 1, se utiliza el joint 0")
-        coordCentrada=data[0,:]
+        rot = []
+        rot.append(transf.transform.rotation.x)
+        rot.append(transf.transform.rotation.y)
+        rot.append(transf.transform.rotation.z)
+        rot.append(transf.transform.rotation.w)
 
-    for i in range(data.shape[0]):
-        if data[i,0]!=0 and data[i,1]!=0:
-            nuevoSK[i,:]=coordCentrada[:]-data[i,:]
-    return nuevoSK
+        return [pos, rot]
 
-#---------------------------------------------------
-def inf_Secuence(data,modelsA,modelsB,modelsPI):
-    
-    probas_nuevas = np.zeros((len(modelsA)),dtype=np.float64)
-    for i in range(len(modelsA)):
-        probas_nuevas[i]=forward(data,modelsA[i],modelsB[i],modelsPI[i])
-    return probas_nuevas
-
-#---------------------------------------------------
-def forward(V, a, b, initial_distribution):
-    probas = np.zeros((V.shape[0], a.shape[0]),dtype=np.float64)
-    alpha = np.zeros((a.shape[0]),dtype=np.float64)
-    probas[0, :] = initial_distribution * b[:, V[0]]
-
-    for t in range(1, V.shape[0]):
-        for j in range(a.shape[0]):
-            # Matrix Computation Steps
-            #                  ((1x2) . (1x2))      *     (1)
-            #                        (1)            *     (1)
-            probas[t, j] = probas[t - 1].dot(a[:, j]) * b[j, V[t]]     
-    alpha = sum(probas[-1,:])
-
-    return alpha
 
  #---------------------------------------------------
 def init_openPose(n_people=-1,net_res="-1x208",model="BODY_25",heatmap=False):
@@ -152,7 +176,7 @@ def init_openPose(n_people=-1,net_res="-1x208",model="BODY_25",heatmap=False):
         params = dict()
 		# OJO a este path, cambiarlo desde donde esté la carpeta openpose
         #print(usr_url+"openpose/models/")
-        params["model_folder"] = usr_url+"openpose/models/"
+        params["model_folder"] = "/openpose/models/"
         params["model_pose"] = model
         params["net_resolution"]= net_res
         # -1 -> toda persona detectable
@@ -197,8 +221,6 @@ def return_xyz_sk(lastSK,indx,cld_points):
     else:
         sk=0
     print("SK:::",sk)
-    
-
 
     head_xyz=[cld_points['x'][round(lastSK[indx,sk,1]), round(lastSK[indx,sk,0])],
             cld_points['y'][round(lastSK[indx,sk,1]), round(lastSK[indx,sk,0])],
@@ -278,7 +300,6 @@ def get_extrapolation(mano,codo,z=0):
 
 
 #---------------------------------------------------
-
 def detect_drinking(data):
     """
         Brazo derecho: 2,3,4 (hombro,codo,mano) 
@@ -302,56 +323,5 @@ def detect_drinking(data):
     else:
         #print("No se detecta brazo con bebida")
         return False
-#------------------------------------------
-def draw_text_bkgn(img, text,
-          font=cv2.FONT_HERSHEY_PLAIN,
-          pos=(0, 0),
-          font_scale=1,
-          font_thickness=2,
-          text_color=(0, 255, 0),
-          text_color_bg=(0, 0, 0)
-          ):
-
-    x, y = pos
-    text_size, _ = cv2.getTextSize(text, font, font_scale, font_thickness)
-    text_w, text_h = text_size
-    cv2.rectangle(img, pos, (x + text_w, y + text_h), text_color_bg, -1)
-    cv2.putText(img, text, (x, y + text_h + int(font_scale) - 1), font, font_scale, text_color, font_thickness)
-
-    return text_size
 
 #------------------------------------------
-def draw_rect_sk(dataout,im,mask=False):
-    f=2
-    color=(255,255,0)
-    if mask:
-        f=-1
-        color=(255,255,255)
-    
-    bbox=get_rect_bbox(dataout,im)
-    cv2.rectangle(im,bbox[0],bbox[-1],color,f)
-    
-    return im
-
-#------------------------------------------
-def get_rect_bbox(dataout,im):
-    h,w,_=im.shape
-
-    bbox=np.array([[floor(np.min(dataout[:,0][np.nonzero(dataout[:,0])])),floor(np.min(dataout[:,1][np.nonzero(dataout[:,1])]))],
-                  [ceil(np.max(dataout[:,0][np.nonzero(dataout[:,0])])),ceil(np.max(dataout[:,1][np.nonzero(dataout[:,1])]))]
-                 ])
-    if bbox[0,0]>50:
-        bbox[0,0]-=50
-
-    if bbox[0,1]>50:
-        bbox[0,1]-=50
-
-    if w-bbox[1,0]>50:
-        bbox[1,0]+=50
-    else:
-        bbox[1,0]+=(w-bbox[1,0]-1)
-    if h-bbox[1,1]>50:
-        bbox[1,1]+=50
-    else:
-        bbox[1,1]+=(h-bbox[1,1]-1)    
-    return bbox

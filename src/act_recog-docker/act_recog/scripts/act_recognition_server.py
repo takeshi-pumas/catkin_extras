@@ -7,9 +7,18 @@ import rospy
 
 from utils_inference import *
 from utils_extras import *
-from utils.misc_utils import RGBD
+
+"""
+	Servicio usando docker para utilizar OpenPose sin ocuparse
+	de si la computadora lo tiene instalado, con el objetivo de 
+	inferir distintas acciones
+	Este servicio no usa HMM para la deteccion de esqueletos,
+	quedó en otro servicio con distinto nombre
+
+"""
 
 
+#========================================
 def callback(req):
 
 	flo=Floats()
@@ -19,132 +28,48 @@ def callback(req):
 	cnt_acciones=0
 	last_act=-1
 	response=RecognizeResponse()
-	max_inf_it=40
-	n_people_max=3
+	
+	print("HOLA MUNDO")
 
-	if req.in_!=4:
-		opWrapper,datum=init_openPose(n_people=1)
-	else:
-		opWrapper,datum=init_openPose(n_people=n_people_max)
+	if req.in_==1: 	# Para utilizar otra camara, por ejemplo usb_cam
 
-	#----------------
-	if req.in_==1:
-		print("Opcion 1\n\tObteniendo imagenes...")
-		dataout=np.zeros((25,2))
-		if ctrlz:
-		    cb2=centralizaSecuencia(cb,codebook=True)    
+		print("Opcion 1: USB_CAM y no accion inferida, solo pose con Openpose")
+		data = rospy.wait_for_message("/usb_cam/image_raw",Image,timeout=5) #
+		cv2_img = bridge.imgmsg_to_cv2(data)
+		image=np.copy(cv2_img)
+		h,w,_=image.shape
+		
+
+		datum.cvInputData = image
+		opWrapper.emplaceAndPop(op.VectorDatum([datum]))
+		if datum.poseKeypoints is not None:
+		    dataout=np.copy(datum.poseKeypoints[0,:,:2])
+		    response.i_out=1
+		    image=draw_skeleton(dataout,h,w,image,cnt_person=0,bkground=True)
 		else:
-		    cb2=cb
-		while True:
-			# <<<<<<<<<<<<<<<< obtengo imagen >>>>>>>>>>>>>>>>>>>>>
-			im=rgbd.get_image()
-			imgOut=np.copy(im)
-			#im=cv2.cvtColor(im, cv2.COLOR_BGR2RGB )
-
-			#    Obtengo esqueleto
-			#       Obtengo simbolo y append
-			# <<<<<<<<<<<< obtengo esqueleto >>>>>>>>>>>>>>>>>>>>>>>>>
-			datum.cvInputData = im
-			opWrapper.emplaceAndPop(op.VectorDatum([datum]))
-			if datum.poseKeypoints is not None:
-			    dataout=np.copy(datum.poseKeypoints[0,:,:2])
-			    # <<<< si detecto esqueleto, obtengo su simbolo y lo guardo >>>>>>>>
-			    symbol=create_vk(dataout,cb2,quitaJ=True,centralized=ctrlz)
-			    buffer.append(symbol)
-			else:
-			    symbol=0
-
-
-
-
-			if len(buffer)==buf_size+1:
-			    buffer.pop(0)
-			#<<<<< si el buffer tiene un cierto tamaño, empieza la inferencia >>>>>>
-			if len(buffer)==buf_size:
-			    probas=inf_Secuence(np.asarray(buffer),mA,mB,mPI)
-			    #print("Accion inferida: {}".format(class_names[np.argmax(probas[:])]))
-			    # <<<<<<< empieza a contar repeticiones de acciones inferidas >>>>>>
-			    if last_act==-1:
-			        last_act=np.argmax(probas[:])
-
-			    else:
-			        if np.argmax(probas[:])==last_act:
-			            cnt_acciones+=1
-			        else:
-			            cnt_acciones=0
-			            last_act=np.argmax(probas[:])
-
-			im=draw_skeleton(dataout,h,w,im,cnt_person=0,bkground=True)
-			im=draw_skeleton(cb[symbol],h,w,im,cnt_person=0,bkground=True,centroid=True)
-			if last_act==-1:
-			    cv2.putText(img=im, text="buffer size:"+str(len(buffer))+", symbol det:"+str(symbol)+" reps:"+str(cnt_acciones), 
-			    org=(5, 20),fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.6, color=(35, 255, 148),thickness=2)
-			else:
-			    cv2.putText(img=im, text="buffer size:"+str(len(buffer))+", symbol det:"+str(symbol)+" reps:"+str(cnt_acciones)+" act:"+str(class_names[last_act]), 
-			    org=(5, 20),fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.6, color=(35, 255, 148),thickness=2)
-			if req.visual!=0:
-			    cv2.imshow("Imagen RGB",im)
-			    cv2.waitKey(10)
-
-			#<<<<<<<<<<< si la inferencia se repite un determinado numero de veces
-			#            termina el ciclo y regresa variables y demas >>>>>>>>>>>>
-
-			if cnt_acciones==max_inf_it and last_act==4:
-			    print("Accion 4 detectada: {}".format(class_names[last_act]))
-			    img_msg=bridge.cv2_to_imgmsg(imgOut) # change to rgbd in robot
-			    sk_msg=bridge.cv2_to_imgmsg(dataout)
-			    print("Recibiendo imagen rgbd...")
-			    frameC,dataPC=get_coordinates()
-			    print("publicando...")
-			    frameC=draw_skeleton(dataout,h,w,frameC,cnt_person=0,bkground=True)  
-			    #if req.visual!=0:  
-			    #    cv2.imshow("IMAGEN RGBD",frameC)
-			    #    cv2.waitKey(400)
-			    pub_points(dataPC,dataout,skPub=1)
-			    print("tfs publicadas")
-
-			    break
-
-
-			# Si es drink o neutral, sigue reconociendo hasta obtener otra accion
-			elif cnt_acciones==max_inf_it and (last_act==2 or last_act==3):
-			    print("Accion detectada: neutral o drink, se sigue detectando... ")
-			    cnt_acciones=0
-
-			# Si es waving, similar a pointing pero solo publica la cara
-			elif cnt_acciones==max_inf_it:
-			    print("Accion detectada: {}".format(class_names[last_act]))
-			    print("Recibiendo imagen rgbd...")
-			    frameC,dataPC=get_coordinates()
-			    print("publicando...")
-			    pub_points(dataPC,dataout,skPub=0)
-			    print("tf publicada")
-			    img_msg=bridge.cv2_to_imgmsg(imgOut) # change to rgbd in robot
-			    sk_msg=bridge.cv2_to_imgmsg(dataout)
-			    
-			    break
-		if req.visual!=0:
-		    cv2.destroyAllWindows()
-		    cv2.waitKey(1)
-
-
+			print("NO SK DETECTADO")
+		img_msg=bridge.cv2_to_imgmsg(image)
 		if len(response.im_out.image_msgs)==0:
 		    response.im_out.image_msgs.append(img_msg)
 		else:
 		    response.im_out.image_msgs[0]=img_msg
 
-		
-		response.i_out=np.argmax(probas[:])
+		if req.visual==1:
+		   	cv2.imshow("RES",image)
+		   	cv2.waitKey(0)
 
-		return response
-    #----------------
-	# Para give object
+	# Para give object 
 	elif req.in_==2:
 		print("Opcion 2, estimar brazo para dar objeto".format(req.in_))
 		cnt=0
+
 		while True:
 
-			im=rgbd.get_image()
+			#im=rgbd.get_image()
+			data = rospy.wait_for_message("/usb_cam/image_raw",Image,timeout=5) #
+			cv2_img = bridge.imgmsg_to_cv2(data)
+			im=np.copy(cv2_img)
+
 			dataout=np.zeros((25,2))
 			datum.cvInputData = im
 			opWrapper.emplaceAndPop(op.VectorDatum([datum]))
@@ -182,15 +107,12 @@ def callback(req):
 			cv2.waitKey(1)
 
 		img_msg=bridge.cv2_to_imgmsg(im)
-		img_msg2=bridge.cv2_to_imgmsg(dataout)
 		if len(response.im_out.image_msgs)==0:
 		    response.im_out.image_msgs.append(img_msg)
 		else:
 		    response.im_out.image_msgs[0]=img_msg
 
-		
-		return response
-    #----------------
+
 	# Para pointing sin HMM
 	elif req.in_==3:
 		max_inf_it=30
@@ -276,10 +198,10 @@ def callback(req):
 		else:
 		    response.im_out.image_msgs[0]=img_msg
 
-		#print(response)
-		return response
+
 
 	#----------------
+	# para drinking, no drinking
 	elif req.in_==4:
 		conteo_sin_bebida=np.zeros(n_people_max)
 		max_drink_cnt=15
@@ -364,8 +286,9 @@ def callback(req):
 		#---------------------------------
 		cv2.destroyAllWindows()
 		#--------------------------------
-		return response
-	#----------------
+
+		#---------------
+
 	# Para obtener la imagen y esqueleto 1 vez y trabajar con ella fuera del servicio
 	else:
 		print("Opcion {}, una sola imagen con openpose".format(req.in_))
@@ -397,35 +320,22 @@ def callback(req):
 		    response.im_out.image_msgs.append(img_msg)
 		else:
 		    response.im_out.image_msgs[0]=img_msg
+	if req.visual!=0:
+		cv2.destroyAllWindows()
+	return response    
+#========================================
 
-		
-		return response    
-
-
-#global tf_man
 def recognition_server():
-	global tf_listener,rgb,rgbd,bridge,class_names,mA,mB,mPI,opWrapper,datum,cb,h,w
-	#---Parte para cargar lo necesario en inferencia con OpenPose y Markov---
-	class_names=["wave_R","wave_L","neutral","drink","pointing"]
-	mA,mB,mPI=loadModels(class_names)
-
-	cb=np.load(path.join(rospack.get_path("act_recog"))+"/scripts/codebooks/codebook_LBG_160_s30.npy")
-	#opWrapper,datum=init_openPose(n_people=1)
+	global tf_listener,rgb,rgbd,bridge,class_names,opWrapper,datum,h,w
+	opWrapper,datum=init_openPose(n_people=1)
 	h=480
 	w=640
 	# ---
 
-	#--- Parte para cargar lo necesario de ROS
-
 	#rospy.init_node('recognize_action_server')
 	rgbd= RGBD()
 	rgb= RGB()
-	#bridge = CvBridge()
-	#tf_man = TF_MANAGER()
-	#bridge = CvBridge()
-	#tf_listener = tf.TransformListener()
-	#broadcaster= tf.TransformBroadcaster()
-	#tf_static_broadcaster= tf2.StaticTransformBroadcaster()
+
 	rospy.loginfo("Action recognition service available")                    # initialize a ROS node
 	s = rospy.Service('recognize_act', Recognize, callback) 
 	print("Reconition service available")
