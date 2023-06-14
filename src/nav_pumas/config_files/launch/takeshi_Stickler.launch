@@ -3,8 +3,8 @@
 
 <!--include file="$(find hsrb_moveit_config)/launch/hsrb_demo_with_controller.launch">
   <arg name="use_gui" value="false"/>
-  <!arg name="load_robot_description" value="false"/>
 </include-->
+  <!--arg name="load_robot_description" value="false"/-->
   
    
   

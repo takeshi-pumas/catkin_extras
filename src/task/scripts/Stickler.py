@@ -19,13 +19,27 @@ class Initial(smach.State):
 
     def execute(self, userdata):
 
+        global forbiden_room , xys , room_names 
         rospy.loginfo('STATE : INITIAL')
         print('Robot neutral pose')
         self.tries += 1
         print(f'Try {self.tries} of 5 attempts')
         if self.tries == 3:
             return 'tries'
-        clean_knowledge()
+        
+        #READ YAML ROOMS XYS
+        df=yaml_to_df()
+        xys=[]
+        xys.append(df[df['child_id_frame']=='bedroom'][['x','y']].values.ravel())
+        xys.append(df[df['child_id_frame']=='living_room'][['x','y']].values.ravel())
+        xys.append(df[df['child_id_frame']=='dining_room'][['x','y']].values.ravel())
+        xys.append(df[df['child_id_frame']=='kitchen'][['x','y']].values.ravel())
+        room_names=['bedroom','living_room','dining_room','kitchen']
+        xys, room_names
+        #####
+        ####FORBIDEN ROOM 
+        forbiden_room='dining_room'
+
         head.set_named_target('neutral')
         #print('head listo')
         #brazo.set_named_target('go')
@@ -170,7 +184,7 @@ class Goto_next_room(smach.State):  # ADD KNONW LOCATION DOOR
 #########################################################################################################
 class Goto_human(smach.State):
     def __init__(self):
-        smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
+        smach.State.__init__(self, outcomes=['succ', 'failed', 'tries','forbidden'])
         self.tries = 0
 
     def execute(self, userdata):
@@ -184,9 +198,22 @@ class Goto_human(smach.State):
         
         print('getting close to human')
         head.to_tf('human')
-        res = omni_base.move_d_to(1.0,'human')
 
-        head.to_tf('human')
+        res = omni_base.move_d_to(1.0,'human')
+        
+        human_pos,_=tf_man.getTF('human')
+        print   (human_pos[:2])
+        human_xy=np.asarray(human_pos[:2])
+
+        dists=(human_xy-np.asarray(xys))
+        
+        
+
+        if room_names[np.linalg.norm(dists, axis=1).argmin()]== forbiden_room:
+            head.to_tf('human')
+            talk (f'human found in{room_names[np.linalg.norm(dists, axis=1).argmin()]} which is forbidden, please follow me to an allowed room')
+            return 'forbidden'
+
 
         
         
@@ -202,6 +229,28 @@ class Goto_human(smach.State):
 ###########################################################################################################
 
 
+class Lead_to_living_room(smach.State):
+    def __init__(self):
+        smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
+        self.tries = 0
+
+    def execute(self, userdata):
+
+        rospy.loginfo('STATE : navigate to known location')
+
+        print('Try', self.tries, 'of 3 attempts')
+        self.tries += 1
+        if self.tries == 3:
+            return 'tries'
+        _,guest_name = get_waiting_guests()
+        talk(f'{guest_name}... I will lead you to the living room, please follow me')
+        # talk('Navigating to ,living room')
+        res = omni_base.move_base(known_location='living_room')
+        if res:
+            return 'succ'
+        else:
+            talk('Navigation Failed, retrying')
+            return 'failed'
 
     
         
@@ -226,6 +275,7 @@ class Analyze_human(smach.State):
 
 
         human_pos,_=tf_man.getTF('human')
+        
         head.absolute(human_pos[0],human_pos[1],0.1)
         rospy.sleep(2.9)
         ##### SHOES NO SHOES DETECTOR
@@ -280,7 +330,7 @@ class Analyze_area(smach.State):
         elif self.tries==3:
             self.tries=0
             return 'tries'
-        rospy.sleep(1.9)
+        rospy.sleep(2.9)
         ##### Segment and analyze
         img=rgbd.get_image()
         cv2.imwrite('rubb.png',img)
@@ -306,7 +356,6 @@ class Analyze_area(smach.State):
                     print ('reject point, most likely part of arena, occupied inflated map')
                 else:
 
-                    talk('Rule no littering Observed. .. no Trash  in area next to human....')
                     tf_man.pub_static_tf(pos=pose, point_name=point_name, ref='head_rgbd_sensor_rgb_frame')## which object to choose   #TODO
                     rospy.sleep(0.3)
                     tf_man.change_ref_frame_tf(point_name=point_name, new_frame='map')
@@ -314,10 +363,12 @@ class Analyze_area(smach.State):
                     print (f"object found at map coords.{pose} ")
                     head.to_tf('human')
                     rospy.sleep(1.9)
-                    talk ('Would you mind picking it up')
+                    talk ('Rule number 2 Broken. Rubbish detected Would you mind picking it up')
                     self.tries=0
                     return 'succ'
 
+                talk('Rule no littering Observed. .. no Trash  in area next to human....')
+                self.tries=0
                 return 'failed'
                     #### TODO  CHECK FOR COMPLIANCE OF RULE
 
@@ -398,7 +449,8 @@ if __name__ == '__main__':
         smach.StateMachine.add("INITIAL",           Initial(),              transitions={'failed': 'INITIAL',       'succ': 'WAIT_PUSH_HAND',   'tries': 'END'})
         smach.StateMachine.add("WAIT_PUSH_HAND",    Wait_push_hand(),       transitions={'failed': 'WAIT_PUSH_HAND','succ': 'FIND_HUMAN',        'tries': 'END'})
         smach.StateMachine.add("FIND_HUMAN",         Find_human(),          transitions={'failed': 'FIND_HUMAN',    'succ': 'GOTO_HUMAN'    , 'tries': 'GOTO_NEXT_ROOM'})
-        smach.StateMachine.add("GOTO_HUMAN",         Goto_human(),          transitions={'failed': 'GOTO_HUMAN',    'succ': 'ANALYZE_HUMAN' , 'tries': 'FIND_HUMAN'})
+        smach.StateMachine.add("GOTO_HUMAN",         Goto_human(),          transitions={'failed': 'GOTO_HUMAN',    'succ': 'ANALYZE_HUMAN' , 'tries': 'FIND_HUMAN' , 'forbidden':'LEAD_TO_LIVING_ROOM'})
+        smach.StateMachine.add("LEAD_TO_LIVING_ROOM",Lead_to_living_room(), transitions={'failed': 'LEAD_TO_LIVING_ROOM','succ': 'GOTO_NEXT_ROOM','tries': 'END'})
         smach.StateMachine.add("ANALYZE_HUMAN",      Analyze_human(),       transitions={'failed': 'FIND_HUMAN',    'succ': 'ANALYZE_AREA'})
         smach.StateMachine.add("ANALYZE_AREA",      Analyze_area(),         transitions={'failed': 'ANALYZE_AREA' , 'succ': 'GOTO_NEXT_ROOM' , 'tries': 'GOTO_NEXT_ROOM'})   #
         smach.StateMachine.add("GOTO_NEXT_ROOM",     Goto_next_room(),      transitions={'failed': 'GOTO_NEXT_ROOM','succ': 'FIND_HUMAN'    , 'tries': 'FIND_HUMAN'})
