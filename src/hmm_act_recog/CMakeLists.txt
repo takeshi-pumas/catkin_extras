@@ -52,13 +52,14 @@ find_package(catkin REQUIRED COMPONENTS
 add_message_files(
  FILES
  Floats.msg
-
+ Image.msg
 )
 
 ## Generate services in the 'srv' folder
  add_service_files(
    FILES
    RecogHMMAction.srv
+   RecognizeOP.srv
  )
 
 ## Generate actions in the 'action' folder
