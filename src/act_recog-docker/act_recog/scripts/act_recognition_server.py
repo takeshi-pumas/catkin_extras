@@ -75,7 +75,7 @@ def callback(req):
 			#cv2_img = bridge.imgmsg_to_cv2(data)
 			#im=np.copy(cv2_img)
 			#######################################################################
-
+			h,w,_=im.shape
 			dataout=np.zeros((25,2))
 			datum.cvInputData = im
 			opWrapper.emplaceAndPop(op.VectorDatum([datum]))
@@ -210,7 +210,7 @@ def callback(req):
 	# para drinking, no drinking
 	elif req.in_==4:
 		conteo_sin_bebida=np.zeros(n_people_max)
-		max_drink_cnt=15
+		max_drink_cnt=20
 		cnt_normal=0
 		no_person=0
 		flg_out=False
@@ -254,13 +254,14 @@ def callback(req):
 
 		    print(conteo_sin_bebida)
 		    # -----------------------
-		    cv2.imshow("RES",image)
-		    cv2.waitKey(10)
+		    if req.visual!=0:
+		    	cv2.imshow("RES",image)
+		    	cv2.waitKey(10)
 		    # --------------------------
-		    if no_person==30:
+		    if no_person==20:
 		    	response.i_out=3
 		    	break
-		    if cnt_normal==40:
+		    if cnt_normal==20:
 		    	print("TODOS CON BEBIDA DURANTE UN TIEMPO RAZONABLE")
 		    	response.i_out=2
 		    	break
@@ -290,7 +291,8 @@ def callback(req):
 			    if flg_out:
 			        break
 		#---------------------------------
-		cv2.destroyAllWindows()
+		if req.visual!=0:
+			cv2.destroyAllWindows()
 		#--------------------------------
 
 		#---------------

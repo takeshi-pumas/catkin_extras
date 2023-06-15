@@ -29,7 +29,7 @@ class Initial(smach.State):
         #Takeshi neutral
         head.set_named_target('neutral')
 
-        confirmation=['yes','no','yeah','No'] ###        Use with get_keywords_speech()
+        confirmation=['yes','no','yeah','not','none','now','negative'] ###        Use with get_keywords_speech()
 
         set_grammar(confirmation)  ##PRESET DRINKS
         rospy.sleep(0.8)
