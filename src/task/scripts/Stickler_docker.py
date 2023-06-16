@@ -123,10 +123,14 @@ class Find_human(smach.State):
         if self.tries==3:head.set_joint_values([-0.3, 0.1])
 
         
+        print('Detecting Humans ')
         rospy.sleep(0.7)
         humanpose=detect_human_to_tf()
+        
+        
+        
 
-        print('Detecting Humans ')
+        
 
 
         if humanpose== False:
@@ -134,7 +138,19 @@ class Find_human(smach.State):
             return 'failed'
         else : 
             talk('Human Found, Getting close ')
+            rospy.sleep(0.7)
+            human_pos,_=tf_man.getTF('human')
             head.to_tf('human')
+            print (humanpose, human_pos)
+            
+            human_xy=np.asarray(human_pos[:2])
+            dists=(human_xy-np.asarray(xys))
+            if room_names[np.linalg.norm(dists, axis=1).argmin()]== forbiden_room:
+                head.to_tf('human')
+                talk (f'human found in forbidden room {room_names[np.linalg.norm(dists, axis=1).argmin()]} ')
+                rospy.sleep(0.6)
+                talk('I will take him to a valid location')
+                
             self.tries=0
             return 'succ'    
 
@@ -199,21 +215,21 @@ class Goto_human(smach.State):
         print('getting close to human')
         head.to_tf('human')
 
-        res = omni_base.move_d_to(1.0,'human')
+        res = omni_base.move_d_to(0.6,'human')
         
-        human_pos,_=tf_man.getTF('human')
-        print   (human_pos[:2])
-        human_xy=np.asarray(human_pos[:2])
+        
 
+        human_pos,_=tf_man.getTF('human')
+        human_xy=np.asarray(human_pos[:2])
         dists=(human_xy-np.asarray(xys))
         
         
 
         if room_names[np.linalg.norm(dists, axis=1).argmin()]== forbiden_room:
             head.to_tf('human')
-            talk (f'human found in{room_names[np.linalg.norm(dists, axis=1).argmin()]} which is forbidden')
+            talk (f' Sorry  no one is allowed in the {room_names[np.linalg.norm(dists, axis=1).argmin()]} ')
             rospy.sleep(0.6)
-            talk('Please follow me. I will take you to a valid location')
+            
             return 'forbidden'
 
 
@@ -267,43 +283,65 @@ class Analyze_human(smach.State):
 
     def execute(self, userdata):
 
-        rospy.loginfo('STATE : Analyze area close to human')
+        rospy.loginfo('STATE : Analyze  human')
 
        
         
-        head.to_tf('human')
         ###image open pose tocayo magic.... #DRINKS
         
 
         
 
 
+        head.set_joint_values([0,1.3])
+        rospy.sleep(1.0)
+        humanpose=detect_human_to_tf()
+        rospy.sleep(0.6)
         human_pos,_=tf_man.getTF('human')
-        
-        head.absolute(human_pos[0],human_pos[1],0.1)
-        rospy.sleep(2.9)
-        ##### SHOES NO SHOES DETECTOR
-        img=rgbd.get_image()
-        cv2.imwrite('feet.png',img)
-        print ('got image for feet analysis')
-        keys=[ "feet", "shoes",'socks','sock','sandals']
-        image = preprocess(Image.fromarray(img)).unsqueeze(0).to(device) #img array from grbd get image
-        text = clip.tokenize(keys).to(device)
+        print('Detecting Humans ')
 
-        with torch.no_grad():
-            image_features = model.encode_image(image)
-            text_features = model.encode_text(text)
+
+        if humanpose== False:
+            talk ('human lost')
             
-            logits_per_image, logits_per_text = model(image, text)
-            probs = logits_per_image.softmax(dim=-1).cpu().numpy()
+        
+        
 
-        print("Label probs:", probs,keys[np.argmax(probs)] ,keys, probs[0][1] ) # prints: [[0.9927937  0.00421068 0.00299572]]
-        if (keys[np.argmax(probs)] in ['sandals','feet','socks', 'sock' ]   ) or ( probs[0][1]  < 0.36) :  
+        human_pos,_=tf_man.getTF('human')
+        #head.absolute(human_pos[0],human_pos[1],0.1)
+        ##### SHOES NO SHOES DETECTOR
+        probss=[]
+        head.absolute(human_pos[0],human_pos[1],-0.1)
+        rospy.sleep(1.9)
+        for i in range (5):
+            img=rgbd.get_image()
+            cv2.imwrite('feet.png',img)
+            print ('got image for feet analysis')
+            keys=[ "feet", "shoes",'socks','sandals','sock']
+            image = preprocess(Image.fromarray(img)).unsqueeze(0).to(device) #img array from grbd get image
+            text = clip.tokenize(keys).to(device)
+
+            with torch.no_grad():
+                image_features = model.encode_image(image)
+                text_features = model.encode_text(text)
+                
+                logits_per_image, logits_per_text = model(image, text)
+                probs = logits_per_image.softmax(dim=-1).cpu().numpy()
+
+            print("Label probs:", probs,keys[np.argmax(probs)] ,keys, probs[0][1] ) # prints: [[0.9927937  0.00421068 0.00299572]]
+        
+
+
+        head.to_tf('human')
+        head.set_joint_values([0,1.3])
+        rospy.sleep(0.5)
+
+        if (keys[np.argmax(probs)] in ['sandals','feet','socks', 'sock' ]   ) or ( probs[0][1]  < 0.45  ) :  
 
             talk ('Thanks for not wearing shoes.... Rule 1 is observed')
             print ('Not wearing shoes')
         else: 
-            talk('Rule number 1... no shoes please... Would you mind taking them off?.... thank you ')
+            talk('Rule number 1 Broken... no shoes please... Would you mind taking them off?.... thank you ')
             ##
         return 'succ'
 
@@ -318,7 +356,7 @@ class Analyze_area(smach.State):
 
     def execute(self, userdata):
 
-        rospy.loginfo('STATE : Analyze_human')
+        rospy.loginfo('STATE : Analyze_area')
 
         
         self.tries+=1
@@ -340,96 +378,47 @@ class Analyze_area(smach.State):
         cv2.imwrite('rubb.png',img)
         print ('got image for segmentation')
         res=segmentation_server.call()
-        origin_map_img=[round(contoured.shape[0]*0.5) ,round(contoured.shape[1]*0.5)]
+        origin_map_img=[round(img_map.shape[0]*0.5) ,round(img_map.shape[1]*0.5)]
 
         if len(res.poses.data)==0:
             talk('no Trash  in area next to human....')
             return 'failed'
 
         else:
-            print('object found')
+            print('object found checking for inflated map')
             
             poses=np.asarray(res.poses.data)
             poses=poses.reshape((int(len(poses)/3) ,3     )      )  
-            
+            num_objs=len(poses)
+            print (num_objs)
             for i,pose in enumerate(poses):
-                #print (f'Occupancy map at point object {i}->', contoured[origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m)])
+                #print (f'Occupancy map at point object {i}-> pixels ',origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m), img_map[origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m)])
                 point_name=f'object_{i}'
-            
-                if contoured[origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m)]!=0:#### Yes axes seem to be "flipped" !=0:
+                tf_man.pub_static_tf(pos=pose, point_name=point_name, ref='head_rgbd_sensor_rgb_frame')## which object to choose   #TODO
+                rospy.sleep(0.3)
+                tf_man.change_ref_frame_tf(point_name=point_name, new_frame='map')
+                rospy.sleep(0.3)
+                pose,_= tf_man.getTF(point_name)
+                print (f'Occupancy map at point object {i}-> pixels ',origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m), img_map[origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m)])
+                if img_map[origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m)]!=0:#### Yes axes seem to be "flipped" !=0:
                     print ('reject point, most likely part of arena, occupied inflated map')
-                else:
+                    tf_man.pub_static_tf(pos=[0,0,0], point_name=point_name, ref='head_rgbd_sensor_rgb_frame')
+                    num_objs-=1
+                print (f"object found at robot coords.{pose} ")
 
-                    tf_man.pub_static_tf(pos=pose, point_name=point_name, ref='head_rgbd_sensor_rgb_frame')## which object to choose   #TODO
-                    rospy.sleep(0.3)
-                    tf_man.change_ref_frame_tf(point_name=point_name, new_frame='map')
-                    rospy.sleep(0.3)
-                    print (f"object found at map coords.{pose} ")
-                    head.to_tf('human')
-                    rospy.sleep(1.9)
-                    talk ('Rule number 2 Broken. Garbage detected Would you mind picking it up')
-                    self.tries=0
-                    return 'succ'
+        if num_objs!=0: 
+            head.to_tf('human')
+            rospy.sleep(0.5)
+            talk ('Rule number 2 Broken. Garbage detected Would you mind picking it up')
+            self.tries=0
+            return 'succ'
+        talk('Rule no littering Observed. .. no Trash  in area next to human....')
+        return 'failed'
 
-                talk('Rule no littering Observed. .. no Trash  in area next to human....')
-                self.tries=0
-                return 'failed'
-                    #### TODO  CHECK FOR COMPLIANCE OF RULE
 
-                
+
+
         
-
-
-        #res=segmentation_server.call()
-        #if len(res.poses.data)==0: 
-        #    talk('Rule no littering Observed. .. no Trash  in area next to human....')
-        #    return 'failed'
-        #else:
-        #    print('object found')
-        #    talk ('Something detected. Maybe trash Rule broken. NO littering')
-        #    poses=np.asarray(res.poses.data)
-        #    ### TFS FOR OBJECTS using segmentation server
-        #    poses=poses.reshape((int(len(poses)/3) ,3     )      )  
-        #    print (poses.shape)
-        #    for i,pose in enumerate(poses):
-        #        point_name=f'object_{i}'
-        #        print (point_name)
-        #        tf_man.pub_static_tf(pos=pose, point_name=point_name, ref='head_rgbd_sensor_rgb_frame')## which object to choose   #TODO
-        #        rospy.sleep(0.3)
-        #        tf_man.change_ref_frame_tf(point_name=point_name, new_frame='map')
-        #        rospy.sleep(0.3)
-        #    #####################
-
-
-            
-        
-
-
-
-"""
-
-
-        keys=[ "trash", "paper",'rubbish', 'floor']
-        image = preprocess(Image.fromarray(img)).unsqueeze(0).to(device) #img array from grbd get image
-        text = clip.tokenize(keys).to(device)
-
-        with torch.no_grad():
-            image_features = model.encode_image(image)
-            text_features = model.encode_text(text)
-            
-            logits_per_image, logits_per_text = model(image, text)
-            probs = logits_per_image.softmax(dim=-1).cpu().numpy()
-
-        print("Label probs:", probs,keys[np.argmax(probs)] , probs)  # prints: [[0.9927937  0.00421068 0.00299572]]
-        if keys[np.argmax(probs)]  in ['trash ','paper', 'rubbish']:
-            talk ('Something detected. Myabe trash?')
-            print ('Not wearing shoes')
-        else: 
-            talk('Rule number 2 Observed. .. no Trash next to human.... thank you ')
-
-        return 'succ'
-        """
-
 ###########################################################################################################
 class Detect_drink(smach.State):
     def __init__(self):
