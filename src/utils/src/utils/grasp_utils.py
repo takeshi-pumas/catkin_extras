@@ -188,7 +188,7 @@ class GAZE():
             if type(xyz) is not bool:
             	self.absolute(*xyz)
 
-    def turn_base_gaze(self,tf='None'):
+    def turn_base_gaze(self,tf='None', to_gaze = 'base_link'):
         base = OMNIBASE()
         succ = False
         THRESHOLD = 0.05
@@ -198,11 +198,11 @@ class GAZE():
         else:
             target_frame = 'gaze'
             self._tf_man.pub_static_tf(pos=[self._x,self._y,self._z], point_name='gaze')
-            rospy.sleep(0.8)
-        while (not succ) and (tries <=25):
+            rospy.sleep(0.1)
+        while (not succ) and (tries <=10):
             tries += 1
-            rospy.sleep(0.8)
-            xyz,_=self._tf_man.getTF(target_frame=target_frame, ref_frame=self._base)
+            rospy.sleep(0.2)
+            xyz,_=self._tf_man.getTF(target_frame=target_frame, ref_frame=to_gaze)
             eT = 0
             if type(xyz) is not bool:
             	eT = np.arctan2(xyz[1],xyz[0])

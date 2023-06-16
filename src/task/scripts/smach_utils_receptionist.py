@@ -82,6 +82,7 @@ wrist= WRIST_SENSOR()
 head = GAZE()
 brazo = ARM()
 line_detector = LineDetector()
+voice = TALKER()
 # arm =  moveit_commander.MoveGroupCommander('arm')
 
 

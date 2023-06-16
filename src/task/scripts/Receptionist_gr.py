@@ -55,7 +55,7 @@ class Wait_push_hand(smach.State):
             return 'tries'
         head.set_named_target('neutral')
         brazo.set_named_target('go')
-        talk('Gently... push my hand to begin')
+        voice.voice.talk('Gently... push my hand to begin')
         succ = wait_for_push_hand(100)
 
         if succ:
@@ -80,9 +80,9 @@ class Wait_door_opened(smach.State):
 
         if self.tries == 100:
             return 'tries'
-        talk('I am ready for receptionist task.')
+        voice.talk('I am ready for receptionist task.')
         rospy.sleep(0.8)
-        talk('I am waiting for the door to be opened')
+        voice.talk('I am waiting for the door to be opened')
         succ = line_detector.line_found()
         #succ = wait_for_push_hand(100)
         rospy.sleep(1.0)
@@ -106,14 +106,15 @@ class Goto_door(smach.State):  # ADD KNONW LOCATION DOOR
         self.tries += 1
         if self.tries == 3:
             return 'tries'
-        if self.tries == 1: talk('Navigating to, door')
+        if self.tries == 1: voice.talk('Navigating to, door')
         res = omni_base.move_base(known_location='door')
         print(res)
 
         if res:
+            self.tries = 0
             return 'succ'
         else:
-            talk('Navigation Failed, retrying')
+            voice.talk('Navigation Failed, retrying')
             return 'failed'
 
 # --------------------------------------------------
@@ -129,7 +130,7 @@ class Scan_face(smach.State):
 
         rospy.loginfo('State : Scan face')
         head.set_joint_values([0.0, 0.3])
-        talk('Scanning for faces, look at me, please')
+        voice.talk('Scanning for faces, look at me, please')
         self.tries += 1
         if self.tries >= 4:
             self.tries = 0
@@ -140,25 +141,23 @@ class Scan_face(smach.State):
         print (res)
 
         print('Checking for faces')
-        if res != None: 
-            #return 0
-
+        if res != None:
             name = res.Ids.ids
 
             print('RESPONSE', name)
             if name == 'NO_FACE':
                 print('No face Found, Keep scanning')
-                talk('I did not see you, I will try again')
+                voice.talk('I did not see you, I will try again')
                 return 'failed'
 
             elif name == 'unknown':
                 print('A face was found.')
-                talk('I believe we have not met. ')
+                voice.talk('I believe we have not met. ')
                 return 'unknown'
 
             else:
-                talk(f'I found you, I Think you are, {name}.')
-                talk('Is it correct?')
+                voice.talk(f'I found you, I Think you are, {name}.')
+                voice.talk('Is it correct?')
                 rospy.sleep(1.5)
                 confirmation = get_keywords_speech(10)
                 print (confirmation)
@@ -166,23 +165,11 @@ class Scan_face(smach.State):
                 if confirmation not in ['yes','jack','juice']:
                     return 'unknown'
                 elif confirmation == "timeout":
-                    talk('I could not hear you')
+                    voice.talk('I could not hear you')
                     return "failed"
-                
-                name_face = name
-                return 'succ'
-                '''talk('what do you want to drink?')
-                rospy.sleep(0.8)
-                speech=get_keywords_speech(7)
-                if len(speech.split(' '))>1: drink=(speech.split(' ')[-1])  # in case things like I would like a
-                else: drink=speech
-                
-                
-                add_guest(name, drink)
-                talk('nice')
-                analyze_face_background(img_face, name)
-                return 'succ'
-                '''
+                else:
+                    name_face = name
+                    return 'succ'
         else:
             return 'failed'
 
@@ -202,8 +189,8 @@ class New_face(smach.State):
         rospy.loginfo('STATE : NEW_FACE')
         
         #If name is not recognized 3 times, guest may be registered as a "someone"
-        if self.tries == 3:
-            talk ('I am having trouble understanding your name, lets keep going')
+        if self.tries == 4:
+            voice.talk ('I am having trouble understanding your name, lets keep going')
             name = 'someone'
             name_face=name
             train_face(img_face, name)
@@ -211,7 +198,7 @@ class New_face(smach.State):
             return 'succ'
         
         #Asking for name
-        talk('Please, tell me your name')
+        voice.talk('Please, tell me your name')
         rospy.sleep(1.0)
         speech=get_keywords_speech(10)
         # in case thinks like I am , my name is . etc
@@ -222,22 +209,22 @@ class New_face(smach.State):
         print (name)
 
         if  name=='timeout':
-            talk('I could not hear you , lets try again')
-            #talk ('lets try again')
+            voice.talk('I could not hear you , lets try again')
+            #voice.talk ('lets try again')
             return 'failed'
 
-        talk(f'Is {name} your name?')
+        voice.talk(f'Is {name} your name?')
         rospy.sleep(2.0)
         confirmation = get_keywords_speech(10)
         print (confirmation)
         
         if confirmation in['yes','jack','juice']:   ### YES AND MOST COMMON MISREADS
-            talk (f'Nice to Meet You {name}')
+            voice.talk (f'Nice to Meet You {name}')
             train_face(img_face, name)
             self.tries=0
             return 'succ'
         else:
-            talk ('lets try again')
+            voice.talk ('lets try again')
             return 'failed'
 
 # --------------------------------------------------
@@ -253,17 +240,17 @@ class Get_drink(smach.State):
         global name_face
         self.tries += 1
 
-        rospy.loginfo('STATE : NEW_FACE')
+        rospy.loginfo('STATE : GET DRINK')
 
         #Asking for drink
-        talk('What would you like to drink?')
+        voice.talk('What would you like to drink?')
         rospy.sleep(1.0)
         drink=get_keywords_speech(10)
 
         if len(drink.split(' '))>1: drink=(drink.split(' ')[-1])
 
         rospy.sleep(0.5)
-        talk(f'Did you say {drink}?')
+        voice.talk(f'Did you say {drink}?')
 
         rospy.sleep(1.0)
         confirmation = get_keywords_speech(10)
@@ -274,7 +261,7 @@ class Get_drink(smach.State):
 
         add_guest(name_face, drink)
         analyze_face_background(img_face, name_face)
-        talk("Nice")
+        voice.talk("Nice")
 
         return 'succ'
 
@@ -294,13 +281,13 @@ class Lead_to_living_room(smach.State):
         if self.tries == 3:
             return 'tries'
         _,guest_name = get_waiting_guests()
-        talk(f'{guest_name}... I will lead you to the living room, please follow me')
-        # talk('Navigating to ,living room')
+        voice.talk(f'{guest_name}... I will lead you to the living room, please follow me')
+        # voice.talk('Navigating to ,living room')
         res = omni_base.move_base(known_location='living_room')
         if res:
             return 'succ'
         else:
-            talk('Navigation Failed, retrying')
+            voice.talk('Navigation Failed, retrying')
             return 'failed'
 
 # --------------------------------------------------
@@ -316,12 +303,12 @@ class Find_sitting_place(smach.State):
 
         print('Try', self.tries, 'of 3 attempts')
         self.tries += 1
-        talk('I am looking for a place to sit')
+        voice.talk('I am looking for a place to sit')
         try:
             place, loc = find_empty_places()
             print(place, loc)
         except:
-            talk('Sorry, there is no more places to sit')
+            voice.talk('Sorry, there is no more places to sit')
             return 'succ'
 
         tf_name = place.replace('_', '_face')
@@ -330,7 +317,7 @@ class Find_sitting_place(smach.State):
         head.to_tf(tf_name)
 
         res=detect_human_to_tf()
-        talk('I will check if there is no people on this sit')
+        voice.talk('I will check if this place is empty')
         res , _ = wait_for_face()  # seconds
         if res == None:
 
@@ -338,9 +325,10 @@ class Find_sitting_place(smach.State):
             _,guest = get_waiting_guests()
             head.set_named_target('neutral')
             rospy.sleep(0.8)
-            head.turn_base_gaze(tf=place)
+            #head.turn_base_gaze(tf=place)
+            head.turn_base_gaze(tf=place, to_gaze='arm_flex_link')
             brazo.set_named_target('neutral')
-            talk(f'{guest}, Here is a place to sit')
+            voice.talk(f'{guest}, Here is a place to sit')
 
 
             assign_occupancy(who=guest, where=place)
@@ -351,10 +339,11 @@ class Find_sitting_place(smach.State):
             #print(occupant_name)
             #occupant_name = "someone"
             if occupant_name == 'unknown':
-                host_name, loc = find_host()
-                occupant_name = host_name
+                occupant_name = 'someone'
+                #host_name, loc = find_host()
+                #occupant_name = host_name
             update_occupancy(found=occupant_name, place=place)
-            talk(f'I am sorry, here is {occupant_name}, I will find another place for you')
+            voice.talk(f'I am sorry, here is {occupant_name}, I will find another place for you')
             return 'failed'
 
 # --------------------------------------------------
@@ -375,7 +364,7 @@ class Introduce_guest(smach.State):
         host_name, loc = find_host()
 
         if loc == "None":
-            #talk("i dont know where the host is")
+            #voice.talk("i dont know where the host is")
             num_places = len(return_places())
             print(f'num_places: {num_places}')
             for i in range(1, num_places + 1):
@@ -385,7 +374,7 @@ class Introduce_guest(smach.State):
                 if guest_face != tf_name:
                     head.to_tf(tf_name)
                     rospy.sleep(1.0)
-                    talk(f'looking for host on sit {i}')
+                    voice.talk(f'looking for host on sit {i}')
                     res, _ = wait_for_face()
 
                     if res is not None and res.Ids.ids != 'NO_FACE':
@@ -402,7 +391,7 @@ class Introduce_guest(smach.State):
                             print('no face in img deep analyze')
                             speech = f'{name_face} has arrived'
                             timeout = 1.0
-                        talk(speech)
+                        voice.talk(speech)
                         rospy.sleep(timeout)
                         self.tries = 0
                         return 'succ'

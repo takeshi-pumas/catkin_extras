@@ -83,7 +83,7 @@ def update_occupancy_gpt(found='unknown', place='None'):
 def find_empty_places():
     knowledge = read_yaml()
     seat = [key for key, places_dict in knowledge['Places'].items(
-    ) if places_dict.get('occupied') == 'None']
+    ) if (places_dict.get('occupied') == 'None') or (places_dict.get('occupied') == 'someone')]
     loc = list(knowledge['Places'][seat[0]]['location'].values())
     t, x, y = loc
     return seat[0], [x, y, t]
