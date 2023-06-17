@@ -33,6 +33,7 @@ from rospy.exceptions import ROSException
 from vision_msgs.srv import *
 import rospkg
 import yaml
+from act_recog.srv import Recognize,RecognizeResponse,RecognizeRequest
 
 from ros_whisper_vosk.srv import SetGrammarVosk
 
@@ -43,9 +44,9 @@ from utils.know_utils import *
 
 global listener, broadcaster, tfBuffer, tf_static_broadcaster, scene, rgbd, head,train_new_face, wrist, human_detect_server, line_detector, clothes_color , head_mvit
 global clear_octo_client, goal,navclient,segmentation_server  , tf_man , omni_base, brazo, speech_recog_server, bridge, map_msg, pix_per_m, analyze_face , arm , set_grammar
-
+global recognize_action
 rospy.init_node('smach')
-head_mvit = moveit_commander.MoveGroupCommander('head')
+#head_mvit = moveit_commander.MoveGroupCommander('head')
 #gripper =  moveit_commander.MoveGroupCommander('gripper')
 #whole_body=moveit_commander.MoveGroupCommander('whole_body')
 
@@ -67,14 +68,16 @@ set_grammar = rospy.ServiceProxy('set_grammar_vosk', SetGrammarVosk)            
 recognize_face = rospy.ServiceProxy('recognize_face', RecognizeFace)                    #FACE RECOG
 train_new_face = rospy.ServiceProxy('new_face', RecognizeFace)                          #FACE RECOG
 analyze_face = rospy.ServiceProxy('analyze_face', RecognizeFace)    ###DEEP FACE ONLY
+recognize_action = rospy.ServiceProxy('recognize_act', Recognize) 
 
 
+#map_msg= rospy.wait_for_message('/prohibition_layer_map', OccupancyGrid)####WAIT for nav pumas map
 map_msg= rospy.wait_for_message('/augmented_map', OccupancyGrid)####WAIT for nav pumas map
 inflated_map= np.asarray(map_msg.data)
 img_map=inflated_map.reshape((map_msg.info.width,map_msg.info.height))
 pix_per_m=map_msg.info.resolution
-contours, hierarchy = cv2.findContours(img_map.astype('uint8'),cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
-contoured=cv2.drawContours(img_map.astype('uint8'), contours, 1, (255,255,255), 1)
+#contours, hierarchy = cv2.findContours(img_map.astype('uint8'),cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+#contoured=cv2.drawContours(img_map.astype('uint8'), contours, 1, (255,255,255), 1)
 
 rgbd= RGBD()
 bridge = CvBridge()
@@ -305,8 +308,31 @@ def read_yaml(known_locations_file='/known_locations.yaml'):
     with open(file_path, 'r') as file:
         content = yaml.safe_load(file)
     return content
+#----------------------------------------------------------
+def yaml_to_df():
+    con = read_yaml()
+    values=[]
+    locations=[]
+    for c in con:
+        locations.append(c)
+
+        for i in range(len(con[c])):
+            values.append(list(con[c][i].values())[0])
+
+    data=np.asarray(values).reshape((int(len(values)/7),7))    #x , y ,theta  ,quat   since z always 0
+    df= pd.DataFrame( data)
+    df.columns=['x','y','th','qx','qy','qz','qw']
+    df['child_id_frame']=locations
+    return df
+
+
+
+
+
+
 
 #------------------------------------------------------
+
 def gaze_to_face():
 
     return False
