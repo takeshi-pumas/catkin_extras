@@ -189,10 +189,10 @@ rospack = rospkg.RosPack()
 #df=pd.read_csv('known_locations.txt')
 
 #df=pd.read_csv(path)##RELATIVIZE PATH?
-file_name    = rospy.get_param("~file_name", "/known_locations.yaml")
+file_name    = rospy.get_param("file_name", "/known_locations.yaml")
 print (file_name)
 df= yaml_to_df()
-print (df)
+print (f'known locs server available using {file_name}')
 known_locs=df.values
 if len(df)!=0:
     for i in range(len(df)):
@@ -205,7 +205,7 @@ if len(df)!=0:
         rospy.sleep(0.3)
 
 
-rospy.loginfo("known locations detection service available")                    # initialize a ROS node
+rospy.loginfo("known locations detection service available" )                    # initialize a ROS node
 rospy.Service('/known_location_add', Locations_server, callback)         # type, and callback
 rospy.Service('/knowledge_place_add', Locations_server, callback2)      #add to knowledge file
 
