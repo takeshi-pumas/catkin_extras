@@ -19,7 +19,8 @@ def trigger_response(request):
     # print (image.shape)
     # cents,xyz, images, img = plane_seg( points_msg,lower=10    , higher=4000,reg_hy=350)
     # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    cents,xyz, images, img = plane_seg2(points_msg,hg=0.85,lg=0.4,lower=500, higher=7000,reg_hy=350,plot=False)
+    plot_im=False
+    cents,xyz, images, img = plane_seg2(points_msg,hg=0.85,lg=0.4,lower=200, higher=2000,reg_ly= 30,reg_hy=350,plot=plot_im)
 
     print(len(cents))
 
@@ -45,6 +46,10 @@ def trigger_response(request):
                             print ( 'No  object TF FOUND')"""
                 #print ('#############',cents_map)
                 #ccs_map=np.asarray(cents_map)
+    if plot_im:
+        cv2.imshow("SEG",img)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
     pose, quat=Floats(),Floats()
     res= SegmentationResponse()
     #pose.data=cents_map

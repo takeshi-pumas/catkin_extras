@@ -149,7 +149,7 @@ def segment_floor(points_data,zs_no_nans,obj_hMax=0.85,obj_lMax=1.5):
     t = tfBuffer.lookup_transform('map', 'head_rgbd_sensor_link', rospy.Time())
     trans=t.transform.translation.z
     img_corrected = np.where((zs_no_nans < -obj_hMax),zs_no_nans,1)
-    img_corrected = np.where((img_corrected >-trans-0.15),img_corrected,1)
+    img_corrected = np.where((img_corrected >-trans-0.03),img_corrected,1)
 
 
     # Quita objetos lejanos
