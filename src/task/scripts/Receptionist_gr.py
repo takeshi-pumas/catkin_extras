@@ -55,7 +55,7 @@ class Wait_push_hand(smach.State):
             return 'tries'
         head.set_named_target('neutral')
         brazo.set_named_target('go')
-        voice.voice.talk('Gently... push my hand to begin')
+        voice.talk('Gently... push my hand to begin')
         succ = wait_for_push_hand(100)
 
         if succ:
@@ -107,7 +107,7 @@ class Goto_door(smach.State):  # ADD KNONW LOCATION DOOR
         if self.tries == 3:
             return 'tries'
         if self.tries == 1: voice.talk('Navigating to, door')
-        res = omni_base.move_base(known_location='door')
+        res = omni_base.move_base(known_location = 'door')
         print(res)
 
         if res:

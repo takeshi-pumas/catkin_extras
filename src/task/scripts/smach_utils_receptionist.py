@@ -36,8 +36,8 @@ from ros_whisper_vosk.srv import SetGrammarVosk
 from utils.grasp_utils import *
 from utils.misc_utils import *
 from utils.nav_utils import *
-#from utils.know_utils import *
-from utils.knowledge_utils import *
+from utils.know_utils import *
+#from utils.knowledge_utils import *
 
 global listener, broadcaster, tfBuffer, tf_static_broadcaster, scene, rgbd, head,train_new_face, wrist, human_detect_server, line_detector, clothes_color
 global clear_octo_client, goal,navclient,segmentation_server  , tf_man , omni_base, brazo, speech_recog_server, bridge, map_msg, pix_per_m, analyze_face , arm , set_grammar
@@ -84,11 +84,19 @@ head = GAZE()
 brazo = ARM()
 line_detector = LineDetector()
 voice = TALKER()
-party = SCENE()
+#party = SCENE()
 # arm =  moveit_commander.MoveGroupCommander('arm')
 
 
-
+def places_2_tf():
+    #tf_man = TF_MANAGER()
+    locs = return_places()
+    #print(locs)
+    for i, loc in enumerate(locs):
+        pos = [loc[0], loc[1], 0.85]
+        rot = tf.transformations.quaternion_from_euler(0.0, 0.0, loc[2])
+        tf_man.pub_static_tf(pos=pos, rot=rot, point_name=f'Place_{i+1}')
+        tf_man.pub_static_tf(pos=[1.0, 0, 0], rot=rot, point_name=f'Place_face{i+1}', ref=f'Place_{i+1}')
 def pub_places():
     locs = party.get_places_location()
     for i, loc in enumerate(locs):

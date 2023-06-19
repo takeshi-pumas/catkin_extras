@@ -310,7 +310,7 @@ class TALKER():
     @staticmethod
     def _fillMsg(msg):
         voice = TalkRequestActionGoal()
-        voice.goal.data.interrupting = True
+        voice.goal.data.interrupting = False
         voice.goal.data.queueing = True
         voice.goal.data.language = 1
         voice.goal.data.sentence = msg
@@ -318,6 +318,6 @@ class TALKER():
     def talk(self, sentence, timeout = 5):
         goal = self._fillMsg(sentence)
         self.talk_client.send_goal(goal)
-        return talk_client.wait_for_result(timeout = rospy.Duration(timeout))
+        return self.talk_client.wait_for_result(timeout = rospy.Duration(timeout))
 
 
