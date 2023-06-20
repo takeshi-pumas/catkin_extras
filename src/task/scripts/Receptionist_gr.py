@@ -25,7 +25,7 @@ class Initial(smach.State):
         ###-----------SPEECH REC
         drinks=['coke','juice','beer', 'water', 'soda', 'wine', 'i want a', 'i would like a']
         names=['rebeca','ana','jack', 'michael', ' my name is' , 'i am','george','mary','ruben','oscar','yolo','mitzi']
-        confirmation=['yes','no']                                                                                          
+        confirmation=['yes','no', 'takeshi yes', 'takeshi no']                                                                                          
         gram=drinks+names+confirmation                                                                                
         if self.tries == 1:
             set_grammar(gram)  ##PRESET DRINKS
@@ -158,11 +158,11 @@ class Scan_face(smach.State):
             else:
                 voice.talk(f'I found you, I Think you are, {name}.')
                 voice.talk('Is it correct?')
-                rospy.sleep(1.5)
+                rospy.sleep(2.5)
                 confirmation = get_keywords_speech(10)
                 print (confirmation)
 
-                if confirmation not in ['yes','jack','juice']:
+                if confirmation not in ['yes','jack','juice', 'takeshi yes']:
                     return 'unknown'
                 elif confirmation == "timeout":
                     voice.talk('I could not hear you')
@@ -237,14 +237,14 @@ class Get_drink(smach.State):
         self.tries = 0
 
     def execute(self, userdata):
-        global name_face
+        global name_face , drink
         self.tries += 1
 
         rospy.loginfo('STATE : GET DRINK')
 
         #Asking for drink
         voice.talk('What would you like to drink?')
-        rospy.sleep(1.0)
+        rospy.sleep(2.0)
         drink=get_keywords_speech(10)
 
         if len(drink.split(' '))>1: drink=(drink.split(' ')[-1])
@@ -252,7 +252,7 @@ class Get_drink(smach.State):
         rospy.sleep(0.5)
         voice.talk(f'Did you say {drink}?')
 
-        rospy.sleep(1.0)
+        rospy.sleep(4.0)
         confirmation = get_keywords_speech(10)
         print (confirmation)
             
@@ -392,7 +392,13 @@ class Introduce_guest(smach.State):
                             speech = f'{name_face} has arrived'
                             timeout = 1.0
                         voice.talk(speech)
+                        if len(speech.split(' '))>0: 
+                        
+                            if speech.split(' ')[4] == 'he':possesive='his'
+                            if speech.split(' ')[4] == 'she':possesive='her'
                         rospy.sleep(timeout)
+                        voice.talk (f'{possesive} favorite drink is {drink}')
+                        rospy.sleep(1.5)
                         self.tries = 0
                         return 'succ'
 
