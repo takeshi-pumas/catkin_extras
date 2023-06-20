@@ -66,10 +66,14 @@ std::string service_caller(const sensor_msgs::Image::ConstPtr& img){
         }
         if (gender == "Man")
                 pronoun = "he";
-        std::string takeshi_line = face_name+ " has arrived... " +pronoun+  " is a " + gender +"... I believe " +pronoun; 
-        takeshi_line += " is  around " +age+ " years old... I would say " +gender+ " is a bit " +state;
+	std::string takeshi_line = "";
+	if (gender != "NO_FACE"){
+        takeshi_line = face_name+ " has arrived... " +pronoun+  " is a " + gender +"... I believe " +pronoun; 
+        takeshi_line += " is  around " +age+ " years old... I would say " +pronoun+ " is a bit " +state;
         takeshi_line += ". I might guess "+ pronoun+ " is of " +race+ " descent.";
+	}
         return takeshi_line;
+
         /*if (results.size() > 1){
             std::string pronoun = "she";
             std::string gender  = results[0];
