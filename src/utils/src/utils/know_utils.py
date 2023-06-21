@@ -5,6 +5,7 @@ import yaml
 from utils.grasp_utils import *
 from utils.nav_utils import *
 import math
+import random
 
 
 def read_yaml(known_locations_file='/receptionist_knowledge2.yaml'):
@@ -80,16 +81,22 @@ def update_occupancy_gpt(found='unknown', place='None'):
         return False
 
 
-def find_empty_places():
+def find_empty_places(last_choice=""):
     knowledge = read_yaml()
-    seat = [key for key, places_dict in knowledge['Places'].items(
+    seats = [key for key, places_dict in knowledge['Places'].items(
     ) if (places_dict.get('occupied') == 'None') or (places_dict.get('occupied') == 'someone')]
-    loc = list(knowledge['Places'][seat[0]]['location'].values())
+    seat = random.choice(seats)
+    while last_choice == seat:
+        seat = random.choice(seats)
+
+    loc = list(knowledge['Places'][seat]['location'].values())
     t, x, y = loc
-    return seat[0], [x, y, t]
+
+    return seat, [x, y, t]
 
 
 def get_waiting_guests():
+
     try:
         knowledge = read_yaml()
         people = [key for key, places_dict in knowledge['People'].items(
@@ -119,7 +126,7 @@ def assign_occupancy(who='None', where='None'):
         return False
 
 
-def add_guest(name, drink='No drink'):
+def add_guest(name, drink='None'):
     try:
         knowledge = read_yaml()
         guests_len = len(knowledge['People'])
@@ -212,6 +219,11 @@ def get_guest_description(name):
              if person_dict.get('name') == name]
     return knowledge['People'][guest[0]]['description']
 
+def get_guest_drink(name):
+    knowledge = read_yaml()
+    guest = [key for key, person_dict in knowledge['People'].items()
+             if person_dict.get('name') == name]
+    return knowledge['People'][guest[0]]['drink']
 
 def get_guest_location(name):
     knowledge = read_yaml()
