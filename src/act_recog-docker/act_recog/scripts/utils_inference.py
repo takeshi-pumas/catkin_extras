@@ -209,7 +209,7 @@ def get_coordinates():
 #---------------------------------------------------
 
 def return_xyz_sk(lastSK,indx,cld_points):
-
+    sk=0
     if lastSK[indx,0,0]==0 or lastSK[indx,0,1]==0:
         if lastSK[indx,17,0]!=0 and lastSK[indx,17,1]!=0:
             sk=17
@@ -313,11 +313,18 @@ def detect_drinking(data):
         ang_izq=np.rad2deg(np.arccos(cos_B))
     else:
         ang_izq=130
-        
+    
+    #print("ANG DER:",abs(ang_der))
+    #print("ANG IZQ:",abs(ang_izq))
     if abs(ang_der)<=120 or abs(ang_izq)<=120:
+        #print("AL MENOS UNO CRUZADO")
         #print("Se detecta que tiene una bebida")
         return True
+    elif abs(ang_izq)<=150 and abs(ang_der)<=150:
+        #print(" AMBOS CRUZADOS")
+        return False
     else:
+        #print("NINGUNO CRUZADO")
         #print("No se detecta brazo con bebida")
         return False
 

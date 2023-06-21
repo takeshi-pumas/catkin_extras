@@ -33,7 +33,6 @@ def callback(req):
 		opWrapper,datum=init_openPose(n_people=1)
 	else:
 		opWrapper,datum=init_openPose(n_people=n_people_max)
-	print("HOLA MUNDO")
 
 	if req.in_==1: 	# Para utilizar otra camara, por ejemplo usb_cam
 
@@ -210,7 +209,7 @@ def callback(req):
 	# para drinking, no drinking
 	elif req.in_==4:
 		conteo_sin_bebida=np.zeros(n_people_max)
-		max_drink_cnt=20
+		max_drink_cnt=10
 		cnt_normal=0
 		no_person=0
 		flg_out=False
@@ -258,10 +257,10 @@ def callback(req):
 		    	cv2.imshow("RES",image)
 		    	cv2.waitKey(10)
 		    # --------------------------
-		    if no_person==20:
+		    if no_person==10:
 		    	response.i_out=3
 		    	break
-		    if cnt_normal==20:
+		    if cnt_normal==10:
 		    	print("TODOS CON BEBIDA DURANTE UN TIEMPO RAZONABLE")
 		    	response.i_out=2
 		    	break

@@ -20,7 +20,7 @@ def trigger_response(request):
     # cents,xyz, images, img = plane_seg( points_msg,lower=10    , higher=4000,reg_hy=350)
     # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     plot_im=False
-    cents,xyz, images, img = plane_seg2(points_msg,hg=0.85,lg=0.4,lower=200, higher=2000,reg_ly= 30,reg_hy=350,plot=plot_im)
+    cents,xyz, images, img = plane_seg2(points_msg,hg=0.85,lg=0.4,lower=200, higher=2000,reg_ly= 60,reg_hy=350,plot=plot_im)
 
     print(len(cents))
 

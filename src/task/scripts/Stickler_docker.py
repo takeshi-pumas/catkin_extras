@@ -11,7 +11,7 @@ model, preprocess = clip.load("ViT-B/32", device=device)
     
 ##### Define state INITIAL #####
 
-# --------------------------------------------------
+#########################################################################################################
 class Initial(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
@@ -19,7 +19,7 @@ class Initial(smach.State):
 
     def execute(self, userdata):
 
-        global forbiden_room , xys , room_names 
+        global forbiden_room,closest_room , xys , room_names 
         rospy.loginfo('STATE : INITIAL')
         print('Robot neutral pose')
         self.tries += 1
@@ -38,7 +38,8 @@ class Initial(smach.State):
         xys, room_names
         #####
         ####FORBIDEN ROOM 
-        forbiden_room='dining_room'
+        forbiden_room='kitchen'
+        closest_room='dining_room'
 
         head.set_named_target('neutral')
         #print('head listo')
@@ -48,9 +49,8 @@ class Initial(smach.State):
 
         return 'succ'
 
-# --------------------------------------------------
 
-
+#########################################################################################################
 class Wait_push_hand(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
@@ -73,9 +73,8 @@ class Wait_push_hand(smach.State):
         else:
             return 'failed'
 
-# --------------------------------------------------
 
-
+#########################################################################################################
 class Goto_door(smach.State):  # ADD KNONW LOCATION DOOR
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
@@ -99,9 +98,8 @@ class Goto_door(smach.State):  # ADD KNONW LOCATION DOOR
             talk('Navigation Failed, retrying')
             return 'failed'
 
-# --------------------------------------------------
 
-
+#########################################################################################################
 class Find_human(smach.State):
     def __init__(self):
         smach.State.__init__(
@@ -121,40 +119,74 @@ class Find_human(smach.State):
         if self.tries==1:head.set_joint_values([ 0.0, 0.0])
         if self.tries==2:head.set_joint_values([ 0.3, 0.1])
         if self.tries==3:head.set_joint_values([-0.3, 0.1])
-
-        
-        print('Detecting Humans ')
-        rospy.sleep(0.7)
-        humanpose=detect_human_to_tf()
-        
-        
-        
-
-        
-
-
+        origin_map_img=[round(img_map.shape[0]*0.5) ,round(img_map.shape[1]*0.5)]
+        humanpose=detect_human_to_tf()  #make sure service is running
         if humanpose== False:
             print ('no human ')
             return 'failed'
-        else : 
-            talk('Human Found, Getting close ')
-            rospy.sleep(0.7)
-            human_pos,_=tf_man.getTF('human')
-            head.to_tf('human')
-            print (humanpose, human_pos)
             
-            human_xy=np.asarray(human_pos[:2])
-            dists=(human_xy-np.asarray(xys))
-            if room_names[np.linalg.norm(dists, axis=1).argmin()]== forbiden_room:
+##############################################################
+        else : 
+            human_pose,_=tf_man.getTF('human')
+            pose=human_pose[:2]
+            dists=(pose-np.asarray(xys))
+            human_room=room_names[np.linalg.norm(dists, axis=1).argmin()]
+            print(f'human in {human_room}')
+            robot_pose=get_robot_px()
+            dists=(robot_pose-np.asarray(xys))
+            robot_room=room_names[np.linalg.norm(dists, axis=1).argmin()]
+            print(f'Robot  in {robot_room}')
+            talk('Human Found')
+            
+            if img_map[origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m)]!=0:#### Yes axes seem to be "flipped" !=0:
+                    print ('reject point, most likely part of the audience, outside of the arena map')
+                    talk ('Human is close to map edge, maybe a part of the audience')
+                    rospy.sleep(1.0)
+                    #return 'failed'
+            
+            if robot_room != human_room: 
+                print('maybe false positive... ignoring... ')
+                talk ('Human is not in the same room as me.. ')
+                rospy.sleep(1.0)
+
+            
+            if human_room==forbiden_room:
                 head.to_tf('human')
-                talk (f'human found in forbidden room {room_names[np.linalg.norm(dists, axis=1).argmin()]} ')
+                talk (f'human found in forbidden room {human_room} ')
                 rospy.sleep(0.6)
                 talk('I will take him to a valid location')
                 
             self.tries=0
             return 'succ'    
 
-#########################################################################################################
+#############################################################        
+#        print('Detecting Humans ')
+#        rospy.sleep(0.7)
+#        humanpose=detect_human_to_tf()
+#
+#
+#        if humanpose== False:
+#            print ('no human ')
+#            return 'failed'
+#        else : 
+#            talk('Human Found, Getting close ')
+#            rospy.sleep(0.7)
+#            human_pos,_=tf_man.getTF('human')
+#            head.to_tf('human')
+#            print (humanpose, human_pos)
+#            
+#            human_xy=np.asarray(human_pos[:2])
+#            dists=(human_xy-np.asarray(xys))
+#            if room_names[np.linalg.norm(dists, axis=1).argmin()]== forbiden_room:
+#                head.to_tf('human')
+#                talk (f'human found in forbidden room {room_names[np.linalg.norm(dists, axis=1).argmin()]} ')
+#                rospy.sleep(0.6)
+#                talk('I will take him to a valid location')
+#                
+#            self.tries=0
+#            return 'succ'    
+#
+##########################################################################################################
 class Goto_next_room(smach.State):  # ADD KNONW LOCATION DOOR
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
@@ -215,7 +247,7 @@ class Goto_human(smach.State):
         print('getting close to human')
         head.to_tf('human')
 
-        res = omni_base.move_d_to(0.6,'human')
+        res = omni_base.move_d_to(0.65,'human')
         
         
 
@@ -233,9 +265,6 @@ class Goto_human(smach.State):
             return 'forbidden'
 
 
-        
-        
-
         if res :
             self.tries=0
             return 'succ'
@@ -245,8 +274,6 @@ class Goto_human(smach.State):
             return 'failed'
 
 ###########################################################################################################
-
-
 class Lead_to_living_room(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
@@ -261,9 +288,19 @@ class Lead_to_living_room(smach.State):
         if self.tries == 3:
             return 'tries'
         _,guest_name = get_waiting_guests()
-        talk(f'{guest_name}... I will lead you to the living room, please follow me')
+
+
+
+
+        head.to_tf('human')
+        rospy.sleep(0.5)
+            
+        head.set_joint_values([0,1.3])
+        rospy.sleep(0.5)
+
+        talk(f'{guest_name}... I will lead you to the {closest_room}, please follow me')
         # talk('Navigating to ,living room')
-        res = omni_base.move_base(known_location='living_room')
+        res = omni_base.move_base(known_location=closest_room)
         if res:
             self.tries=0
             talk( ' You can remain here, thank you')
@@ -285,28 +322,10 @@ class Analyze_human(smach.State):
 
         rospy.loginfo('STATE : Analyze  human')
 
-       
-        
-        ###image open pose tocayo magic.... #DRINKS
-        
-
-        
-
-
         head.set_joint_values([0,1.3])
         rospy.sleep(1.0)
-        humanpose=detect_human_to_tf()
-        rospy.sleep(0.6)
-        human_pos,_=tf_man.getTF('human')
-        print('Detecting Humans ')
-
-
-        if humanpose== False:
-            talk ('human lost')
             
         
-        
-
         human_pos,_=tf_man.getTF('human')
         #head.absolute(human_pos[0],human_pos[1],0.1)
         ##### SHOES NO SHOES DETECTOR
@@ -336,9 +355,9 @@ class Analyze_human(smach.State):
         head.set_joint_values([0,1.3])
         rospy.sleep(0.5)
 
-        if (keys[np.argmax(probs)] in ['sandals','feet','socks', 'sock' ]   ) or ( probs[0][1]  < 0.45  ) :  
+        if (keys[np.argmax(probs)] in ['sandals','feet','socks', 'sock' ]   ) or ( probs[0][1]  < 0.4  ) :  
 
-            talk ('Thanks for not wearing shoes.... Rule 1 is observed')
+            talk ('Thanks for not wearing shoes.... Rule 1 is followed')
             print ('Not wearing shoes')
         else: 
             talk('Rule number 1 Broken... no shoes please... Would you mind taking them off?.... thank you ')
@@ -409,10 +428,13 @@ class Analyze_area(smach.State):
         if num_objs!=0: 
             head.to_tf('human')
             rospy.sleep(0.5)
-            talk ('Rule number 2 Broken. Garbage detected Would you mind picking it up')
+            head.set_joint_values([0,1.3])
+
+            rospy.sleep(0.5)
+            talk ('Rule number 2 Broken. Garbage detected, would you mind picking it up?')
             self.tries=0
             return 'succ'
-        talk('Rule no littering Observed. .. no Trash  in area next to human....')
+        talk('Rule no littering Observed... There is no Trash in area next to human....')
         return 'failed'
 
 
@@ -431,31 +453,34 @@ class Detect_drink(smach.State):
         self.tries += 1
         if self.tries ==2:
             hv= head.get_joint_values()
-            hv[0]= hv[0]+0.5
+            hv[0]= hv[0]+0.6
             head.set_joint_values(hv)
             rospy.sleep(1.0)
         if self.tries ==3:
             hv= head.get_joint_values()
-            hv[0]= hv[0]-1.0
+            hv[0]= hv[0]-1.2
             head.set_joint_values(hv)
             rospy.sleep(1.0)
             
         if self.tries == 4:
             talk('Number of tries reached, moving to the next task')
+            self.tries=0
             rospy.sleep(0.8)
             return 'failed'
-
+        # Guardo posicion para retornar
         trans, quat=tf_man.getTF('base_link')
-        print("Current",trans)
-
+        print("TRIES:",self.tries)
         rospy.sleep(0.4)
         if self.tries<2:
             head.set_named_target('neutral')        
             rospy.sleep(1.0)
             hv= head.get_joint_values()
-            hv[1]= hv[1]+0.15
+            hv[1]= hv[1]+0.25
             head.set_joint_values(hv)
             rospy.sleep(1.0)
+        # ----------------ATENTO EN DONDE ESTARIAN LAS BEBIDAS------------
+        place_drinks='kitchen'
+        #-----------------------------------------------------------------
         talk('Detecting drinking')
         rospy.sleep(0.8)
         reqAct.visual=0
@@ -466,7 +491,7 @@ class Detect_drink(smach.State):
         # 1 -> detecta una persona con drink y pasa a acercarce a la tf correspondiente para ofrecer bebida(?)
         if resAct.i_out==1:
             print(resAct.d_xyz)
-            talk('I detect a person without a drink')
+            talk('Rule broken, I detect a person without a drink')
             rospy.sleep(0.8)
             res = omni_base.move_d_to(0.75,'head_xyz')
             rospy.sleep(0.8)
@@ -475,20 +500,22 @@ class Detect_drink(smach.State):
 
             talk('I detect that you do not have a drink. I will guide you to the kitchen, please follow me') 
             rospy.sleep(0.8)
-            talk('Navigating to, kitchen')
+            talk(f'Navigating to,{place_drinks}')
             rospy.sleep(0.8)
-            print ('navigating to kitchen')
-            res = omni_base.move_base(known_location='kitchen')
+            res = omni_base.move_base(known_location=place_drinks)
             print(res)
             if res :
+                head.set_named_target('neutral')        
+                rospy.sleep(1.0)
                 talk('Arrived, you can grab a drink here. I will come back to the room.')# AGREGAR POINTING A LA TF DONDE ESTAN LAS BEBIDAS (?)
                 rospy.sleep(0.8)
-                res = omni_base.move_base(trans[0],trans[1],tf.transformations.euler_from_quaternion(quat)[2])
+                _ = omni_base.move_base(trans[0],trans[1],tf.transformations.euler_from_quaternion(quat)[2])
                 rospy.sleep(0.8)
+                self.tries=0
                 return 'tries'
         # 2 -> todos tienen bebida
         elif resAct.i_out==2:
-            talk('I detect that everyone has a drink')
+            talk('Rule followed, everyone has a drink')
             rospy.sleep(0.8)
             #cv2.destroyAllWindows()
             self.tries = 0
@@ -528,14 +555,14 @@ if __name__ == '__main__':
         # State machine STICKLER
         smach.StateMachine.add("INITIAL",           Initial(),              transitions={'failed': 'INITIAL',           'succ': 'WAIT_PUSH_HAND',   'tries': 'END'})
         smach.StateMachine.add("WAIT_PUSH_HAND",    Wait_push_hand(),       transitions={'failed': 'WAIT_PUSH_HAND',    'succ': 'FIND_HUMAN',       'tries': 'END'})
-        smach.StateMachine.add("FIND_HUMAN",         Find_human(),          transitions={'failed': 'FIND_HUMAN',        'succ': 'GOTO_HUMAN'    ,   'tries': 'GOTO_NEXT_ROOM'})
+        smach.StateMachine.add("FIND_HUMAN",         Find_human(),          transitions={'failed': 'FIND_HUMAN',        'succ': 'DETECT_DRINK'    ,   'tries': 'GOTO_NEXT_ROOM'})
         smach.StateMachine.add("GOTO_HUMAN",         Goto_human(),          transitions={'failed': 'GOTO_HUMAN',        'succ': 'ANALYZE_HUMAN' ,   'tries': 'FIND_HUMAN' , 'forbidden':'LEAD_TO_LIVING_ROOM'})
         smach.StateMachine.add("LEAD_TO_LIVING_ROOM",Lead_to_living_room(), transitions={'failed': 'LEAD_TO_LIVING_ROOM','succ': 'GOTO_NEXT_ROOM',  'tries': 'END'})
         smach.StateMachine.add("ANALYZE_HUMAN",      Analyze_human(),       transitions={'failed': 'FIND_HUMAN',        'succ': 'ANALYZE_AREA'})
-        smach.StateMachine.add("ANALYZE_AREA",      Analyze_area(),         transitions={'failed': 'ANALYZE_AREA' ,     'succ': 'DETECT_DRINK' ,    'tries': 'DETECT_DRINK'})   #
+        smach.StateMachine.add("ANALYZE_AREA",      Analyze_area(),         transitions={'failed': 'ANALYZE_AREA' ,     'succ': 'GOTO_NEXT_ROOM' ,    'tries': 'GOTO_NEXT_ROOM'})   #
         smach.StateMachine.add("GOTO_NEXT_ROOM",     Goto_next_room(),      transitions={'failed': 'GOTO_NEXT_ROOM',    'succ': 'FIND_HUMAN'    ,   'tries': 'FIND_HUMAN'})
         #################################################################################################################################################################
-        smach.StateMachine.add("DETECT_DRINK",         Detect_drink(),      transitions={'failed': 'GOTO_NEXT_ROOM',    'succ': 'GOTO_NEXT_ROOM'  , 'tries': 'DETECT_DRINK'})
+        smach.StateMachine.add("DETECT_DRINK",         Detect_drink(),      transitions={'failed': 'GOTO_NEXT_ROOM',    'succ': 'GOTO_HUMAN'  , 'tries': 'DETECT_DRINK'})
         #################################################################################################################################################################
         ##################################################################################################################################################################
         
