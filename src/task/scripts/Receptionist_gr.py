@@ -218,7 +218,18 @@ class New_face(smach.State):
         confirmation = get_keywords_speech(10)
         print (confirmation)
         
-        if confirmation in['yes','jack','juice','yeah']:   ### YES AND MOST COMMON MISREADS
+        ''' if confirmation in['yes','jack','juice','yeah']:   ### YES AND MOST COMMON MISREADS
+            voice.talk (f'Nice to Meet You {name}')
+            train_face(img_face, name)
+            self.tries=0
+            return 'succ'
+        else:
+            voice.talk ('lets try again')
+            return 'failed' '''
+
+        confirmation = confirmation.split(' ')
+        confirm = match_speech(confirmation, ['yes','yeah','jack','juice'])
+        if confirm:
             voice.talk (f'Nice to Meet You {name}')
             train_face(img_face, name)
             self.tries=0
@@ -226,6 +237,7 @@ class New_face(smach.State):
         else:
             voice.talk ('lets try again')
             return 'failed'
+
 
 # --------------------------------------------------
 
@@ -248,16 +260,25 @@ class Get_drink(smach.State):
         drink=get_keywords_speech(10)
 
         if len(drink.split(' '))>1: drink=(drink.split(' ')[-1])
-
+        print(drink)
         rospy.sleep(0.5)
+        if drink=='timeout':
+            voice.talk("sorry I could not hear you")
+            return 'failed' 
         voice.talk(f'Did you say {drink}?')
 
         rospy.sleep(4.0)
         confirmation = get_keywords_speech(10)
-        print (confirmation)
+        
+        '''if len(confirmation.split(' ')) > 1: confirmation=
+        print(confirmation)
             
         if confirmation not in['yes','jack','juice','yeah']:
-            return 'failed'
+            return 'failed'  '''
+
+        confirmation = confirmation.split(' ')
+        confirm = match_speech(confirmation, ['yes','yeah','jack','juice'])
+        if not confirm: return 'failed' 
 
         add_guest(name_face, drink)
         analyze_face_background(img_face, name_face)
@@ -393,30 +414,6 @@ class Find_host(smach.State):
                             return 'succ'
                         else:
                             continue
-                        #if name != 'NO_FACE':
-
-                        '''takeshi_line = get_guest_description(name_face)                    
-
-                        if takeshi_line != 'None':
-                            if name != 'unknown': 
-                                speech = f'{name}, {takeshi_line}'
-                            else: 
-                                speech = takeshi_line
-                            timeout = 9.087
-                        else:
-                            print('no face in img deep analyze')
-                            speech = f'{name_face} has arrived'
-                            timeout = 5.0
-                        voice.talk(speech, timeout)'''
-                        '''if len(speech.split(' '))>0: 
-                        
-                            if speech.split(' ')[4] == 'he':possesive='his'
-                            if speech.split(' ')[4] == 'she':possesive='her'
-                        rospy.sleep(timeout)
-                        voice.talk (f'{possesive} favorite drink is {drink}')
-                        rospy.sleep(1.5) '''
-                        #self.tries = 0
-                        #return 'succ'
 
             # if the host is not found
             return 'failed'
@@ -425,11 +422,23 @@ class Find_host(smach.State):
             #Host location is known
             name_like_host = host_name
             tf_name = loc.replace('_','_face')
-            voice.talk(f'Host is on seat {tf_name.replace("Place_face","")}')
+            res,_ = wait_for_face()
+            if res is not None:
+                name = res.Ids.ids
+                if name != host_name:
+                    reset_occupancy(who=host_name)
+                    return 'failed'
+
+            #voice.talk(f'Host is on seat {tf_name.replace("Place_face","")}')
             #rospy.sleep(0.8)
-            head.to_tf(tf_name)
-            self.tries == 0
-            return 'succ'
+                
+                else:
+                    head.to_tf(tf_name)
+                    self.tries == 0
+                    return 'succ'
+            else:
+                reset_occupancy(who=host_name)
+                return 'failed'
 
 # --------------------------------------------------
 class Introduce_guest(smach.State):

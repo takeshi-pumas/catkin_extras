@@ -333,3 +333,9 @@ def get_keywords_speech(timeout=5):
         rospy.loginfo('timeout')
         pub.publish(String())
         return 'timeout'
+
+def match_speech(speech, to_match):
+    for element in to_match:
+        if element in speech:
+            return True
+    return False

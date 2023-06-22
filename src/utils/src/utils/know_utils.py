@@ -106,6 +106,19 @@ def get_waiting_guests():
         return num_wait, waiting
     except:
         return 0, ''
+def reset_occupancy(who):
+    knowledge= read_yaml()
+    try:
+        guest = [key for key, person_dict in knowledge['People'].items()
+            if person_dict.get('name') == who]
+        if len(guest) > 0:
+            knowledge['People'][guest[0]]['location'] = 'None'
+            write_yaml(knowledge)
+            return True
+        else:
+            return False
+    except:
+        return False
 
 
 def assign_occupancy(who='None', where='None'):
