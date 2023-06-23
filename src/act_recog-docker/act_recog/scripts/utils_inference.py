@@ -302,31 +302,21 @@ def detect_drinking(data):
         Brazo derecho: 2,3,4 (hombro,codo,mano) 
         Brazo izquierdo: 5,6,7 (hombro,codo,mano)
     """
-    if data[2,:].any()!=0 or data[3,:].any()!=0 or data[4,:].any()!=0:
-        cos_A=np.dot((data[2,:]-data[3,:]),(data[4,:]-data[3,:]))/(np.linalg.norm((data[2,:]-data[3,:]))*np.linalg.norm((data[4,:]-data[3,:])))
+    if dataout[2,0]!=0 and dataout[3,0]!=0 and dataout[4,0]!=0:
+        cos_A=np.dot((data[2,:]-data[3,:]),(data[4,:]-data[3,:]))/(0.0001+np.linalg.norm((data[2,:]-data[3,:]))*np.linalg.norm((data[4,:]-data[3,:])))
         ang_der=np.rad2deg(np.arccos(cos_A))
     else:
-        ang_der=130
-    
-    if data[5,:].any()!=0 or data[6,:].any()!=0 or data[7,:].any()!=0:
-        cos_B=np.dot((data[5,:]-data[6,:]),(data[7,:]-data[6,:]))/(np.linalg.norm((data[5,:]-data[6,:]))*np.linalg.norm((data[7,:]-data[6,:])))
+        ang_der=150
+
+    if dataout[5,0]!=0 and dataout[6,0]!=0 and dataout[7,:].any()!=0:
+        cos_B=np.dot((dataout[5,:]-dataout[6,:]),(dataout[7,:]-dataout[6,:]))/(0.0001+np.linalg.norm((dataout[5,:]-dataout[6,:]))*np.linalg.norm((dataout[7,:]-dataout[6,:])))
         ang_izq=np.rad2deg(np.arccos(cos_B))
     else:
-        ang_izq=130
-    
-    #print("ANG DER:",abs(ang_der))
-    #print("ANG IZQ:",abs(ang_izq))
-    if abs(ang_der)<=120 or abs(ang_izq)<=120:
-        #print("AL MENOS UNO CRUZADO")
-        #print("Se detecta que tiene una bebida")
+        ang_izq=150    
+
+    if (abs(ang_der)<=120 and abs(ang_izq)>120) or (abs(ang_izq)<=120 and abs(ang_der)>120):
         return True
-    elif abs(ang_izq)<=150 and abs(ang_der)<=150:
-        #print(" AMBOS CRUZADOS")
-        return False
-    else:
-        #print("NINGUNO CRUZADO")
-        #print("No se detecta brazo con bebida")
-        return False
+    else:return False
 
 #------------------------------------------
 
