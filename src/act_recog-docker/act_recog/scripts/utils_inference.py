@@ -308,7 +308,7 @@ def detect_drinking(data):
     else:
         ang_der=150
 
-    if dataout[5,0]!=0 and dataout[6,0]!=0 and dataout[7,:].any()!=0:
+    if dataout[5,0]!=0 and dataout[6,0]!=0 and dataout[7,0]!=0:
         cos_B=np.dot((dataout[5,:]-dataout[6,:]),(dataout[7,:]-dataout[6,:]))/(0.0001+np.linalg.norm((dataout[5,:]-dataout[6,:]))*np.linalg.norm((dataout[7,:]-dataout[6,:])))
         ang_izq=np.rad2deg(np.arccos(cos_B))
     else:
