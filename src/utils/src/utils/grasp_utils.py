@@ -176,17 +176,24 @@ class GAZE():
 
     def to_tf(self, target_frame='None'):
         if target_frame != 'None':
+            rospy.sleep(0.5)
             xyz,_ = self._tf_man.getTF(target_frame=target_frame)
-            rospy.sleep(0.7)
+            rospy.sleep(0.8)
             tries = 1
             #type(xyz) is bool --> tf no encontrada
-            while (type(xyz) is bool) and (tries <= 5):
-                tries += 1
-                print(tries)
-                xyz,_ = self._tf_man.getTF(target_frame=target_frame)
-                rospy.sleep(0.5)
+            while (type(xyz) is bool): #and (tries <= 5):
+                #tries += 1
+                #print(tries)
+                #xyz,_ = self._tf_man.getTF(target_frame=target_frame)
+                #rospy.sleep(0.8)
+                num_loc = (int) (target_frame.replace('Place_face', ''))
+                locs = [[9.65,-2.02,0.0], [9.72,-2.1,0.0], [9.67,-3.06,0.0]]
+                loc =locs[num_loc-1]
+                xyz = [loc[0], loc[1], 0.85]
+                #for i, loc in enumerate(locs):
+                #    pos = [loc[0], loc[1], 0.85]
             if type(xyz) is not bool:
-            	self.absolute(*xyz)
+               self.absolute(*xyz)
 
     def turn_base_gaze(self,tf='None', to_gaze = 'base_link'):
         base = OMNIBASE()

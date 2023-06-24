@@ -306,6 +306,7 @@ class Lead_to_living_room(smach.State):
         # voice.talk('Navigating to ,living room')
         res = omni_base.move_base(known_location='living_room')
         if res:
+            self.tries = 0
             return 'succ'
         else:
             voice.talk('Navigation Failed, retrying')
@@ -336,6 +337,8 @@ class Find_sitting_place(smach.State):
         tf_name = place.replace('_', '_face')
         print(tf_name)
         rospy.sleep(1.0)
+        trans,_ = tf_man.getTF(target_frame = tf_name)
+        print('Transformada es : ',trans)
         head.to_tf(tf_name)
 
         res=detect_human_to_tf()
@@ -347,8 +350,8 @@ class Find_sitting_place(smach.State):
             _,guest = get_waiting_guests()
             head.set_named_target('neutral')
             rospy.sleep(0.8)
-            #head.turn_base_gaze(tf=place)
-            head.turn_base_gaze(tf=place, to_gaze='arm_flex_link')
+            head.turn_base_gaze(tf=place)
+            #head.turn_base_gaze(tf=place, to_gaze='arm_flex_link')
             brazo.set_named_target('neutral')
             voice.talk(f'{guest}, Here is a place to sit')
 
@@ -388,7 +391,7 @@ class Find_host(smach.State):
         if loc == "None":
             #host location is not known
             num_places = len(return_places())
-            print(f'num_places: {num_places}')
+            #print(f'num_places: {num_places}')
             name_like_host = ""
             for i in range(1, num_places + 1):
                 guest_loc = get_guest_location(name_face)
@@ -402,18 +405,21 @@ class Find_host(smach.State):
                     res, _ = wait_for_face()
                     if res is not None :
                         name = res.Ids.ids
+                        print('Found: ',name)
+
                         if (self.tries == 1) and (name == host_name):
                             self.tries = 0
                             name_like_host = host_name
-                            assign_occupancy(who=host_name, where=f'Place_face{i}')
+                            assign_occupancy(who=host_name, where=f'Place_{i}')
                             return 'succ'
-                        elif (self.tries >= 2) and name != 'NO_FACE':
+                        elif (self.tries >= 2) and (name != 'NO_FACE'):
                             if name != 'unknown':
                                 name_like_host = name
                             self.tries = 0
+
                             return 'succ'
-                        else:
-                            continue
+                        #else:
+                        #    continue
 
             # if the host is not found
             return 'failed'
@@ -449,6 +455,7 @@ class Introduce_guest(smach.State):
     def execute(self, userdata):
         global name_like_host
         rospy.loginfo('STATE : Find host')
+
         self.tries += 1
         print('Try', self.tries, 'of 3 attempts')
         voice.talk(f'Host like name is {name_like_host}')
