@@ -12,5 +12,8 @@ src/human_detector/scripts/__pycache__/
 src/segmentation/scripts/__pycache__/
 src/utils/src/utils/__pycache__/
 src/segmentation/scripts/__pycache__/
-src/segmentation/scripts/__pycache__/
+src/human_detector/scripts/__pycache__/
 /__pycache__/
+src/task/scripts/.ipynb_checkpoints/
+
+

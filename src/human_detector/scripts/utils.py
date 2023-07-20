@@ -13,7 +13,7 @@ import numpy as np
 import ros_numpy
 import os
 import matplotlib.pyplot as plt
-
+import cv2 
 from sensor_msgs.msg import Image , LaserScan , PointCloud2
 from geometry_msgs.msg import TransformStamped, Pose
 from tf2_sensor_msgs.tf2_sensor_msgs import do_transform_cloud
@@ -137,4 +137,80 @@ def detect_human(points_msg):
     return res    
 
 
+def get_points(frame,inHeight,inWidth,output,threshold=0.1):
     
+    h=output.shape[2]
+    w=output.shape[3]
+    points=[]
+
+    for i in range(25):
+        probMap = output[0,i,:,:]
+        minVal,prob,minLoc,point = cv2.minMaxLoc(probMap)
+        print("P: ",point)
+        x = (inWidth * point[0]) / w
+        y = (inHeight * point[1]) / h
+
+        if prob > threshold : 
+            cv2.circle(frame,(int(x),int(y)),5,(0,255,255),-1)
+            cv2.putText(frame,str(i),(int(x),int(y)),
+                        cv2.FONT_HERSHEY_SIMPLEX,0.6,(255,165,5),1,
+                        lineType=cv2.LINE_AA)
+
+            points.append((x,y))
+        else:
+            points.append(None)
+
+    return points
+
+
+# IN PROGRESS
+def detect_all(points_msg):
+    direct=os.getcwd()
+    im=cv2.imread(direct+"/Documents/Tests/persons2.jpg")
+    print(im.shape)
+    points_data = ros_numpy.numpify(points_msg)    
+    image_data = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]   
+    image=cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
+    #image = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]
+    #rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    print (image.shape)
+    frame=im
+    inHeight = frame.shape[0]
+    inWidth = frame.shape[1]
+
+    keypoints=[]
+    # Prepare the frame to be fed to the network
+    inpBlob = cv2.dnn.blobFromImage(frame, 1.0 / 255, (inWidth, inHeight), (0, 0, 0), swapRB=False, crop=False)
+
+    # Set the prepared object as the input blob of the network
+    net.setInput(inpBlob)
+
+    output = net.forward()
+
+    points = get_points(frame,inHeight,inWidth,output)
+    print("POINTSSSS",len(points),points)
+    cv2.imshow("DRAW",frame)
+    cv2.waitKey(0)
+
+    """
+    i = 0 #Face
+    #i = 1# Neck
+    print("SHAPEs",output.shape)
+    probMap = output[0, i, :, :]
+    print(probMap.shape)
+    probMap = cv2.resize(probMap, (inWidth, inHeight))
+    minVal, prob, minLoc, point = cv2.minMaxLoc(probMap)
+ 
+        #imr=cv2.bitwise_or(im, probMap)
+    cv2.imshow("A",cv2.cvtColor(im, cv2.COLOR_BGR2RGB))
+    for i in range(output.shape[1]):
+        probM=output[0,i,:,:]
+        probM=cv2.resize(probM, (inWidth, inHeight))
+
+        cv2.imshow("B",probM)
+        cv2.waitKey(0)
+
+    """
+    cv2.destroyAllWindows()
+
+    return Human_detectorResponse() 

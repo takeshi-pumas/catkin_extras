@@ -1,14 +1,9 @@
 People:
   Guest_0:
-    description: None
+    description: ruben has arrived... he is a Man... I believe he is  around 31 years
+      old... I would say he is a bit neutral. I might guess he is of asian descent.
     drink: coke
     location: None
-    name: Michael
-  Guest_1:
-    description: ruben has arrived... he is a Man... I believe he is  around 28 years
-      old... I would say he is a bit neutral. I might guess he is of black descent.
-    drink: water
-    location: Place_1
     name: ruben
 Places:
   Place_0:
@@ -19,19 +14,25 @@ Places:
     occupied: occupied
   Place_1:
     location:
-      theta: 1.52
-      x: 9.65
-      y: -2.02
-    occupied: Guest_1
+      theta: 1.55
+      x: 2.04
+      y: 4.26
+    occupied: None
   Place_2:
     location:
-      theta: 0.0
-      x: 9.72
-      y: -2.1
+      theta: 1.48
+      x: 2.79
+      y: 4.27
     occupied: None
   Place_3:
     location:
-      theta: 6.27
-      x: 9.67
-      y: -3.06
+      theta: 0.67
+      x: 3.06
+      y: 4.24
+    occupied: None
+  Place_4:
+    location:
+      theta: 2.51
+      x: 2.5
+      y: 4.19
     occupied: None

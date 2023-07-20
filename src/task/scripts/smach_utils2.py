@@ -96,7 +96,7 @@ line_detector = LineDetector()
 def get_robot_px():
     trans, rot=tf_man.getTF('base_link')
     robot=np.asarray(trans[:2])
-    print (trans)
+    
     return np.asarray((robot/pix_per_m).round(),dtype='int')
 
 #------------------------------------------------------
@@ -309,8 +309,8 @@ def read_yaml(known_locations_file='/known_locations.yaml'):
         content = yaml.safe_load(file)
     return content
 #----------------------------------------------------------
-def yaml_to_df():
-    con = read_yaml()
+def yaml_to_df(known_locations_file='/known_locations.yaml'):
+    con = read_yaml(known_locations_file)
     values=[]
     locations=[]
     for c in con:
@@ -359,3 +359,24 @@ def get_keywords_speech(timeout=5):
     except ROSException:
         rospy.loginfo('timeout')
         return 'timeout'
+
+def check_room_px(px_pose,living_room_px_region,kitchen_px_region,bedroom_px_region,dining_room_px_region ):
+
+    
+    for i in range(4):
+        if i==0:
+            px_region=living_room_px_region
+            region='living_room'
+        if i==1:
+            px_region=kitchen_px_region
+            region='kitchen'
+        if i==2:
+            px_region=bedroom_px_region
+            region='bedroom'
+        if i==3:
+            px_region=dining_room_px_region
+            region='dining_room'
+        #print (region,px_region,px_pose)
+        if (px_pose[1]< px_region[1,1]) and (px_pose[1]> px_region[0,1]) and (px_pose[0]> px_region[0,0]) and (px_pose[0]< px_region[1,0]) : 
+            print (f'in  {region}')
+            return region

@@ -4,8 +4,8 @@
   <node name="fake_global_pose" pkg="killer_node" type="fake_global_pose.py" output="screen"/>
 <node name="sensor_scan_fix" pkg="sensor_scan_fix" type="sensor_scan_fix.py" output="screen"/>
 
-  <arg name="static_map_file"  default="$(find config_files)/maps/biorobotica.yaml"/>
-  <arg name="prohibition_map_file"  default="$(find config_files)/maps/biorobotica.yaml"/>
+  <arg name="static_map_file"  default="$(find config_files)/maps/map.yaml"/>
+  <arg name="prohibition_map_file"  default="$(find config_files)/prohibition_maps/map.yaml"/>
   <arg name="initial_pose_x" default="-5.7"/>
   <arg name="initial_pose_y" default="-6.0"/>
   <arg name="initial_pose_a" default=" 90"/>

@@ -28,7 +28,7 @@ def callback(req):
 	cnt_acciones=0
 	last_act=-1
 	response=RecognizeResponse()
-	n_people_max=3
+	n_people_max=1
 	if req.in_!=4:
 		opWrapper,datum=init_openPose(n_people=1)
 	else:
@@ -210,6 +210,8 @@ def callback(req):
 	elif req.in_==4:
 		conteo_sin_bebida=np.zeros(n_people_max)
 		max_drink_cnt=10
+		m_no_p=10
+		c_nor=10
 		cnt_normal=0
 		no_person=0
 		flg_out=False
@@ -257,10 +259,10 @@ def callback(req):
 		    	cv2.imshow("RES",image)
 		    	cv2.waitKey(10)
 		    # --------------------------
-		    if no_person==10:
+		    if no_person==m_no_p:
 		    	response.i_out=3
 		    	break
-		    if cnt_normal==10:
+		    if cnt_normal==c_nor:
 		    	print("TODOS CON BEBIDA DURANTE UN TIEMPO RAZONABLE")
 		    	response.i_out=2
 		    	break

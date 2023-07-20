@@ -13,15 +13,17 @@ import numpy as np
 import ros_numpy
 import os
 import matplotlib.pyplot as plt
+import rospkg
+import yaml
 
 from sensor_msgs.msg import Image , LaserScan , PointCloud2
 from geometry_msgs.msg import TransformStamped, Pose
 from tf2_sensor_msgs.tf2_sensor_msgs import do_transform_cloud
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 #-----------------------------------------------------------------
-global tf_listener, ptcld_lis, broadcaster , bridge
+global tf_listener, ptcld_lis, broadcaster , bridge , rospack
 
-
+rospack = rospkg.RosPack()
 rospy.init_node('plane_segmentation') 
 tfBuffer = tf2_ros.Buffer()
 tfBuffer = tf2_ros.Buffer()
@@ -38,7 +40,9 @@ tf_static_broadcaster = tf2_ros.StaticTransformBroadcaster()
 bridge=CvBridge()
 
 #-----------------------------------------------------------------
-def write_tf(pose, q, child_frame , parent_frame='map'):
+def write_tf(pose, q, child_frame="" , parent_frame='map'):
+    #  pose = trans  q = quaternion  , childframe =""
+    # format  write the transformstampled message
     t= TransformStamped()
     t.header.stamp = rospy.Time.now()
     #t.header.stamp = rospy.Time(0)
@@ -55,6 +59,7 @@ def write_tf(pose, q, child_frame , parent_frame='map'):
     return t
 #-----------------------------------------------------------------
 def read_tf(t):
+    # trasnform message to np arrays
     pose=np.asarray((
         t.transform.translation.x,
         t.transform.translation.y,
@@ -70,13 +75,14 @@ def read_tf(t):
     return pose, quat
 
 #-----------------------------------------------------------------
-def correct_points(points_msg,low=0.27,high=1000):
+def correct_points(points_msg):
 
     # Function that transforms Point Cloud reference frame from  head, to map. (i.e. sensor coords to map coords )
-    # low  high params Choose corrected plane to segment  w.r.t. head link 
     # img= correct_points() (Returns rgbd depth corrected image)    
-
+    #points msg in 
     #data = rospy.wait_for_message('/hsrb/head_rgbd_sensor/depth_registered/rectified_points', PointCloud2)
+    
+
     np_data=ros_numpy.numpify(points_msg)
 
     try:
@@ -89,35 +95,31 @@ def correct_points(points_msg,low=0.27,high=1000):
 
     #trans,rot=tf_listener.lookupTransform('/map', '/head_rgbd_sensor_rgb_frame', rospy.Time(0))
     #print ("############TF1",trans,rot)
-
-
     eu=np.asarray(tf.transformations.euler_from_quaternion(rot))
     t=TransformStamped()
     rot=tf.transformations.quaternion_from_euler(eu[0],eu[1],eu[2])
     #rot=tf.transformations.quaternion_from_euler(-eu[1],0,0)
     t.header.stamp = points_msg.header.stamp
-    
     t.transform.rotation.x = rot[0]
     t.transform.rotation.y = rot[1]
     t.transform.rotation.z = rot[2]
     t.transform.rotation.w = rot[3]
-
     cloud_out = do_transform_cloud(points_msg, t)
     np_corrected=ros_numpy.numpify(cloud_out)
     corrected=np_corrected.reshape(np_data.shape)
-
     img= np.copy(-corrected['z'])
-
     img[np.isnan(img)]=2
-
     img_corrected = np.where((img<trans[2]*0.96) ,img,5)
-#    img_corrected = np.where((img<trans[2]+0.07)&(img>trans[2]-0.05) ,img,5)
+
     return img_corrected , corrected
 
 #-----------------------------------------------------------------
 
 #-----------------------------------------------------
 def segment_table(points_data,zs_no_nans,obj_lMax=0.8):
+
+    ###first get table height from historgram
+    #### then segment from that height to the height in the variable oblj_lMax
 
     histogram, bin_edges =(np.histogram(zs_no_nans, bins=50))
     t = tfBuffer.lookup_transform('map', 'head_rgbd_sensor_link', rospy.Time())
@@ -166,6 +168,13 @@ def segment_floor(points_data,zs_no_nans,obj_hMax=0.85,obj_lMax=1.5):
     return img_corrected
 
 #-----------------------------------------------------------------    
+def read_yaml(yaml_file = '/known_locations.yaml'):
+    
+    file_path = rospack.get_path('segmentation')+'/config_files'  + yaml_file
+
+    with open(file_path, 'r') as file:
+        content = yaml.safe_load(file)
+    return content
     
 def plane_seg2(points_msg,hg=0.85,lg=1.5,lower=1000 ,higher=50000,reg_ly= 30,reg_hy=600,plot=False):
     points_data = ros_numpy.numpify(points_msg)    
@@ -228,7 +237,8 @@ def plane_seg2(points_msg,hg=0.85,lg=1.5,lower=1000 ,higher=50000,reg_ly= 30,reg
                 if len (npmask)>0:
                     for a in npmask:
                         ix,iy=a[0],a[1]
-                        aux=(np.asarray((points_data['x'][boundRect[1]+ix,boundRect[0]+iy],points_data['y'][boundRect[1]+ix,boundRect[0]+iy],points_data['z'][boundRect[1]+ix,boundRect[0]+iy])))
+                        #aux=(np.asarray((points_data['x'][boundRect[1]+ix,boundRect[0]+iy],points_data['y'][boundRect[1]+ix,boundRect[0]+iy],points_data['z'][boundRect[1]+ix,boundRect[0]+iy])))
+                        aux=(np.asarray((corrected['x'][boundRect[1]+ix,boundRect[0]+iy],corrected['y'][boundRect[1]+ix,boundRect[0]+iy],corrected['z'][boundRect[1]+ix,boundRect[0]+iy])))
                         #print (aux)
                         if np.isnan(aux[0]) or np.isnan(aux[1]) or np.isnan(aux[2]):
                                 'reject point'

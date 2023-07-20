@@ -20,7 +20,9 @@ def trigger_response(request):
     # cents,xyz, images, img = plane_seg( points_msg,lower=10    , higher=4000,reg_hy=350)
     # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     plot_im=False
-    cents,xyz, images, img = plane_seg2(points_msg,hg=0.85,lg=0.4,lower=200, higher=2000,reg_ly= 60,reg_hy=350,plot=plot_im)
+    cents,xyz, images, img = plane_seg2(points_msg,hg=0.95,lg=0.001,lower=100, higher=500000,reg_ly= 100,reg_hy=450,plot=plot_im)
+    
+
 
     print(len(cents))
 
@@ -30,6 +32,13 @@ def trigger_response(request):
         if np.isnan(x) or np.isnan(y) or np.isnan(z):
             print('nan')
         else:
+            print ('Estimated Height of the object ',max(xyz[i][:,2])-min(xyz[i][:,2]))
+            
+            print ('Estimated Width',max(xyz[i][:,1]) -min(xyz[i][:,1])               )
+            
+            print ('Estimated Depth',max(xyz[i][:,0])-min(xyz[i][:,0]))
+            np.save( "/home/roboworks/Documents/points", xyz[i]   )
+            
             t=write_tf(    (x,y,z),(0,0,0,1), 'Object'+str(i), "head_rgbd_sensor_rgb_frame"     )
             broadcaster.sendTransform(t)
             """#broadcaster.sendTransform((x,y,z),(0,0,0,1), rospy.Time.now(), 'Object'+str(i),"head_rgbd_sensor_rgb_frame")

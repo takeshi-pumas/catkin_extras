@@ -18,6 +18,8 @@ def trigger_response(request):
 
 
     res= detect_human(points_msg)
+    # IN PROGRESS
+    #res = detect_all(points_msg)
     print (res)
     return res
     

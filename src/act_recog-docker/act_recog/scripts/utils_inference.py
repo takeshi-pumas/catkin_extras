@@ -302,14 +302,14 @@ def detect_drinking(data):
         Brazo derecho: 2,3,4 (hombro,codo,mano) 
         Brazo izquierdo: 5,6,7 (hombro,codo,mano)
     """
-    if dataout[2,0]!=0 and dataout[3,0]!=0 and dataout[4,0]!=0:
+    if data[2,0]!=0 and data[3,0]!=0 and data[4,0]!=0:
         cos_A=np.dot((data[2,:]-data[3,:]),(data[4,:]-data[3,:]))/(0.0001+np.linalg.norm((data[2,:]-data[3,:]))*np.linalg.norm((data[4,:]-data[3,:])))
         ang_der=np.rad2deg(np.arccos(cos_A))
     else:
         ang_der=150
 
-    if dataout[5,0]!=0 and dataout[6,0]!=0 and dataout[7,0]!=0:
-        cos_B=np.dot((dataout[5,:]-dataout[6,:]),(dataout[7,:]-dataout[6,:]))/(0.0001+np.linalg.norm((dataout[5,:]-dataout[6,:]))*np.linalg.norm((dataout[7,:]-dataout[6,:])))
+    if data[5,0]!=0 and data[6,0]!=0 and data[7,0]!=0:
+        cos_B=np.dot((data[5,:]-data[6,:]),(data[7,:]-data[6,:]))/(0.0001+np.linalg.norm((data[5,:]-data[6,:]))*np.linalg.norm((data[7,:]-data[6,:])))
         ang_izq=np.rad2deg(np.arccos(cos_B))
     else:
         ang_izq=150    
@@ -317,6 +317,29 @@ def detect_drinking(data):
     if (abs(ang_der)<=120 and abs(ang_izq)>120) or (abs(ang_izq)<=120 and abs(ang_der)>120):
         return True
     else:return False
+
+#---------------------------------------------------
+def distance_to_people(data,cld_points):
+
+    if data[0,0]!=0:
+        i=0
+    else:
+        i=1
+
+    distanc = [cld_points['x'][round(data[i,1]), round(data[i,0])],
+            cld_points['y'][round(data[i,1]), round(data[i,0])],
+            cld_points['z'][round(data[i,1]), round(data[i,0])]]
+    tf_man.pub_static_tf(distanc,point_name='d_to_human', ref='head_rgbd_sensor_link')
+    rospy.sleep(0.8)
+    ob_xyz,_ = tf_man.getTF(target_frame='d_to_human',ref_frame='head_rgbd_sensor_link')
+
+    dist_to_p = np.linalg.norm(ob_xyz)
+
+    if dist_to_p<2.5:
+        return 1,dist_to_p
+    else:
+        return 0,dist_to_p
+
 
 #------------------------------------------
 

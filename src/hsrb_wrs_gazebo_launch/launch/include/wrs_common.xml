@@ -30,7 +30,7 @@
   <arg     if="$(arg highrtf)" name="world_suffix2" value="_highrtf"/>
   <arg name="world_name" default="$(find tmc_wrs_gazebo_worlds)/worlds/wrs2020$(arg world_suffix)$(arg world_suffix2).world" />
 
-  <arg name="robot_pos" default="-x -2.1 -y 1.2 -z 0 -Y -1.57" />
+  <arg name="robot_pos" default="-x -9.1 -y 1.2 -z 0 -Y -1.57" />
 
   <param name="/use_sim_time" value="true" />
 
@@ -58,7 +58,7 @@
   </group>
   <group if="$(arg use_oss_stacks)">
     <!-- world -->
-    <include file="$(find hsrb_gazebo_bringup)/launch/hsrb_empty_world.launch">
+    <include file="$(find tmc_wrs_gazebo_worlds)/worlds/hsrb_empty_world.launch">
       <arg name="debug" value="$(arg debug)"/>
       <arg name="fast_physics" value="$(arg fast_physics)" />
       <arg name="gazebo_visualization" value="$(arg gazebo_visualization)" />
