@@ -8,6 +8,8 @@ project(head)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
+  tf2 REQUIRED
+  tf2_ros REQUIRED
   controller_manager_msgs
   trajectory_msgs
   geometry_msgs
@@ -15,6 +17,8 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
 )
+
+
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -138,8 +142,11 @@ include_directories(
 ## The recommended prefix ensures that target names across packages don't collide
 add_executable(head_node
   src/head_node.cpp)
+add_executable(gaze_node
+  src/gaze_node.cpp)
 add_executable(led_node
-  src/led_node.cpp)
+  src/led_node.cpp)  
+
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -160,6 +167,11 @@ target_link_libraries(head_node
 target_link_libraries(led_node
   ${catkin_LIBRARIES}
   )
+
+target_link_libraries(gaze_node 
+${catkin_LIBRARIES} 
+${tf2_LIBRARIES} 
+${tf2_ros_LIBRARIES})
 
 #############
 ## Install ##
