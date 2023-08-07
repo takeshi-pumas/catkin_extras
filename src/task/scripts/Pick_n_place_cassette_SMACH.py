@@ -128,12 +128,13 @@ class Set_position(smach.State):
         AR_stopper.call()
         head.set_named_target('neutral')
         head.go()
-        arm.set_named_target('go')
+        arm.set_named_target('neutral')
         arm.go()
         succ = False
         THRESHOLD = 0.04
         while not succ:
-            trans,_ = tf_man.getTF(target_frame='cassette', ref_frame='arm_flex_link')
+            #trans,_ = tf_man.getTF(target_frame='cassette', ref_frame='arm_flex_link')
+            trans,_ = tf_man.getTF(target_frame='cassette', ref_frame='hand_palm_link')
             _, rot = tf_man.getTF(target_frame='cassette', ref_frame='base_link')
             if type(trans) is not bool and type(rot) is not bool:
                 eX, eY, _ = trans

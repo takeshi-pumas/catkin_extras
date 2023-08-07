@@ -11,7 +11,8 @@
    
   <include file="$(find hsrb_gazebo_launch)/launch/include/hsrb_gazebo_common.xml" pass_all_args="true" >
     
-    <arg name="map" value="$(find tmc_wrs_gazebo_worlds)/maps/rc2023/map.yaml" />
+  <arg name="map" value="$(find config_files)/prohibition_maps/map.yaml" />
+   <!-- <arg name="map" value="$(find tmc_wrs_gazebo_worlds)/maps/rc2023/map.yaml" /> -->
     
   	
   	
