@@ -219,7 +219,8 @@ class GAZE():
             base.tiny_move(velT = eT, MAX_VEL_THETA=0.9)
         return True
 
-'''class HEAD():
+'''
+class HEAD():
     def __init__(self):
         self._x = 0
         self._y = 0
@@ -354,7 +355,9 @@ class GAZE():
             if succ:
                 eT = 0
             base.tiny_move(velT = eT, MAX_VEL_THETA=0.9)
-        return True '''
+        return True 
+        
+'''
 
 def set_pose_goal(pos=[0,0,0], rot=[0,0,0,1]):
     pose_goal = Pose()

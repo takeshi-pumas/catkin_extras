@@ -27,7 +27,7 @@ global clear_octo_client, scene, goal, navclient, arm
 rospy.init_node('smach')
 
 #----------Moveit instances
-arm = moveit_commander.MoveGroupCommander('arm')
+arm = moveit_commander.MoveGroupCommander('whole_body_weighted')
 
 #----------Class instances
 rgbd        = RGBD()
@@ -44,14 +44,14 @@ voice       = TALKER()
 def wait_for_push_hand(time=10):
 
     start_time = rospy.get_time()
-    time= 10
+    time = 10
     print('timeout will be ',time,'seconds')
-    while rospy.get_time() - start_time < time:
+    while (rospy.get_time() - start_time < time):
         torque = wrist.get_torque()
-        if np.abs(torque[1])>1.0:
-            print(' Hand Pused Ready TO start')
+        if np.abs(torque[1]) > 1.0:
+            print('Hand pused ready to start')
             #takeshi_talk_pub.publish(string_to_Voice())
-            talk('Im ready to start')
+            voice.talk('Im ready to start')
             return True
             break
 

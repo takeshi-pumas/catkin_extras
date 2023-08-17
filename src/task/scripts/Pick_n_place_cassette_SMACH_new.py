@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 from smach_utils_pick_and_place import *
-        
+
+
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
     ##### States definition #####
 #Estado inicial de takeshi, neutral
 class Initial(smach.State):
@@ -10,7 +12,7 @@ class Initial(smach.State):
     def execute(self,userdata):
         rospy.loginfo('STATE : robot neutral pose')
         self.tries+=1
-        rospy.loginfo(f'Try:{self.tries} of 5 attepmpts') 
+        rospy.loginfo(f'Try:{self.tries} of 5 attempts') 
         if self.tries==3:
             return 'tries'
         # Set moveit initial values
@@ -24,7 +26,6 @@ class Initial(smach.State):
         return 'succ'
 
 # --------------------------------------------------
-
 class Wait_push_hand(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
@@ -51,7 +52,6 @@ class Wait_push_hand(smach.State):
             return 'failed'
 
 # --------------------------------------------------
-
 class Goto_cassette_location(smach.State):
     def __init__(self):
         smach.State.__init__(self,outcomes=['succ','failed','tries'])
@@ -75,7 +75,6 @@ class Goto_cassette_location(smach.State):
             return 'failed'
 
 # --------------------------------------------------
-
 class Set_position(smach.State):
     def __init__(self):
         smach.State.__init__(self,outcomes=['succ','failed','tries'])
@@ -92,7 +91,7 @@ class Set_position(smach.State):
         #tf_man.getTF(target_frame = "hand_palm_link")
 
         pos,_ = tf_man.getTF(target_frame="ar_marker/201", ref_frame="hand_palm_link")
-        tf_man.pub_static_tf(pos=[pos[0] + 0.10, 0, 0.10] rot=[0, 0, 0, 1], point_name='goal', ref="hand_palm_link")
+        tf_man.pub_static_tf(pos=[pos[0] + 0.10, 0, 0.10], rot=[0, 0, 0, 1], point_name='goal', ref="hand_palm_link")
         pose_goal = geometry_msgs.msg.Pose()
         pose_goal.orientation.w = 1.0
         pose_goal.position.x = 0.4
@@ -104,6 +103,7 @@ class Set_position(smach.State):
 
         brazo.move_hand_to_target(target_frame = 'ar_marker/201')
 
+# --------------------------------------------------
 class Pre_grasp_pose(smach.State):
     def __init__(self):
         smach.State.__init__(self,outcomes=['succ','failed','tries'])
@@ -158,7 +158,8 @@ class Pre_grasp_pose(smach.State):
                     # grasp_base.tiny_move(velY=-0.4*trans[1], std_time=0.2, MAX_VEL=0.3)
                 grasp_base.tiny_move(velX=0.3*eX, velY=-0.4*eY, std_time=0.2, MAX_VEL=0.3) #Pending test
         return 'succ'
-            
+
+# --------------------------------------------------
 class Grasp_pose(smach.State):
     def __init__(self):
         smach.State.__init__(self,outcomes=['succ','failed','tries'],input_keys=['global_counter'])
@@ -182,7 +183,8 @@ class Grasp_pose(smach.State):
         rospy.sleep(0.5)
         # succ = True
         return 'succ'
-        
+
+# --------------------------------------------------
 class Grasp_table(smach.State):
     def __init__(self):
         smach.State.__init__(self,outcomes=['succ','failed','tries'],input_keys=['global_counter'])
@@ -249,6 +251,7 @@ class Grasp_table(smach.State):
                 rospy.sleep(0.7)
                 return 'tries'
 
+# --------------------------------------------------
 class Post_grasp_pose(smach.State):###example of a state definition.
     def __init__(self):
         smach.State.__init__(self,outcomes=['succ','failed','tries'])
@@ -272,6 +275,8 @@ class Post_grasp_pose(smach.State):###example of a state definition.
             return 'succ'
         else:
             return 'tries'
+
+# --------------------------------------------------
 class Attach_object(smach.State):
     def __init__(self):
         smach.State.__init__(self,outcomes=['succ','failed','tries'],input_keys=['global_counter'])
@@ -308,6 +313,8 @@ class Attach_object(smach.State):
             return 'succ'
         else:
             return 'tries'
+
+# --------------------------------------------------
 class Delete_objects(smach.State):
     def __init__(self):
         smach.State.__init__(self,outcomes=['succ','failed','tries'],input_keys=['global_counter'])
@@ -332,6 +339,7 @@ class Delete_objects(smach.State):
         arm.go()
         return 'succ'
 
+# --------------------------------------------------
 class Forward_shift(smach.State):
     def __init__(self):
         smach.State.__init__(self,outcomes=['succ','failed','tries'],input_keys=['global_counter'])
@@ -356,6 +364,7 @@ class Forward_shift(smach.State):
         else:
             return 'failed'
 
+# --------------------------------------------------
 class Player_search(smach.State):
     def __init__(self):
         smach.State.__init__(self,outcomes=['succ','failed','tries'],input_keys=['global_counter'])
@@ -412,6 +421,7 @@ class Player_search(smach.State):
                 head.go()
                 rospy.sleep(0.3)
 
+# --------------------------------------------------
 class Player_alignment(smach.State):
     def __init__(self):
         smach.State.__init__(self,outcomes=['succ','failed','tries'],input_keys=['global_counter'])
@@ -456,6 +466,8 @@ class Player_alignment(smach.State):
                 grasp_base.tiny_move(velX=0.2
                                      *eX, velY=0.4*eY, velT=-0.4*eT, std_time=0.2, MAX_VEL=0.3) #Pending test
         return 'succ'
+
+# --------------------------------------------------
 class Pre_place_pose(smach.State):
     def __init__(self):
         smach.State.__init__(self,outcomes=['succ','failed','tries'],input_keys=['global_counter'])
@@ -487,6 +499,8 @@ class Pre_place_pose(smach.State):
             return 'succ'
         else:
             return 'tries'
+
+# --------------------------------------------------
 class Get_player_edge(smach.State):
     def __init__(self):
         smach.State.__init__(self,outcomes=['succ','failed','tries'],input_keys=['global_counter'])
@@ -510,6 +524,7 @@ class Get_player_edge(smach.State):
                 succ = True
         return 'succ'
 
+# --------------------------------------------------
 class Pre_place_cassette(smach.State):
     def __init__(self):
         smach.State.__init__(self,outcomes=['succ','failed','tries'],input_keys=['global_counter'])
@@ -540,6 +555,7 @@ class Pre_place_cassette(smach.State):
                                      *eX, velY=0.45*eY, std_time=0.25, MAX_VEL=0.3) #Pending test
         return 'succ'
 
+# --------------------------------------------------
 class Place_cassette(smach.State):
     def __init__(self):
         smach.State.__init__(self,outcomes=['succ','failed','tries'],input_keys=['global_counter'])
@@ -577,6 +593,7 @@ class Place_cassette(smach.State):
                 return 'tries'
         return 'succ'
 
+# --------------------------------------------------
 class Push_cassette(smach.State):
     def __init__(self):
         smach.State.__init__(self,outcomes=['succ','failed','tries'],input_keys=['global_counter'])
@@ -606,6 +623,8 @@ class Push_cassette(smach.State):
                 grasp_base.tiny_move(velX = 0.04,std_time=0.2)
         gripper.steady()
         return 'succ'
+
+#==============================================================================
 #Initialize global variables and node
 def init(node_name):
 
@@ -613,7 +632,7 @@ def init(node_name):
     global rgbd, hand_cam, wrist, gripper, grasp_base, clear_octo_client, service_client, AR_starter, AR_stopper, NS
 
     moveit_commander.roscpp_initialize(sys.argv)
-    rospy.init_node('takeshi_smach_20')
+    #rospy.init_node('node_name')
 
     head = moveit_commander.MoveGroupCommander('head')
     wb = moveit_commander.MoveGroupCommander('whole_body')
@@ -645,6 +664,8 @@ def init(node_name):
     head.set_num_planning_attempts(1)
     wb.set_num_planning_attempts(10)
     # wb.allow
+
+#==============================================================================
 #Entry point    
 if __name__== '__main__':
     print("Takeshi STATE MACHINE...")
@@ -653,28 +674,29 @@ if __name__== '__main__':
 
     with sm:
         #State machine for grasping on Table
-        # smach.StateMachine.add("GET_PLAYER_EDGE",Get_player_edge(),transitions = {'failed':'GET_PLAYER_EDGE', 'succ':'PRE_PLACE_CASSETTE', 'tries':'GET_PLAYER_EDGE'})
+        # smach.StateMachine.add("GET_PLAYER_EDGE", Get_player_edge(),  transitions = {'failed':'GET_PLAYER_EDGE',      'succ':'PRE_PLACE_CASSETTE','tries':'GET_PLAYER_EDGE'})
 
-        smach.StateMachine.add("INITIAL",Initial(),transitions = {'failed':'INITIAL', 'succ':'FIND_AR_MARKER', 'tries':'END'}) 
+        smach.StateMachine.add("INITIAL",           Initial(),          transitions = {'failed':'INITIAL',              'succ':'WAIT_PUSH_HAND',    'tries':'END'}) 
+        smach.StateMachine.add("WAIT_PUSH_HAND",    Wait_push_hand(),          transitions = {'failed':'WAIT_PUSH_HAND','succ':'GOTO_CASSETTE',    'tries':'END'}) 
         
-        smach.StateMachine.add("FIND_AR_MARKER",Find_AR_marker(),transitions = {'failed':'END', 'succ':'SET_POSITION', 'tries':'FIND_AR_MARKER'}) 
-        smach.StateMachine.add("SET_POSITION",Set_position(),transitions = {'failed':'SET_POSITION', 'succ':'PRE_GRASP_POSE', 'tries':'SET_POSITION'})
+        smach.StateMachine.add("GOTO_CASSETTE",     Goto_cassette_location(),   transitions = {'failed':'GOTO_CASSETTE','succ':'SET_POSITION',      'tries':'END'}) 
+        smach.StateMachine.add("SET_POSITION",      Set_position(),     transitions = {'failed':'SET_POSITION',         'succ':'PRE_GRASP_POSE',    'tries':'SET_POSITION'})
 
-        smach.StateMachine.add("PRE_GRASP_POSE",Pre_grasp_pose(),transitions = {'failed':'END', 'succ':'GRASP_POSE', 'tries':'PRE_GRASP_POSE'}) 
-        smach.StateMachine.add("FORWARD_SHIFT",Forward_shift(),transitions = {'failed':'FORWARD_SHIFT', 'succ':'GRASP_TABLE', 'tries':'FORWARD_SHIFT'}) 
-        smach.StateMachine.add("GRASP_POSE",Grasp_pose(),transitions = {'failed':'END', 'succ':'GRASP_TABLE', 'tries':'GRASP_POSE'}) 
-        smach.StateMachine.add("GRASP_TABLE",Grasp_table(),transitions = {'failed':'DELETE_OBJECTS', 'succ':'ATTACH_OBJECT', 'tries':'GRASP_TABLE'})
-        smach.StateMachine.add("ATTACH_OBJECT",Attach_object(),transitions = {'failed':'POST_GRASP_POSE', 'succ':'POST_GRASP_POSE', 'tries':'POST_GRASP_POSE'})
-        smach.StateMachine.add("DELETE_OBJECTS",Delete_objects(),transitions = {'failed':'END', 'succ':'END', 'tries':'END'})
-        smach.StateMachine.add("POST_GRASP_POSE",Post_grasp_pose(),transitions = {'failed':'END', 'succ':'PLAYER_SEARCH', 'tries':'POST_GRASP_POSE'})
-        smach.StateMachine.add("PLAYER_SEARCH",Player_search(),transitions = {'failed':'PLAYER_SEARCH', 'succ':'PLAYER_ALIGNMENT', 'tries':'PLAYER_SEARCH'})
-        smach.StateMachine.add("PLAYER_ALIGNMENT",Player_alignment(),transitions = {'failed':'PLAYER_ALIGNMENT', 'succ':'PRE_PLACE_POSE', 'tries':'PLAYER_ALIGNMENT'})
-        smach.StateMachine.add("PRE_PLACE_POSE",Pre_place_pose(),transitions = {'failed':'PLAYER_SEARCH', 'succ':'GET_PLAYER_EDGE', 'tries':'PRE_PLACE_POSE'})
+        smach.StateMachine.add("PRE_GRASP_POSE",    Pre_grasp_pose(),   transitions = {'failed':'END',                  'succ':'GRASP_POSE',        'tries':'PRE_GRASP_POSE'}) 
+        smach.StateMachine.add("FORWARD_SHIFT",     Forward_shift(),    transitions = {'failed':'FORWARD_SHIFT',        'succ':'GRASP_TABLE',       'tries':'FORWARD_SHIFT'}) 
+        smach.StateMachine.add("GRASP_POSE",        Grasp_pose(),       transitions = {'failed':'END',                  'succ':'GRASP_TABLE',       'tries':'GRASP_POSE'}) 
+        smach.StateMachine.add("GRASP_TABLE",       Grasp_table(),      transitions = {'failed':'DELETE_OBJECTS',       'succ':'ATTACH_OBJECT',     'tries':'GRASP_TABLE'})
+        smach.StateMachine.add("ATTACH_OBJECT",     Attach_object(),    transitions = {'failed':'POST_GRASP_POSE',      'succ':'POST_GRASP_POSE',   'tries':'POST_GRASP_POSE'})
+        smach.StateMachine.add("DELETE_OBJECTS",    Delete_objects(),   transitions = {'failed':'END',                  'succ':'END',               'tries':'END'})
+        smach.StateMachine.add("POST_GRASP_POSE",   Post_grasp_pose(),  transitions = {'failed':'END',                  'succ':'PLAYER_SEARCH',     'tries':'POST_GRASP_POSE'})
+        smach.StateMachine.add("PLAYER_SEARCH",     Player_search(),    transitions = {'failed':'PLAYER_SEARCH',        'succ':'PLAYER_ALIGNMENT',  'tries':'PLAYER_SEARCH'})
+        smach.StateMachine.add("PLAYER_ALIGNMENT",  Player_alignment(), transitions = {'failed':'PLAYER_ALIGNMENT',     'succ':'PRE_PLACE_POSE',    'tries':'PLAYER_ALIGNMENT'})
+        smach.StateMachine.add("PRE_PLACE_POSE",    Pre_place_pose(),   transitions = {'failed':'PLAYER_SEARCH',        'succ':'GET_PLAYER_EDGE',   'tries':'PRE_PLACE_POSE'})
 
-        smach.StateMachine.add("GET_PLAYER_EDGE",Get_player_edge(),transitions = {'failed':'GET_PLAYER_EDGE', 'succ':'PRE_PLACE_CASSETTE', 'tries':'GET_PLAYER_EDGE'})
-        smach.StateMachine.add("PRE_PLACE_CASSETTE",Pre_place_cassette(),transitions = {'failed':'PRE_PLACE_CASSETTE', 'succ':'PLACE_CASSETTE', 'tries':'PRE_PLACE_CASSETTE'})
-        smach.StateMachine.add("PLACE_CASSETTE",Place_cassette(),transitions = {'failed':'PLACE_CASSETTE', 'succ':'PUSH_CASSETTE', 'tries':'END'})
-        smach.StateMachine.add("PUSH_CASSETTE",Push_cassette(),transitions = {'failed':'PUSH_CASSETTE', 'succ':'END', 'tries':'PUSH_CASSETTE'})
+        smach.StateMachine.add("GET_PLAYER_EDGE",   Get_player_edge(),  transitions = {'failed':'GET_PLAYER_EDGE',      'succ':'PRE_PLACE_CASSETTE','tries':'GET_PLAYER_EDGE'})
+        smach.StateMachine.add("PRE_PLACE_CASSETTE",Pre_place_cassette(),transitions = {'failed':'PRE_PLACE_CASSETTE',  'succ':'PLACE_CASSETTE',    'tries':'PRE_PLACE_CASSETTE'})
+        smach.StateMachine.add("PLACE_CASSETTE",    Place_cassette(),   transitions = {'failed':'PLACE_CASSETTE',       'succ':'PUSH_CASSETTE',     'tries':'END'})
+        smach.StateMachine.add("PUSH_CASSETTE",     Push_cassette(),    transitions = {'failed':'PUSH_CASSETTE',        'succ':'END',               'tries':'PUSH_CASSETTE'})
         # smach.StateMachine.add("PRE_PLACE_POSE",Pre_place_pose(),transitions = {'failed':'PLAYER_SEARCH', 'succ':'END', 'tries':'PRE_PLACE_POSE'})
         # 
 

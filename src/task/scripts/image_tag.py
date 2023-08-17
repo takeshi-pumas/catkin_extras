@@ -50,7 +50,7 @@ def callback(points_msg):
     global first , rospack , file_path
  
 
-
+    print("DENTRO")
     #print('got imgs msgs')
     points_data = ros_numpy.numpify(points_msg)    
     image_data = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]   #JUST TO MANTAIN DISPLAY

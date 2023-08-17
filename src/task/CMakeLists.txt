@@ -12,6 +12,9 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
   tf
+  moveit_core
+  moveit_ros_planning_interface
+  tf2_geometry_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -104,6 +107,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
+  CATKIN_DEPENDS moveit_core moveit_ros_planning_interface tf2_geometry_msgs roscpp
 #  INCLUDE_DIRS include
 #  LIBRARIES task
 #  CATKIN_DEPENDS roscpp rospy std_msgs
@@ -164,6 +168,8 @@ include_directories(
    scripts/write_analyze_result.py
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
  )
+ 
+
 
 ## Mark executables for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_executables.html
