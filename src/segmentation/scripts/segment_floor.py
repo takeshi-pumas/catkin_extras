@@ -20,7 +20,9 @@ def trigger_response(request):
     # cents,xyz, images, img = plane_seg( points_msg,lower=10    , higher=4000,reg_hy=350)
     # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     plot_im=False
-    cents,xyz, images, img = plane_seg(points_msg,hg=0.95,lg=0.001,lower=100, higher=500000,reg_ly= 100,reg_hy=450,plot=plot_im)
+    params=read_yaml('/segmentation_params.yaml')
+
+    cents,xyz, images, img = plane_seg2(points_msg,hg=0.95,lg=0.001,lower=100, higher=500000,reg_ly= 100,reg_hy=450,plot=plot_im)
     
 
 
@@ -37,6 +39,7 @@ def trigger_response(request):
             print ('Estimated Width',max(xyz[i][:,1]) -min(xyz[i][:,1])               )
             
             print ('Estimated Depth',max(xyz[i][:,0])-min(xyz[i][:,0]))
+            
             np.save( "/home/roboworks/Documents/points", xyz[i]   )
             
             t=write_tf(    (x,y,z),(0,0,0,1), 'Object'+str(i), "head_rgbd_sensor_rgb_frame"     )

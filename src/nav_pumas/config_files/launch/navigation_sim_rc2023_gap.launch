@@ -6,8 +6,8 @@
   <!--node name="fake_global_pose" pkg="killer_node" type="fake_global_pose.py" output="screen"/-->
   
 
-  <arg name="static_map_file"  default="$(find config_files)/prohibition_maps/map.yaml"/>
-  <arg name="prohibition_map_file"  default="$(find config_files)/prohibition_maps/map.yaml"/>
+  <arg name="static_map_file"  default="$(find config_files)/prohibition_maps/robocup_2023/map.yaml"/>
+  <arg name="prohibition_map_file"  default="$(find config_files)/prohibition_maps/robocup_2023/map.yaml"/>
   <arg name="initial_pose_x" default="8.0"/>
   <arg name="initial_pose_y" default="0.0"/>
   <arg name="initial_pose_a" default="3.1416"/>

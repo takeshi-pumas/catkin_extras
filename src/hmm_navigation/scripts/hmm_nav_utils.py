@@ -9,6 +9,7 @@ from sensor_msgs.msg import LaserScan
 from geometry_msgs.msg import Twist, PointStamped
 from visualization_msgs.msg import Marker , MarkerArray
 
+
 ##################################################
 
 def quantized(xyth,ccxyth):
@@ -80,6 +81,13 @@ def pose2feedback(pose_robot,quat_robot,timeleft,euclD):
     feed.feedback.timeleft    = timeleft
     feed.feedback.euclD= euclD
     return feed
+
+def show_topo():
+    
+
+
+
+
 #########################################################
 global listener , pub ,pub2, pub3 , pub_goal , ccxyth , A
 ###########################################################
@@ -97,5 +105,6 @@ A=np.load(file_path_A)
 
 file_path_ccxyth = rospack.get_path('hmm_navigation')  + '/scripts/hmm_nav/ccxyth.npy'  #Observation Symbols centroids ##
 ccxyth=np.load(file_path_ccxyth)
+
 
 

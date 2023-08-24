@@ -50,7 +50,7 @@ def callback(points_msg):
     global first , rospack , file_path
  
 
-    print("DENTRO")
+
     #print('got imgs msgs')
     points_data = ros_numpy.numpify(points_msg)    
     image_data = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]   #JUST TO MANTAIN DISPLAY
@@ -156,12 +156,13 @@ def callback(points_msg):
                     rospy.sleep(0.3)
                     tf_man.change_ref_frame_tf(point_name=point_name, new_frame='map')
                     rospy.sleep(0.3)
-                    #pose,_= tf_man.getTF(point_name)
-                    #print (f'Occupancy map at point object {i}-> pixels ',origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m), img_map[origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m)])
-                    #if img_map[origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m)]!=0:#### Yes axes seem to be "flipped" !=0:
-                    #    print ('reject point, most likely part of arena, occupied inflated map')
-                    #    tf_man.pub_static_tf(pos=[0,0,0], point_name=point_name, ref='head_rgbd_sensor_rgb_frame')
-                    #    num_objs-=1
+                    pose,_= tf_man.getTF(point_name)
+                    print (f'Occupancy map at point object {i}-> pixels ',origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m), img_map[origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m)])
+                    ## Pixels from augmented image map server published map image
+                    if img_map[origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m)]!=0:#### Yes axes seem to be "flipped" !=0:
+                        print ('reject point, most likely part of arena, occupied inflated map')
+                        tf_man.pub_static_tf(pos=[0,0,0], point_name=point_name, ref='head_rgbd_sensor_rgb_frame')
+                        num_objs-=1
                     print (f"object found at robot coords.{pose} ")
                 
             

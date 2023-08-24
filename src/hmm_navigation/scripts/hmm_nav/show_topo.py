@@ -26,6 +26,8 @@ from utils_hmm import backw_alg
 from joblib import dump, load
 import matplotlib.pyplot as plt
 import math
+import rospkg
+
 
 odom_adjust,odom_adjust_aff=np.zeros(3),np.zeros(3)
 first_adjust= np.zeros(3)
@@ -54,8 +56,18 @@ first_adjust_2=True
 last_states_trans=[0,0]
 last_states_trans_2=[0,0]
 last_states_trans_real=[0,0]
-centroides = np.load('ccvk.npy')
-ccxyth= np.load('ccxyth.npy')
+
+rospack = rospkg.RosPack()
+
+
+
+file_path_ccvk = rospack.get_path('hmm_navigation')  + '/scripts/hmm_nav/ccvk.npy'   # Transition Matrix for HMM ( or any other 2D pose centroids (x,y,theta))
+centroides = np.load(file_path_ccvk)
+
+file_path_ccxyth = rospack.get_path('hmm_navigation')  + '/scripts/hmm_nav/ccxyth.npy'  #Observation Symbols centroids ##
+ccxyth=np.load(file_path_ccxyth)
+file_path_A = rospack.get_path('hmm_navigation')  + '/scripts/hmm_nav/A.npy'   # Transition Matrix for HMM ( or any other 2D pose centroids (x,y,theta))
+A=np.load(file_path_A)
 
 
 
@@ -68,13 +80,13 @@ class HMM (object):
                  self.PI=PI  
 
 #############
-A, B, PI= np.load('A.npy') , np.load('B.npy') , np.load('PI.npy')
-Modelo1= HMM(A,B,PI)
-A2, B2, PI2= np.load('A.npy') , np.load('B2.npy') , np.load('PI2.npy')## SAME MATRIX A BUT COULD NOT BE
-Modelo2= HMM(A,B2,PI2)
+#A, B, PI= np.load('A.npy') , np.load('B.npy') , np.load('PI.npy')
+#Modelo1= HMM(A,B,PI)
+#A2, B2, PI2= np.load('A.npy') , np.load('B2.npy') , np.load('PI2.npy')## SAME MATRIX A BUT COULD NOT BE
+#Modelo2= HMM(A,B2,PI2)
 
 
-
+    
     
 
 def callback(laser,odom,pose):
