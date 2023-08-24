@@ -20,8 +20,14 @@ from sensor_msgs.msg import Image , LaserScan , PointCloud2
 from geometry_msgs.msg import TransformStamped, Pose
 from tf2_sensor_msgs.tf2_sensor_msgs import do_transform_cloud
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+import matplotlib.pyplot as plt
+import numpy as np
+from mpl_toolkits.mplot3d import Axes3D
+import seaborn as sns
+import pandas as pd
+from sklearn.decomposition import PCA
 #-----------------------------------------------------------------
-global tf_listener, ptcld_lis, broadcaster , bridge , rospack
+global tf_listener, ptcld_lis, broadcaster , bridge , rospack , Pca
 
 rospack = rospkg.RosPack()
 rospy.init_node('plane_segmentation') 
@@ -38,6 +44,30 @@ tf_static_broadcaster = tf2_ros.StaticTransformBroadcaster()
 #tf_static_broadcaster= tf2_ros.StaticTransformBroadcaster()
 #pub = rospy.Publisher('/segmented_images', Image, queue_size=1)
 bridge=CvBridge()
+
+Pca=PCA()
+
+#-----------------------------------------------------------------
+def points_to_PCA(points, limit_z=-0.978):
+    df=pd.DataFrame(points)
+    df.columns=[['x','y','z']]
+    rslt_df = df[['x','y','z']][df[['x','y','z']] > limit_z]
+    points=rslt_df[['x','y','z']].dropna().values
+    Pca=PCA(n_components=3)
+    Pca.fit(points)
+    print('Pca.explained_variance_',Pca.explained_variance_)
+    ref=np.eye(3)
+    pcas=Pca.components_
+    R=[]
+    R.append(np.dot(pcas[0],ref))
+    R.append(np.dot(pcas[1],ref))
+    R.append(np.dot(pcas[2],ref))
+    R=np.asarray(R)
+    ## HOMOGENEUS
+    E_R= np.zeros((4,4))
+    E_R[:3,:3]+=R
+    E_R[-1,-1]=1
+    return     E_R
 
 #-----------------------------------------------------------------
 def write_tf(pose, q, child_frame="" , parent_frame='map'):
@@ -159,6 +189,7 @@ def segment_floor(points_data,zs_no_nans,obj_hMax=0.85,obj_lMax=1.5,thres_floor=
     # Quita piso y mayor a una cierta altura
     t = tfBuffer.lookup_transform('map', 'head_rgbd_sensor_link', rospy.Time())
     trans=t.transform.translation.z
+<<<<<<< Updated upstream
     
     # Quito piso desde altura robot(sensor) + un threshold (hacia abajo) -> thres_floor
     img_corrected = np.where((zs_no_nans >-trans-thres_floor),zs_no_nans,1)
@@ -166,6 +197,14 @@ def segment_floor(points_data,zs_no_nans,obj_hMax=0.85,obj_lMax=1.5,thres_floor=
     img_corrected = np.where((img_corrected < -obj_hMax),img_corrected,1)
     
     
+=======
+    img_corrected = np.where((zs_no_nans < -obj_hMax),zs_no_nans,1)
+    cv2.imwrite(  "/home/roboworks/Documents/imgcorr.png",img_corrected  )
+    
+    img_corrected = np.where((img_corrected >-trans-0.03),img_corrected,1)
+
+
+>>>>>>> Stashed changes
     # Quita objetos lejanos
     ls_no_nans=np.where(~np.isnan(points_data['z']),points_data['z'],5)
     
@@ -221,6 +260,7 @@ def plane_seg(points_msg,hg=0.85,lg=1.5,th_v=0.03,lower=1000 ,higher=50000,reg_l
     i=0
     cents=[]
     points=[]
+    points_c=[]
     images=[]
     for i, contour in enumerate(contours):
 
@@ -248,27 +288,36 @@ def plane_seg(points_msg,hg=0.85,lg=1.5,th_v=0.03,lower=1000 ,higher=50000,reg_l
                 cv2.putText(rgb_image, "centroid_"+str(i)+"_"+str(cX)+','+str(cY)    ,    (cX - 25, cY - 25)   ,cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 255, 0), 2)
                 #print ('cX,cY',cX,cY,'len mask',len(npmask))
                 xyz=[]
+                xyz_c=[]
                 if len (npmask)>0:
                     for a in npmask:
                         ix,iy=a[0],a[1]
                         #aux=(np.asarray((points_data['x'][boundRect[1]+ix,boundRect[0]+iy],points_data['y'][boundRect[1]+ix,boundRect[0]+iy],points_data['z'][boundRect[1]+ix,boundRect[0]+iy])))
-                        aux=(np.asarray((corrected['x'][boundRect[1]+ix,boundRect[0]+iy],corrected['y'][boundRect[1]+ix,boundRect[0]+iy],corrected['z'][boundRect[1]+ix,boundRect[0]+iy])))
+                        
+                        aux2=(np.asarray((corrected['x'][boundRect[1]+ix,boundRect[0]+iy],corrected['y'][boundRect[1]+ix,boundRect[0]+iy],corrected['z'][boundRect[1]+ix,boundRect[0]+iy])))
+                        aux=(np.asarray((points_data['x'][boundRect[1]+ix,boundRect[0]+iy],points_data['y'][boundRect[1]+ix,boundRect[0]+iy],points_data['z'][boundRect[1]+ix,boundRect[0]+iy])))
                         #print (aux)
                         if np.isnan(aux[0]) or np.isnan(aux[1]) or np.isnan(aux[2]):
                                 'reject point'
                         else:
                             xyz.append(aux)
+                        if np.isnan(aux2[0]) or np.isnan(aux2[1]) or np.isnan(aux2[2]):
+                                'reject point'
+                        else:
+                            xyz_c.append(aux2)
                 
                 xyz=np.asarray(xyz)
+                xyz_c=np.asarray(xyz_c)
                 #print (xyz)
                 cent=xyz.mean(axis=0)
                 cents.append(cent)
                 #print (cent)
                 points.append(xyz)
+                points_c.append(xyz_c)
                 
             else:   
                 print ('cent out of region... rejected')
-    return cents,np.asarray(points), images,rgb_image
+    return cents,np.asarray(points), images,rgb_image,np.asarray(points_c) 
 
 #-----------------------------------------------------------------
 # th_v -> threshold de cuanto mas hacia abajo de la altura del robot(sensor) se quiere la nube de puntos

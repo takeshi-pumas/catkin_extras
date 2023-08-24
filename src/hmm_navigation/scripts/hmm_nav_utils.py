@@ -3,6 +3,7 @@ import tf2_ros
 import numpy as np
 import rospy
 import actionlib
+import rospkg
 from hmm_navigation.msg import NavigateAction ,NavigateActionGoal,NavigateActionFeedback,NavigateActionResult
 from sensor_msgs.msg import LaserScan
 from geometry_msgs.msg import Twist, PointStamped
@@ -87,9 +88,14 @@ pub = rospy.Publisher('/hsrb/command_velocity', Twist, queue_size=1)
 pub2 = rospy.Publisher('/aa/Markov_NXT/', PointStamped, queue_size=1)  
 pub3= rospy.Publisher('aa/Markov_route',MarkerArray,queue_size=1)
 pub_goal= rospy.Publisher('/clicked_point',PointStamped,queue_size=1)
-listener = tf.TransformListener()
-ccxyth=np.load('/home/takeshi/catkin_extras/src/hmm_navigation/scripts/hmm_nav/ccxyth.npy')
-A=np.load('/home/takeshi/catkin_extras/src/hmm_navigation/scripts/hmm_nav/A.npy')
 
+rospack = rospkg.RosPack()
+listener = tf.TransformListener()
+
+file_path_A = rospack.get_path('hmm_navigation')  + '/scripts/hmm_nav/A.npy'   # Transition Matrix for HMM ( or any other 2D pose centroids (x,y,theta))
+A=np.load(file_path_A)
+
+file_path_ccxyth = rospack.get_path('hmm_navigation')  + '/scripts/hmm_nav/ccxyth.npy'  #Observation Symbols centroids ##
+ccxyth=np.load(file_path_ccxyth)
 
 

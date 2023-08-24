@@ -1,4 +1,10 @@
-#! /usr/bin/env python3
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Dec 17 02:14:10 2022
+
+@author: oscar
+"""
 from hmm_nav_utils import *
 
 class HMM_navServer():
