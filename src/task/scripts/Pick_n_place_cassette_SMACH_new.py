@@ -56,15 +56,17 @@ class Goto_cassette_location(smach.State):
         smach.State.__init__(self,outcomes=['succ','failed','tries'])
         self.tries=0
     def execute(self,userdata):
-        rospy.loginfo('State : GOTO CASSETE... Find AR marker ')
+        rospy.loginfo('State : GOTO CASSETE... Go to known location ')
         self.tries+=1
         print('Try',self.tries,'of 5 attepmpts') 
-        if self.tries > 1:
-            omni_base.tiny_move(velX=0.05,std_time=0.5, MAX_VEL=0.05)
+        #if self.tries > 1:
+        #    omni_base.tiny_move(velX=0.05,std_time=0.5, MAX_VEL=0.05)
 
         #clear_octo_client()
+        print("Moviendose...")
         res = omni_base.move_base(known_location='cassette_demo')
         print(res)
+
         rospy.sleep(0.8)
         if res:
             self.tries = 0
@@ -86,6 +88,10 @@ class Set_position(smach.State):
         #TO DO: decide if use Pre defined pose (brazo) or to compute pose (moveit)
         #brazo.set_joint_values(joint_values = [0.0, 0.0, -1.6, -1.6, 0.0])
         #tf_man.getTF(target_frame = "hand_palm_link")
+        #if self.tries==3:
+            # SI NO LOGRA PLANEAR, SE MUEVE UN POQUITO (CON EL CONTROL SE VIO QUE YA LOGRA PLANEAR 
+            #                                           AL MOVERLE UN POQUITO ADELANTE O A UN LADO)
+        #    omni_base.tiny_move(velX = -0.02, std_time=1.0, MAX_VEL=0.04)
 
         brazo.set_named_target('neutral')
         rospy.sleep(0.8)
@@ -388,7 +394,10 @@ class Player_search(smach.State):
         # State Player AR search
         # status = goto('player_demo')
         status = 1
-        omni_base.move_base(known_location='player_demo')
+        print("Moviendose a known location de player...")
+        res = omni_base.move_base(known_location='player_demo')
+        if not(res) and self.tries<6:
+            return 'tries'
         # while status !=3:
             # status = NS.get_status()
             # print(status)
@@ -399,7 +408,7 @@ class Player_search(smach.State):
             clear_octo_client()
         except:
             rospy.loginfo('Cant clear octomap')
-        rospy.sleep(0.2)
+        rospy.sleep(0.9)
         #hcp = cabeza.relative(1,0,0.7)
         #head.set_joint_value_target(hcp)
         #head.go()
@@ -407,7 +416,7 @@ class Player_search(smach.State):
         flag = 1
         while not succ:
             trans,rot = tf_man.getTF(target_frame='ar_marker/7')
-            print(trans)
+
             if type(trans) is not bool:
                 tf_man.pub_static_tf(pos=trans, rot=rot, point_name='player')
                 rospy.sleep(0.8)
@@ -430,7 +439,7 @@ class Player_search(smach.State):
                 #head.go()
             #    rospy.sleep(0.3)
             else:
-                return 'succ'
+                return 'tries'
 
 
 # --------------------------------------------------
@@ -441,7 +450,7 @@ class Player_alignment(smach.State):
     def execute(self,userdata):
         rospy.loginfo('STATE : player alignment')
         self.tries+=1
-        rospy.loginfo(f'Try:{self.tries} of 5 attepmpts') 
+        rospy.loginfo(f'Try:{self.tries} of 5 attempts') 
         if self.tries==3:
             return 'tries'
         #Player alignment
@@ -456,8 +465,13 @@ class Player_alignment(smach.State):
             return 'tries'
         succ = False
         THRESHOLD = 0.01
+        ret=''
         while not succ:
             trans,rot = tf_man.getTF(target_frame='player', ref_frame='hand_palm_link')
+            print("ROT player: ",rot)
+            if rot==False:
+                ret='tries'
+                break
             euler = tf.transformations.euler_from_quaternion(rot)
             theta = euler[1] 
             if type(trans) is not bool:
@@ -476,7 +490,8 @@ class Player_alignment(smach.State):
                 succ =  eX == 0 and eY == 0
 #                 rospy.sleep(1.0)
                 omni_base.tiny_move(velX=0.2*eX, velY=0.4*eY, velT=-0.4*eT, std_time=0.2, MAX_VEL=0.3) #Pending test
-        return 'succ'
+                ret='succ'
+        return ret
 
 # --------------------------------------------------
 class Pre_place_pose(smach.State):
@@ -642,7 +657,7 @@ if __name__== '__main__':
     sm = smach.StateMachine(outcomes = ['END'])     #State machine, final state "END"
 
     with sm:
-        smach.StateMachine.add("INITIAL",           Initial(),          transitions = {'succ':'GOTO_CASSETTE'}) 
+        smach.StateMachine.add("INITIAL",           Initial(),          transitions = {'succ':'PLAYER_SEARCH'}) 
         smach.StateMachine.add("WAIT_PUSH_HAND",    Wait_push_hand(),   transitions = {'failed':'WAIT_PUSH_HAND','succ':'GOTO_CASSETTE',    'tries':'END'}) 
         
         smach.StateMachine.add("GOTO_CASSETTE",     Goto_cassette_location(),   transitions = {'failed':'GOTO_CASSETTE','succ':'SET_POSITION',      'tries':'END'}) 
