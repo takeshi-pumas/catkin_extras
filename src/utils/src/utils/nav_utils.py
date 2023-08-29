@@ -228,6 +228,7 @@ class NAVIGATION():
         self.failed = False
         if known_location != 'None':
             x, y, theta = self.get_known_location(known_location)
+
         else:
             x, y, theta = goal_x, goal_y, goal_theta
 
