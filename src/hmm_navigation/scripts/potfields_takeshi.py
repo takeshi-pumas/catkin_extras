@@ -14,10 +14,27 @@ from tf.transformations import euler_from_quaternion
 from sensor_msgs.msg import LaserScan
 import numpy as np
 import tf as tf
+import tf2_ros                                    
+
 xcl,ycl=0,0
 cont=0
 
 
+def read_tf(t):
+    # trasnform message to np arrays
+    pose=np.asarray((
+        t.transform.translation.x,
+        t.transform.translation.y,
+        t.transform.translation.z
+        ))
+    quat=np.asarray((
+        t.transform.rotation.x,
+        t.transform.rotation.y,
+        t.transform.rotation.z,
+        t.transform.rotation.w
+        ))
+    
+    return pose, quat
 def normalize(x,y):
     xn= x/np.linalg.norm((x,y))
     yn= y/np.linalg.norm((x,y))
@@ -62,10 +79,26 @@ def readSensor(data):
              
      Fth= np.arctan2(Fy,(Fx+.000000000001))+np.pi
      Fmag= np.linalg.norm((Fx,Fy))
-     pose,quat=  listener.lookupTransform('map','base_footprint',rospy.Time(0))
-     x,y = pose[0], pose [1]
-     euler = euler_from_quaternion(quat)
-     th=euler[2]
+
+
+
+     try:
+        
+        trans= tfBuffer.lookup_transform('map','base_footprint', rospy.Time(), rospy.Duration(5.0))
+        pose, quat  =read_tf(trans)
+        x,y = pose[0], pose [1]
+        euler = euler_from_quaternion(quat)
+        th=euler[2]
+        
+     except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
+        print ( 'Waiting for tf to publish')
+        x,y= 0,0
+        th=0
+
+     #pose,quat=  listener.lookupTransform('map','base_footprint',rospy.Time(0))
+     #x,y = pose[0], pose [1]
+     #euler = euler_from_quaternion(quat)
+     #th=euler[2]
      xy,xycl=np.array((x,y)) ,   np.array((xcl,ycl))
      euclD=np.linalg.norm(xy-xycl)
 
@@ -149,13 +182,22 @@ speed=Twist()
 speed.angular.z=0
 def inoutinout():
     #sub= rospy.Subscriber("/hsrb/odom",Odometry,newOdom)
-    global listener,xcl,ycl,current_speed,cont
+    global listener,xcl,ycl,current_speed,cont , tfBuffer
 
     rospy.init_node('talker_cmdvel', anonymous=True)
     sub2=rospy.Subscriber("/hsrb/base_scan",LaserScan,readSensor)
     sub3=rospy.Subscriber("/clicked_point",PointStamped,readPoint)
     pub = rospy.Publisher('/hsrb/command_velocity', Twist, queue_size=1)
+    
+
+
+
+    
+    tfBuffer = tf2_ros.Buffer()
+    listener2 = tf2_ros.TransformListener(tfBuffer)
     listener = tf.TransformListener()
+
+
     rate = rospy.Rate(25) # 10hz
     print('Pot Fields AMCL active')
     while not rospy.is_shutdown():
