@@ -1,15 +1,70 @@
 #!/usr/bin/env python3
-
 import rospy
 import tf2_ros
 from viterbi_server.msg import Obs_symbols ,States_estimated
 from viterbi_server.srv import Viterbify ,ViterbifyRequest , ViterbifyResponse
 from rospy.numpy_msg import numpy_msg
-from utils_hmm import  *
 import rospkg
 import numpy as np
 
+def viterbi(obs,Modelo1,PI):
+    A, B= Modelo1.A , Modelo1.B    
+    delta=np.zeros((len(obs)+1,len(Modelo1.A)))
+    phi=np.zeros((len(obs)+1,len(A)))+666
+    path =np.zeros(len(obs)+1)
+    T=len(obs)
+    Modelo1.PI = PI
+    delta[0,:]= Modelo1.PI * Modelo1.B[:,obs[0]]
+    phi[0,:]=666
+    for t in range(len(obs)):
+        for j in range(delta.shape[1]):
 
+            delta [t+1,j]=np.max(delta[t] * A[:,j]) * B[j,obs[t]]
+            phi[t+1,j]= np.argmax(delta[t] * A[:,j])
+    path[T]=int(np.argmax(delta[T,:]))
+    for i in np.arange(T-1,0,-1):
+        #print (i,phi[i+1,int(path[i+1])])
+        path[i]=phi[i+1,int(path[i+1])]
+    return(path)
+
+class HMM (object):
+             def __init__(self,A,B,PI):
+                 self.A=A
+                 self.B=B
+                 self.PI=PI   
+def forw_alg(o_k,Modelo):
+    #MATRIX NOTATION
+    PI=Modelo.PI
+    K= len(o_k)   #Secuencia Observaciones
+    N= len(Modelo.A)  #número de estados
+    alpha=np.zeros((N,K))
+    c_k= np.zeros(K)
+    alpha[:,0]= PI
+    c_k[0]=1
+    for k in range(1,K):
+        alpha_k= alpha[:,k-1]
+        a= Modelo.A[:,:]
+        b= Modelo.B[:,o_k[k]]
+        alpha[:,k]=(b*np.dot(alpha_k,a))#* c_k[k-1]
+        #c_k[k]=1/alpha[:,k].sum()
+    return alpha #,c_k
+def  backw_alg(o_k,Modelo):
+    #MATRIX NOTATION
+
+    PI=Modelo.PI
+    K= len(o_k)   #Secuencia Observaciones
+    N= len(Modelo.A)  #número de estados
+    beta=np.zeros((N,K))
+    beta[:,-1]=1
+    for t in range(K-2,-1,-1):
+        beta_t1=beta[:,t+1]
+        beta_t1
+        a= Modelo.A[:,:]
+        b= Modelo.B[:,o_k[t]]
+        beta[:,t]= b*np.dot(a,beta_t1)
+    return beta
+    
+    
 
 def callback(req):
     
@@ -18,10 +73,13 @@ def callback(req):
 
     states= States_estimated()
     states.data.append(req.data.data[0])
-    
-    vit_est= viterbi(np.ones((1,7)),Modelo1,Modelo1.PI)
-    print ('vit_est',vit_est)
+    states.data.append(req.data.data[0])
+    states.data.append(req.data.data[0])
 
+    
+    #vit_est= viterbi()
+    #print ('vit_est',vit_est)
+    print (states)
     return ViterbifyResponse(states)
     
     
