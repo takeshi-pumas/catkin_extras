@@ -55,8 +55,7 @@ def readSensor(data):
      Fx=0
      Fy = 0.001
      for i,deg in enumerate(laserdegs):
-        if  (lec[i]<1.5)  and ( i < 467 ) or ( i >500 ):
-            
+                    
             Fx = Fx + (1/lec[i])**2 * np.cos(deg)
             Fy = Fy + (1/lec[i])**2 * np.sin(deg)
              
@@ -77,9 +76,9 @@ def readSensor(data):
      Fatrth=np.arctan2(Fatry, Fatrx) 
      Fatrth=Fatrth-th
      Fmagat= np.linalg.norm((Fatrx,Fatry))
-     Ftotx= Fmag*np.cos(Fth)*.0045   +    Fmagat*np.cos(Fatrth)
+     Ftotx= Fmag*np.cos(Fth)*.0025   +    Fmagat*np.cos(Fatrth)
      #Ftotx= Fmag*np.cos(Fth) *600  +    Fmagat*np.cos(Fatrth)
-     Ftoty= Fmag*np.sin(Fth)*.0045    +    Fmagat*np.sin(Fatrth)
+     Ftoty= Fmag*np.sin(Fth)*.0025    +    Fmagat*np.sin(Fatrth)
      #Ftoty= Fmag*np.sin(Fth)  *600   +    Fmagat*np.sin(Fatrth)
      Ftotth=np.arctan2(Ftoty,Ftotx)
      
@@ -126,7 +125,7 @@ def readSensor(data):
                 if Ftotth < -np.pi/2:
                     
                     print('Vang---')
-                    speed.linear.x  = max(current_speed.linear.x-0.0025, 0.001)
+                    speed.linear.x  = max(current_speed.linear.x-0.0035, 0.001)
                     speed.angular.z = max(current_speed.angular.z-0.003,-0.5)
                 
 
@@ -134,7 +133,7 @@ def readSensor(data):
                     
                 
                     print('Vang+++')
-                    speed.linear.x  = max(current_speed.linear.x-0.0025, 0.001)
+                    speed.linear.x  = max(current_speed.linear.x-0.0035, 0.001)
                     speed.angular.z = min(current_speed.angular.z+0.003, 0.5)
      else:
              

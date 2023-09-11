@@ -80,10 +80,7 @@ def pose2feedback(pose_robot,quat_robot,timeleft,euclD):
     feed.feedback.yaw_robot = euler[2]
     feed.feedback.timeleft    = timeleft
     feed.feedback.euclD= euclD
-    return feed
-
-def show_topo():
-    
+    return feed  
 
 
 
@@ -100,10 +97,10 @@ pub_goal= rospy.Publisher('/clicked_point',PointStamped,queue_size=1)
 rospack = rospkg.RosPack()
 listener = tf.TransformListener()
 
-file_path_A = rospack.get_path('hmm_navigation')  + '/scripts/hmm_nav/A.npy'   # Transition Matrix for HMM ( or any other 2D pose centroids (x,y,theta))
+file_path_A = rospack.get_path('hmm_navigation')  + '/scripts/hmm_nav_lab/A.npy'   # Transition Matrix for HMM ( or any other 2D pose centroids (x,y,theta))
 A=np.load(file_path_A)
 
-file_path_ccxyth = rospack.get_path('hmm_navigation')  + '/scripts/hmm_nav/ccxyth.npy'  #Observation Symbols centroids ##
+file_path_ccxyth = rospack.get_path('hmm_navigation')  + '/scripts/hmm_nav_lab/ccxyth.npy'  #Observation Symbols centroids ##
 ccxyth=np.load(file_path_ccxyth)
 
 
