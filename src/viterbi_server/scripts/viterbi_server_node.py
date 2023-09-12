@@ -27,6 +27,8 @@ def viterbi(obs,Modelo1,PI):
         path[i]=phi[i+1,int(path[i+1])]
     return(path)
 
+#########################################################################
+#########################################################################
 class HMM (object):
              def __init__(self,A,B,PI):
                  self.A=A
@@ -64,7 +66,8 @@ def  backw_alg(o_k,Modelo):
         beta[:,t]= b*np.dot(a,beta_t1)
     return beta
     
-    
+#########################################################################
+#########################################################################   
 
 def callback(req):
     
@@ -72,14 +75,20 @@ def callback(req):
     
 
     states= States_estimated()
-    states.data.append(req.data.data[0])
-    states.data.append(req.data.data[0])
-    states.data.append(req.data.data[0])
-
     
-    #vit_est= viterbi()
-    #print ('vit_est',vit_est)
-    print (states)
+    
+    o_k=[]
+    for lec in req.data.data:o_k.append(lec)
+    
+    
+
+
+    vit_est= viterbi(o_k,Modelo,Modelo.PI)
+
+    for s in vit_est:states.data.append((int)(s))
+    print ('vit_est',states)
+    
+    
     return ViterbifyResponse(states)
     
     
@@ -89,7 +98,7 @@ def callback(req):
 
 
 def classify_server():
-    global listener,rgbd, bridge, rospack , Modelo1
+    global listener,rgbd, bridge, rospack , Modelo
     rospy.init_node('viterbi_server_node')
     #rgbd= RGBD()
     #bridge = CvBridge()
@@ -105,8 +114,9 @@ def classify_server():
     #A=np.zeros((3,3))
     #B=np.zeros((3,6))
     #PI=np.zeros((1,3))
-    Modelo1= HMM(A,B,PI)
+    Modelo= HMM(A,B,PI)
     s = rospy.Service('viterbify', Viterbify, callback) 
+
     #print("Classification service available")
    
 
