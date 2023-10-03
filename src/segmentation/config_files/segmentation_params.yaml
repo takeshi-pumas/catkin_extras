@@ -1,6 +1,6 @@
-hg: 0.95
-higher: 17989
+hg: 0.666
+higher: 500000
 lg: 0.001
-lower: 477
-reg_hy: 480
-reg_ly: 93
+lower: 100
+reg_hy: 450
+reg_ly: 100

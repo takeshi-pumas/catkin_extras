@@ -26,15 +26,9 @@ def trigger_response(request):
     reg_hy_v=df['reg_hy']
     reg_ly_v=df['reg_ly']
 
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-    cents,xyz, images, img = plane_seg(points_msg,hg=0.95,lg=0.001,lower=lower_v, higher=higher_v,reg_ly= reg_ly_v,reg_hy=reg_hy_v,plot=plot_im)
-=======
-    cents,xyz, images, img, xyz_c= plane_seg2(points_msg,hg=0.95,lg=0.001,lower=lower_v, higher=higher_v,reg_ly= reg_ly_v,reg_hy=reg_hy_v,plot=plot_im)
->>>>>>> Stashed changes
-=======
-    cents,xyz, images, img, xyz_c= plane_seg2(points_msg,hg=0.95,lg=0.001,lower=lower_v, higher=higher_v,reg_ly= reg_ly_v,reg_hy=reg_hy_v,plot=plot_im)
->>>>>>> Stashed changes
+
+    cents,xyz, images, img, xyz_c= plane_seg(points_msg,hg=0.95,lg=0.001,lower=lower_v, higher=higher_v,reg_ly= reg_ly_v,reg_hy=reg_hy_v,plot=plot_im)
+
     
 
 
@@ -53,6 +47,7 @@ def trigger_response(request):
             print ('Estimated Depth',max(xyz[i][:,0])-min(xyz[i][:,0]))
             np.save( "/home/roboworks/Documents/points", xyz_c[i]   )#### CONVENIENT FOR DEBUG
             points = xyz_c[i]
+            points.shape
             E_R= points_to_PCA(points)
             print ('MATRIZ ROTACION PCA' ,E_R)
             

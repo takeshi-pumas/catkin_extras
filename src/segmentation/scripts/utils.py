@@ -189,22 +189,13 @@ def segment_floor(points_data,zs_no_nans,obj_hMax=0.85,obj_lMax=1.5,thres_floor=
     # Quita piso y mayor a una cierta altura
     t = tfBuffer.lookup_transform('map', 'head_rgbd_sensor_link', rospy.Time())
     trans=t.transform.translation.z
-<<<<<<< Updated upstream
     
     # Quito piso desde altura robot(sensor) + un threshold (hacia abajo) -> thres_floor
     img_corrected = np.where((zs_no_nans >-trans-thres_floor),zs_no_nans,1)
     # Quito objetos mayores a una altura -> obj_hMax
     img_corrected = np.where((img_corrected < -obj_hMax),img_corrected,1)
     
-    
-=======
-    img_corrected = np.where((zs_no_nans < -obj_hMax),zs_no_nans,1)
-    cv2.imwrite(  "/home/roboworks/Documents/imgcorr.png",img_corrected  )
-    
-    img_corrected = np.where((img_corrected >-trans-0.03),img_corrected,1)
 
-
->>>>>>> Stashed changes
     # Quita objetos lejanos
     ls_no_nans=np.where(~np.isnan(points_data['z']),points_data['z'],5)
     
