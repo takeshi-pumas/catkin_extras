@@ -21,15 +21,13 @@ def trigger_response(request):
     # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     plot_im=False
     df=read_yaml('/segmentation_params.yaml')
-    higher_v=df['higher']
-    lower_v=df['lower']
-    reg_hy_v=df['reg_hy']
-    reg_ly_v=df['reg_ly']
-
-
-    cents,xyz, images, img, xyz_c= plane_seg(points_msg,hg=0.95,lg=0.001,lower=lower_v, higher=higher_v,reg_ly= reg_ly_v,reg_hy=reg_hy_v,plot=plot_im)
-
-    
+    higher_v=df['higher']  #Higher area limit 
+    lower_v=df['lower']    #Lower Area Limit
+    reg_hy_v=df['reg_hy']  #higher limit of pix y ( bottom part of img) 
+    reg_ly_v=df['reg_ly']  #lower limit of pix y ( high part of img) 
+    #print ( 'segmentation params ',df)
+    cents,xyz, images, img, xyz_c= plane_seg(points_msg,lower=lower_v, higher=higher_v,reg_ly=reg_ly_v,reg_hy=reg_hy_v)
+#                                               (points_msg,hg=0.85,lg=1.5,th_v=0.03,lower=1000 ,higher=50000,reg_ly= 30,reg_hy=600)
 
 
     print(len(cents))
@@ -40,11 +38,8 @@ def trigger_response(request):
         if np.isnan(x) or np.isnan(y) or np.isnan(z):
             print('nan')
         else:
-            print ('Estimated Height of the object ',max(xyz[i][:,2])-min(xyz[i][:,2]))
+            print ('Estimated Height of the object ',max(xyz_c[i][:,2])-min(xyz_c[i][:,2]))
             
-            print ('Estimated Width',max(xyz[i][:,1]) -min(xyz[i][:,1])               )
-            
-            print ('Estimated Depth',max(xyz[i][:,0])-min(xyz[i][:,0]))
             np.save( "/home/roboworks/Documents/points", xyz_c[i]   )#### CONVENIENT FOR DEBUG
             points = xyz_c[i]
             points.shape
@@ -56,6 +51,8 @@ def trigger_response(request):
             quats_pca.append(quat)
             #quat[0],quat[1],quat[2],quat[3]
             t=write_tf(    (x,y,z), (0,0,0,1), 'Object'+str(i), "head_rgbd_sensor_rgb_frame"   )
+
+            #t=write_tf(    (x,y,z), (0,0,0,1), 'Corrected?'+str(i), "head_rgbd_sensor_rgb_frame"   )
             broadcaster.sendTransform(t)
             
             """#broadcaster.sendTransform((x,y,z),(0,0,0,1), rospy.Time.now(), 'Object'+str(i),"head_rgbd_sensor_rgb_frame")

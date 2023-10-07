@@ -71,8 +71,8 @@ def callback(points_msg):
         cv2.imshow('class rgbd'  , img)
         df = read_segmentation_yaml()
 
-        cv2.createTrackbar('Max Area', 'class rgbd', 0, 240*320, nothing)   ### AREA MAX IS half THE WHOLE IMAGE 
-        cv2.createTrackbar('Min Area', 'class rgbd', 0, 2000, nothing)  
+        cv2.createTrackbar('Max Area', 'class rgbd', 0, 480*640, nothing)   ### AREA MAX IS THE WHOLE IMAGE 
+        cv2.createTrackbar('Min Area', 'class rgbd', 0, 2000, nothing)   ### AREA MAX IS THE WHOLE IMAGE 
         cv2.createTrackbar('Hi limit pix y', 'class rgbd',240,480,nothing)
         cv2.createTrackbar('Lo limit pix y', 'class rgbd',0,240,nothing)
         cv2.setTrackbarPos('Max Area', 'class rgbd',df['higher']) 
@@ -126,14 +126,23 @@ def callback(points_msg):
 
             
         
-
-
         if key=='s': 
+            head.set_joint_values([ 0.1, -0.5])
+            res=segmentation_server.call()
+            print( 'segmenting')
+            brazo.set_named_target('go')
+            if len(res.poses.data)==0:print('no objs')
+            else:
+                poses=np.asarray(res.poses.data)
+                print ('OBJECTS',poses)
+
+
+        if key=='p': 
 
             r = cv2.getTrackbarPos('Max Area', 'class rgbd')
             print ('#################################',r)
             
-            #head.set_joint_values([ 0.1, -0.5])
+            head.set_joint_values([ 0.1, -0.5])
             res=segmentation_server.call()
             print( 'segmenting')
             brazo.set_named_target('go')
