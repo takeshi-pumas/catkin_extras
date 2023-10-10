@@ -40,7 +40,7 @@ def trigger_response(request):
         else:
             print ('Estimated Height of the object ',max(xyz_c[i][:,2])-min(xyz_c[i][:,2]))
             
-            np.save( "/home/roboworks/Documents/points", xyz_c[i]   )#### CONVENIENT FOR DEBUG
+            np.save( "/home/takeshi/Documents/points", xyz_c[i]   )#### CONVENIENT FOR DEBUG
             points = xyz_c[i]
             points.shape
             E_R= points_to_PCA(points)

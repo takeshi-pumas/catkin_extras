@@ -236,6 +236,8 @@ def plane_seg(points_msg,hg=0.85,lg=1.5,th_v=0.03,lower=1000 ,higher=50000,reg_l
     print (bin_edges,histogram[:-1].argmax(), histogram[:-1].argmax())
     plane_height= (trans)+bin_edges[histogram[:-1].argmax()]
     print(plane_height, 'plane_height')
+    thres_floor=0.03
+    im_corrected = np.where((zs_no_nans >-trans-thres_floor),zs_no_nans,1)
 
 
        #if plane_height<0.1:
