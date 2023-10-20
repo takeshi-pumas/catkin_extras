@@ -104,6 +104,8 @@ class Set_position(smach.State):
         tf_man.pub_static_tf(pos=posMarker, rot=rotMarker, point_name='marker', ref="map")
 
         pos,_ = tf_man.getTF(target_frame="marker", ref_frame="hand_palm_link")
+        if type(pos) is bool:
+            return 'tries'
         tf_man.pub_static_tf(pos=[pos[0] + 0.06, 0, 0.10], rot=[0, 0, 0, 1], point_name='goal', ref="hand_palm_link")
         trans, rot = tf_man.getTF(target_frame='goal', ref_frame='odom')
         pose_goal = Pose()
@@ -115,6 +117,8 @@ class Set_position(smach.State):
         arm.set_pose_target(pose_goal)
         succ = arm.go()
 
+        cp=brazo.get_joint_values()
+        print("POSITION OF PLANNING",cp)
         if succ:
         #Get close to cassette
             brazo.move_hand_to_target(target_frame = 'marker')
@@ -171,7 +175,7 @@ class Pre_grasp_pose(smach.State):
                 rospy.loginfo("Distance to goal: {:.2f}, {:.2f}".format(eX, eY))
                 if abs(eY) < THRESHOLD:
                     eY = 0
-                if abs(eX) < THRESHOLD-0.0003:
+                if abs(eX) < THRESHOLD:
                     eX = 0
                 succ =  eX == 0 and eY == 0
                     # grasp_base.tiny_move(velY=-0.4*trans[1], std_time=0.2, MAX_VEL=0.3)
@@ -405,6 +409,109 @@ class Goto_player(smach.State):
         self.tries=0
         return 'succ'
 
+
+
+# --------------------------------------------------
+class Embudo_search(smach.State):
+    def __init__(self):
+        smach.State.__init__(self,outcomes=['succ','failed','tries'],input_keys=['global_counter'])
+        self.tries=0
+    def execute(self,userdata):
+        rospy.loginfo('STATE : embudo searching')
+        self.tries+=1
+        print('Try',self.tries,'of 5 attepmpts') 
+        
+        if self.tries==2:
+            hp=cabeza.get_joint_values()
+            hp[0]-=0.6    
+            cabeza.set_joint_values(hp)    
+        # State Player AR search
+        # status = goto('player_demo')
+        #status = 1
+        #print("Moviendose a known location de player...")
+        #res = omni_base.move_base(known_location='player_demo',timeout=20)
+        #if not(res) and self.tries<6:
+        #    return 'tries'
+        # while status !=3:
+            # status = NS.get_status()
+            # print(status)
+            # rospy.sleep(0.5)
+        # return 'succ'
+        talk("Finding player")
+        rospy.sleep(0.8)
+
+        try:
+            AR_starter.call()
+            clear_octo_client()
+        except:
+            rospy.loginfo('Cant clear octomap')
+        rospy.sleep(0.9)
+        #hcp = cabeza.relative(1,0,0.7)
+        #head.set_joint_value_target(hcp)
+        #head.go()
+        succ = False
+        flag = 1
+        while not succ:
+            trans,rot = tf_man.getTF(target_frame='ar_marker/6')
+
+            if type(trans) is not bool:
+                cabeza.set_named_target('neutral')
+
+                tf_man.pub_static_tf(pos=trans, rot=rot, point_name='embudo_loc')
+                rospy.sleep(0.8)
+                succ = True
+                self.tries=0
+                return 'succ'
+          
+            else:
+
+                return 'tries'
+
+
+# --------------------------------------------------
+class Embudo_place(smach.State):
+    def __init__(self):
+        smach.State.__init__(self,outcomes=['succ','failed','tries'],input_keys=['global_counter'])
+        self.tries=0
+    def execute(self,userdata):
+        rospy.loginfo('State : placing arm above marker 6')
+        self.tries+=1
+        print('Try',self.tries,'of 5 attepmpts') 
+        #cabeza.relative(1,0,0.7)
+        #TO DO: decide if use Pre defined pose (brazo) or to compute pose (moveit)
+        #brazo.set_joint_values(joint_values = [0.0, 0.0, -1.6, -1.6, 0.0])
+        #tf_man.getTF(target_frame = "hand_palm_link")
+        #if self.tries==3:
+            # SI NO LOGRA PLANEAR, SE MUEVE UN POQUITO (CON EL CONTROL SE VIO QUE YA LOGRA PLANEAR 
+            #                                           AL MOVERLE UN POQUITO ADELANTE O A UN LADO)
+        #    omni_base.tiny_move(velX = -0.02, std_time=1.0, MAX_VEL=0.04)
+
+        pos,_ = tf_man.getTF(target_frame="embudo_loc", ref_frame="hand_palm_link")
+        if type(pos) is bool:
+            return 'tries'
+
+        # POR RESOLVER: la distancia para poner el brazo respecto a la base del embudo
+        # Basado en como pone el brazo para poner 
+        tf_man.pub_static_tf(pos=[pos[0] + 0.06, 0, 0.10], rot=[0, 0, 0, 1], point_name='goal', ref="hand_palm_link")
+        trans, rot = tf_man.getTF(target_frame='goal', ref_frame='odom')
+        pose_goal = Pose()
+        pos = Point(*trans)
+        quat = Quaternion(*rot)
+        pose_goal.orientation = quat
+        pose_goal.position = pos
+
+        arm.set_pose_target(pose_goal)
+        succ = arm.go()
+
+        cp=brazo.get_joint_values()
+        print("POSITION OF PLANNING of hand",cp)
+        if succ:
+        #Get close to cassette
+            brazo.move_hand_to_target(target_frame = 'embudo_loc')
+            self.tries=0
+            return 'succ'
+        else:
+            return 'failed'
 
 # --------------------------------------------------
 class Player_search(smach.State):
@@ -709,7 +816,11 @@ if __name__== '__main__':
         smach.StateMachine.add("DELETE_OBJECTS",    Delete_objects(),   transitions = {'failed':'END',                  'succ':'END',               'tries':'END'})
         smach.StateMachine.add("POST_GRASP_POSE",   Post_grasp_pose(),  transitions = {'failed':'END',                  'succ':'GOTO_PLAYER',     'tries':'POST_GRASP_POSE'})
 
-        smach.StateMachine.add("GOTO_PLAYER",       Goto_player(),      transitions = {'failed':'GOTO_PLAYER',          'succ':'PLAYER_SEARCH',  'tries':'GOTO_PLAYER'})
+        smach.StateMachine.add("GOTO_PLAYER",       Goto_player(),      transitions = {'failed':'GOTO_PLAYER',          'succ':'EMBUDO_LOC',  'tries':'GOTO_PLAYER'})
+        
+        smach.StateMachine.add("EMBUDO_LOC",     Embudo_search(),    transitions = {'failed':'EMBUDO_LOC',        'succ':'EMBUDO_PLACE',  'tries':'EMBUDO_LOC'})
+
+        smach.StateMachine.add("EMBUDO_PLACE",     Embudo_place(),    transitions = {'failed':'EMBUDO_PLACE',        'succ':'END',  'tries':'EMBUDO_PLACE'})
         smach.StateMachine.add("PLAYER_SEARCH",     Player_search(),    transitions = {'failed':'PLAYER_SEARCH',        'succ':'PLAYER_ALIGNMENT',  'tries':'PLAYER_SEARCH'})
         
         smach.StateMachine.add("PLAYER_ALIGNMENT",  Player_alignment(), transitions = {'failed':'PLAYER_ALIGNMENT',     'succ':'PRE_PLACE_POSE',    'tries':'PLAYER_ALIGNMENT'})
