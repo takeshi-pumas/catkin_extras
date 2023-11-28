@@ -20,6 +20,8 @@ class Initial(smach.State):
         #scene.remove_attached_object(eef_link, name='box')
         #scene.remove_world_object('box')
         #gripper.steady()
+        arm.set_named_target('go')
+        arm.go()
         #arm.clear_pose_targets()
         #clear_octo_client()
         return 'succ'
@@ -84,6 +86,11 @@ class Set_position(smach.State):
         rospy.loginfo('State : Set position ')
         self.tries+=1
         print('Try',self.tries,'of 5 attepmpts') 
+        floor_pose = [0.0,-2.47,0.0,0.86,-0.032,0.0]
+        cassette_pose=[0.3, -0.87, 0.0, -0.75, -0.03, 0.0]
+        arm.set_joint_value_target(cassette_pose)
+        arm.plan()
+        succ=arm.go()
         #cabeza.relative(1,0,0.7)
         #TO DO: decide if use Pre defined pose (brazo) or to compute pose (moveit)
         #brazo.set_joint_values(joint_values = [0.0, 0.0, -1.6, -1.6, 0.0])
@@ -93,17 +100,18 @@ class Set_position(smach.State):
             #                                           AL MOVERLE UN POQUITO ADELANTE O A UN LADO)
         #    omni_base.tiny_move(velX = -0.02, std_time=1.0, MAX_VEL=0.04)
 
-        brazo.set_named_target('neutral')
+        #brazo.set_named_target('neutral')
         rospy.sleep(0.8)
 
         posMarker,rotMarker = tf_man.getTF(target_frame="ar_marker/201")
-        if posMarker[0]==None:
+        if type(posMarker) is bool:
             print(posMarker)
             return 'tries'
-        
+        print (posMarker)
         tf_man.pub_static_tf(pos=posMarker, rot=rotMarker, point_name='marker', ref="map")
 
         pos,_ = tf_man.getTF(target_frame="marker", ref_frame="hand_palm_link")
+        print (pos)
         if type(pos) is bool:
             return 'tries'
         tf_man.pub_static_tf(pos=[pos[0] + 0.06, 0, 0.10], rot=[0, 0, 0, 1], point_name='goal', ref="hand_palm_link")
@@ -114,8 +122,8 @@ class Set_position(smach.State):
         pose_goal.orientation = quat
         pose_goal.position = pos
 
-        arm.set_pose_target(pose_goal)
-        succ = arm.go()
+        #arm.set_pose_target(pose_goal)
+        #succ = arm.go()
 
         cp=brazo.get_joint_values()
         print("POSITION OF PLANNING",cp)
@@ -437,14 +445,10 @@ class Embudo_search(smach.State):
             # print(status)
             # rospy.sleep(0.5)
         # return 'succ'
-        talk("Finding player")
+        talk("Finding base")
         rospy.sleep(0.8)
 
-        try:
-            AR_starter.call()
-            clear_octo_client()
-        except:
-            rospy.loginfo('Cant clear octomap')
+        
         rospy.sleep(0.9)
         #hcp = cabeza.relative(1,0,0.7)
         #head.set_joint_value_target(hcp)
@@ -477,6 +481,8 @@ class Embudo_place(smach.State):
         rospy.loginfo('State : placing arm above marker 6')
         self.tries+=1
         print('Try',self.tries,'of 5 attepmpts') 
+        prepos=[0.1910194489063303, -0.29981252801888525, -0.0008733453436939875, -1.2880166302849658, 1.5589871082238158]
+
         #cabeza.relative(1,0,0.7)
         #TO DO: decide if use Pre defined pose (brazo) or to compute pose (moveit)
         #brazo.set_joint_values(joint_values = [0.0, 0.0, -1.6, -1.6, 0.0])
@@ -485,33 +491,36 @@ class Embudo_place(smach.State):
             # SI NO LOGRA PLANEAR, SE MUEVE UN POQUITO (CON EL CONTROL SE VIO QUE YA LOGRA PLANEAR 
             #                                           AL MOVERLE UN POQUITO ADELANTE O A UN LADO)
         #    omni_base.tiny_move(velX = -0.02, std_time=1.0, MAX_VEL=0.04)
+        cp=brazo.get_joint_values()
 
-        pos,_ = tf_man.getTF(target_frame="embudo_loc", ref_frame="hand_palm_link")
+        pos,_ = tf_man.getTF(target_frame="embudo_loc", ref_frame="map")
         if type(pos) is bool:
             return 'tries'
+        trans, rot = tf_man.getTF(target_frame='hand_palm_link', ref_frame='map')
+        prepos[0]=cp[0]+0.2-(trans[-1]-pos[-1])
+        print("Distancia a subir/bajar",0.2-(trans[-1]-pos[-1]))
+        brazo.set_joint_values(joint_values = prepos)
 
-        # POR RESOLVER: la distancia para poner el brazo respecto a la base del embudo
-        # Basado en como pone el brazo para poner 
-        tf_man.pub_static_tf(pos=[pos[0] + 0.06, 0, 0.10], rot=[0, 0, 0, 1], point_name='goal', ref="hand_palm_link")
-        trans, rot = tf_man.getTF(target_frame='goal', ref_frame='odom')
-        pose_goal = Pose()
-        pos = Point(*trans)
-        quat = Quaternion(*rot)
-        pose_goal.orientation = quat
-        pose_goal.position = pos
-
-        arm.set_pose_target(pose_goal)
-        succ = arm.go()
-
-        cp=brazo.get_joint_values()
-        print("POSITION OF PLANNING of hand",cp)
-        if succ:
-        #Get close to cassette
-            brazo.move_hand_to_target(target_frame = 'embudo_loc')
-            self.tries=0
-            return 'succ'
-        else:
-            return 'failed'
+        rospy.sleep(1.4)
+        succ = False
+        THRESHOLDX = 0.07
+        THRESHOLDY = 0.02
+        
+        while not succ:
+            trans,_ = tf_man.getTF(target_frame='embudo_loc', ref_frame='hand_palm_link')
+            if type(trans) is not bool:
+                _, eY, eX = trans
+                rospy.loginfo("Distance to goal: {:.2f}, {:.2f}".format(eX, eY))
+                if abs(eY) <= THRESHOLDY:
+                    eY = 0
+                if abs(eX) <= THRESHOLDX:
+                    eX = 0
+                succ =  eX == 0 and eY == 0
+                    # grasp_base.tiny_move(velY=-0.4*trans[1], std_time=0.2, MAX_VEL=0.3)
+                omni_base.tiny_move(velX=0.3*eX, velY=-0.4*eY, std_time=0.2, MAX_VEL=0.3) #Pending test
+        
+        return 'succ'
+        
 
 # --------------------------------------------------
 class Player_search(smach.State):
@@ -584,8 +593,61 @@ class Player_search(smach.State):
 
                 return 'tries'
 
+class Test(smach.State):
+    def __init__(self):
+        smach.State.__init__(self,outcomes=['succ'],input_keys=['global_counter'])
+        self.tries=0
+    def execute(self,userdata):
+        rospy.loginfo('STATE : test')
+        try:
+            AR_starter.call()
+        except:
+            rospy.loginfo('Cant clear octomap')
+        prepos=[0.1910194489063303, -0.29981252801888525, -0.0008733453436939875, -1.2880166302849658, 1.5589871082238158]
+        arribaCP =  [0.18101280992623314, -0.29981252801888525, -0.0008733453436939875, -1.378021630284966, 1.5589871082238158]
+        abajoCP =   [0.0010122688144853283, -0.29981252801888525, -0.0008733453436939875, -1.3780156302849658, 1.5589871082238158]
+        unoCP =     [0.14101709286584477, -0.03175052801888523, -1.559970345343694, -1.5691396302849658, -0.004520891776183866]
+        arriveCP =  [2.2589044755220306e-06, 7.94719811145761e-05, -1.634353345343694, -1.5706966302849659, 8.010822381621097e-05]
+        arr2 =      [1.4146844755143911e-06, -0.00030452801888536385, -1.634353345343694, -1.5706966302849659, 8.010822381621097e-05]
+        # OBTENER CP[0] DE LA ALTURA DEL QR PARA QUE SEA VARIABLE
+        
+        #brazo.set_joint_values(joint_values = arriveCP)
+        cp=brazo.get_joint_values()
+        #cp[0] -> altura        0.1-> +- 10 cm
+        #cp[1] -> adelante(-) atras(+)
+        #cp[2] -> rota brazo/muñeca
+        #cp[3] -> sube(+) baja(-) mano
+        #cp[4] -> rota mano 
+        print("CP",cp)
+        
+        rospy.sleep(0.8)
+        posMarker,rotMarker = tf_man.getTF(target_frame="ar_marker/6")
+        print("MARKER POS",posMarker)
+        
+        if posMarker :
+            tf_man.pub_static_tf(pos=posMarker, rot=rotMarker, point_name='markerEmbudo', ref="map")
 
-# --------------------------------------------------
+            pos,_ = tf_man.getTF(target_frame="markerEmbudo", ref_frame="map")
+            print("POS respecto a",pos)
+        
+            rospy.sleep(0.8)
+            trans2, rot2 = tf_man.getTF(target_frame='hand_palm_link', ref_frame='map')
+            print("POSE HAND",trans2) 
+            print("distancia alturas ",trans2[-1]-posMarker[-1])
+            #cp=prepos
+            #abajoCP[0]+=0.4
+            print("DISTANCIA A SUBIR ",0.2-(trans2[-1]-posMarker[-1]))
+            prepos[0]=cp[0]+0.2-(trans2[-1]-posMarker[-1])
+            brazo.set_joint_values(joint_values = prepos)
+        else:
+            print("NO posMarker")
+            brazo.set_joint_values(joint_values = arriveCP)
+        
+        
+
+        return 'succ'
+
+        # --------------------------------------------------
 class Player_alignment(smach.State):
     def __init__(self):
         smach.State.__init__(self,outcomes=['succ','failed','tries'],input_keys=['global_counter'])
@@ -795,14 +857,21 @@ class Push_cassette(smach.State):
         gripper.steady()
         return 'succ'
 
+
+
 #==============================================================================
 #Entry point    
 if __name__== '__main__':
     print("TAKESHI STATE MACHINE...")
+
     sm = smach.StateMachine(outcomes = ['END'])     #State machine, final state "END"
 
     with sm:
-        smach.StateMachine.add("INITIAL",           Initial(),          transitions = {'succ':'GOTO_CASSETTE'}) 
+
+        
+        #smach.StateMachine.add("INITIAL",           Initial(),          transitions = {'succ':'GOTO_CASSETTE'}) 
+        smach.StateMachine.add("INITIAL",           Initial(),          transitions = {'succ':'WAIT_PUSH_HAND'}) 
+        smach.StateMachine.add("TEST",           Test(),          transitions = {'succ':'END'}) 
         smach.StateMachine.add("WAIT_PUSH_HAND",    Wait_push_hand(),   transitions = {'failed':'WAIT_PUSH_HAND','succ':'GOTO_CASSETTE',    'tries':'END'}) 
         
         smach.StateMachine.add("GOTO_CASSETTE",     Goto_cassette_location(),   transitions = {'failed':'GOTO_CASSETTE','succ':'SET_POSITION',      'tries':'END'}) 

@@ -233,11 +233,11 @@ def plane_seg(points_msg,hg=0.85,lg=1.5,th_v=0.03,lower=1000 ,higher=50000,reg_l
     histogram, bin_edges =(np.histogram(zs_no_nans, bins=100))
     t = tfBuffer.lookup_transform('map', 'head_rgbd_sensor_link', rospy.Time())
     trans=t.transform.translation.z
-    print (bin_edges,histogram[:-1].argmax(), histogram[:-1].argmax())
+    #print (bin_edges,histogram[:-1].argmax(), histogram[:-1].argmax())
     plane_height= (trans)+bin_edges[histogram[:-1].argmax()]
     print(plane_height, 'plane_height')
-    thres_floor=0.03
-    im_corrected = np.where((zs_no_nans >-trans-thres_floor),zs_no_nans,1)
+    thres_floor=0.13
+    im_corrected = np.where((zs_no_nans >-trans-thres_floor-plane_height),zs_no_nans,1)
 
 
        #if plane_height<0.1:
@@ -302,6 +302,7 @@ def plane_seg(points_msg,hg=0.85,lg=1.5,th_v=0.03,lower=1000 ,higher=50000,reg_l
     #          rgb_image ( labeled bboxed image , useful for display and debug (beta))
     #          points_c points of each segmented object , but now from the corrected cloud-(beta) usefull for estimating objs dimensions 
     return cents,np.asarray(points), images,rgb_image,np.asarray(points_c) 
+    #return cents,np.asarray(points), images,im_corrected,np.asarray(points_c) 
 
 #-----------------------------------------------------------------
 ###

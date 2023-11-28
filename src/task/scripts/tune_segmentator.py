@@ -136,7 +136,7 @@ def callback(points_msg):
             #head.set_joint_values([ 0.1, -0.5])
             res=segmentation_server.call()
             print( 'segmenting')
-            brazo.set_named_target('go')
+            #brazo.set_named_target('go')
             origin_map_img=[round(img_map.shape[0]*0.5) ,round(img_map.shape[1]*0.5)]   
             if len(res.poses.data)==0:print('no objs')
             else:
@@ -163,6 +163,46 @@ def callback(points_msg):
                         print ('reject point, most likely part of arena, occupied inflated map')
                         tf_man.pub_static_tf(pos=[0,0,0], point_name=point_name, ref='head_rgbd_sensor_rgb_frame')
                         num_objs-=1
+                    print (f"object found at robot coords.{pose} ")
+                
+            
+            img=bridge.imgmsg_to_cv2(res.im_out.image_msgs[0])
+            cv2.imshow('our of res'  , img)
+        if key=='t': 
+
+            r = cv2.getTrackbarPos('Max Area', 'class rgbd')
+            print ('#################################',r)
+            
+            #head.set_joint_values([ 0.1, -0.5])
+            res=segmentation_server.call()
+            print( 'segmenting')
+            #brazo.set_named_target('go')
+            origin_map_img=[round(img_map.shape[0]*0.5) ,round(img_map.shape[1]*0.5)]   
+            if len(res.poses.data)==0:print('no objs')
+            else:
+                #print ('QUATS PCA',res.quats.data)
+                poses=np.asarray(res.poses.data)
+                quats=np.asarray(res.quats.data)
+                poses=poses.reshape((int(len(poses)/3) ,3     )      )  
+                quats=quats.reshape((int(len(quats)/4) ,4     )      )  
+                num_objs=len(poses)
+                q=  quats[0]/np.linalg.norm(quats[0])
+                print ('num_objs', num_objs, q)
+                for i,pose in enumerate(poses):
+                    #print (f'Occupancy map at point object {i}-> pixels ',origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m), img_map[origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m)])
+                    point_name=f'object_{i}'
+                    tf_man.pub_tf(pos=pose, rot =q , point_name=point_name+'_PCA', ref='head_rgbd_sensor_rgb_frame')## which object to choose   #TODO
+                    tf_man.pub_static_tf(pos=pose, rot =q , point_name=point_name, ref='head_rgbd_sensor_rgb_frame')## which object to choose   #TODO
+                    rospy.sleep(0.3)
+                    tf_man.change_ref_frame_tf(point_name=point_name, new_frame='map')
+                    rospy.sleep(0.3)
+                    pose,_= tf_man.getTF(point_name)
+                    print (f'Occupancy map at point object {i}-> pixels ',origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m), img_map[origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m)])
+                    ## Pixels from augmented image map server published map image
+                    
+                    
+                    
+                    
                     print (f"object found at robot coords.{pose} ")
                 
             

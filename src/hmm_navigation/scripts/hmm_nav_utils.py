@@ -80,14 +80,9 @@ def pose2feedback(pose_robot,quat_robot,timeleft,euclD):
     feed.feedback.yaw_robot = euler[2]
     feed.feedback.timeleft    = timeleft
     feed.feedback.euclD= euclD
-<<<<<<< Updated upstream
+
     return feed  
-=======
-    return feed
 
-
-    
->>>>>>> Stashed changes
 
 
 

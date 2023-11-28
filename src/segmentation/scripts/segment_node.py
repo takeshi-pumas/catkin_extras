@@ -45,7 +45,6 @@ def trigger_response(request):
             points.shape
             E_R= points_to_PCA(points)
             print ('MATRIZ ROTACION PCA' ,E_R)
-            
             quat=tf.transformations.quaternion_from_matrix(E_R) ### ROTACION expresada en quaternion de la rotacion propuesta por PCA
             print ('quat from R',quat)
             quats_pca.append(quat)
@@ -54,7 +53,8 @@ def trigger_response(request):
 
             #t=write_tf(    (x,y,z), (0,0,0,1), 'Corrected?'+str(i), "head_rgbd_sensor_rgb_frame"   )
             broadcaster.sendTransform(t)
-            
+   
+                #ccs_map=np.asarray(cents_map)         
             """#broadcaster.sendTransform((x,y,z),(0,0,0,1), rospy.Time.now(), 'Object'+str(i),"head_rgbd_sensor_rgb_frame")
                         
                 #trans,rot=tf_listener.lookupTransform('map', 'Object'+str(i), rospy.Time(0))"""
