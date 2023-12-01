@@ -77,6 +77,30 @@ class Goto_cassette_location(smach.State):
         else:
             voice.talk('Navigation Failed, retrying')
             return 'failed'
+class Goto_door(smach.State):
+    def __init__(self):
+        smach.State.__init__(self,outcomes=['succ','failed','tries'])
+        self.tries=0
+    def execute(self,userdata):
+        rospy.loginfo('State : GOTO DOOR... Reset ')
+        self.tries+=1
+        print('Try',self.tries,'of 5 attepmpts') 
+        #if self.tries > 1:
+        #    omni_base.tiny_move(velX=0.05,std_time=0.5, MAX_VEL=0.05)
+
+        #clear_octo_client()
+        print("Moviendose...")
+        res = omni_base.move_base(known_location='dining_room',timeout=20)
+        print(res)
+        #AR_starter.call()
+
+        rospy.sleep(0.8)
+        if res:
+            self.tries = 0
+            return 'succ'
+        else:
+            voice.talk('Navigation Failed, retrying')
+            return 'failed'
 
 
 
@@ -140,7 +164,7 @@ class Pre_grasp_pose(smach.State):
         self.tries+=1
         print('Try',self.tries,'of 5 attepmpts') 
         if self.tries==1:
-            talk("I will reach the cassette")
+            talk("Getting close to the cassette")
             rospy.sleep(0.7)
         elif self.tries == 5:
             return 'failed'
@@ -877,9 +901,10 @@ if __name__== '__main__':
         smach.StateMachine.add("PRE_GRASP_POSE",    Pre_grasp_pose(),   transitions = {'failed':'END',                  'succ':'GRASP_POSE',        'tries':'PRE_GRASP_POSE'}) 
         #smach.StateMachine.add("FORWARD_SHIFT",     Forward_shift(),    transitions = {'failed':'FORWARD_SHIFT',        'succ':'GRASP_TABLE',       'tries':'FORWARD_SHIFT'}) 
         smach.StateMachine.add("GRASP_POSE",        Grasp_pose(),       transitions = {'failed':'END',                  'succ':'GRASP_TABLE',       'tries':'GRASP_POSE'}) 
-        smach.StateMachine.add("GRASP_TABLE",       Grasp_table(),      transitions = {'failed':'DELETE_OBJECTS',       'succ':'ATTACH_OBJECT',     'tries':'GRASP_TABLE'})
+        smach.StateMachine.add("GRASP_TABLE",       Grasp_table(),      transitions = {'failed':'GOTO_DOOR',       'succ':'ATTACH_OBJECT',     'tries':'GRASP_TABLE'})
         smach.StateMachine.add("ATTACH_OBJECT",     Attach_object(),    transitions = {'failed':'POST_GRASP_POSE',      'succ':'POST_GRASP_POSE',   'tries':'POST_GRASP_POSE'})
         smach.StateMachine.add("DELETE_OBJECTS",    Delete_objects(),   transitions = {'failed':'END',                  'succ':'END',               'tries':'END'})
+        smach.StateMachine.add("GOTO_DOOR",     Goto_door(),   transitions = {'failed':'GOTO_DOOR','succ':'GOTO_CASSETTE',      'tries':'END'}) 
         smach.StateMachine.add("POST_GRASP_POSE",   Post_grasp_pose(),  transitions = {'failed':'END',                  'succ':'GOTO_PLAYER',     'tries':'POST_GRASP_POSE'})
         smach.StateMachine.add("GOTO_PLAYER",       Goto_player(),      transitions = {'failed':'GOTO_PLAYER',          'succ':'EMBUDO_LOC',  'tries':'GOTO_PLAYER'})
         smach.StateMachine.add("EMBUDO_LOC",       Embudo_search(),    transitions = {'failed':'EMBUDO_LOC',        'succ':'EMBUDO_PLACE',  'tries':'EMBUDO_LOC'})
