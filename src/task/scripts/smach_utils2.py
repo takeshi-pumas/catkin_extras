@@ -71,8 +71,8 @@ analyze_face = rospy.ServiceProxy('analyze_face', RecognizeFace)    ###DEEP FACE
 recognize_action = rospy.ServiceProxy('recognize_act', Recognize) 
 
 
-#map_msg= rospy.wait_for_message('/prohibition_layer_map', OccupancyGrid)####WAIT for nav pumas map
-map_msg= rospy.wait_for_message('/augmented_map', OccupancyGrid)####WAIT for nav pumas map
+
+map_msg= rospy.wait_for_message('/augmented_map', OccupancyGrid , 20)####WAIT for nav pumas map .. 
 inflated_map= np.asarray(map_msg.data)
 img_map=inflated_map.reshape((map_msg.info.width,map_msg.info.height))
 pix_per_m=map_msg.info.resolution

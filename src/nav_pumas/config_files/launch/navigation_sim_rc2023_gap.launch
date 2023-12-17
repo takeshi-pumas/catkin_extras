@@ -6,7 +6,7 @@
   <!--node name="fake_global_pose" pkg="killer_node" type="fake_global_pose.py" output="screen"/-->
   
 
-  <arg name="static_map_file"  default="$(find config_files)/prohibition_maps/robocup_2023/map.yaml"/>
+  <arg name="static_map_file"       default="$(find config_files)/prohibition_maps/robocup_2023/map.yaml"/>
   <arg name="prohibition_map_file"  default="$(find config_files)/prohibition_maps/robocup_2023/map.yaml"/>
   <arg name="initial_pose_x" default="8.0"/>
   <arg name="initial_pose_y" default="0.0"/>
@@ -53,13 +53,13 @@
 
   <node name="map_augmenter"  pkg="map_augmenter"  type="map_augmenter_node"  output="screen">
     <param name="use_lidar" value="$(arg use_lidar)"/>
-    <param name="use_sonars" value="$(arg use_sonars)"/>
+    <param name="use_sonars" value="False"/>
     <param name="use_point_cloud" value="$(arg use_point_cloud)"/>
     <param name="use_point_cloud2" value="False"/>
     <param name="point_cloud_topic" value="$(arg point_cloud_topic)"/>
     <param name="laser_scan_topic" value="$(arg laser_scan_topic)"/>
     <param name="cloud_downsampling" value="$(arg cloud_downsampling)"/>
-    <param name="inflation_radius" value="0.2"/>
+    <param name="inflation_radius" value="0.05"/>
     <param name="cost_radius" value="0.5"/>
     <!--###decay_factor-->
 
@@ -75,7 +75,7 @@
     <remap from="/map" to="/prohibition_layer_map"/>
   </node>
  
-  <!--node name="map_server" pkg="map_server" type="map_server" output="screen" args="$(arg static_map_file)"/-->
+  <node name="map_server" pkg="map_server" type="map_server" output="screen" args="$(arg static_map_file)"/>
 
   
 

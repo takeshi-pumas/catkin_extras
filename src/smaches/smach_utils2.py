@@ -238,7 +238,7 @@ def wait_for_face(timeout=10 , name=''):
 def wait_for_push_hand(time=10):
 
     start_time = rospy.get_time()
-    time= 10
+    #time= 10
     print('timeout will be ',time,'seconds')
     while rospy.get_time() - start_time < time:
         torque = wrist.get_torque()

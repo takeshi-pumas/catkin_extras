@@ -53,6 +53,7 @@ find_package(catkin REQUIRED COMPONENTS
  add_message_files(
    FILES
    Floats.msg
+   Ints.msg
    Image.msg
    
    

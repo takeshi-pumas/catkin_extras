@@ -1,3 +1,6 @@
 Image  in
 ---
-Floats out
+Ints pt_min
+Ints pt_max
+Image debug_image
+Floats confidence  
