@@ -34,6 +34,8 @@ from vision_msgs.srv import *
 import rospkg
 import yaml
 from act_recog.srv import Recognize,RecognizeResponse,RecognizeRequest
+from object_classification.srv import *
+
 
 from ros_whisper_vosk.srv import SetGrammarVosk
 
@@ -44,7 +46,7 @@ from utils.know_utils import *
 
 global listener, broadcaster, tfBuffer, tf_static_broadcaster, scene, rgbd, head,train_new_face, wrist, human_detect_server, line_detector, clothes_color , head_mvit
 global clear_octo_client, goal,navclient,segmentation_server  , tf_man , omni_base, brazo, speech_recog_server, bridge, map_msg, pix_per_m, analyze_face , arm , set_grammar
-global recognize_action
+global recognize_action , classify_client
 rospy.init_node('smach')
 #head_mvit = moveit_commander.MoveGroupCommander('head')
 #gripper =  moveit_commander.MoveGroupCommander('gripper')
@@ -69,6 +71,7 @@ recognize_face = rospy.ServiceProxy('recognize_face', RecognizeFace)            
 train_new_face = rospy.ServiceProxy('new_face', RecognizeFace)                          #FACE RECOG
 analyze_face = rospy.ServiceProxy('analyze_face', RecognizeFace)    ###DEEP FACE ONLY
 recognize_action = rospy.ServiceProxy('recognize_act', Recognize) 
+classify_client = rospy.ServiceProxy('/classify', Classify)
 
 
 

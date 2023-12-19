@@ -104,7 +104,7 @@ def callback(points_msg):
             ptcld_lis.unregister()
             
             
-        if key=='y': 
+        if key=='f': 
             
             
             print('file_path',file_path)
@@ -124,10 +124,15 @@ def callback(points_msg):
                 documents = yaml.dump(df, file, default_flow_style=False)
             return True
 
+        if key=='y':
+            print ('#############YOLO SERVICE YCB REQUESTED')
+            img_msg  = bridge.cv2_to_imgmsg(image)
+            req      = classify_client.request_class()
+            req.in_.image_msgs.append(img_msg)
+            res      = classify_client(req)
             
-        
-
-
+            debug_image=bridge.imgmsg_to_cv2(res.debug_image.image_msgs[0])
+            cv2.imshow('our of res'  , debug_image)
         if key=='s': 
 
             r = cv2.getTrackbarPos('Max Area', 'class rgbd')

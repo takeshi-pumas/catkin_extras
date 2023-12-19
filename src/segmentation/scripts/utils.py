@@ -155,60 +155,6 @@ def correct_points(points_msg):
     return img_corrected , corrected
 
 
-#-----------------------------------------------------
-def segment_table(points_data,zs_no_nans,obj_lMax=0.8,thres_t=0.01):
-
-    ###first get table height from historgram
-    #### then segment from that height to the height in the variable oblj_lMax
-
-    histogram, bin_edges =(np.histogram(zs_no_nans, bins=50))
-    t = tfBuffer.lookup_transform('map', 'head_rgbd_sensor_link', rospy.Time())
-    trans=t.transform.translation.z
-    img_corrected = np.where((-zs_no_nans < trans*0.999) ,zs_no_nans,1.0)  #FLOOR
-
-    #Quita a una altura
-    plane_height= (trans)+bin_edges[histogram[:-1].argmax()+1]
-    img_corrected = np.where((-zs_no_nans < (trans*0.999)-plane_height-thres_t),zs_no_nans,1)
-
-    # Quita objetos lejanos
-    lenZ_no_nans=np.where(~np.isnan(points_data['z']),points_data['z'],-5)
-    lenZ_corrected=np.where(lenZ_no_nans<obj_lMax,lenZ_no_nans,-5)
-
-    # quita Z en los que los X sean -5
-    for r in range(img_corrected.shape[0]):
-        for c in range(img_corrected.shape[1]):
-            if lenZ_corrected[r,c]<=-5:
-                img_corrected[r,c]=1
-    return img_corrected
-
-#-----------------------------------------------------    
-def segment_floor(points_data,zs_no_nans,obj_hMax=0.85,obj_lMax=1.5,thres_floor=0.03):
-    # obj_hMax -> altura maxima para objetos para segmentar
-    # obj_lMax -> distancia de objetos maxima para segmentar
-
-    # Quita piso y mayor a una cierta altura
-    t = tfBuffer.lookup_transform('map', 'head_rgbd_sensor_link', rospy.Time())
-    trans=t.transform.translation.z
-    
-    # Quito piso desde altura robot(sensor) + un threshold (hacia abajo) -> thres_floor
-    img_corrected = np.where((zs_no_nans >-trans-thres_floor),zs_no_nans,1)
-    # Quito objetos mayores a una altura -> obj_hMax
-    #img_corrected = np.where((img_corrected < -obj_hMax),img_corrected,1)
-    
-
-    # Quita objetos lejanos
-    ls_no_nans=np.where(~np.isnan(points_data['z']),points_data['z'],5)
-    
-    lZ_no_nans=np.where(ls_no_nans<obj_lMax,ls_no_nans,5)
-    
-    # Con esto, quita en z los que en X (alturas) esten con 5
-    for r in range(img_corrected.shape[0]):
-        for c in range(img_corrected.shape[1]):
-            if lZ_no_nans[r,c]>=5:
-                img_corrected[r,c]=1
-    
-    return img_corrected
-
 #-----------------------------------------------------------------    
 def read_yaml(yaml_file = '/known_locations.yaml'):
     
@@ -219,7 +165,7 @@ def read_yaml(yaml_file = '/known_locations.yaml'):
     return content
 
 #-----------------------------------------------------------------    
-# th_v -> threshold de cuanto mas hacia abajo de la altura del robot(sensor) se quiere la nube de puntos
+
 def plane_seg(points_msg,hg=0.85,lg=1.5,th_v=0.03,lower=1000 ,higher=50000,reg_ly= 30,reg_hy=600):
 
     ###
@@ -233,24 +179,14 @@ def plane_seg(points_msg,hg=0.85,lg=1.5,th_v=0.03,lower=1000 ,higher=50000,reg_l
     histogram, bin_edges =(np.histogram(zs_no_nans, bins=100))
     t = tfBuffer.lookup_transform('map', 'head_rgbd_sensor_link', rospy.Time())
     trans=t.transform.translation.z
-    #print (bin_edges,histogram[:-1].argmax(), histogram[:-1].argmax())
+
     plane_height= (trans)+bin_edges[histogram[:-1].argmax()]
     print(plane_height, 'plane_height')
-    print(im_corrected[300:350,500:550])
+  
     #thres_floor=0.13
     thres_floor = 0.01
-    print(-trans+thres_floor+plane_height, 'npwhere')
+  
     im_corrected = np.where((zs_no_nans >-trans+thres_floor+plane_height),zs_no_nans,1)
-
-
-       #if plane_height<0.1:
-    #    print("Segmentacion en: Piso")
-    #    im_corrected=segment_floor(points_data,zs_no_nans,obj_hMax=hg,obj_lMax=lg,thres_floor=th_v)
-    #else:
-    #    print("Segmentacion en: Mesa")
-    #    im_corrected=segment_table(points_data,zs_no_nans,obj_lMax=lg,thres_t=th_v)
-    
-    
     contours, hierarchy = cv2.findContours(im_corrected.astype('uint8'),cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
     i=0
     cents=[]
@@ -291,10 +227,8 @@ def plane_seg(points_msg,hg=0.85,lg=1.5,th_v=0.03,lower=1000 ,higher=50000,reg_l
                             xyz_c.append(aux2)
                 xyz=np.asarray(xyz)
                 xyz_c=np.asarray(xyz_c)
-                #print (xyz)
                 cent=xyz.mean(axis=0)  #centroids of each object ( mean of xyz pts.)
                 cents.append(cent)
-                #print (cent)
                 points.append(xyz)
                 points_c.append(xyz_c)
             else:   
@@ -304,95 +238,6 @@ def plane_seg(points_msg,hg=0.85,lg=1.5,th_v=0.03,lower=1000 ,higher=50000,reg_l
     #          images array of each image segmented (for image training)
     #          rgb_image ( labeled bboxed image , useful for display and debug (beta))
     #          points_c points of each segmented object , but now from the corrected cloud-(beta) usefull for estimating objs dimensions 
-    #return cents,np.asarray(points), images,rgb_image,np.asarray(points_c) 
-    return cents,np.asarray(points), images,im_corrected,np.asarray(points_c) 
-
-#-----------------------------------------------------------------
-###
-#### DEPRECATION? Whose Function is this?
-###
-# th_v -> threshold de cuanto mas hacia abajo de la altura del robot(sensor) se quiere la nube de puntos
-def plane_seg2(points_msg,hg=0.85,lg=1.5,th_v=0.03,lower=1000 ,higher=50000,reg_ly= 30,reg_hy=600,plot=False):
-    points_data = ros_numpy.numpify(points_msg)    
-    image_data = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]   
-    image=cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
-    image = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]
-    rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    #print (image.shape)
-
-    _,corrected=correct_points(points_msg)
-    # quito NaN
-    zs_no_nans=np.where(~np.isnan(corrected['z']),corrected['z'],1)
-    histogram, bin_edges =(np.histogram(zs_no_nans, bins=100))
-    t = tfBuffer.lookup_transform('map', 'head_rgbd_sensor_link', rospy.Time())
-    trans=t.transform.translation.z
-    # Obtengo la altura del sensor respecto a la base-piso
-    plane_height= (trans)+bin_edges[histogram[:-1].argmax()+1]
-    #print(plane_height)
-    if plane_height<0.1:
-        #print("Segmentacion en: Piso, lg:",lg)
-        im_corrected=segment_floor(points_data,zs_no_nans,obj_hMax=hg,obj_lMax=lg,thres_floor=th_v)
-    else:
-        #print("Segmentacion en: Mesa")
-        im_corrected=segment_table(points_data,zs_no_nans,obj_lMax=lg,thres_t=th_v)
-    
-    if plot:
-        cv2.imshow("Image to segment",im_corrected)
-        cv2.waitKey(0)
-
-        cv2.destroyAllWindows()
-    contours, _ = cv2.findContours(im_corrected.astype('uint8'),cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
-    i=0
-    cents=[]
-    points=[]
-    images=[]
-    for i, contour in enumerate(contours):
-
-        area = cv2.contourArea(contour)
-        if area > lower and area < higher :
-            M = cv2.moments(contour)
-            # calculate x,y coordinate of center
-            cX = int(M["m10"] / M["m00"])
-            cY = int(M["m01"] / M["m00"])
-            if (cY > reg_ly and cY < reg_hy  ):
-
-                boundRect = cv2.boundingRect(contour)
-                #just for drawing rect, dont waste too much time on this
-                #image_aux= iimmg[boundRect[1]:boundRect[1]+max(boundRect[2],boundRect[3]),boundRect[0]:boundRect[0]+max(boundRect[2],boundRect[3])]
-                
-
-                image_aux= image[boundRect[1]:boundRect[1]+boundRect[3],boundRect[0]:boundRect[1]+boundRect[2]]
-                images.append(image_aux)
-                image_aux= im_corrected[boundRect[1]:boundRect[1]+boundRect[3],boundRect[0]:boundRect[0]+boundRect[2]]
-
-                mask=np.where(image_aux!=5)
-                npmask=np.asarray(mask).T
-                rgb_image=cv2.rectangle(rgb_image,(boundRect[0], boundRect[1]),(boundRect[0]+boundRect[2], boundRect[1]+boundRect[3]), (255,255,0), 2)
-                cv2.circle(rgb_image, (cX, cY), 5, (255, 255, 255), -1)
-                cv2.putText(rgb_image, "centroid_"+str(i)+"_"+str(cX)+','+str(cY)    ,    (cX - 25, cY - 25)   ,cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 255, 0), 2)
-                #print ('cX,cY',cX,cY,'len mask',len(npmask))
-                xyz=[]
-                if len (npmask)>0:
-                    for a in npmask:
-                        ix,iy=a[0],a[1]
-                        #aux=(np.asarray((points_data['x'][boundRect[1]+ix,boundRect[0]+iy],points_data['y'][boundRect[1]+ix,boundRect[0]+iy],points_data['z'][boundRect[1]+ix,boundRect[0]+iy])))
-                        aux=(np.asarray((corrected['x'][boundRect[1]+ix,boundRect[0]+iy],corrected['y'][boundRect[1]+ix,boundRect[0]+iy],corrected['z'][boundRect[1]+ix,boundRect[0]+iy])))
-                        #print (aux)
-                        if np.isnan(aux[0]) or np.isnan(aux[1]) or np.isnan(aux[2]):
-                                'reject point'
-                        else:
-                            xyz.append(aux)
-                
-                xyz=np.asarray(xyz)
-                #print (xyz)
-                cent=xyz.mean(axis=0)
-                cents.append(cent)
-                #print (cent)
-                points.append(xyz)
-                
-            else:   
-                print ('cent out of region... rejected')
-    return cents,np.asarray(points,dtype=object), images,rgb_image,im_corrected
-
-    
+    return cents,np.asarray(points), images,rgb_image,np.asarray(points_c) 
+    #return cents,np.asarray(points), images,im_corrected,np.asarray(points_c) 
 

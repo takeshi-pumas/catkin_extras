@@ -13,6 +13,11 @@ from yolov5.utils.torch_utils import select_device #select_device, load_classifi
 ######################################################################################
 from utils_srv import *
 #############################################################################
+
+
+
+
+################################################################################
 def callback(req):
     
     print ('got ',len(req.in_.image_msgs),'images')    
@@ -29,12 +34,31 @@ def callback(req):
         pred = non_max_suppression(pred)  # IOU 
         debug_img=np.copy(test_img)
         num_preds=0
+
+        points_msg = rospy.wait_for_message('/hsrb/head_rgbd_sensor/depth_registered/rectified_points', PointCloud2)
+        
+        points= ros_numpy.numpify(points_msg)
+        
+
+
         for  det in pred:
             for *xyxy, conf, cls in (det):# Model Result is bounding box  confidence  and class
                 if conf.cpu().tolist() > 0.5:
                     num_preds+=1
                     pt_min=[int(xyxy[0].cpu().tolist()),int(xyxy[1].cpu().tolist())]
                     pt_max=[int(xyxy[2].cpu().tolist()),int(xyxy[3].cpu().tolist())]
+                    pose=Pose()
+                    cc=[np.nanmean(  points['x'][pt_min[1]:pt_max[1],pt_min[0]:pt_max[0]]),
+                        np.nanmean(  points['y'][pt_min[1]:pt_max[1],pt_min[0]:pt_max[0]]),
+                        np.nanmean(  points['z'][pt_min[1]:pt_max[1],pt_min[0]:pt_max[0]]) ]
+                    pose.position.x=cc[0]
+                    pose.position.y=cc[1]
+                    pose.position.z=cc[2]
+                    pose.orientation.w=1
+                    res.poses.append(pose)
+   
+                    t=write_tf(    cc , (0,0,0,1), model.names[int(cls.cpu().tolist())], "head_rgbd_sensor_rgb_frame"   )
+                    broadcaster.sendTransform(t)
                     debug_img=cv2.rectangle(debug_img ,pt_min,pt_max,  (0, 255, 0), 2   )
                     debug_img= cv2.putText(
                                 debug_img ,model.names[int(cls.cpu().tolist())],
@@ -45,23 +69,37 @@ def callback(req):
                                 2
                                 )
                     
-                    print (num_preds,pt_min, pt_max,conf.cpu().tolist(),model.names[int(cls.cpu().tolist())])
+                    print (num_preds,pt_min, pt_max,conf.cpu().tolist(),model.names[int(cls.cpu().tolist())], cc )
                     for coord in pt_min:    res.pt_min.data.append(coord)
                     for coord in pt_max:    res.pt_max.data.append(coord)
                     res.confidence.data.append(conf)                    
-        np.save('debug.npy',debug_img)  # IMAGE WITH BOUNDING BOX
+        #np.save('debug.npy',debug_img)  # IMAGE WITH BOUNDING BOX
         print(f'### number of detections -> {num_preds}')
     res.debug_image.image_msgs.append(bridge.cv2_to_imgmsg(debug_img))
+
+    ##### TFS
+    
+    
     return res 
 
 def classify_server():
-    global listener,rgbd, bridge , model , device
+    global listener,rgbd, bridge , model , device , tfBuffer, broadcaster
     rospy.init_node('classification_server')
     rgbd= RGBD()
     bridge = CvBridge()
+
+   
+
+
+    tfBuffer = tf2_ros.Buffer()
+    tfBuffer = tf2_ros.Buffer()
+    listener2 = tf2_ros.TransformListener(tfBuffer)
     listener = tf.TransformListener()
-    broadcaster= tf.TransformBroadcaster()
-    tf_static_broadcaster= tf2_ros.StaticTransformBroadcaster()
+
+    broadcaster = tf2_ros.TransformBroadcaster()
+    tf_static_broadcaster = tf2_ros.StaticTransformBroadcaster()
+
+
     device = select_device('')
     model=attempt_load('/home/roboworks/catkin_extras/src/yolov5_ros/scripts/yolov5/ycb.pt',device)
     rospy.loginfo("calssification_ YOLOV5 service available")                    # initialize a ROS node

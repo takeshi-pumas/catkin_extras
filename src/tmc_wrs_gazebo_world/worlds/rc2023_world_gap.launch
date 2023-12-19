@@ -19,7 +19,7 @@
 
 
     <arg name="world_name" value="$(find tmc_wrs_gazebo_worlds)/worlds/rc2023_gap.world "  />
-	<arg name="robot_pos" value="-x 8 -y 0 -z 0 -Y 3.14" />
+	<arg name="robot_pos" value="-x 9.3 -y 4 -z 0 -Y 3.14" />
     <arg name="use_laser_odom" value="true" />
   </include>
 

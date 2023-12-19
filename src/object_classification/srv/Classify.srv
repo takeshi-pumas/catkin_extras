@@ -3,4 +3,5 @@ Image  in
 Ints pt_min
 Ints pt_max
 Image debug_image
-Floats confidence  
+Floats confidence
+geometry_msgs/Pose[] poses  
