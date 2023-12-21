@@ -72,7 +72,10 @@ def callback(req):
                     print (num_preds,pt_min, pt_max,conf.cpu().tolist(),model.names[int(cls.cpu().tolist())], cc )
                     for coord in pt_min:    res.pt_min.data.append(coord)
                     for coord in pt_max:    res.pt_max.data.append(coord)
-                    res.confidence.data.append(conf)                    
+                    res.confidence.data.append(conf)     
+                    string_msg= String()
+                    string_msg.data=model.names[int(cls.cpu().tolist())]
+                    res.names.append(string_msg)               
         #np.save('debug.npy',debug_img)  # IMAGE WITH BOUNDING BOX
         print(f'### number of detections -> {num_preds}')
     res.debug_image.image_msgs.append(bridge.cv2_to_imgmsg(debug_img))

@@ -36,6 +36,7 @@ import yaml
 from act_recog.srv import Recognize,RecognizeResponse,RecognizeRequest
 from object_classification.srv import *
 
+
 from ros_whisper_vosk.srv import SetGrammarVosk
 
 from utils.grasp_utils import *
@@ -74,20 +75,20 @@ classify_client = rospy.ServiceProxy('/classify', Classify)
 
 
 
-#map_msg= rospy.wait_for_message('/prohibition_layer_map', OccupancyGrid)####WAIT for nav pumas map
-map_msg= rospy.wait_for_message('/augmented_map', OccupancyGrid)####WAIT for nav pumas map
+map_msg= rospy.wait_for_message('/augmented_map', OccupancyGrid , 20)####WAIT for nav pumas map .. 
 inflated_map= np.asarray(map_msg.data)
 img_map=inflated_map.reshape((map_msg.info.width,map_msg.info.height))
 pix_per_m=map_msg.info.resolution
-#contours, hierarchy = cv2.findContours(img_map.astype('uint8'),cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
-#contoured=cv2.drawContours(img_map.astype('uint8'), contours, 1, (255,255,255), 1)
+contours, hierarchy = cv2.findContours(img_map.astype('uint8'),cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+contoured=cv2.drawContours(img_map.astype('uint8'), contours, 1, (255,255,255), 1)
 
 rgbd= RGBD()
 bridge = CvBridge()
 #segmentation_server = rospy.ServiceProxy('/segment_2_tf', Trigger) 
 tf_man = TF_MANAGER()
 gripper = GRIPPER()
-omni_base=NAVIGATION()
+omni_base=OMNIBASE()        #  NAV ACTION
+#omni_base=NAVIGATION()     #  nav UTILS
 wrist= WRIST_SENSOR()
 head = GAZE()
 brazo = ARM()
@@ -99,7 +100,7 @@ line_detector = LineDetector()
 def get_robot_px():
     trans, rot=tf_man.getTF('base_link')
     robot=np.asarray(trans[:2])
-    print (trans)
+    
     return np.asarray((robot/pix_per_m).round(),dtype='int')
 
 #------------------------------------------------------
@@ -126,8 +127,6 @@ def check_point_map(x,y):
                     delta_px=  safe_xy_px-np.asarray((xrob,yrob))
                     delta_px= delta_px / np.linalg.norm(delta_px).round()
                     delta_px=np.round(delta_px*10)
-
-
                     newxy[0]=safe_xy_px[0]-delta_px[0].astype('int')
                     newxy[1]=safe_xy_px[1]-delta_px[1].astype('int')
                     safe_xy_px=newxy
@@ -241,7 +240,7 @@ def wait_for_face(timeout=10 , name=''):
 def wait_for_push_hand(time=10):
 
     start_time = rospy.get_time()
-    #time= 10
+    time= 10
     print('timeout will be ',time,'seconds')
     while rospy.get_time() - start_time < time:
         torque = wrist.get_torque()
@@ -312,8 +311,8 @@ def read_yaml(known_locations_file='/known_locations.yaml'):
         content = yaml.safe_load(file)
     return content
 #----------------------------------------------------------
-def yaml_to_df():
-    con = read_yaml()
+def yaml_to_df(known_locations_file='/known_locations.yaml'):
+    con = read_yaml(known_locations_file)
     values=[]
     locations=[]
     for c in con:
@@ -362,3 +361,24 @@ def get_keywords_speech(timeout=5):
     except ROSException:
         rospy.loginfo('timeout')
         return 'timeout'
+
+def check_room_px(px_pose,living_room_px_region,kitchen_px_region,bedroom_px_region,dining_room_px_region ):
+
+    
+    for i in range(4):
+        if i==0:
+            px_region=living_room_px_region
+            region='living_room'
+        if i==1:
+            px_region=kitchen_px_region
+            region='kitchen'
+        if i==2:
+            px_region=bedroom_px_region
+            region='bedroom'
+        if i==3:
+            px_region=dining_room_px_region
+            region='dining_room'
+        #print (region,px_region,px_pose)
+        if (px_pose[1]< px_region[1,1]) and (px_pose[1]> px_region[0,1]) and (px_pose[0]> px_region[0,0]) and (px_pose[0]< px_region[1,0]) : 
+            print (f'in  {region}')
+            return region

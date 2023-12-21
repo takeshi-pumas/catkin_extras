@@ -140,10 +140,12 @@ def write_yaml_locs(trans,name, known_locations_file = '/known_locations.yaml'):
     trans,quat=read_tf(trans)
     
 
-
+    print ()
 
     con= read_yaml(known_locations_file=known_locations_file)
     data=deepcopy(con[list(con.keys())[-1]])
+
+    
     data[0]['x']=           math.trunc(trans[0]*1000)/1000
     data[1]['y']=           math.trunc(trans[1]  *1000)/1000
     data[2]['theta']=       math.trunc(tf.transformations.euler_from_quaternion(quat)[2]*1000)/1000
@@ -234,13 +236,15 @@ def processFeedback(feedback):
     p = feedback.pose.position
     o = feedback.pose.orientation
     trans=np.asarray([p.x,p.y,p.z])
-    trans= write_tf(([p.x,p.y,p.z]),([o.w,o.x,o.y,o.z]),feedback.marker_name)
+    trans= write_tf(([p.x,p.y,p.z]),([o.x,o.y,o.z,o.w]),feedback.marker_name)
     
-    
+    quat= [o.x,o.y,o.z,o.w]
     
     succ=write_yaml_locs(trans,feedback.marker_name,file_name)
-    #tf.transformations.euler_from_quaternion(quat)[2]
-    print (feedback.marker_name + " is now at " + str(p.x) + ", " + str(p.y) + ", " + str(p.z) + f"rot {o.w} " )
+    
+    th=tf.transformations.euler_from_quaternion(quat)[2]
+
+    print (feedback.marker_name + " is now at " + str(p.x) + ", " + str(p.y) + ", " + str(p.z) + f"rot {th} " )
 
                  
 def callback2(req):

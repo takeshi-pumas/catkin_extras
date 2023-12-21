@@ -87,7 +87,8 @@ bridge = CvBridge()
 #segmentation_server = rospy.ServiceProxy('/segment_2_tf', Trigger) 
 tf_man = TF_MANAGER()
 gripper = GRIPPER()
-omni_base=NAVIGATION()
+omni_base=OMNIBASE()        #  NAV ACTION
+#omni_base=NAVIGATION()     #  nav UTILS
 wrist= WRIST_SENSOR()
 head = GAZE()
 brazo = ARM()
@@ -126,8 +127,6 @@ def check_point_map(x,y):
                     delta_px=  safe_xy_px-np.asarray((xrob,yrob))
                     delta_px= delta_px / np.linalg.norm(delta_px).round()
                     delta_px=np.round(delta_px*10)
-
-
                     newxy[0]=safe_xy_px[0]-delta_px[0].astype('int')
                     newxy[1]=safe_xy_px[1]-delta_px[1].astype('int')
                     safe_xy_px=newxy
@@ -332,8 +331,22 @@ def yaml_to_df(known_locations_file='/known_locations.yaml'):
 
 
 
-
-
+#------------------------------------------------------
+def read_tf(t):
+    # trasnform message to np arrays
+    pose=np.asarray((
+        t.transform.translation.x,
+        t.transform.translation.y,
+        t.transform.translation.z
+        ))
+    quat=np.asarray((
+        t.transform.rotation.x,
+        t.transform.rotation.y,
+        t.transform.rotation.z,
+        t.transform.rotation.w
+        ))
+    
+    return pose, quat
 #------------------------------------------------------
 
 def gaze_to_face():

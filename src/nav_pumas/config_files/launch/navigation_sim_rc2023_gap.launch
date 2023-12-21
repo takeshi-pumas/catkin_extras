@@ -78,11 +78,18 @@
   <node name="map_server" pkg="map_server" type="map_server" output="screen" args="$(arg static_map_file)"/>
 
   
+<!--##########################################################################################################-->
 
+  <param name="file_name" value="/known_locs_serving_sim.yaml"/>
   <node pkg="hmm_navigation"  name="pumas_nav" type="pumas_nav.py" output="screen" />
-  <param name="file_name" value="/known_locations.yaml"/>
-  <!--param name="file_name" value="/known_locations_sim.yaml"/-->
-  <!--node pkg="face_recog"  name="wave_recog_server" type="sos_service_waving.py"/-->
+  <node pkg="known_locations_tf_server"  name="known_locs" type="known_locs_node.py" output="screen" />
+  <node pkg="object_classification"  name="objs_reco" type="classification_server.py"  />  
+  <node pkg="segmentation"  name="segmentation" type="segment_node.py"  />  
+  <node pkg="smach_viewer"  name="smach_viewer" type="smach_viewer.py"  />  
+<!--##########################################################################################################-->
+
+
+  
     
   
 </launch>
