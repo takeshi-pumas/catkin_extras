@@ -15,7 +15,7 @@ from geometry_msgs.msg import TransformStamped
 from tf2_sensor_msgs.tf2_sensor_msgs import do_transform_cloud
 import rospkg
 
-from smach_utils2 import *
+from smach_tuner import *
 
 from object_classification.srv import *
 #from utils_srv import RGBD
@@ -75,6 +75,7 @@ def callback(points_msg):
         cv2.createTrackbar('Min Area', 'class rgbd', 0, 2000, nothing)  
         cv2.createTrackbar('Hi limit pix y', 'class rgbd',240,480,nothing)
         cv2.createTrackbar('Lo limit pix y', 'class rgbd',0,240,nothing)
+        cv2.createTrackbar('Plane height (cms)', 'class rgbd', -10, 100, nothing)   ### AREA MAX IS half THE WHOLE IMAGE 
         cv2.setTrackbarPos('Max Area', 'class rgbd',df['higher']) 
         cv2.setTrackbarPos('Min Area', 'class rgbd',df['lower']) 
         cv2.setTrackbarPos('Hi limit pix y','class rgbd',df['reg_hy']) 
@@ -135,27 +136,32 @@ def callback(points_msg):
             cv2.imshow('our of res'  , debug_image)
         if key=='s': 
 
-            r = cv2.getTrackbarPos('Max Area', 'class rgbd')
-            print ('#################################',r)
+            request= segmentation_server.request_class() 
+            r = cv2.getTrackbarPos('Plane height (cms)', 'class rgbd')
+            request.height.data=r * 0.01
+            if r == 100:request.height.data=-1.0
+            print ('#############Segmenting at plane####################',request.height.data)
             
             #head.set_joint_values([ 0.1, -0.5])
-            res=segmentation_server.call()
-            print( 'segmenting')
+            res=segmentation_server.call(request)
             #brazo.set_named_target('go')
             origin_map_img=[round(img_map.shape[0]*0.5) ,round(img_map.shape[1]*0.5)]   
             if len(res.poses.data)==0:print('no objs')
             else:
-                print ('QUATS PCA',res.quats.data)
+                print ('poses',res.poses_corr.data,res.poses.data)
                 poses=np.asarray(res.poses.data)
                 quats=np.asarray(res.quats.data)
                 poses=poses.reshape((int(len(poses)/3) ,3     )      )  
                 quats=quats.reshape((int(len(quats)/4) ,4     )      )  
                 num_objs=len(poses)
                 q=  quats[0]/np.linalg.norm(quats[0])
-                print ('num_objs', num_objs, q)
                 for i,pose in enumerate(poses):
                     #print (f'Occupancy map at point object {i}-> pixels ',origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m), img_map[origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m)])
+                    quat=  quats[i]/np.linalg.norm(quats[i])
+                    
                     point_name=f'object_{i}'
+                    print (np.rad2deg(tf.transformations.euler_from_quaternion(quat)))
+                    print( f'################## {point_name} estimated rotation PCA {np.sign(np.rad2deg(tf.transformations.euler_from_quaternion(quat))[0])*np.rad2deg(tf.transformations.euler_from_quaternion(quat))[1]}')
                     tf_man.pub_tf(pos=pose, rot =q , point_name=point_name+'_PCA', ref='head_rgbd_sensor_rgb_frame')## which object to choose   #TODO
                     tf_man.pub_static_tf(pos=pose, rot =q , point_name=point_name, ref='head_rgbd_sensor_rgb_frame')## which object to choose   #TODO
                     rospy.sleep(0.3)
@@ -168,7 +174,7 @@ def callback(points_msg):
                         print ('reject point, most likely part of arena, occupied inflated map')
                         tf_man.pub_static_tf(pos=[0,0,0], point_name=point_name, ref='head_rgbd_sensor_rgb_frame')
                         num_objs-=1
-                    print (f"object found at robot coords.{pose} ")
+                    print (f"object found at map coords.{pose} ")
                 
             
             img=bridge.imgmsg_to_cv2(res.im_out.image_msgs[0])

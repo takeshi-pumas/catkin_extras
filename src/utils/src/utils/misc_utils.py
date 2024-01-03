@@ -123,6 +123,7 @@ class HAND_RGB():
     def get_image(self):
         image = self._image_data
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         return image
 
 # Color segmentator

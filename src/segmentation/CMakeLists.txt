@@ -60,7 +60,7 @@ add_message_files(
 add_service_files(
   FILES
    Segmentation.srv
-#   Service2.srv
+   
 )
 
 ## Generate actions in the 'action' folder

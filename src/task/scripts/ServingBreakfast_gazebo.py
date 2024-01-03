@@ -20,13 +20,24 @@ class Initial(smach.State):
         
         #READ YAML ROOMS XYS
         
-        global arm
+        global arm ,  hand_rgb
+        hand_rgb= HAND_RGB()
+
         arm = moveit_commander.MoveGroupCommander('arm')
         head.set_named_target('neutral')
 
         rospy.sleep(0.8)
         arm.set_named_target('go')
         arm.go()
+        rospy.sleep(0.3)
+
+        gripper.open()
+        rospy.sleep(0.3)
+
+        gripper.close()
+        rospy.sleep(0.3)
+
+        
         return 'succ'
 
 
@@ -55,7 +66,7 @@ class Wait_push_hand(smach.State):
 
 
 #########################################################################################################
-class Goto_pickup(smach.State):  # ADD KNONW LOCATION DOOR
+class Goto_pickup(smach.State):  
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
         self.tries = 0
@@ -85,13 +96,12 @@ class Scan_table(smach.State):
         smach.State.__init__(
             self, outcomes=['succ', 'failed', 'tries'])
         self.tries = 0
+        self.target= '024_bowl'
     def execute(self, userdata):
         rospy.loginfo('State : Scanning_table')
         talk('Scanning table')
         self.tries += 1
-        if self.tries >= 4:
-            self.tries = 0
-            return'tries'
+        if self.tries >= 4:self.tries = 0
         if self.tries==1:head.set_joint_values([ 0.0, -0.7])
         if self.tries==2:head.set_joint_values([ 0.2, -0.7])
         if self.tries==3:head.set_joint_values([-0.2, -0.7])
@@ -102,49 +112,330 @@ class Scan_table(smach.State):
         res      = classify_client(req)
         print (res.poses, res.names)
         if len (res.poses)==0:return 'failed'
-        self.tries=0
         #for pose in res.poses:
         for pose, point_name in zip(res.poses, res.names):
-            print ([pose.position.x,pose.position.y,pose.position.z],[pose.orientation.x,pose.orientation.y,pose.orientation.z,pose.orientation.w],point_name.data ,'*******************************')
-            tf_man.pub_static_tf(pos=[pose.position.x,pose.position.y,pose.position.z], rot =[pose.orientation.x,pose.orientation.y,pose.orientation.z,pose.orientation.w] , point_name='static'+point_name.data, ref='head_rgbd_sensor_depth_frame') #head_rgbd_sensor_rgb_frame')## which object to choose   #TODO
-            rospy.sleep(0.3)
-            succ=tf_man.change_ref_frame_tf('static'+point_name.data)
-            rospy.sleep(0.3)
-            print (succ,'succ')
-
-        if succ:return 'succ'
+            
+            if point_name.data == self.target or  point_name.data == '003_cracker_box' or  point_name.data == '029_plate' :
+                print ([pose.position.x,pose.position.y,pose.position.z],[pose.orientation.x,pose.orientation.y,pose.orientation.z,pose.orientation.w],point_name.data ,'*******************************')
+                tf_man.pub_static_tf(pos=[pose.position.x,pose.position.y,pose.position.z], rot =[pose.orientation.x,pose.orientation.y,pose.orientation.z,pose.orientation.w] , point_name='static'+point_name.data, ref='head_rgbd_sensor_depth_frame') #head_rgbd_sensor_rgb_frame')## which object to choose   #TODO
+                rospy.sleep(0.3)
+                succ=tf_man.change_ref_frame_tf('static'+point_name.data)
+                rospy.sleep(0.3)
+                print (f'{self.target} found')
+                self.target='003_cracker_box'
+                return 'succ'
+        print( self.target , 'not found')
         return 'failed'
 
 #########################################################################################################
 class Pre_pickup(smach.State):
     def __init__(self):
         smach.State.__init__(
+            self, outcomes=['succ', 'failed', 'tries', 'pickup_cereal'])
+        #self.target = 'bowl'
+        self.target = 'cereal'
+    def execute(self, userdata):
+        rospy.loginfo(f'State : Pre PICKUP  {self.target} ')
+        talk(f'Pickup {self.target}')
+        
+        global target_object, pca_angle
+        head.set_named_target('neutral')
+        rospy.sleep(0.5)
+        clear_octo_client()
+        gripper.open()
+        
+        
+        if self.target == 'cereal':
+           
+            
+            #head.to_tf('static003_cracker_box')
+            
+            head.set_joint_values([0.0 , -0.7])
+            
+            rospy.sleep(1.0)   #wait for head to get into position  
+            request= segmentation_server.request_class() 
+            request.height.data= 0.4  #TABLE HEIGHT
+            res=segmentation_server.call(request)
+            poses=np.asarray(res.poses.data)
+            quats=np.asarray(res.quats.data)
+            poses=poses.reshape((int(len(poses)/3) ,3     )      )  
+            quats=quats.reshape((int(len(quats)/4) ,4     )      )  
+            print ( f' {len(poses)}Objects Segmented')
+            if len(poses)==0:
+                res = omni_base.move_base(known_location='pca_table', time_out=200)
+                return 'failed'
+            for i,pose in enumerate(poses):
+                #print (f'Occupancy map at point object {i}-> pixels ',origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m), img_map[origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m)])
+                quat=  quats[i]/np.linalg.norm(quats[i])
+                print (np.rad2deg(tf.transformations.euler_from_quaternion(quat)))
+                pca_angle=np.sign(np.rad2deg(tf.transformations.euler_from_quaternion(quat))[0])*np.rad2deg(tf.transformations.euler_from_quaternion(quat))[1]
+                print( f'################## cereal estimated rotation PCA {pca_angle}')
+                print( f'################## cereal estimated Centroid {pose}')
+            return 'pickup_cereal'
+        
+        if self.target== 'bowl':
+            target_object='static024_bowl'
+            pickup_pose=[0.35,-1.2,0.0,-1.9, 0.0, 0.0]
+        
+        
+        succ= arm.go(pickup_pose)
+        rospy.sleep(1.0)
+        
+
+        if succ:
+            
+            succ = False
+            
+            while not succ:
+                #trans,rot = tf_man.getTF(target_frame='static003_cracker_box', ref_frame='hand_palm_link')
+                trans,_ = tf_man.getTF(target_frame=target_object, ref_frame='hand_palm_link')
+                _,rot = tf_man.getTF(target_frame='base_link', ref_frame='map')
+
+                if type(trans) is bool:return 'failed'
+                if type(trans) is not bool:
+                    eX, eY, eZ = trans
+                    eY+=-0.05
+                    eT= tf.transformations.euler_from_quaternion(rot)[2] - 0.5*np.pi    #(known loc pickup change to line finder?)   NO! THERE ARE  ROUND TABLES !
+                    rospy.loginfo("Distance to goal: {:.2f}, {:.2f}, angle {:.2f}, target obj frame {}".format(eX, eY , eT,target_object))
+                    if abs(eX) < 0.03:
+                        eX = 0
+                    if abs(eY) < 0.01:
+                        eY = 0
+                    if abs(eT   ) < 0.05:
+                        eT = 0
+                    succ =  eX == 0 and eY == 0 and eT==0
+                        # grasp_base.tiny_move(velY=-0.4*trans[1], std_time=0.2, MAX_VEL=0.3)
+                    omni_base.tiny_move(velX=0.13*eX, velY=-0.4*eY, velT=-0.3*eT, std_time=0.2, MAX_VEL=0.3) #Pending test
+            
+            print(tf_man.getTF(ref_frame=target_object,target_frame='base_link'), 'tf obj base######################################')
+
+            img=hand_rgb.get_image()
+            img_msg  = bridge.cv2_to_imgmsg(img)
+            req      = classify_client.request_class()
+            req.in_.image_msgs.append(img_msg)
+            res      = classify_client(req)
+
+            obj_name='024_bowl'
+            obj_name2='029_plate'
+            for i,name in enumerate(res.names):
+                print(i,name.data)
+                if (name.data== obj_name or name.data== obj_name2 ):break
+            print ('BBX',res.pt_min.data[2*i+1],res.pt_max.data[2*i+1],  res.pt_min.data[2*i],res.pt_max.data[2*i])
+            #np.save( '~/home/roboworks/Documents/debug_img_hand_yolo.npy',bridge.imgmsg_to_cv2(res.debug_image.image_msgs[0]))
+            
+
+
+            self.target='cereal'
+            return 'succ'
+            
+        return 'failed'
+
+#########################################################################################################
+class Pickup(smach.State):
+    def __init__(self):
+        smach.State.__init__(
+            self, outcomes=['succ', 'failed', 'tries'])
+        self.tries = 0
+    def execute(self, userdata):
+        rospy.loginfo('State :  PICKUP ')
+        clear_octo_client()
+        self.tries += 1
+
+
+        if self.tries >= 4:
+            self.tries = 0
+            return'tries'
+        
+        clear_octo_client()
+
+        av=arm.get_current_joint_values()
+        print (av,'av')
+        av[0]+= -0.17
+        succ=arm.go(av)
+        rospy.sleep(0.5)
+        gripper.close()
+        print(tf_man.getTF(ref_frame=target_object,target_frame='base_link'), 'tf obj base######################################')
+              
+        if succ:
+            
+            tf_man.pub_static_tf(pos=np.zeros(3), rot =[0,0,0,1] , point_name=target_object, ref='erase')
+            return 'succ'
+
+            
+        return 'failed'
+
+#########################################################################################################
+class Pickup_cereal(smach.State):
+    def __init__(self):
+        smach.State.__init__(
+            self, outcomes=['succ', 'failed', 'tries'])
+        self.tries = 0
+    def execute(self, userdata):
+        rospy.loginfo('State :  PICKUP ')
+        clear_octo_client()
+        self.tries += 1
+
+
+        if self.tries >= 4:
+            self.tries = 0
+            return'tries'
+        
+
+        print ( 'x,y,',np.cos(np.deg2rad(pca_angle)), np.sin(np.deg2rad(pca_angle)) )
+        omni_base.tiny_move(velX=-0.2 *np.cos(np.deg2rad(pca_angle)) , velY= 0.1 * np.sin(np.deg2rad(pca_angle)) ,std_time=4.2, MAX_VEL=0.3) 
+
+      
+
+
+
+
+
+
+
+
+
+
+
+
+
+        clear_octo_client()
+        print(pca_angle,"####################AnGLE WITHIN LIMITS")
+        #print(max(-np.deg2rad(pca_angle),-90),"####################ACNLGE WITHIN LIMITS")
+        pickup_pose=[0.077,np.deg2rad(-70),np.deg2rad(-90), -np.deg2rad(max(pca_angle,-45)),np.deg2rad(90), 0.0]
+        print (pickup_pose)
+        succ= arm.go(pickup_pose)
+        rospy.sleep(1.0)
+        succ=False
+        while not succ:
+            #trans,rot = tf_man.getTF(target_frame='static003_cracker_box', ref_frame='hand_palm_link')
+            trans,_ = tf_man.getTF(target_frame='hand_palm_link', ref_frame='static003_cracker_box')
+            _,rot = tf_man.getTF(target_frame='base_link', ref_frame='map')
+            print (trans)
+            print ('#############')
+            if type(trans) is bool:return 'failed'
+            if type(trans) is not bool:
+                eX, eY, eZ = trans
+                eT= tf.transformations.euler_from_quaternion(rot)[2] - 0.5*np.pi    #(known loc pickup change to line finder?)   NO! THERE ARE  ROUND TABLES !
+                rospy.loginfo("Distance to goal: {:.2f}, {:.2f}, angle {:.2f}, target obj frame {}".format(eX, eY , eT,'cereal'))
+                
+                if abs(eX) < 0.05:
+                    eX = 0
+                if abs(eY) < 0.15:
+                    eY = 0
+                if abs(eT   ) < 0.1:
+                    eT = 0
+                succ =  eX == 0 and eY == 0 and eT==0
+                    # grasp_base.tiny_move(velY=-0.4*trans[1], std_time=0.2, MAX_VEL=0.3)
+                omni_base.tiny_move(velX=-0.1*eY, velY=0.1*eX, velT=-0.3*eT, std_time=0.2, MAX_VEL=0.3) #Pending test
+
+        rospy.sleep(1.0)
+        gripper.close()
+ 
+        
+              
+        if succ:
+            
+            trans,_ = tf_man.getTF(target_frame='static003_cracker_box', ref_frame='hand_palm_link')
+            
+            print ('#############')
+            print ('#############')
+            print ('#############')
+            print ('#############')
+            print (trans, 'hand')
+            print ('#############')
+            print ('#############')
+            print ('#############')
+            print ('#############')
+            print ('#############')
+            
+            return 'succ'
+
+            
+        return 'failed'
+
+#########################################################################################################
+class Post_pickup(smach.State):
+    def __init__(self):
+        smach.State.__init__(
             self, outcomes=['succ', 'failed', 'tries'])
         self.tries = 0
     def execute(self, userdata):
         rospy.loginfo('State : Pre PICKUP ')
-        talk('Pickup Bowl')
+        clear_octo_client()
         self.tries += 1
         if self.tries >= 4:
             self.tries = 0
             return'tries'
         
-        pickup_pose=[0.3, -0.87, 0.0, -0.75, -0.03, 0.0]
-        if arm.go(pickup_pose):
-            succ = False
-            THRESHOLD = 0.1
-            while not succ:
-                trans,_ = tf_man.getTF(target_frame='static003_cracker_box', ref_frame='hand_palm_link')
-                if type(trans) is not bool:
-                    _, eY, eX = trans
-                    rospy.loginfo("Distance to goal: {:.2f}, {:.2f}".format(eX, eY))
-                    if abs(eY) < THRESHOLD:
-                        eY = 0
-                    if abs(eX) < THRESHOLD:
-                        eX = 0
-                    succ =  eX == 0 and eY == 0
-                        # grasp_base.tiny_move(velY=-0.4*trans[1], std_time=0.2, MAX_VEL=0.3)
-                    omni_base.tiny_move(velX=0.13*eX, velY=-0.4*eY, std_time=0.2, MAX_VEL=0.3) #Pending test
+        clear_octo_client()
+
+        av=arm.get_current_joint_values()
+        print (av,'av')
+        av[0]=0.31
+        succ=arm.go(av)
+        omni_base.tiny_move(velX=-0.2, std_time=1.0, MAX_VEL=0.3) 
+        
+       
+        if succ:
+            return 'succ'
+            
+        return 'failed'
+
+#########################################################################################################
+class Goto_table(smach.State):  
+    def __init__(self):
+        smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
+        self.tries = 0
+
+    def execute(self, userdata):
+
+        rospy.loginfo('STATE : Navigate to known location')
+        arm.set_named_target('go')
+        arm.go()
+        
+
+
+        self.tries += 1
+        if self.tries == 3:
+            return 'tries'
+        if self.tries == 1: talk('Navigating to, pickup')
+        res = omni_base.move_base(known_location='table', time_out=200)
+        print(res)
+
+        if res:
+            return 'succ'
+        else:
+            talk('Navigation Failed, retrying')
+            return 'failed'
+
+#########################################################################################################
+class Place_table(smach.State):
+    def __init__(self):
+        smach.State.__init__(
+            self, outcomes=['succ', 'failed', 'tries'])
+        self.tries = 0
+    def execute(self, userdata):
+        rospy.loginfo('State : PLACE TABLE ')
+        clear_octo_client()
+        self.tries += 1
+        if self.tries >= 4:
+            self.tries = 0
+            return'tries'
+        place_pose=[0.5, -0.9, 0.0, -1.9, 0.0, 0.0]
+        succ=arm.go(place_pose)
+        
+        if succ:
+            omni_base.tiny_move(velX=0.3, std_time=0.7, MAX_VEL=0.3) 
+            
+            shake=[0.45, -1.1    , 0.0, -1.9, 0.0, 0.0]
+            arm.go(shake)                 
+            rospy.sleep(0.3)           
+            gripper.open()             
+            rospy.sleep(0.3)           
+            succ=arm.go(place_pose)
+            omni_base.tiny_move(velX=-0.2, std_time=0.7, MAX_VEL=0.4) 
+            
+
             return 'succ'
             
         return 'failed'
@@ -548,8 +839,12 @@ if __name__ == '__main__':
         smach.StateMachine.add("WAIT_PUSH_HAND",    Wait_push_hand(),       transitions={'failed': 'WAIT_PUSH_HAND',    'succ': 'GOTO_PICKUP',       'tries': 'END'})
         smach.StateMachine.add("GOTO_PICKUP",     Goto_pickup(),      transitions={'failed': 'GOTO_PICKUP',    'succ': 'SCAN_TABLE'    ,   'tries': 'INITIAL'})
         smach.StateMachine.add("SCAN_TABLE",        Scan_table(),           transitions={'failed': 'SCAN_TABLE',        'succ': 'PRE_PICKUP'    ,   'tries': 'INITIAL'})  
-        smach.StateMachine.add("PRE_PICKUP",        Pre_pickup(),           transitions={'failed': 'PRE_PICKUP',        'succ': 'END'    ,   'tries': 'END'})        
-        
+        smach.StateMachine.add("PRE_PICKUP",        Pre_pickup(),           transitions={'failed': 'PRE_PICKUP',        'succ': 'PICKUP'    ,'pickup_cereal':'PICKUP_CEREAL' ,   'tries': 'END'})        
+        smach.StateMachine.add("PICKUP",            Pickup(),           transitions={'failed': 'PICKUP',        'succ': 'POST_PICKUP'    ,   'tries': 'END'})        
+        smach.StateMachine.add("PICKUP_CEREAL",     Pickup_cereal(),        transitions={'failed': 'PICKUP_CEREAL',        'succ': 'POST_PICKUP'    ,   'tries': 'END'})        
+        smach.StateMachine.add("POST_PICKUP",        Post_pickup(),         transitions={'failed': 'POST_PICKUP',        'succ': 'GOTO_TABLE'    ,   'tries': 'END'})        
+        smach.StateMachine.add("GOTO_TABLE",        Goto_table(),           transitions={'failed': 'GOTO_TABLE',        'succ': 'PLACE_TABLE'    ,   'tries': 'END'})        
+        smach.StateMachine.add("PLACE_TABLE",     Place_table(),      transitions={'failed': 'GOTO_TABLE',    'succ': 'INITIAL'    ,   'tries': 'INITIAL'})
 
         #smach.StateMachine.add("FIND_HUMAN",         Find_human(),          transitions={'failed': 'FIND_HUMAN',        'succ': 'DETECT_DRINK'    ,   'tries': 'GOTO_NEXT_ROOM', 'forbidden':'GOTO_HUMAN'})
         #smach.StateMachine.add("GOTO_HUMAN",         Goto_human(),          transitions={'failed': 'GOTO_HUMAN',        'succ': 'ANALYZE_HUMAN' ,   'tries': 'FIND_HUMAN' , 'forbidden':'LEAD_TO_LIVING_ROOM'})

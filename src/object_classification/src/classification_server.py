@@ -51,14 +51,24 @@ def callback(req):
                     cc=[np.nanmean(  points['x'][pt_min[1]:pt_max[1],pt_min[0]:pt_max[0]]),
                         np.nanmean(  points['y'][pt_min[1]:pt_max[1],pt_min[0]:pt_max[0]]),
                         np.nanmean(  points['z'][pt_min[1]:pt_max[1],pt_min[0]:pt_max[0]]) ]
-                    pose.position.x=cc[0]
-                    pose.position.y=cc[1]
-                    pose.position.z=cc[2]
-                    pose.orientation.w=1
-                    res.poses.append(pose)
-   
-                    t=write_tf(    cc , (0,0,0,1), model.names[int(cls.cpu().tolist())], "head_rgbd_sensor_rgb_frame"   )
-                    broadcaster.sendTransform(t)
+                    
+                    if np.isnan(cc[0]) or np.isnan(cc[1]) or  np.isnan(cc[2]):
+                        print ('no points')
+                        pose.position.x=cc[0]
+                        pose.position.y=cc[1]
+                        pose.position.z=cc[2]
+                        pose.orientation.w=1
+                        res.poses.append(pose)
+                    else:
+
+                        pose.position.x=cc[0]
+                        pose.position.y=cc[1]
+                        pose.position.z=cc[2]
+                        pose.orientation.w=1
+                        res.poses.append(pose)
+                        
+                        t=write_tf(    cc , (0,0,0,1), model.names[int(cls.cpu().tolist())], "head_rgbd_sensor_rgb_frame"   )
+                        broadcaster.sendTransform(t)
                     debug_img=cv2.rectangle(debug_img ,pt_min,pt_max,  (0, 255, 0), 2   )
                     debug_img= cv2.putText(
                                 debug_img ,model.names[int(cls.cpu().tolist())],
@@ -67,8 +77,7 @@ def callback(req):
                                 0.5,
                                 (0, 255, 0),
                                 2
-                                )
-                    
+                                )                
                     print (num_preds,pt_min, pt_max,conf.cpu().tolist(),model.names[int(cls.cpu().tolist())], cc )
                     for coord in pt_min:    res.pt_min.data.append(coord)
                     for coord in pt_max:    res.pt_max.data.append(coord)
@@ -76,7 +85,7 @@ def callback(req):
                     string_msg= String()
                     string_msg.data=model.names[int(cls.cpu().tolist())]
                     res.names.append(string_msg)               
-        #np.save('debug.npy',debug_img)  # IMAGE WITH BOUNDING BOX
+        np.save('debug.npy',debug_img)  # IMAGE WITH BOUNDING BOX
         print(f'### number of detections -> {num_preds}')
     res.debug_image.image_msgs.append(bridge.cv2_to_imgmsg(debug_img))
 

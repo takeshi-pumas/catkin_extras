@@ -106,16 +106,6 @@ def read_tf(t):
     return pose, quat
 
 #-----------------------------------------------------------------
-def plot_with_cbar(image,cmap="jet"):
-    ax = plt.subplot()
-    im=ax.imshow(image, cmap=cmap)
-    divider = make_axes_locatable(ax)
-    cax = divider.append_axes("right", size="5%", pad=0.05)
-    plt.colorbar(im, cax=cax)
-    plt.show()
-
-
-#-----------------------------------------------------------------
 def correct_points(points_msg):
 
     # Function that transforms Point Cloud reference frame from  head, to map. (i.e. sensor coords to map coords )
@@ -166,7 +156,7 @@ def read_yaml(yaml_file = '/known_locations.yaml'):
 
 #-----------------------------------------------------------------    
 
-def plane_seg(points_msg,hg=0.85,lg=1.5,th_v=0.03,lower=1000 ,higher=50000,reg_ly= 30,reg_hy=600):
+def plane_seg(points_msg,hg=0.85,lg=1.5,th_v=0.03,lower=1000 ,higher=50000,reg_ly= 30,reg_hy=600 ,plane_height=-1 ):
 
     ###
     points_data = ros_numpy.numpify(points_msg)    
@@ -176,11 +166,11 @@ def plane_seg(points_msg,hg=0.85,lg=1.5,th_v=0.03,lower=1000 ,higher=50000,reg_l
     rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)    
     im_corrected,corrected=correct_points(points_msg)  ### aplica la transformada de la camara para corregir la perspectiva
     zs_no_nans=np.where(~np.isnan(corrected['z']),corrected['z'],1)   
-    histogram, bin_edges =(np.histogram(zs_no_nans, bins=100))
     t = tfBuffer.lookup_transform('map', 'head_rgbd_sensor_link', rospy.Time())
     trans=t.transform.translation.z
-
-    plane_height= (trans)+bin_edges[histogram[:-1].argmax()]
+    if plane_height == -1:
+        histogram, bin_edges =(np.histogram(zs_no_nans, bins=100))
+        plane_height= (trans)+bin_edges[histogram[:-1].argmax()]
     print(plane_height, 'plane_height')
   
     #thres_floor=0.13
@@ -190,6 +180,7 @@ def plane_seg(points_msg,hg=0.85,lg=1.5,th_v=0.03,lower=1000 ,higher=50000,reg_l
     contours, hierarchy = cv2.findContours(im_corrected.astype('uint8'),cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
     i=0
     cents=[]
+    cents_corr=[]
     points=[]
     points_c=[]
     images=[]
@@ -209,7 +200,7 @@ def plane_seg(points_msg,hg=0.85,lg=1.5,th_v=0.03,lower=1000 ,higher=50000,reg_l
                 npmask=np.asarray(mask).T
                 rgb_image=cv2.rectangle(rgb_image,(boundRect[0], boundRect[1]),(boundRect[0]+boundRect[2], boundRect[1]+boundRect[3]), (255,255,0), 2)
                 cv2.circle(rgb_image, (cX, cY), 5, (255, 255, 255), -1)
-                cv2.putText(rgb_image, "centroid_"+str(i)+"_"+str(cX)+','+str(cY)    ,    (cX - 25, cY - 25)   ,cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 255, 0), 2)
+                cv2.putText(rgb_image, "centroid_"+str(i+1)+"_"+str(cX)+','+str(cY)    ,    (cX - 25, cY - 25)   ,cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 255, 0), 2)
                 xyz=[]
                 xyz_c=[]
                 if len (npmask)>0:    ## MASK containing the segmented object, read every xyz world coordinate related to pixels in the mask.
@@ -227,8 +218,10 @@ def plane_seg(points_msg,hg=0.85,lg=1.5,th_v=0.03,lower=1000 ,higher=50000,reg_l
                             xyz_c.append(aux2)
                 xyz=np.asarray(xyz)
                 xyz_c=np.asarray(xyz_c)
-                cent=xyz.mean(axis=0)  #centroids of each object ( mean of xyz pts.)
+                cent=xyz.mean(axis=0)
+                cent_corr=xyz_c.mean(axis=0)  #centroids of each object ( mean of xyz pts.)
                 cents.append(cent)
+                cents_corr.append(cent_corr)
                 points.append(xyz)
                 points_c.append(xyz_c)
             else:   
@@ -238,6 +231,6 @@ def plane_seg(points_msg,hg=0.85,lg=1.5,th_v=0.03,lower=1000 ,higher=50000,reg_l
     #          images array of each image segmented (for image training)
     #          rgb_image ( labeled bboxed image , useful for display and debug (beta))
     #          points_c points of each segmented object , but now from the corrected cloud-(beta) usefull for estimating objs dimensions 
-    return cents,np.asarray(points), images,rgb_image,np.asarray(points_c) 
+    return cents,np.asarray(points), images,rgb_image,np.asarray(points_c) ,cents_corr
     #return cents,np.asarray(points), images,im_corrected,np.asarray(points_c) 
 

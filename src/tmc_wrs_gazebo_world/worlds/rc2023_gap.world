@@ -66,8 +66,6 @@
       </link>
     </model>
     <gravity>0 0 -9.8</gravity>
-    <magnetic_field>6e-06 2.3e-05 -4.2e-05</magnetic_field>
-    <atmosphere type='adiabatic'/>
     <physics type='ode'>
       <max_step_size>0.001</max_step_size>
       <real_time_factor>1</real_time_factor>
@@ -87,10 +85,10 @@
       <heading_deg>0</heading_deg>
     </spherical_coordinates>
     <state world_name='default'>
-      <sim_time>2146 533000000</sim_time>
-      <real_time>89 534779469</real_time>
-      <wall_time>1703083582 453427990</wall_time>
-      <iterations>89338</iterations>
+      <sim_time>0 0</sim_time>
+      <real_time>0 0</real_time>
+      <wall_time>1703790985 585507624</wall_time>
+      <iterations>0</iterations>
       <model name='bed'>
         <pose>2.4649 5.69361 0 0 0 -1.56137</pose>
         <scale>1 1 1</scale>
@@ -112,23 +110,23 @@
         </link>
       </model>
       <model name='chair'>
-        <pose>5.01613 -1.3117 0 1.57079 -1e-06 -1.12289</pose>
+        <pose>5.01613 -1.3117 0 1.57079 -0 -1.12289</pose>
         <scale>1 1 1</scale>
         <link name='body'>
-          <pose>5.01613 -1.3117 0 1.57079 -1e-06 -1.12289</pose>
+          <pose>5.01613 -1.3117 0 1.57079 -0 -1.12289</pose>
           <velocity>0 0 0 0 -0 0</velocity>
-          <acceleration>0 -0 0.992246 2.18872 1.05163 0</acceleration>
-          <wrench>0 -0 0.992246 0 -0 0</wrench>
+          <acceleration>-0 -0 0.990856 -2.0901 -0.953144 -3.14159</acceleration>
+          <wrench>-0 -0 0.990856 0 -0 0</wrench>
         </link>
       </model>
       <model name='chair_0'>
-        <pose>7.87986 -1.39519 0 1.57079 -1e-06 0.831877</pose>
+        <pose>7.87986 -1.39519 0 1.57079 0 0.831877</pose>
         <scale>1 1 1</scale>
         <link name='body'>
-          <pose>7.87986 -1.39519 0 1.57079 -1e-06 0.831877</pose>
+          <pose>7.87986 -1.39519 0 1.57079 0 0.831877</pose>
           <velocity>0 0 0 0 -0 0</velocity>
-          <acceleration>0 0 0.992246 1.34663 1.50619 3.14159</acceleration>
-          <wrench>0 0 0.992246 0 -0 0</wrench>
+          <acceleration>0 -0 0.990856 -1.50639 1.34686 -3.14159</acceleration>
+          <wrench>0 -0 0.990856 0 -0 0</wrench>
         </link>
       </model>
       <model name='ground_plane'>
@@ -352,32 +350,32 @@
         </link>
       </model>
       <model name='ycb_003_cracker_box'>
-        <pose>3.43027 -1.01592 0.403095 0.000743 0.002205 0.64794</pose>
+        <pose>3.43027 -0.871299 0.403095 0.000739 0.002204 0.648032</pose>
         <scale>1 1 1</scale>
         <link name='body'>
-          <pose>3.43027 -1.01592 0.403095 0.000743 0.002205 0.64794</pose>
+          <pose>3.43027 -0.871299 0.403095 0.000739 0.002204 0.648032</pose>
           <velocity>0 0 0 0 -0 0</velocity>
           <acceleration>0 0 -9.8 0 -0 0</acceleration>
           <wrench>0 0 -28.7526 0 -0 0</wrench>
         </link>
       </model>
       <model name='ycb_024_bowl'>
-        <pose>2.99361 -1.02763 0.400503 -0.000323 -0.002163 0.056953</pose>
+        <pose>3.2042 -0.811796 0.400491 -0.000754 -0.002818 0.059029</pose>
         <scale>1 1 1</scale>
         <link name='body'>
-          <pose>2.99361 -1.02763 0.400503 -0.000323 -0.002163 0.056953</pose>
-          <velocity>-2.6e-05 3e-05 0.003494 -0.059745 -0.052063 -2e-06</velocity>
-          <acceleration>0.520532 1.27849 11.4872 -3.02766 0.262239 -0.070517</acceleration>
-          <wrench>0.023441 0.057575 0.517311 0 -0 0</wrench>
+          <pose>3.2042 -0.811796 0.400491 -0.000754 -0.002818 0.059029</pose>
+          <velocity>-0.001938 -0.000392 -0.004534 -0.014847 0.073993 -4.9e-05</velocity>
+          <acceleration>0.341404 0.603393 -7.83951 2.90578 -0.101415 -0.090937</acceleration>
+          <wrench>0.015375 0.027173 -0.353042 0 -0 0</wrench>
         </link>
       </model>
       <model name='ycb_031_spoon'>
-        <pose>3.16066 -0.949342 0.416365 -3.09117 0.021135 -0.748707</pose>
+        <pose>2.8732 -0.891165 0.41637 -3.09118 0.021124 -0.74822</pose>
         <scale>1 1 1</scale>
         <link name='body'>
-          <pose>3.16066 -0.949342 0.416365 -3.09117 0.021135 -0.748707</pose>
+          <pose>2.8732 -0.891165 0.41637 -3.09118 0.021124 -0.74822</pose>
           <velocity>0 0 0 0 -0 0</velocity>
-          <acceleration>0 0 -9.8 2e-06 -2e-06 -8.8e-05</acceleration>
+          <acceleration>0 0 -9.8 -4e-06 -1e-05 -8e-06</acceleration>
           <wrench>0 0 -0.321767 0 -0 0</wrench>
         </link>
       </model>
@@ -1527,7 +1525,7 @@
     </model>
     <gui fullscreen='0'>
       <camera name='user_camera'>
-        <pose>1.46415 -4.99423 28.4648 0 1.5378 0.623258</pose>
+        <pose>4.81521 -3.22959 13.8661 0 1.5378 0.623258</pose>
         <view_controller>orbit</view_controller>
         <projection_type>perspective</projection_type>
       </camera>
@@ -4969,5 +4967,7 @@
       </link>
       <pose>3.43972 -0.622748 0 0 -0 0</pose>
     </model>
+    <magnetic_field>6e-06 2.3e-05 -4.2e-05</magnetic_field>
+    <atmosphere type='adiabatic'/>
   </world>
 </sdf>
