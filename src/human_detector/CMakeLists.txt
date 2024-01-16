@@ -60,6 +60,7 @@ find_package(catkin REQUIRED COMPONENTS
  add_service_files(
   FILES
     Human_detector.srv
+    Point_detector.srv
  )
 
 ## Generate actions in the 'action' folder

@@ -154,26 +154,33 @@ def callback(points_msg):
                 poses=poses.reshape((int(len(poses)/3) ,3     )      )  
                 quats=quats.reshape((int(len(quats)/4) ,4     )      )  
                 num_objs=len(poses)
-                q=  quats[0]/np.linalg.norm(quats[0])
+                
                 for i,pose in enumerate(poses):
                     #print (f'Occupancy map at point object {i}-> pixels ',origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m), img_map[origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m)])
                     quat=  quats[i]/np.linalg.norm(quats[i])
                     
                     point_name=f'object_{i}'
+                    print ('point_name',point_name, pose, quat)
                     print (np.rad2deg(tf.transformations.euler_from_quaternion(quat)))
-                    print( f'################## {point_name} estimated rotation PCA {np.sign(np.rad2deg(tf.transformations.euler_from_quaternion(quat))[0])*np.rad2deg(tf.transformations.euler_from_quaternion(quat))[1]}')
-                    tf_man.pub_tf(pos=pose, rot =q , point_name=point_name+'_PCA', ref='head_rgbd_sensor_rgb_frame')## which object to choose   #TODO
-                    tf_man.pub_static_tf(pos=pose, rot =q , point_name=point_name, ref='head_rgbd_sensor_rgb_frame')## which object to choose   #TODO
+                    print( f'################## {point_name} estimated rotation PCA {np.rad2deg(tf.transformations.euler_from_quaternion(quat))[0]}') #np.sign(np.rad2deg(tf.transformations.euler_from_quaternion(quat))[0])*np.rad2deg(tf.transformations.euler_from_quaternion(quat))[1]}')
+                    axis=[0,0,1]
+                    angle = tf.transformations.euler_from_quaternion(quat)[0]
+                    rotation_quaternion = tf.transformations.quaternion_about_axis(angle, axis)
+                    print ('rot quat',rotation_quaternion)
+                   
+                    tf_man.pub_static_tf(pos=pose, rot =[0,0,0,1], point_name=point_name+'_norot', ref='head_rgbd_sensor_rgb_frame')## which object to choose   #TODO
+                    tf_man.change_ref_frame_tf(point_name=point_name+'_norot', new_frame='map')
+                    tf_man.pub_static_tf(pos=pose, rot =rotation_quaternion, point_name=point_name, ref='head_rgbd_sensor_rgb_frame')## which object to choose   #TODO
                     rospy.sleep(0.3)
-                    tf_man.change_ref_frame_tf(point_name=point_name, new_frame='map')
+                    tf_man.change_ref_frame_tf(point_name=point_name,rotational=rotation_quaternion , new_frame='map')
                     rospy.sleep(0.3)
                     pose,_= tf_man.getTF(point_name)
                     print (f'Occupancy map at point object {i}-> pixels ',origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m), img_map[origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m)])
                     ## Pixels from augmented image map server published map image
                     if img_map[origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m)]!=0:#### Yes axes seem to be "flipped" !=0:
-                        print ('reject point, most likely part of arena, occupied inflated map')
-                        tf_man.pub_static_tf(pos=[0,0,0], point_name=point_name, ref='head_rgbd_sensor_rgb_frame')
-                        num_objs-=1
+                        print ('reject point suggested ( for floor), most likely part of arena, occupied inflated map')
+                        #tf_man.pub_static_tf(pos=[0,0,0], point_name=point_name, ref='head_rgbd_sensor_rgb_frame')
+                        #num_objs-=1
                     print (f"object found at map coords.{pose} ")
                 
             

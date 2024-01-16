@@ -96,7 +96,8 @@ class Scan_table(smach.State):
         smach.State.__init__(
             self, outcomes=['succ', 'failed', 'tries'])
         self.tries = 0
-        self.target= '024_bowl'
+        #self.target= '024_bowl'
+        self.target= '003_cracker_box'
     def execute(self, userdata):
         rospy.loginfo('State : Scanning_table')
         talk('Scanning table')
@@ -115,7 +116,7 @@ class Scan_table(smach.State):
         #for pose in res.poses:
         for pose, point_name in zip(res.poses, res.names):
             
-            if point_name.data == self.target or  point_name.data == '003_cracker_box' or  point_name.data == '029_plate' :
+            if point_name.data == self.target :
                 print ([pose.position.x,pose.position.y,pose.position.z],[pose.orientation.x,pose.orientation.y,pose.orientation.z,pose.orientation.w],point_name.data ,'*******************************')
                 tf_man.pub_static_tf(pos=[pose.position.x,pose.position.y,pose.position.z], rot =[pose.orientation.x,pose.orientation.y,pose.orientation.z,pose.orientation.w] , point_name='static'+point_name.data, ref='head_rgbd_sensor_depth_frame') #head_rgbd_sensor_rgb_frame')## which object to choose   #TODO
                 rospy.sleep(0.3)
@@ -191,7 +192,11 @@ class Pre_pickup(smach.State):
                 trans,_ = tf_man.getTF(target_frame=target_object, ref_frame='hand_palm_link')
                 _,rot = tf_man.getTF(target_frame='base_link', ref_frame='map')
 
-                if type(trans) is bool:return 'failed'
+                if type(trans) is bool:
+                    trans,_ = tf_man.getTF(target_frame='static029_plate', ref_frame='hand_palm_link')
+                    _,rot = tf_man.getTF(target_frame='base_link', ref_frame='map')
+                    print('no tf')
+                    return 'failed'
                 if type(trans) is not bool:
                     eX, eY, eZ = trans
                     eY+=-0.05
@@ -282,7 +287,7 @@ class Pickup_cereal(smach.State):
         
 
         print ( 'x,y,',np.cos(np.deg2rad(pca_angle)), np.sin(np.deg2rad(pca_angle)) )
-        omni_base.tiny_move(velX=-0.2 *np.cos(np.deg2rad(pca_angle)) , velY= 0.1 * np.sin(np.deg2rad(pca_angle)) ,std_time=4.2, MAX_VEL=0.3) 
+        #omni_base.tiny_move(velX=-0.2 *np.cos(np.deg2rad(pca_angle)) , velY= 0.1 * np.sin(np.deg2rad(pca_angle)) ,std_time=4.2, MAX_VEL=0.3) 
 
       
 
@@ -299,9 +304,9 @@ class Pickup_cereal(smach.State):
 
 
         clear_octo_client()
-        print(pca_angle,"####################AnGLE WITHIN LIMITS")
+        print(pca_angle,max(min((pca_angle+90),-45),45),"####################AnGLE WITHIN LIMITS")
         #print(max(-np.deg2rad(pca_angle),-90),"####################ACNLGE WITHIN LIMITS")
-        pickup_pose=[0.077,np.deg2rad(-70),np.deg2rad(-90), -np.deg2rad(max(pca_angle,-45)),np.deg2rad(90), 0.0]
+        pickup_pose=[0.077,np.deg2rad(-70),np.deg2rad(-90), np.deg2rad(max(min((pca_angle+90),-45),45)),np.deg2rad(90), 0.0]
         print (pickup_pose)
         succ= arm.go(pickup_pose)
         rospy.sleep(1.0)
@@ -328,8 +333,11 @@ class Pickup_cereal(smach.State):
                     # grasp_base.tiny_move(velY=-0.4*trans[1], std_time=0.2, MAX_VEL=0.3)
                 omni_base.tiny_move(velX=-0.1*eY, velY=0.1*eX, velT=-0.3*eT, std_time=0.2, MAX_VEL=0.3) #Pending test
 
-        rospy.sleep(1.0)
         gripper.close()
+        av= arm.get_current_joint_values()
+        av[-2]+=-0.2
+        arm.go(av)
+        rospy.sleep(1.0)
  
         
               
@@ -434,6 +442,7 @@ class Place_table(smach.State):
             rospy.sleep(0.3)           
             succ=arm.go(place_pose)
             omni_base.tiny_move(velX=-0.2, std_time=0.7, MAX_VEL=0.4) 
+            res = omni_base.move_base(known_location='pca_table', time_out=200)
             
 
             return 'succ'
@@ -844,7 +853,7 @@ if __name__ == '__main__':
         smach.StateMachine.add("PICKUP_CEREAL",     Pickup_cereal(),        transitions={'failed': 'PICKUP_CEREAL',        'succ': 'POST_PICKUP'    ,   'tries': 'END'})        
         smach.StateMachine.add("POST_PICKUP",        Post_pickup(),         transitions={'failed': 'POST_PICKUP',        'succ': 'GOTO_TABLE'    ,   'tries': 'END'})        
         smach.StateMachine.add("GOTO_TABLE",        Goto_table(),           transitions={'failed': 'GOTO_TABLE',        'succ': 'PLACE_TABLE'    ,   'tries': 'END'})        
-        smach.StateMachine.add("PLACE_TABLE",     Place_table(),      transitions={'failed': 'GOTO_TABLE',    'succ': 'INITIAL'    ,   'tries': 'INITIAL'})
+        smach.StateMachine.add("PLACE_TABLE",     Place_table(),      transitions={'failed': 'GOTO_TABLE',    'succ': 'SCAN_TABLE'    ,   'tries': 'INITIAL'})
 
         #smach.StateMachine.add("FIND_HUMAN",         Find_human(),          transitions={'failed': 'FIND_HUMAN',        'succ': 'DETECT_DRINK'    ,   'tries': 'GOTO_NEXT_ROOM', 'forbidden':'GOTO_HUMAN'})
         #smach.StateMachine.add("GOTO_HUMAN",         Goto_human(),          transitions={'failed': 'GOTO_HUMAN',        'succ': 'ANALYZE_HUMAN' ,   'tries': 'FIND_HUMAN' , 'forbidden':'LEAD_TO_LIVING_ROOM'})

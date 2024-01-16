@@ -8,14 +8,12 @@ from cv_bridge import CvBridge
 from object_classification.srv import *
 import tf2_ros    
 from segmentation.msg import *
-
 import numpy as np
 import ros_numpy
 import os
 import matplotlib.pyplot as plt
 import rospkg
 import yaml
-
 from sensor_msgs.msg import Image , LaserScan , PointCloud2
 from geometry_msgs.msg import TransformStamped, Pose
 from tf2_sensor_msgs.tf2_sensor_msgs import do_transform_cloud
@@ -48,10 +46,12 @@ bridge=CvBridge()
 Pca=PCA()
 
 #-----------------------------------------------------------------
-def points_to_PCA(points, limit_z=-0.978):
+def points_to_PCA(points):
     df=pd.DataFrame(points)
     df.columns=[['x','y','z']]
-    rslt_df = df[['x','y','z']][df[['x','y','z']] > limit_z]
+    threshold= df['z'].min().values[0]*0.998
+    print (threshold)
+    rslt_df = df.loc[df[df['z'] > threshold].index]
     points=rslt_df[['x','y','z']].dropna().values
     Pca=PCA(n_components=3)
     Pca.fit(points)
@@ -68,6 +68,7 @@ def points_to_PCA(points, limit_z=-0.978):
     E_R[:3,:3]+=R
     E_R[-1,-1]=1
     return     E_R
+
 
 #-----------------------------------------------------------------
 def write_tf(pose, q, child_frame="" , parent_frame='map'):
@@ -208,6 +209,7 @@ def plane_seg(points_msg,hg=0.85,lg=1.5,th_v=0.03,lower=1000 ,higher=50000,reg_l
                         ix,iy=a[0],a[1]
                         aux2=(np.asarray((corrected['x'][boundRect[1]+ix,boundRect[0]+iy],corrected['y'][boundRect[1]+ix,boundRect[0]+iy],corrected['z'][boundRect[1]+ix,boundRect[0]+iy])))
                         aux=(np.asarray((points_data['x'][boundRect[1]+ix,boundRect[0]+iy],points_data['y'][boundRect[1]+ix,boundRect[0]+iy],points_data['z'][boundRect[1]+ix,boundRect[0]+iy])))
+                        
                         if np.isnan(aux[0]) or np.isnan(aux[1]) or np.isnan(aux[2]):
                                 'reject point'
                         else:
@@ -215,9 +217,11 @@ def plane_seg(points_msg,hg=0.85,lg=1.5,th_v=0.03,lower=1000 ,higher=50000,reg_l
                         if np.isnan(aux2[0]) or np.isnan(aux2[1]) or np.isnan(aux2[2]):
                                 'reject point'
                         else:
+                            print (aux2)
                             xyz_c.append(aux2)
                 xyz=np.asarray(xyz)
                 xyz_c=np.asarray(xyz_c)
+                
                 cent=xyz.mean(axis=0)
                 cent_corr=xyz_c.mean(axis=0)  #centroids of each object ( mean of xyz pts.)
                 cents.append(cent)

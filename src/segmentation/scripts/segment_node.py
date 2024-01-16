@@ -40,16 +40,19 @@ def trigger_response(request):
             points = xyz_c[i]
             #########################
             
-            df_pts=pd.DataFrame(points)
-            df_pts.columns=[['x','y','z']]
-            threshold= df_pts['z'].min().values[0]*0.998  # REMOVE SOME GROUND points
-            print (threshold)
-            #threshsold=-0.978
-            rslt_df_pts = df_pts[['x','y','z']][df_pts[['x','y','z']] > threshold]
-            print (rslt_df_pts.describe())
+            #df_pts=pd.DataFrame(points)
+            #print (df_pts.describe())
 
-            newpoints=rslt_df_pts[['x','y','z']].values
-            E_R=points_to_PCA(newpoints)
+            #df_pts.columns=[['x','y','z']]
+            #threshold= df_pts['z'].min().values[0]*0.998  # REMOVE SOME GROUND points
+            #print (threshold)
+            #threshsold=-0.978
+            #rslt_df_pts = df_pts[['x','y','z']][df_pts[['x','y','z']] > threshold]
+
+            #print (rslt_df_pts.describe())
+
+            #newpoints=rslt_df_pts[['x','y','z']].values
+            E_R=points_to_PCA(points)
             print(np.rad2deg(tf.transformations.euler_from_matrix(E_R)))
             print('###############ESTIAMTED EULER IN DEG',np.sign(np.rad2deg(tf.transformations.euler_from_matrix(E_R))[0])*np.rad2deg(tf.transformations.euler_from_matrix(E_R))[1])
             e_ER=tf.transformations.euler_from_matrix(E_R)

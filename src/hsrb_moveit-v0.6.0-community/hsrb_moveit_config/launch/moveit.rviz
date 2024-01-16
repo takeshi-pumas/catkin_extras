@@ -573,13 +573,23 @@ Visualization Manager:
           Value: true
         024_bowl:
           Value: true
-        063-b_marbles:
+        029_plate:
+          Value: true
+        030_fork:
+          Value: true
+        031_spoon:
+          Value: true
+        062_dice:
           Value: true
         070-b_colored_wood_blocks:
           Value: true
         071_nine_hole_peg_test:
           Value: true
         All Enabled: false
+        Object0:
+          Value: true
+        ar_marker/1799:
+          Value: true
         arm_flex_link:
           Value: false
         arm_lift_link:
@@ -618,6 +628,8 @@ Visualization Manager:
           Value: false
         base_roll_link:
           Value: false
+        erase:
+          Value: true
         hand_camera_frame:
           Value: false
         hand_camera_gazebo_frame:
@@ -676,23 +688,21 @@ Visualization Manager:
           Value: false
         head_tilt_link:
           Value: false
+        kitchen:
+          Value: true
         living_room:
           Value: true
         map:
           Value: false
         odom:
           Value: false
+        pca_table:
+          Value: true
         pickup:
           Value: true
         static003_cracker_box:
           Value: true
         static024_bowl:
-          Value: true
-        static063-b_marbles:
-          Value: true
-        static070-b_colored_wood_blocks:
-          Value: true
-        static071_nine_hole_peg_test:
           Value: true
         table:
           Value: true
@@ -715,7 +725,12 @@ Visualization Manager:
       Show Axes: true
       Show Names: true
       Tree:
+        erase:
+          static024_bowl:
+            {}
         map:
+          kitchen:
+            {}
           living_room:
             {}
           odom:
@@ -777,7 +792,8 @@ Visualization Manager:
                           {}
                       head_l_stereo_camera_link:
                         head_l_stereo_camera_frame:
-                          {}
+                          ar_marker/1799:
+                            {}
                         head_l_stereo_camera_gazebo_frame:
                           {}
                       head_r_stereo_camera_link:
@@ -795,25 +811,27 @@ Visualization Manager:
                             {}
                           024_bowl:
                             {}
-                          063-b_marbles:
+                          029_plate:
+                            {}
+                          030_fork:
+                            {}
+                          031_spoon:
+                            {}
+                          062_dice:
                             {}
                           070-b_colored_wood_blocks:
                             {}
                           071_nine_hole_peg_test:
                             {}
+                          Object0:
+                            {}
             base_footprint_wheel:
               {}
+          pca_table:
+            {}
           pickup:
             {}
           static003_cracker_box:
-            {}
-          static024_bowl:
-            {}
-          static063-b_marbles:
-            {}
-          static070-b_colored_wood_blocks:
-            {}
-          static071_nine_hole_peg_test:
             {}
           table:
             {}
@@ -925,6 +943,15 @@ Visualization Manager:
         {}
       Queue Size: 100
       Value: true
+    - Class: rviz/InteractiveMarkers
+      Enable Transparency: true
+      Enabled: false
+      Name: InteractiveMarkers
+      Show Axes: false
+      Show Descriptions: true
+      Show Visual Aids: false
+      Update Topic: /simple_marker/update
+      Value: false
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -941,7 +968,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 5.216610908508301
+      Distance: 3.3918137550354004
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -949,17 +976,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 1.6140327453613281
-        Y: -1.1374341249465942
-        Z: 6.407504997696378e-07
+        X: -0.6805033683776855
+        Y: -0.9882864356040955
+        Z: 4.0233192066807533e-07
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.15979713201522827
+      Pitch: 1.0197969675064087
       Target Frame: base_footprint
-      Yaw: 2.8913166522979736
+      Yaw: 4.81132173538208
     Saved: ~
 Window Geometry:
   Displays:

@@ -3,12 +3,11 @@ import tf
 import cv2
 import rospy  
 import tf2_ros                                    
-from human_detector.srv import Human_detector ,Human_detectorResponse 
+from human_detector.srv import Point_detector ,Point_detectorResponse 
 from cv_bridge import CvBridge
 from object_classification.srv import *
 import tf2_ros    
 from segmentation.msg import *
-
 import numpy as np
 import ros_numpy
 import os
@@ -17,20 +16,19 @@ import cv2
 from sensor_msgs.msg import Image , LaserScan , PointCloud2
 from geometry_msgs.msg import TransformStamped, Pose
 from tf2_sensor_msgs.tf2_sensor_msgs import do_transform_cloud
-from utils.misc_utils import *
+
 
 #-----------------------------------------------------------------
-global tf_listener, ptcld_lis, broadcaster , bridge , net
+global tf_listener, ptcld_lis, broadcaster , bridge , net , b_tf, b_st
 
 
 rospy.init_node('human_detector') 
 tfBuffer = tf2_ros.Buffer()
-tfBuffer = tf2_ros.Buffer()
-listener2 = tf2_ros.TransformListener(tfBuffer)
-listener = tf.TransformListener()
+listener = tf2_ros.TransformListener(tfBuffer)
+b_tf=tf2_ros.TransformBroadcaster()
+b_st=tf2_ros.StaticTransformBroadcaster()
 
-broadcaster = tf2_ros.TransformBroadcaster()
-tf_static_broadcaster = tf2_ros.StaticTransformBroadcaster()
+
 usr_url=os.path.expanduser( '~' )
 protoFile = usr_url+"/openpose/models/pose/body_25/pose_deploy.prototxt"
 weightsFile = usr_url+"/openpose/models/pose/body_25/pose_iter_584000.caffemodel"
@@ -142,7 +140,7 @@ def detect_pointing(points_msg):
     points_data = ros_numpy.numpify(points_msg)    
     image_data = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]   
     image=cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
-    
+    pts= points_data
     print (image.shape)
     frame=image
     inHeight = frame.shape[0]
@@ -157,13 +155,13 @@ def detect_pointing(points_msg):
     output = net.forward()
 
     poses=[]
-    res=img[:,:,1]
+    res=image[:,:,1]
     for i in np.asarray((3,4,6,7)):
         
         probMap = output[0, i, :, :]
         probMap = cv2.resize(probMap, (inWidth, inHeight))
         
-        pose=[np.nanmean(pts['x'][np.where(probMap>=0.3)]),
+        pose=  [np.nanmean(pts['x'][np.where(probMap>=0.3)]),
                 np.nanmean(pts['y'][np.where(probMap>=0.3)]),
                 np.nanmean(pts['z'][np.where(probMap>=0.3)])]
         
@@ -174,39 +172,111 @@ def detect_pointing(points_msg):
     # right wrist      ####
     # left elbow
     # left wrist
-    res=Human_detectorResponse()
+    res=Point_detectorResponse()
     ##############################
-    tf_man.pub_static_tf(pos=poses[0],point_name='right_elbow', ref='head_rgbd_sensor_rgb_frame')
-    tf_man.change_ref_frame_tf(point_name='right_elbow')
-    tf_man.pub_static_tf(pos=poses[1],point_name='right_wrist', ref='head_rgbd_sensor_rgb_frame')
-    tf_man.change_ref_frame_tf(point_name='right_wrist')
-    tf_man.pub_static_tf(pos=poses[2],point_name='left_elbow', ref='head_rgbd_sensor_rgb_frame')
-    tf_man.change_ref_frame_tf(point_name='left_elbow')
-    tf_man.pub_static_tf(pos=poses[3],point_name='left_wrist', ref='head_rgbd_sensor_rgb_frame')
-    tf_man.change_ref_frame_tf(point_name='left_wrist')
-    wrist_xyz=tf_man.getTF(target_frame='right_wrist')
-    elbow_xyz=tf_man.getTF(target_frame='right_elbow')
-    v= np.asarray(wrist_xyz[0])-np.asarray(elbow_xyz[0])
-    t=elbow_xyz[0][2]-v[2]
-    x= elbow_xyz[0][0]+ t*v[0]
-    y= elbow_xyz[0][1]+ t*v[1]
-    tf_man.pub_static_tf(pos=[x,y,0],point_name='point_right')
-    res.x_r= x
-    res.y_r= y
-    res.z_r= 0
-    
+    print (poses[0])
+    t=write_tf(poses[0],(0,0,0,1),'right_elbow','head_rgbd_sensor_rgb_frame') 
+    b_tf.sendTransform(t)
+    rospy.sleep(0.2)
+    tt=tfBuffer.lookup_transform('map','right_elbow',rospy.Time(0))
+    rospy.sleep(0.2)
+    pose,quat= read_tf(tt)
+    t=write_tf(pose,(0,0,0,1),'right_elbow')
+    b_st.sendTransform(t)
+    rospy.sleep(0.2)
+    t=write_tf(poses[1],(0,0,0,1),'right_wrist','head_rgbd_sensor_rgb_frame') 
+    b_tf.sendTransform(t)
+    rospy.sleep(0.2)
+    tt=tfBuffer.lookup_transform('map','right_wrist',rospy.Time(0))
+    rospy.sleep(0.2)
+    pose,quat= read_tf(tt)
+    t=write_tf(pose,(0,0,0,1),'right_wrist')
+    b_st.sendTransform(t)
 
-    wrist_xyz=tf_man.getTF(target_frame='left_wrist')
-    elbow_xyz=tf_man.getTF(target_frame='left_elbow')
-    v= np.asarray(wrist_xyz[0])-np.asarray(elbow_xyz[0])
-    t=elbow_xyz[0][2]-v[2]
-    x= elbow_xyz[0][0]+ t*v[0]
-    y= elbow_xyz[0][1]+ t*v[1]
-    res.x_l= x
-    res.y_l= y
-    res.z_l= 0
+    t=write_tf(poses[2],(0,0,0,1),'left_elbow','head_rgbd_sensor_rgb_frame') 
+    b_tf.sendTransform(t)
+    rospy.sleep(0.2)
+    tt=tfBuffer.lookup_transform('map','left_elbow',rospy.Time(0))
+    rospy.sleep(0.2)
+    pose,quat= read_tf(tt)
+    t=write_tf(pose,(0,0,0,1),'left_elbow')
+    b_st.sendTransform(t)
+
+    t=write_tf(poses[3],(0,0,0,1),'left_wrist','head_rgbd_sensor_rgb_frame') 
+    b_tf.sendTransform(t)
+    rospy.sleep(0.2)
+    tt=tfBuffer.lookup_transform('map','left_wrist',rospy.Time(0))
+    rospy.sleep(0.2)
+    pose,quat= read_tf(tt)
+    t=write_tf(pose,(0,0,0,1),'left_wrist')
+    b_st.sendTransform(t)
+
+
+
+
+
+    tt=tfBuffer.lookup_transform('map','right_wrist',rospy.Time(0))
+    wrist_xyz,_= read_tf(tt)
+    rospy.sleep(0.2)
+    tt=tfBuffer.lookup_transform('map','right_elbow',rospy.Time(0))
+    rospy.sleep(0.2)
+    elbow_xyz,_= read_tf(tt)
     
-    tf_man.pub_static_tf(pos=[x,y,0],point_name='point_left')
+    v= np.asarray(wrist_xyz)-np.asarray(elbow_xyz)
+    print (v,elbow_xyz)
+    t= elbow_xyz[2]-   v[2]
+    x= elbow_xyz[0]+ t*v[0]
+    y= elbow_xyz[1]+ t*v[1]
+    t=write_tf((x,y,0),(0,0,0,1),'pointing_right')
+    b_st.sendTransform(t)
+    res.x_r=x
+    res.y_r=y
+    res.z_r=0
+
+    tt=tfBuffer.lookup_transform('map','left_wrist',rospy.Time(0))
+    wrist_xyz,_= read_tf(tt)
+    rospy.sleep(0.2)
+    tt=tfBuffer.lookup_transform('map','left_elbow',rospy.Time(0))
+    rospy.sleep(0.2)
+    elbow_xyz,_= read_tf(tt)
+    
+    v= np.asarray(wrist_xyz)-np.asarray(elbow_xyz)
+    print (v,elbow_xyz)
+    t= elbow_xyz[2]-   v[2]
+    x= elbow_xyz[0]+ t*v[0]
+    y= elbow_xyz[1]+ t*v[1]
+    t=write_tf((x,y,0),(0,0,0,1),'pointing_left')
+    b_st.sendTransform(t)
+    res.x_l=x
+    res.y_l=y
+    res.z_l=0
+
+
+
+    print (pose,quat)
+    #tf_man.pub_static_tf(pos=poses[0],point_name='right_elbow', ref='head_rgbd_sensor_rgb_frame')
+    #tf_man.change_ref_frame_tf(point_name='right_elbow')
+    #tf_man.pub_static_tf(pos=poses[1],point_name='right_wrist', ref='head_rgbd_sensor_rgb_frame')
+    #tf_man.change_ref_frame_tf(point_name='right_wrist')
+    #tf_man.pub_static_tf(pos=poses[2],point_name='left_elbow', ref='head_rgbd_sensor_rgb_frame')
+    #tf_man.change_ref_frame_tf(point_name='left_elbow')
+    #tf_man.pub_static_tf(pos=poses[3],point_name='left_wrist', ref='head_rgbd_sensor_rgb_frame')
+    #tf_man.change_ref_frame_tf(point_name='left_wrist')
+    #wrist_xyz=tf_man.getTF(target_frame='right_wrist')
+    #elbow_xyz=tf_man.getTF(target_frame='right_elbow')
+    #res.x_r= x
+    #res.y_r= y
+    #res.z_r= 0
+    #wrist_xyz=tf_man.getTF(target_frame='left_wrist')
+    #elbow_xyz=tf_man.getTF(target_frame='left_elbow')
+    #v= np.asarray(wrist_xyz[0])-np.asarray(elbow_xyz[0])
+    #t=elbow_xyz[0][2]-v[2]
+    #x= elbow_xyz[0][0]+ t*v[0]
+    #y= elbow_xyz[0][1]+ t*v[1]
+    #res.x_l= x
+    #res.y_l= y
+    #res.z_l= 0
+    #tf_man.pub_static_tf(pos=[x,y,0],point_name='point_left')
 
     return res    
 
@@ -309,4 +379,4 @@ def detect_all(points_msg):
     """
     cv2.destroyAllWindows()
 
-    return Human_detectorResponse() 
+    return Point_detectorResponse() 
