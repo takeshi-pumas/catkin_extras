@@ -1,14 +1,11 @@
 #include <ros/ros.h>
 #include <std_msgs/String.h>
-// #include <std_msgs/Float32MultiArray.h>
 #include <tmc_msgs/SetColor.h>
-#include <iostream>
 #include "actionlib_msgs/GoalStatus.h"
 
 const int loop_rate_hz = 5;
 
 ros::ServiceClient client;
-// bool talk_flag = true;
 
 float mapToFloat(short int value) {
   return static_cast<float>(value) / 255.0;
@@ -67,16 +64,13 @@ void talk_now_Callback(const std_msgs::String::ConstPtr& msg) {
     r = mapToFloat(102);
     g = mapToFloat(204);
     b = mapToFloat(255);
-    // service_caller(r,g,b);
   }
   else{
     r = 0.0;
     g = 0.0;
     b = 1.0;
-    // service_caller(r,g,b);
   }
   service_caller(r, g, b);
-  // talk_flag = !talk_flag;
 
 }
 
