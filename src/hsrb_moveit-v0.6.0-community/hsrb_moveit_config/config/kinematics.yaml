@@ -23,3 +23,9 @@ whole_body_light:
   kinematics_solver_timeout: 0.005
   kinematics_solver_attempts: 3
   kinematics_solver_weights: [10, 1, 1, 1, 1, 1, 1, 100]
+whole_body_improved:
+  kinematics_solver: hsrb_moveit_kinematics/HSRBKinematicsPlugin
+  kinematics_solver_search_resolution: 0.005
+  kinematics_solver_timeout: 0.010
+  kinematics_solver_attempts: 5
+  kinematics_solver_weights: [3, 1, 1, 1, 1, 1, 1, 100]

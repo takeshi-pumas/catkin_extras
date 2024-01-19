@@ -144,6 +144,8 @@ add_executable(head_node
   src/head_node.cpp)
 add_executable(gaze_node
   src/gaze_node.cpp)
+add_executable(gaze_node2
+  src/gaze_node2.cpp)
 add_executable(led_node
   src/led_node.cpp)  
 
@@ -169,6 +171,11 @@ target_link_libraries(led_node
   )
 
 target_link_libraries(gaze_node 
+${catkin_LIBRARIES} 
+${tf2_LIBRARIES} 
+${tf2_ros_LIBRARIES})
+
+target_link_libraries(gaze_node2 
 ${catkin_LIBRARIES} 
 ${tf2_LIBRARIES} 
 ${tf2_ros_LIBRARIES})
