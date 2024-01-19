@@ -12,7 +12,7 @@ Panels:
         - /LaserScan1
         - /Map2
       Splitter Ratio: 0.5
-    Tree Height: 746
+    Tree Height: 719
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -316,36 +316,10 @@ Visualization Manager:
       Filter (whitelist): ""
       Frame Timeout: 15
       Frames:
-        003_cracker_box:
-          Value: true
-        007_tuna_fish_can:
-          Value: true
-        019-b_pitcher_base_v2:
-          Value: true
-        024_bowl:
-          Value: false
-        026_sponge:
-          Value: false
-        029_plate:
-          Value: false
-        030_fork:
-          Value: false
-        031_spoon:
-          Value: false
-        033_spatula:
-          Value: true
-        062_dice:
-          Value: true
-        063-b_marbles:
-          Value: false
-        070-b_colored_wood_blocks:
-          Value: false
-        071_nine_hole_peg_test:
-          Value: true
         All Enabled: false
-        Object0:
+        KNOWNOBJECT/refrigerator_right_drawer_234:
           Value: true
-        ar_marker/1799:
+        ar_marker/6:
           Value: true
         arm_flex_link:
           Value: false
@@ -384,8 +358,6 @@ Visualization Manager:
         base_range_sensor_link:
           Value: false
         base_roll_link:
-          Value: false
-        erase:
           Value: false
         hand_camera_frame:
           Value: false
@@ -429,13 +401,9 @@ Visualization Manager:
           Value: false
         head_pan_link:
           Value: false
-        head_r_stereo_camera_frame:
-          Value: false
         head_r_stereo_camera_gazebo_frame:
           Value: false
         head_r_stereo_camera_link:
-          Value: false
-        head_rgbd_sensor_depth_frame:
           Value: false
         head_rgbd_sensor_gazebo_frame:
           Value: false
@@ -445,24 +413,20 @@ Visualization Manager:
           Value: false
         head_tilt_link:
           Value: false
-        kitchen:
-          Value: false
-        living_room:
-          Value: false
+        left_elbow:
+          Value: true
+        left_wrist:
+          Value: true
         map:
           Value: false
         odom:
           Value: false
-        pca_table:
-          Value: false
-        pickup:
-          Value: false
-        static003_cracker_box:
+        recognized_object/refrigerator_right_drawer/234:
           Value: true
-        static024_bowl:
-          Value: false
-        table:
-          Value: false
+        right_elbow:
+          Value: true
+        right_wrist:
+          Value: true
         torso_lift_link:
           Value: false
         wrist_flex_link:
@@ -473,8 +437,6 @@ Visualization Manager:
           Value: false
         wrist_roll_link:
           Value: false
-        zero:
-          Value: false
       Marker Alpha: 1
       Marker Scale: 1
       Name: TF
@@ -482,12 +444,8 @@ Visualization Manager:
       Show Axes: true
       Show Names: true
       Tree:
-        erase:
-          {}
         map:
-          kitchen:
-            {}
-          living_room:
+          KNOWNOBJECT/refrigerator_right_drawer_234:
             {}
           odom:
             base_footprint:
@@ -548,63 +506,29 @@ Visualization Manager:
                           {}
                       head_l_stereo_camera_link:
                         head_l_stereo_camera_frame:
-                          ar_marker/1799:
+                          ar_marker/6:
+                            {}
+                          head_rgbd_sensor_rgb_frame:
+                            left_elbow:
+                              {}
+                            left_wrist:
+                              {}
+                            right_elbow:
+                              {}
+                            right_wrist:
+                              {}
+                          recognized_object/refrigerator_right_drawer/234:
                             {}
                         head_l_stereo_camera_gazebo_frame:
                           {}
                       head_r_stereo_camera_link:
-                        head_r_stereo_camera_frame:
-                          {}
                         head_r_stereo_camera_gazebo_frame:
                           {}
                       head_rgbd_sensor_link:
-                        head_rgbd_sensor_depth_frame:
-                          {}
                         head_rgbd_sensor_gazebo_frame:
                           {}
-                        head_rgbd_sensor_rgb_frame:
-                          003_cracker_box:
-                            {}
-                          007_tuna_fish_can:
-                            {}
-                          019-b_pitcher_base_v2:
-                            {}
-                          024_bowl:
-                            {}
-                          026_sponge:
-                            {}
-                          029_plate:
-                            {}
-                          030_fork:
-                            {}
-                          031_spoon:
-                            {}
-                          033_spatula:
-                            {}
-                          062_dice:
-                            {}
-                          063-b_marbles:
-                            {}
-                          070-b_colored_wood_blocks:
-                            {}
-                          071_nine_hole_peg_test:
-                            {}
-                          Object0:
-                            {}
             base_footprint_wheel:
               {}
-          pca_table:
-            {}
-          pickup:
-            {}
-          static003_cracker_box:
-            {}
-          static024_bowl:
-            {}
-          table:
-            {}
-          zero:
-            {}
       Update Interval: 0
       Value: true
     - Alpha: 1
@@ -736,7 +660,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 9.836126327514648
+      Distance: 29.700376510620117
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -744,9 +668,9 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 10.109591484069824
-        Y: 6.203496932983398
-        Z: -5.379207134246826
+        X: 12.260780334472656
+        Y: 4.04939603805542
+        Z: -4.496635913848877
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
@@ -759,10 +683,10 @@ Visualization Manager:
 Window Geometry:
   Displays:
     collapsed: false
-  Height: 1043
+  Height: 1016
   Hide Left Dock: false
   Hide Right Dock: true
-  QMainWindow State: 000000ff00000000fd00000004000000000000015600000375fc0200000009fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003d00000375000000c900fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000000c00430061006d00650072006100000002d0000000c70000000000000000000000010000010f0000035afc0200000009fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073000000003d0000035a000000a400fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b20000000000000000fb0000001c004800650061006400430061006d006500720061004c00650066007400000002f5000000160000000000000000fb0000001400480061006e006400430061006d0065007200610000000311000000160000000000000000fb0000001e004800650061006400430061006d00650072006100520069006700680074000000032d000000160000000000000000fb00000020004800650061006400430061006d00650072006100430065006e0074006500720000000349000000160000000000000000fb00000014005800740069006f006e0049006d0061006700650000000365000000160000000000000000fb00000014005800740069006f006e0044006500700074006800000003810000001600000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000007800000003efc0100000002fb0000000800540069006d0065010000000000000780000003bc00fffffffb0000000800540069006d00650100000000000004500000000000000000000006240000037500000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd0000000400000000000001560000035afc0200000009fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003d0000035a000000c900fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000000c00430061006d00650072006100000002d0000000c70000000000000000000000010000010f0000035afc0200000009fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073000000003d0000035a000000a400fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b20000000000000000fb0000001c004800650061006400430061006d006500720061004c00650066007400000002f5000000160000000000000000fb0000001400480061006e006400430061006d0065007200610000000311000000160000000000000000fb0000001e004800650061006400430061006d00650072006100520069006700680074000000032d000000160000000000000000fb00000020004800650061006400430061006d00650072006100430065006e0074006500720000000349000000160000000000000000fb00000014005800740069006f006e0049006d0061006700650000000365000000160000000000000000fb00000014005800740069006f006e0044006500700074006800000003810000001600000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000007380000003efc0100000002fb0000000800540069006d0065010000000000000738000003bc00fffffffb0000000800540069006d00650100000000000004500000000000000000000005dc0000035a00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Time:
@@ -771,6 +695,6 @@ Window Geometry:
     collapsed: false
   Views:
     collapsed: true
-  Width: 1920
-  X: 0
-  Y: 0
+  Width: 1848
+  X: 72
+  Y: 27

@@ -1,42 +1,41 @@
 #!/usr/bin/env python3
 
+import cv2  
+import rospy 
+import numpy as np
+import pandas as pd
 import smach
 import smach_ros
-from geometry_msgs.msg import PoseStamped, Point , PointStamped , Quaternion , TransformStamped , Twist
-from std_srvs.srv import Trigger, TriggerResponse 
+import actionlib
+import rospkg
+import yaml
+import tf
+import time
 import moveit_commander
 import moveit_msgs.msg
 import tf2_ros
+from geometry_msgs.msg import PoseStamped, Point , PointStamped , Quaternion , TransformStamped , Twist
+from std_srvs.srv import Trigger, TriggerResponse 
+from sensor_msgs.msg import Image , LaserScan , PointCloud2
 from tf2_sensor_msgs.tf2_sensor_msgs import do_transform_cloud
 from object_classification.srv import *
 from segmentation.srv import *
 from human_detector.srv import Human_detector ,Human_detectorResponse 
+from human_detector.srv import Point_detector ,Point_detectorResponse 
 from ros_whisper_vosk.srv import GetSpeech
+from object_classification.srv import *
 from face_recog.msg import *
 from face_recog.srv import *
 #import face_recognition 
-import cv2  
-import rospy 
-import numpy as np
-import actionlib
 from hmm_navigation.msg import NavigateActionGoal, NavigateAction
 from cv_bridge import CvBridge, CvBridgeError
-import pandas as pd
 from std_srvs.srv import Empty
-from sensor_msgs.msg import Image , LaserScan , PointCloud2
-import tf
-import time
 from cv_bridge import CvBridge, CvBridgeError
 from nav_msgs.msg import OccupancyGrid
 from hri_msgs.msg import RecognizedSpeech
 from rospy.exceptions import ROSException
 from vision_msgs.srv import *
-import rospkg
-import yaml
 from act_recog.srv import Recognize,RecognizeResponse,RecognizeRequest
-from object_classification.srv import *
-
-
 from ros_whisper_vosk.srv import SetGrammarVosk
 
 from utils.grasp_utils import *
@@ -46,7 +45,7 @@ from utils.know_utils import *
 
 global listener, broadcaster, tfBuffer, tf_static_broadcaster, scene, rgbd, head,train_new_face, wrist, human_detect_server, line_detector, clothes_color , head_mvit
 global clear_octo_client, goal,navclient,segmentation_server  , tf_man , omni_base, brazo, speech_recog_server, bridge, map_msg, pix_per_m, analyze_face , arm , set_grammar
-global recognize_action , classify_client
+global recognize_action , classify_client,pointing_detect_server
 rospy.init_node('smach')
 #head_mvit = moveit_commander.MoveGroupCommander('head')
 #gripper =  moveit_commander.MoveGroupCommander('gripper')
@@ -61,12 +60,13 @@ broadcaster = tf2_ros.TransformBroadcaster()
 tf_static_broadcaster = tf2_ros.StaticTransformBroadcaster()
 clear_octo_client = rospy.ServiceProxy('/clear_octomap', Empty)   ###OGRASPING OBSTACLE 
 human_detect_server = rospy.ServiceProxy('/detect_human' , Human_detector)  ####HUMAN FINDER OPPOSEBASED
+pointing_detect_server = rospy.ServiceProxy('/detect_pointing' , Point_detector)  ####HUMAN FINDER OPPOSEBASED
 segmentation_server = rospy.ServiceProxy('/segment' , Segmentation)    ##### PLANE SEGMENTATION (PARALEL TO FLOOR)
 navclient=actionlib.SimpleActionClient('/navigate', NavigateAction)   ### PUMAS NAV ACTION LIB
+
 # scene = moveit_commander.PlanningSceneInterface()
 speech_recog_server = rospy.ServiceProxy('/speech_recognition/vosk_service' ,GetSpeech)##############SPEECH VOSK RECOG FULL DICT
 set_grammar = rospy.ServiceProxy('set_grammar_vosk', SetGrammarVosk)                   ###### Get speech vosk keywords from grammar (function get_keywords)         
-
 recognize_face = rospy.ServiceProxy('recognize_face', RecognizeFace)                    #FACE RECOG
 train_new_face = rospy.ServiceProxy('new_face', RecognizeFace)                          #FACE RECOG
 analyze_face = rospy.ServiceProxy('analyze_face', RecognizeFace)    ###DEEP FACE ONLY

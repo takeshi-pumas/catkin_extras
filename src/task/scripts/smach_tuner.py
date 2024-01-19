@@ -11,6 +11,7 @@ from tf2_sensor_msgs.tf2_sensor_msgs import do_transform_cloud
 from object_classification.srv import *
 from segmentation.srv import *
 from human_detector.srv import Human_detector ,Human_detectorResponse 
+from human_detector.srv import Point_detector ,Point_detectorResponse 
 from ros_whisper_vosk.srv import GetSpeech
 from face_recog.msg import *
 from face_recog.srv import *
@@ -46,7 +47,7 @@ from utils.know_utils import *
 
 global listener, broadcaster, tfBuffer, tf_static_broadcaster, scene, rgbd, head,train_new_face, wrist, human_detect_server, line_detector, clothes_color , head_mvit
 global clear_octo_client, goal,navclient,segmentation_server  , tf_man , omni_base, brazo, speech_recog_server, bridge, map_msg, pix_per_m, analyze_face , arm , set_grammar
-global recognize_action , classify_client
+global recognize_action , classify_client , pointing_detect_server
 rospy.init_node('node_tuner')
 #head_mvit = moveit_commander.MoveGroupCommander('head')
 #gripper =  moveit_commander.MoveGroupCommander('gripper')
@@ -61,7 +62,11 @@ broadcaster = tf2_ros.TransformBroadcaster()
 tf_static_broadcaster = tf2_ros.StaticTransformBroadcaster()
 clear_octo_client = rospy.ServiceProxy('/clear_octomap', Empty)   ###OGRASPING OBSTACLE 
 human_detect_server = rospy.ServiceProxy('/detect_human' , Human_detector)  ####HUMAN FINDER OPPOSEBASED
-segmentation_server = rospy.ServiceProxy('/segment' , Segmentation)    ##### PLANE SEGMENTATION (PARALEL TO FLOOR)
+pointing_detect_server = rospy.ServiceProxy('/detect_pointing' , Point_detector)
+segmentation_server = rospy.ServiceProxy('/segment' , Segmentation)
+
+
+    ##### PLANE SEGMENTATION (PARALEL TO FLOOR)
 navclient=actionlib.SimpleActionClient('/navigate', NavigateAction)   ### PUMAS NAV ACTION LIB
 # scene = moveit_commander.PlanningSceneInterface()
 speech_recog_server = rospy.ServiceProxy('/speech_recognition/vosk_service' ,GetSpeech)##############SPEECH VOSK RECOG FULL DICT

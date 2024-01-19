@@ -131,9 +131,27 @@ def callback(points_msg):
             req      = classify_client.request_class()
             req.in_.image_msgs.append(img_msg)
             res      = classify_client(req)
-            
             debug_image=bridge.imgmsg_to_cv2(res.debug_image.image_msgs[0])
             cv2.imshow('our of res'  , debug_image)
+
+        if key=='p':
+            print ('#############Pointing  SERVICE openPose REQUESTED')
+            
+            res=pointing_detect_server.call()
+
+           
+            
+            #img_msg  = bridge.cv2_to_imgmsg(image)
+            #req      = classify_client.request_class()
+            #req.in_.image_msgs.append(img_msg)
+            #res      = classify_client(req)
+            #debug_image=bridge.imgmsg_to_cv2(res.debug_image.image_msgs[0])
+            
+            if (res.x_r+res.y_r)!=0:tf_man.pub_static_tf(pos=[res.x_r, res.y_r,0], rot =[0,0,0,1], point_name='pointing_right')
+            if (res.x_l+res.y_l)!=0:tf_man.pub_static_tf(pos=[res.x_l, res.y_l,0], rot =[0,0,0,1], point_name='pointing_left')
+            debug_image=bridge.imgmsg_to_cv2(res.debug_image[0])
+            cv2.imshow('our of res'  , debug_image)
+
         if key=='s': 
 
             request= segmentation_server.request_class() 
