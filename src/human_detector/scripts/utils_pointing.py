@@ -4,6 +4,8 @@ import cv2
 import rospy  
 import tf2_ros                                    
 from human_detector.srv import Point_detector ,Point_detectorResponse 
+from human_detector.srv import Human_detector ,Human_detectorResponse 
+
 from cv_bridge import CvBridge
 from object_classification.srv import *
 import tf2_ros    
@@ -22,7 +24,7 @@ from tf2_sensor_msgs.tf2_sensor_msgs import do_transform_cloud
 global tf_listener, ptcld_lis, broadcaster , bridge , net , b_tf, b_st
 
 
-rospy.init_node('human_detector') 
+rospy.init_node('human_pointing_detector') 
 tfBuffer = tf2_ros.Buffer()
 listener = tf2_ros.TransformListener(tfBuffer)
 b_tf=tf2_ros.TransformBroadcaster()
@@ -148,108 +150,170 @@ def detect_pointing(points_msg):
 
 
     # Prepare the frame to be fed to the network
-    inpBlob = cv2.dnn.blobFromImage(frame, 1.0 / 255, (inWidth, inHeight), (0, 0, 0), swapRB=False, crop=False)
+    inpBlob = cv2.dnn.blobFromImage(image, 1.0 / 255, (inWidth, inHeight), (0, 0, 0), swapRB=False, crop=False)
 
     # Set the prepared object as the input blob of the network
     net.setInput(inpBlob)
     output = net.forward()
-
+    thresh= 0.5
     poses=[]
-    res=image[:,:,1]
+    deb_img=image[:,:,0]
+    res=Point_detectorResponse()
     for i in np.asarray((3,4,6,7)):
-        
         probMap = output[0, i, :, :]
         probMap = cv2.resize(probMap, (inWidth, inHeight))
-        
-        pose=  [np.nanmean(pts['x'][np.where(probMap>=0.3)]),
-                np.nanmean(pts['y'][np.where(probMap>=0.3)]),
-                np.nanmean(pts['z'][np.where(probMap>=0.3)])]
-        
+        if len(np.where(probMap>=thresh)[0]) ==0: pose=[0,0,0]  
+        else:pose=  [np.nanmean(pts['x'][np.where(probMap>=thresh)]),
+                     np.nanmean(pts['y'][np.where(probMap>=thresh)]),
+                     np.nanmean(pts['z'][np.where(probMap>=thresh)])]
         poses.append(pose)
-        res= 500*probMap+ res  #DEBUG IMAGE
-    #plt.imshow(res)
+        #deb_img= probMap+ deb_img*0.3  #DEBUG IMAGE
+        deb_img[np.where(probMap>=thresh)]= 255
+    deb_img_rgb=cv2.merge((deb_img, image[:,:,1], image[:,:,2]))
+    res.debug_image.append(bridge.cv2_to_imgmsg(deb_img_rgb))
+
     #right elbow       ####
     # right wrist      ####
     # left elbow
     # left wrist
-    res=Point_detectorResponse()
     ##############################
-    print (poses[0])
-    t=write_tf(poses[0],(0,0,0,1),'right_elbow','head_rgbd_sensor_rgb_frame') 
-    b_tf.sendTransform(t)
-    rospy.sleep(0.2)
-    tt=tfBuffer.lookup_transform('map','right_elbow',rospy.Time(0))
-    rospy.sleep(0.2)
-    pose,quat= read_tf(tt)
-    t=write_tf(pose,(0,0,0,1),'right_elbow')
-    b_st.sendTransform(t)
-    rospy.sleep(0.2)
-    t=write_tf(poses[1],(0,0,0,1),'right_wrist','head_rgbd_sensor_rgb_frame') 
-    b_tf.sendTransform(t)
-    rospy.sleep(0.2)
-    tt=tfBuffer.lookup_transform('map','right_wrist',rospy.Time(0))
-    rospy.sleep(0.2)
-    pose,quat= read_tf(tt)
-    t=write_tf(pose,(0,0,0,1),'right_wrist')
-    b_st.sendTransform(t)
+    found_joints={}
+    for i, name in enumerate(['right_elbow','right_wrist','left_elbow','left_wrist']):
+        if np.sum(np.asarray(poses[i]))==0:print(f'no {name} points')
+        else:
+            t=write_tf(poses[i],(0,0,0,1),name,'head_rgbd_sensor_rgb_frame') 
+            b_tf.sendTransform(t)
+            rospy.sleep(0.25)
+            try:
+                tt=tfBuffer.lookup_transform('map',name,rospy.Time(0))
+                pose,quat= read_tf(tt)
+                t=write_tf(pose,(0,0,0,1),name)
+                found_joints[name]=pose
+                b_st.sendTransform(t)
+            except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
+                print (f'{name}  not found.')
+            
 
-    t=write_tf(poses[2],(0,0,0,1),'left_elbow','head_rgbd_sensor_rgb_frame') 
-    b_tf.sendTransform(t)
-    rospy.sleep(0.2)
-    tt=tfBuffer.lookup_transform('map','left_elbow',rospy.Time(0))
-    rospy.sleep(0.2)
-    pose,quat= read_tf(tt)
-    t=write_tf(pose,(0,0,0,1),'left_elbow')
-    b_st.sendTransform(t)
-
-    t=write_tf(poses[3],(0,0,0,1),'left_wrist','head_rgbd_sensor_rgb_frame') 
-    b_tf.sendTransform(t)
-    rospy.sleep(0.2)
-    tt=tfBuffer.lookup_transform('map','left_wrist',rospy.Time(0))
-    rospy.sleep(0.2)
-    pose,quat= read_tf(tt)
-    t=write_tf(pose,(0,0,0,1),'left_wrist')
-    b_st.sendTransform(t)
+    if 'right_wrist' in found_joints.keys() and 'right_elbow' in found_joints.keys():
+        wrist_xyz,elbow_xyz=found_joints['right_wrist'],found_joints['right_elbow']
+        v= np.asarray(wrist_xyz)-np.asarray(elbow_xyz)
+        print (v,elbow_xyz)
+        t= elbow_xyz[2]-   v[2]
+        x= elbow_xyz[0]+ t*v[0]
+        y= elbow_xyz[1]+ t*v[1]
+        t=write_tf((x,y,0),(0,0,0,1),'pointing_right')
+        b_st.sendTransform(t)
+        res.x_r=x
+        res.y_r=y
+        res.z_r=0
+        #
+    else:
+        res.x_r=0.0
+        res.y_r=0.0
+        res.z_r=0.0
 
 
-
-
-
-    tt=tfBuffer.lookup_transform('map','right_wrist',rospy.Time(0))
-    wrist_xyz,_= read_tf(tt)
-    rospy.sleep(0.2)
-    tt=tfBuffer.lookup_transform('map','right_elbow',rospy.Time(0))
-    rospy.sleep(0.2)
-    elbow_xyz,_= read_tf(tt)
+    if 'left_wrist'  in found_joints.keys() and 'left_elbow'  in found_joints.keys():
+        wrist_xyz,elbow_xyz=found_joints['left_wrist'],found_joints['left_elbow']
+        v= np.asarray(wrist_xyz)-np.asarray(elbow_xyz)
+        print (v,elbow_xyz)
+        t= elbow_xyz[2]-   v[2]
+        x= elbow_xyz[0]+ t*v[0]
+        y= elbow_xyz[1]+ t*v[1]
+        t=write_tf((x,y,0),(0,0,0,1),'pointing_left')
+        b_st.sendTransform(t)
+        res.x_r=x
+        res.y_r=y
+        res.z_r=0
+    else:
+        res.x_l=0.0
+        res.y_l=0.0
+        res.z_l=0.0
+            
+    print (found_joints)
+    #print (poses[0])
+    #if np.sum(np.asarray(poses[0]))==0:print('no r.e.')
+    #else:
+    #    t=write_tf(poses[0],(0,0,0,1),'right_elbow','head_rgbd_sensor_rgb_frame') 
+    #    b_tf.sendTransform(t)
+    #    rospy.sleep(0.25)
+    #    tt=tfBuffer.lookup_transform('map','right_elbow',rospy.Time(0))
+    #    pose,quat= read_tf(tt)
+    #    t=write_tf(pose,(0,0,0,1),'right_elbow')
+    #    b_st.sendTransform(t)
     
-    v= np.asarray(wrist_xyz)-np.asarray(elbow_xyz)
-    print (v,elbow_xyz)
-    t= elbow_xyz[2]-   v[2]
-    x= elbow_xyz[0]+ t*v[0]
-    y= elbow_xyz[1]+ t*v[1]
-    t=write_tf((x,y,0),(0,0,0,1),'pointing_right')
-    b_st.sendTransform(t)
-    res.x_r=x
-    res.y_r=y
-    res.z_r=0
-
-    tt=tfBuffer.lookup_transform('map','left_wrist',rospy.Time(0))
-    wrist_xyz,_= read_tf(tt)
-    rospy.sleep(0.2)
-    tt=tfBuffer.lookup_transform('map','left_elbow',rospy.Time(0))
-    rospy.sleep(0.2)
-    elbow_xyz,_= read_tf(tt)
-    
-    v= np.asarray(wrist_xyz)-np.asarray(elbow_xyz)
-    print (v,elbow_xyz)
-    t= elbow_xyz[2]-   v[2]
-    x= elbow_xyz[0]+ t*v[0]
-    y= elbow_xyz[1]+ t*v[1]
-    t=write_tf((x,y,0),(0,0,0,1),'pointing_left')
-    b_st.sendTransform(t)
-    res.x_l=x
-    res.y_l=y
-    res.z_l=0
+    return res
+    """rospy.sleep(0.2)
+                pose,quat= read_tf(tt)
+                t=write_tf(pose,(0,0,0,1),'right_elbow')
+                b_st.sendTransform(t)
+                rospy.sleep(0.2)
+                t=write_tf(poses[1],(0,0,0,1),'right_wrist','head_rgbd_sensor_rgb_frame') 
+                b_tf.sendTransform(t)
+                rospy.sleep(0.2)
+                tt=tfBuffer.lookup_transform('map','right_wrist',rospy.Time(0))
+                rospy.sleep(0.2)
+                pose,quat= read_tf(tt)
+                t=write_tf(pose,(0,0,0,1),'right_wrist')
+                b_st.sendTransform(t)
+            
+                t=write_tf(poses[2],(0,0,0,1),'left_elbow','head_rgbd_sensor_rgb_frame') 
+                b_tf.sendTransform(t)
+                rospy.sleep(0.2)
+                tt=tfBuffer.lookup_transform('map','left_elbow',rospy.Time(0))
+                rospy.sleep(0.2)
+                pose,quat= read_tf(tt)
+                t=write_tf(pose,(0,0,0,1),'left_elbow')
+                b_st.sendTransform(t)
+            
+                t=write_tf(poses[3],(0,0,0,1),'left_wrist','head_rgbd_sensor_rgb_frame') 
+                b_tf.sendTransform(t)
+                rospy.sleep(0.2)
+                tt=tfBuffer.lookup_transform('map','left_wrist',rospy.Time(0))
+                rospy.sleep(0.2)
+                pose,quat= read_tf(tt)
+                t=write_tf(pose,(0,0,0,1),'left_wrist')
+                b_st.sendTransform(t)
+            
+            
+            
+            
+            
+                tt=tfBuffer.lookup_transform('map','right_wrist',rospy.Time(0))
+                wrist_xyz,_= read_tf(tt)
+                rospy.sleep(0.2)
+                tt=tfBuffer.lookup_transform('map','right_elbow',rospy.Time(0))
+                rospy.sleep(0.2)
+                elbow_xyz,_= read_tf(tt)
+                
+                v= np.asarray(wrist_xyz)-np.asarray(elbow_xyz)
+                print (v,elbow_xyz)
+                t= elbow_xyz[2]-   v[2]
+                x= elbow_xyz[0]+ t*v[0]
+                y= elbow_xyz[1]+ t*v[1]
+                t=write_tf((x,y,0),(0,0,0,1),'pointing_right')
+                b_st.sendTransform(t)
+                res.x_r=x
+                res.y_r=y
+                res.z_r=0
+            
+                tt=tfBuffer.lookup_transform('map','left_wrist',rospy.Time(0))
+                wrist_xyz,_= read_tf(tt)
+                rospy.sleep(0.2)
+                tt=tfBuffer.lookup_transform('map','left_elbow',rospy.Time(0))
+                rospy.sleep(0.2)
+                elbow_xyz,_= read_tf(tt)
+                
+                v= np.asarray(wrist_xyz)-np.asarray(elbow_xyz)
+                print (v,elbow_xyz)
+                t= elbow_xyz[2]-   v[2]
+                x= elbow_xyz[0]+ t*v[0]
+                y= elbow_xyz[1]+ t*v[1]
+                t=write_tf((x,y,0),(0,0,0,1),'pointing_left')
+                b_st.sendTransform(t)
+                res.x_l=x
+                res.y_l=y
+                res.z_l=0"""
 
 
 

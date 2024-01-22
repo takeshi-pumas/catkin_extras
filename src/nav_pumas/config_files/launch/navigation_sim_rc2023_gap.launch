@@ -86,6 +86,7 @@
   <node pkg="object_classification"  name="objs_reco" type="classification_server.py"  />  
   <node pkg="segmentation"  name="segmentation" type="segment_node.py"  />  
   <node pkg="smach_viewer"  name="smach_viewer" type="smach_viewer.py"  />  
+  <node pkg="human_detector"  name="human_detector" type="pointing_detector_server.py"/>  
 
   <!--include file="$(find hsrb_moveit_config)/launch/hsrb_demo_with_controller.launch"> 
   <arg name="use_gui" value="true"/> 
