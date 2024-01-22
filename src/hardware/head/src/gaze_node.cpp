@@ -3,7 +3,7 @@
 #include <geometry_msgs/TransformStamped.h>
 #include <tf2_ros/transform_listener.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
-#include <tf/tf.h>
+#include <tf2/LinearMath/Matrix3x3.h>
 #include <cmath>
 
 class GazeController {
@@ -54,8 +54,8 @@ public:
 
             // Publicar los ángulos en el tópico "/hardware/head/goal_pose"
             std_msgs::Float32MultiArray head_control_msg;
-            head_control_msg.data.push_back(tilt);
             head_control_msg.data.push_back(pan);
+            head_control_msg.data.push_back(tilt);
 
             ROS_INFO("Head angles are: %f, %f", pan, tilt);
             pub_head_control_.publish(head_control_msg);
@@ -71,9 +71,9 @@ public:
 
             trans = tf_buffer_.lookupTransform("head_rgbd_sensor_link", ref_frame,  ros::Time(0), ros::Duration(0.3));
             rot = tf_buffer_.lookupTransform("base_link", ref_frame, ros::Time(0), ros::Duration(0.3));
-            tf::Quaternion quat(rot.transform.rotation.x, rot.transform.rotation.y, rot.transform.rotation.z, rot.transform.rotation.w);
+            tf2::Quaternion quat(rot.transform.rotation.x, rot.transform.rotation.y, rot.transform.rotation.z, rot.transform.rotation.w);
             double roll, pitch, yaw;
-            tf::Matrix3x3(quat).getRPY(roll, pitch, yaw);
+            tf2::Matrix3x3(quat).getRPY(roll, pitch, yaw);
             
             double x_rob = trans.transform.translation.x;
             double y_rob = trans.transform.translation.y;
@@ -88,8 +88,8 @@ public:
             double tilt = -atan2(D_z, sqrt(D_x * D_x + D_y * D_y));
 
             std_msgs::Float32MultiArray head_control_msg;
-            head_control_msg.data.push_back(tilt);
             head_control_msg.data.push_back(pan);
+            head_control_msg.data.push_back(tilt);
 
             ROS_INFO("Head angles are: %f, %f", pan, tilt);
             pub_head_control_.publish(head_control_msg);
