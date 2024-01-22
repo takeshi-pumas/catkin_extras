@@ -84,7 +84,7 @@ public:
             double D_z = z_rob - target_position[2];
             double D_th = atan2(D_y, D_x);
 
-            double pan = fmod((-yaw + D_th + M_PI), (2 * M_PI));
+            double pan = fmod((-yaw + D_th + M_PI), (M_PI));
             double tilt = -atan2(D_z, sqrt(D_x * D_x + D_y * D_y));
 
             std_msgs::Float32MultiArray head_control_msg;
