@@ -84,7 +84,7 @@ head = GAZE()
 brazo = ARM()
 line_detector = LineDetector()
 voice = TALKER()
-#party = SCENE()
+party = RECEPTIONIST()
 # arm =  moveit_commander.MoveGroupCommander('arm')
 
 

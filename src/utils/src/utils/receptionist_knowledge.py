@@ -25,17 +25,21 @@ class RECEPTIONIST:
             documents = yaml.dump(new_knowledge, file)
 
     # --- Add ---
+    # Adds a new person to party context, updates active guest and pre-assign a seat to this new guest
     def add_guest(self, name, drink = 'None'):
         self.active_guest = self.add_new_person(name, drink)
         self.active_seat = self.get_any_available_seat()
 
+    # Adds description to active guest
     def add_guest_description(self, description):
         self.informacion_fiesta['People'][self.active_guest]['description'] = description
         self.save_data_to_yaml(self.informacion_fiesta)
     
+    # Adds a drink to active guest
     def add_guest_drink(self, drink):
         self.informacion_fiesta['People'][self.active_guest]['drink'] = drink
     
+    # Adds a new person to party context, in case a intruder is on party scene
     def add_new_person(self, name, drink):
         guests_len = len(self.informacion_fiesta['People'])
         guest_num = f'Guest_{guests_len}'
@@ -48,6 +52,7 @@ class RECEPTIONIST:
         return guest_num
 
     # --- Gets ---
+    # Gets randomly an available seat from available seats list
     def get_any_available_seat(self):
         seats = self.get_available_seats()
         if len(seats) > 0:
@@ -55,6 +60,7 @@ class RECEPTIONIST:
         else:
             return 'None'
 
+    # Gets the available seats list
     def get_available_seats(self):
         available_seats = []
         for place, info in self.informacion_fiesta['Places'].items():
@@ -62,26 +68,32 @@ class RECEPTIONIST:
                 available_seats.append(place)
         return available_seats
 
+    # Gets guest number with guest name
     def get_guest_by_name(self, guest_name):
         for guest, info in self.informacion_fiesta['People'].items():
             if info['name'] == guest_name:
                 return guest
         return 'None'
 
+    # Gets the seat number with guest name (unused)
     def get_guest_seat(self, guest_name):
         for place, info in self.informacion_fiesta['Places'].items():
             if info['occupied'] == guest_name:
                 return place
         return 'None'
 
+    # Gets every place X, Y, Theta and place number on party context
     def get_places_location(self):
         locs = []
+        places = []
         for place, info in self.informacion_fiesta['Places'].items():
             if place != 'Place_0':
                 xyt = [info['location']['x'], info['location']['y'], info['location']['theta']]
+                places.append(place)
                 locs.append(xyt)
-        return locs
+        return places, locs
     
+    # Gets X, Y, Theta location of active seat, if there is no active seat returns False
     def get_active_seat_location(self):
         if self.active_seat != 'None':
             return True, [self.informacion_fiesta['Places'][self.active_seat]['location']['x'],
@@ -89,21 +101,33 @@ class RECEPTIONIST:
                     self.informacion_fiesta['Places'][self.active_seat]['location']['theta']]
         else:
             return False, [0,0,0]
+    
+    # Gets every place number on party context (unused)
     def get_places(self):
         return list(self.informacion_fiesta['Places'].keys())
 
+    #Gets active guest description
     def get_active_guest_description(self):
         if self.active_guest != 'None':
             return self.informacion_fiesta['People'][self.active_guest]['description']
         else:
             return 'No active guest found'
 
+    # Gets host name and location
     def get_host_info(self):
         host = self.informacion_fiesta['People']['Guest_0']
-        return host['name'], host['location'], host['drink']
+        return host['name'], host['location']
     
+    #Gets active guest
     def get_active_guest(self):
         return self.active_guest
+    
+    #Gets active guest name
+    def get_active_guest_name(self):
+        if self.active_guest != 'None':
+            return self.informacion_fiesta['People'][self.active_guest]['name']
+        else:
+            return 'None'
 
     # --- Seat methods ---
     def seat_confirmation(self, guest_found = 'None'):
@@ -134,10 +158,11 @@ class RECEPTIONIST:
 
     def update_seat_assignment(self, guest_num):
         #get last known seat for guest found
-        lastKnownSeat = self.informacion_fiesta['People'][guest_num]['location']
+        last_known_seat = self.informacion_fiesta['People'][guest_num]['location']
 
         #update data
-        self.informacion_fiesta['Places'][lastKnownSeat]['occupied'] = 'None'
+        if last_known_seat != 'None':
+            self.informacion_fiesta['Places'][last_known_seat]['occupied'] = 'None'
         self.informacion_fiesta['Places'][self.active_seat]['occupied'] = guest_num
         self.informacion_fiesta['People'][guest_num]['location'] = self.active_seat
         self.save_data_to_yaml(self.informacion_fiesta)

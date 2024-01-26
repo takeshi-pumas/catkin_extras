@@ -100,7 +100,7 @@ class OMNIBASE():
 
     def navigate(self, goal_x = 0.0, goal_y = 0.0, goal_theta = 0.0, known_location = 'None'):
         if known_location != 'None':
-            x,y,theta = get_known_location(known_location)
+            x,y,theta = self.get_known_location(known_location)
         else:
             x,y,theta = goal_x,goal_y,goal_theta
 
@@ -127,7 +127,7 @@ class OMNIBASE():
         except:
             return False, 'No location found'
 
-    def get_known_location(self, location):
+    def get_known_location(self, known_loc):
         succ, loc = self._match_location(known_loc)
         if succ:
             XYT = loc[:3]
