@@ -87,7 +87,8 @@
   <node pkg="segmentation"  name="segmentation" type="segment_node.py"  />  
   <node pkg="smach_viewer"  name="smach_viewer" type="smach_viewer.py"  />  
   <node pkg="human_detector"  name="human_detector" type="pointing_detector_server.py"/>  
-
+  <node pkg="leg_finder"  name="leg_finder_node" type="leg_finder_node"/>  
+  <node pkg="human_follower"  name="human_follower_node" type="human_follower_node"/>  
   <!--include file="$(find hsrb_moveit_config)/launch/hsrb_demo_with_controller.launch"> 
   <arg name="use_gui" value="true"/> 
 </include-->
@@ -98,4 +99,3 @@
     
   
 </launch>
- 

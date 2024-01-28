@@ -14,7 +14,7 @@ Panels:
         - /TF1/Frames1
         - /MarkerArray3
       Splitter Ratio: 0.7425600290298462
-    Tree Height: 140
+    Tree Height: 248
   - Class: rviz/Help
     Name: Help
   - Class: rviz/Views
@@ -569,27 +569,15 @@ Visualization Manager:
       Filter (whitelist): ""
       Frame Timeout: 15
       Frames:
-        003_cracker_box:
+        007_tuna_fish_can:
           Value: true
         024_bowl:
           Value: true
-        029_plate:
+        057_racquetball:
           Value: true
-        030_fork:
-          Value: true
-        031_spoon:
-          Value: true
-        062_dice:
-          Value: true
-        070-b_colored_wood_blocks:
-          Value: true
-        071_nine_hole_peg_test:
+        070-a_colored_wood_blocks:
           Value: true
         All Enabled: false
-        Object0:
-          Value: true
-        ar_marker/1799:
-          Value: true
         arm_flex_link:
           Value: false
         arm_lift_link:
@@ -628,8 +616,6 @@ Visualization Manager:
           Value: false
         base_roll_link:
           Value: false
-        erase:
-          Value: true
         hand_camera_frame:
           Value: false
         hand_camera_gazebo_frame:
@@ -649,7 +635,7 @@ Visualization Manager:
         hand_motor_dummy_link:
           Value: false
         hand_palm_link:
-          Value: true
+          Value: false
         hand_r_distal_link:
           Value: false
         hand_r_finger_tip_frame:
@@ -673,13 +659,13 @@ Visualization Manager:
         head_pan_link:
           Value: false
         head_r_stereo_camera_frame:
-          Value: true
+          Value: false
         head_r_stereo_camera_gazebo_frame:
           Value: false
         head_r_stereo_camera_link:
           Value: false
         head_rgbd_sensor_depth_frame:
-          Value: true
+          Value: false
         head_rgbd_sensor_gazebo_frame:
           Value: false
         head_rgbd_sensor_link:
@@ -689,23 +675,55 @@ Visualization Manager:
         head_tilt_link:
           Value: false
         kitchen:
-          Value: true
+          Value: false
         living_room:
-          Value: true
+          Value: false
         map:
           Value: false
+        object_0:
+          Value: true
+        object_0_norot:
+          Value: true
+        object_1:
+          Value: true
+        object_1_norot:
+          Value: true
+        object_2:
+          Value: true
+        object_2_norot:
+          Value: true
+        object_3:
+          Value: true
+        object_3_norot:
+          Value: true
+        object_4:
+          Value: true
+        object_4_norot:
+          Value: true
+        object_5:
+          Value: true
+        object_5_norot:
+          Value: true
+        object_6:
+          Value: true
+        object_6_norot:
+          Value: true
+        object_7:
+          Value: true
+        object_7_norot:
+          Value: true
+        object_8:
+          Value: true
+        object_8_norot:
+          Value: true
         odom:
           Value: false
         pca_table:
-          Value: true
+          Value: false
         pickup:
-          Value: true
-        static003_cracker_box:
-          Value: true
-        static024_bowl:
-          Value: true
+          Value: false
         table:
-          Value: true
+          Value: false
         torso_lift_link:
           Value: false
         wrist_flex_link:
@@ -717,7 +735,7 @@ Visualization Manager:
         wrist_roll_link:
           Value: false
         zero:
-          Value: true
+          Value: false
       Marker Alpha: 1
       Marker Scale: 1
       Name: TF
@@ -725,13 +743,46 @@ Visualization Manager:
       Show Axes: true
       Show Names: true
       Tree:
-        erase:
-          static024_bowl:
-            {}
         map:
           kitchen:
             {}
           living_room:
+            {}
+          object_0:
+            {}
+          object_0_norot:
+            {}
+          object_1:
+            {}
+          object_1_norot:
+            {}
+          object_2:
+            {}
+          object_2_norot:
+            {}
+          object_3:
+            {}
+          object_3_norot:
+            {}
+          object_4:
+            {}
+          object_4_norot:
+            {}
+          object_5:
+            {}
+          object_5_norot:
+            {}
+          object_6:
+            {}
+          object_6_norot:
+            {}
+          object_7:
+            {}
+          object_7_norot:
+            {}
+          object_8:
+            {}
+          object_8_norot:
             {}
           odom:
             base_footprint:
@@ -792,8 +843,7 @@ Visualization Manager:
                           {}
                       head_l_stereo_camera_link:
                         head_l_stereo_camera_frame:
-                          ar_marker/1799:
-                            {}
+                          {}
                         head_l_stereo_camera_gazebo_frame:
                           {}
                       head_r_stereo_camera_link:
@@ -807,31 +857,19 @@ Visualization Manager:
                         head_rgbd_sensor_gazebo_frame:
                           {}
                         head_rgbd_sensor_rgb_frame:
-                          003_cracker_box:
+                          007_tuna_fish_can:
                             {}
                           024_bowl:
                             {}
-                          029_plate:
+                          057_racquetball:
                             {}
-                          030_fork:
-                            {}
-                          031_spoon:
-                            {}
-                          062_dice:
-                            {}
-                          070-b_colored_wood_blocks:
-                            {}
-                          071_nine_hole_peg_test:
-                            {}
-                          Object0:
+                          070-a_colored_wood_blocks:
                             {}
             base_footprint_wheel:
               {}
           pca_table:
             {}
           pickup:
-            {}
-          static003_cracker_box:
             {}
           table:
             {}
@@ -968,7 +1006,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 3.3918137550354004
+      Distance: 3.203047275543213
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -976,22 +1014,22 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: -0.6805033683776855
-        Y: -0.9882864356040955
-        Z: 4.0233192066807533e-07
+        X: 0.1621035933494568
+        Y: 0.43435579538345337
+        Z: -3.7404026898002485e-07
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.0197969675064087
+      Pitch: 0.9647967219352722
       Target Frame: base_footprint
-      Yaw: 4.81132173538208
+      Yaw: 4.6927008628845215
     Saved: ~
 Window Geometry:
   Displays:
     collapsed: false
-  Height: 689
+  Height: 1016
   Help:
     collapsed: false
   Hide Left Dock: false
@@ -1000,9 +1038,9 @@ Window Geometry:
     collapsed: false
   MotionPlanning - Trajectory Slider:
     collapsed: false
-  QMainWindow State: 000000ff00000000fd0000000100000000000001f300000257fc0200000007fb000000100044006900730070006c006100790073010000003d000000c9000000c900fffffffb0000000800480065006c00700000000342000000bb0000006e00fffffffb0000000a0056006900650077007300000003b0000000b0000000a400fffffffb0000000c00430061006d00650072006100000002ff000001610000000000000000fb0000001e004d006f00740069006f006e00200050006c0061006e006e0069006e00670100000374000001890000000000000000fb00000044004d006f00740069006f006e0050006c0061006e006e0069006e00670020002d0020005400720061006a006500630074006f0072007900200053006c00690064006500720000000000ffffffff0000001600000016fb0000001c004d006f00740069006f006e0050006c0061006e006e0069006e0067010000010c000001880000017d00ffffff0000053f0000025700000001000000020000000100000002fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd0000000100000000000001f30000039efc0200000007fb000000100044006900730070006c006100790073010000003d00000135000000c900fffffffb0000000800480065006c00700000000342000000bb0000006e00fffffffb0000000a0056006900650077007300000003b0000000b0000000a400fffffffb0000000c00430061006d00650072006100000002ff000001610000000000000000fb0000001e004d006f00740069006f006e00200050006c0061006e006e0069006e00670100000374000001890000000000000000fb00000044004d006f00740069006f006e0050006c0061006e006e0069006e00670020002d0020005400720061006a006500630074006f0072007900200053006c00690064006500720000000000ffffffff0000001600000016fb0000001c004d006f00740069006f006e0050006c0061006e006e0069006e00670100000178000002630000017d00ffffff0000053f0000039e00000001000000020000000100000002fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Views:
     collapsed: false
   Width: 1848
   X: 72
-  Y: 0
+  Y: 27

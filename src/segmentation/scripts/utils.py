@@ -216,8 +216,7 @@ def plane_seg(points_msg,hg=0.85,lg=1.5,th_v=0.03,lower=1000 ,higher=50000,reg_l
                             xyz.append(aux)
                         if np.isnan(aux2[0]) or np.isnan(aux2[1]) or np.isnan(aux2[2]):
                                 'reject point'
-                        else:
-                            print (aux2)
+                        else:                            
                             xyz_c.append(aux2)
                 xyz=np.asarray(xyz)
                 xyz_c=np.asarray(xyz_c)

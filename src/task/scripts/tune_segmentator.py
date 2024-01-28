@@ -63,7 +63,7 @@ def callback(points_msg):
     img=cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
    
 
-    cv2.imshow('xtion rgb'	, image)
+    #cv2.imshow('xtion rgb'	, image)
 
      
     if first:
@@ -138,17 +138,15 @@ def callback(points_msg):
             print ('#############Pointing  SERVICE openPose REQUESTED')
             
             res=pointing_detect_server.call()
+            print (f'xr{res.x_r} yr{res.y_r} xl{res.x_l} yl{res.y_l} ')
 
            
-            
-            #img_msg  = bridge.cv2_to_imgmsg(image)
-            #req      = classify_client.request_class()
-            #req.in_.image_msgs.append(img_msg)
-            #res      = classify_client(req)
-            #debug_image=bridge.imgmsg_to_cv2(res.debug_image.image_msgs[0])
-            
-            if (res.x_r+res.y_r)!=0:tf_man.pub_static_tf(pos=[res.x_r, res.y_r,0], rot =[0,0,0,1], point_name='pointing_right')
-            if (res.x_l+res.y_l)!=0:tf_man.pub_static_tf(pos=[res.x_l, res.y_l,0], rot =[0,0,0,1], point_name='pointing_left')
+            if (res.x_r+res.y_r)!=0:
+                print('right')
+                tf_man.pub_static_tf(pos=[res.x_r, res.y_r,0], rot =[0,0,0,1], point_name='pointing_right')
+            if (res.x_l+res.y_l)!=0:
+                print('left')
+                tf_man.pub_static_tf(pos=[res.x_l, res.y_l,0], rot =[0,0,0,1], point_name='pointing_left')
             debug_image=bridge.imgmsg_to_cv2(res.debug_image[0])
             cv2.imshow('our of res'  , debug_image)
 
@@ -166,32 +164,25 @@ def callback(points_msg):
             origin_map_img=[round(img_map.shape[0]*0.5) ,round(img_map.shape[1]*0.5)]   
             if len(res.poses.data)==0:print('no objs')
             else:
-                print ('poses',res.poses_corr.data,res.poses.data)
+                
                 poses=np.asarray(res.poses.data)
                 quats=np.asarray(res.quats.data)
                 poses=poses.reshape((int(len(poses)/3) ,3     )      )  
                 quats=quats.reshape((int(len(quats)/4) ,4     )      )  
                 num_objs=len(poses)
-                
-                for i,pose in enumerate(poses):
-                    #print (f'Occupancy map at point object {i}-> pixels ',origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m), img_map[origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m)])
-                    quat=  quats[i]/np.linalg.norm(quats[i])
-                    
-                    point_name=f'object_{i}'
-                    print ('point_name',point_name, pose, quat)
-                    print (np.rad2deg(tf.transformations.euler_from_quaternion(quat)))
-                    print( f'################## {point_name} estimated rotation PCA {np.rad2deg(tf.transformations.euler_from_quaternion(quat))[0]}') #np.sign(np.rad2deg(tf.transformations.euler_from_quaternion(quat))[0])*np.rad2deg(tf.transformations.euler_from_quaternion(quat))[1]}')
+                print(f'{num_objs} found')
+                for i,cent in enumerate(poses):
+                    x,y,z=cent
                     axis=[0,0,1]
-                    angle = tf.transformations.euler_from_quaternion(quat)[0]
+                    angle = tf.transformations.euler_from_quaternion(quats[i])[0]
                     rotation_quaternion = tf.transformations.quaternion_about_axis(angle, axis)
-                    print ('rot quat',rotation_quaternion)
-                   
-                    tf_man.pub_static_tf(pos=pose, rot =[0,0,0,1], point_name=point_name+'_norot', ref='head_rgbd_sensor_rgb_frame')## which object to choose   #TODO
-                    tf_man.change_ref_frame_tf(point_name=point_name+'_norot', new_frame='map')
-                    tf_man.pub_static_tf(pos=pose, rot =rotation_quaternion, point_name=point_name, ref='head_rgbd_sensor_rgb_frame')## which object to choose   #TODO
-                    rospy.sleep(0.3)
-                    tf_man.change_ref_frame_tf(point_name=point_name,rotational=rotation_quaternion , new_frame='map')
-                    rospy.sleep(0.3)
+                    point_name=f'object_{i}'
+                    print (f'{point_name} found at {cent}')
+                    tf_man.pub_tf(pos=cent, rot =[0,0,0,1], point_name=point_name+'_norot', ref='map')## which object to choose   #TODO
+                    tf_man.pub_tf(pos=cent, rot =rotation_quaternion, point_name=point_name, ref='map')## which object to choose   #TODO
+                    #tf_man.pub_static_tf(pos=cent, rot =[0,0,0,1], point_name=point_name+'_norot', ref='map')## which object to choose   #TODO
+                    #tf_man.pub_static_tf(pos=cent, rot =rotation_quaternion, point_name=point_name, ref='map')## which object to choose   #TODO
+                    rospy.sleep(0.5)                                                                        
                     pose,_= tf_man.getTF(point_name)
                     print (f'Occupancy map at point object {i}-> pixels ',origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m), img_map[origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m)])
                     ## Pixels from augmented image map server published map image
@@ -204,53 +195,10 @@ def callback(points_msg):
             
             img=bridge.imgmsg_to_cv2(res.im_out.image_msgs[0])
             cv2.imshow('our of res'  , img)
-        if key=='t': 
-
-            r = cv2.getTrackbarPos('Max Area', 'class rgbd')
-            print ('#################################',r)
-            
-            #head.set_joint_values([ 0.1, -0.5])
-            res=segmentation_server.call()
-            print( 'segmenting')
-            #brazo.set_named_target('go')
-            origin_map_img=[round(img_map.shape[0]*0.5) ,round(img_map.shape[1]*0.5)]   
-            if len(res.poses.data)==0:print('no objs')
-            else:
-                #print ('QUATS PCA',res.quats.data)
-                poses=np.asarray(res.poses.data)
-                quats=np.asarray(res.quats.data)
-                poses=poses.reshape((int(len(poses)/3) ,3     )      )  
-                quats=quats.reshape((int(len(quats)/4) ,4     )      )  
-                num_objs=len(poses)
-                q=  quats[0]/np.linalg.norm(quats[0])
-                print ('num_objs', num_objs, q)
-                for i,pose in enumerate(poses):
-                    #print (f'Occupancy map at point object {i}-> pixels ',origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m), img_map[origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m)])
-                    point_name=f'object_{i}'
-                    tf_man.pub_tf(pos=pose, rot =q , point_name=point_name+'_PCA', ref='head_rgbd_sensor_rgb_frame')## which object to choose   #TODO
-                    tf_man.pub_static_tf(pos=pose, rot =q , point_name=point_name, ref='head_rgbd_sensor_rgb_frame')## which object to choose   #TODO
-                    rospy.sleep(0.3)
-                    tf_man.change_ref_frame_tf(point_name=point_name, new_frame='map')
-                    rospy.sleep(0.3)
-                    pose,_= tf_man.getTF(point_name)
-                    print (f'Occupancy map at point object {i}-> pixels ',origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m), img_map[origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m)])
-                    ## Pixels from augmented image map server published map image
-                    
-                    
-                    
-                    
-                    print (f"object found at robot coords.{pose} ")
-                
-            
-            img=bridge.imgmsg_to_cv2(res.im_out.image_msgs[0])
-            cv2.imshow('our of res'  , img)
+      
         if key=='q':
             rospy.signal_shutdown("User hit q key to quit.")
 
-
-
-#cv2_img_depth = bridge.imgmsg_to_cv2(res.segmented_objects_array.table_objects_array[i].depth_image_array[j] )
-#cv2_img = bridge.imgmsg_to_cv2(res.segmented_objects_array.table_objects_array[i].rgb_image_array[j] )
 
 
 def listener():
@@ -263,33 +211,13 @@ def listener():
     
     #rospy.init_node('image_tag_rgbd', anonymous=True)
     
-    tf_listener = tf.TransformListener()
-   
-
+    tf_listener = tf.TransformListener() 
     ptcld_lis=rospy.Subscriber("/hsrb/head_rgbd_sensor/depth_registered/rectified_points",PointCloud2, callback)
     # spin() simply keeps python from exiting until this node is stopped
     rospy.spin()
 
 
 
-
-
-    #rgbd= RGBD()
-    #rospy.wait_for_service('classify')
-    #try:
-    #    classify = rospy.ServiceProxy('/classify', Classify)    
-    #except rospy.ServiceException as e:
-    #    print("Service call failed: %s"%e)
-    #rospy.Subscriber("/hsrb/head_rgbd_sensor/rgb/image_rect_color", Image, callback)
-    #rospy.Subscriber("/hsrb/head_rgbd_sensor/depth_registered/image", Image, callback)
-    #images= message_filters.Subscriber("/hsrb/head_rgbd_sensor/rgb/image_rect_color",Image)
-    #images= message_filters.Subscriber("/usb_cam/image_raw",Image)
-    #points= message_filters.Subscriber("/hsrb/head_rgbd_sensor/depth_registered/rectified_points",PointCloud2)
-    #message_filters.Subscriber("/hsrb/head_rgbd_sensor/depth_registered/image"     ,Image)
-    #ats= message_filters.ApproximateTimeSynchronizer([symbol,odom,twist],queue_size=5,slop=.1,allow_headerless=True)
-    #ats= message_filters.ApproximateTimeSynchronizer([images,points],queue_size=5,slop=.1,allow_headerless=True)
-    #ats.registerCallback(callback)
-    #rospy.Subscriber("/hsrb/base_scan", LaserScan, callback)
     
 
 

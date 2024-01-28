@@ -315,7 +315,7 @@ class Pickup(smach.State):
                 rospy.loginfo("Distance to goal: {:.2f}, {:.2f}, angle {:.2f}, target obj frame {}".format(eX, eY , eT,target_object))
                 if abs(eX) < 0.03:
                     eX = 0
-                if abs(eY) < 0.01:
+                if abs(eY) < 0.04:
                     eY = 0
                 if abs(eT   ) < 0.05:
                     eT = 0
@@ -327,6 +327,7 @@ class Pickup(smach.State):
         gripper.close()
         arm.set_named_target('go')
         arm.go()
+        omni_base.move_base(known_location='living_room')
         return 'succ'
 
             
@@ -580,17 +581,16 @@ class Goto_human(smach.State):
         
       
         
+        
         print('getting close to human')
         head.to_tf('human')
         res = omni_base.move_d_to(1.65,'human')
-        print ('ready to follow')
-        if res :
-            self.tries=0
-            return 'succ'
-            
-        else:
-            talk('Navigation Failed, retrying')
-            return 'failed'
+        fag= FollowActionGoal()
+        fag.goal.timeout=10
+        fag.goal.push_hand=True
+        pub_fag.publish(fag)
+
+        return 'failed'
 
 ###########################################################################################################
 class Lead_to_living_room(smach.State):
@@ -897,7 +897,7 @@ if __name__ == '__main__':
         smach.StateMachine.add("SCAN_FLOOR",         Scan_floor(),          transitions={'failed': 'SCAN_FLOOR' ,     'succ': 'PRE_PICKUP' ,    'tries': 'END'})   #
         smach.StateMachine.add("PRE_PICKUP",        Pre_pickup(),           transitions={'failed': 'PRE_PICKUP',        'succ': 'PICKUP'    ,  'tries': 'END'})        
         smach.StateMachine.add("PICKUP",            Pickup(),           transitions={'failed': 'PICKUP',        'succ': 'GOTO_HUMAN'    ,   'tries': 'END'})        
-        smach.StateMachine.add("GOTO_HUMAN",         Goto_human(),          transitions={'failed': 'GOTO_HUMAN',        'succ': 'END' ,   'tries': 'FIND_HUMAN' })
+        smach.StateMachine.add("GOTO_HUMAN",         Goto_human(),          transitions={'failed': 'GOTO_HUMAN',        'succ': 'END' ,   'tries': 'END' })
         #smach.StateMachine.add("PICKUP_CEREAL",     Pickup_cereal(),        transitions={'failed': 'PICKUP_CEREAL',        'succ': 'POST_PICKUP'    ,   'tries': 'END'})        
         #smach.StateMachine.add("POST_PICKUP",        Post_pickup(),         transitions={'failed': 'POST_PICKUP',        'succ': 'GOTO_TABLE'    ,   'tries': 'END'})        
         #smach.StateMachine.add("GOTO_TABLE",        Goto_table(),           transitions={'failed': 'GOTO_TABLE',        'succ': 'PLACE_TABLE'    ,   'tries': 'END'})        
