@@ -113,7 +113,11 @@ def classify_server():
 
 
     device = select_device('')
-    model=attempt_load('/home/roboworks/catkin_extras/src/yolov5_ros/scripts/yolov5/ycb.pt',device)
+    rospack= rospkg.RosPack()
+    file_path = rospack.get_path('yolov5_ros')
+    ycb_yolo_path=file_path+'/scripts/yolov5/ycb.pt'
+    #model=attempt_load('/home/roboworks/catkin_extras/src/yolov5_ros/scripts/yolov5/ycb.pt',device)
+    model=attempt_load(ycb_yolo_path,device)
     rospy.loginfo("calssification_ YOLOV5 service available")                    # initialize a ROS node
     s = rospy.Service('classify', Classify, callback) 
     print("Classification service available")

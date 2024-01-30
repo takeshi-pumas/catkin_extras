@@ -18,6 +18,7 @@ import math as m
 import moveit_commander
 import moveit_msgs.msg
 from cv_bridge import CvBridge, CvBridgeError
+import rospkg
 
 import actionlib
 import subprocess

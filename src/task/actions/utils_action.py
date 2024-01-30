@@ -1,44 +1,44 @@
 #!/usr/bin/env python3
 
+import cv2  
+import rospy 
+import numpy as np
+import pandas as pd
 import smach
 import smach_ros
-from geometry_msgs.msg import PoseStamped, Point , PointStamped , Quaternion , TransformStamped , Twist
-from std_srvs.srv import Trigger, TriggerResponse 
+import actionlib
+import rospkg
+import yaml
+import tf
+import time
 import moveit_commander
 import moveit_msgs.msg
 import tf2_ros
+from geometry_msgs.msg import PoseStamped, Point , PointStamped , Quaternion , TransformStamped , Twist
+from std_srvs.srv import Trigger, TriggerResponse 
+from sensor_msgs.msg import Image , LaserScan , PointCloud2
 from tf2_sensor_msgs.tf2_sensor_msgs import do_transform_cloud
 from object_classification.srv import *
 from segmentation.srv import *
 from human_detector.srv import Human_detector ,Human_detectorResponse 
 from human_detector.srv import Point_detector ,Point_detectorResponse 
 from ros_whisper_vosk.srv import GetSpeech
+from object_classification.srv import *
 from face_recog.msg import *
 from face_recog.srv import *
 #import face_recognition 
-import cv2  
-import rospy 
-import numpy as np
-import actionlib
 from hmm_navigation.msg import NavigateActionGoal, NavigateAction
 from cv_bridge import CvBridge, CvBridgeError
-import pandas as pd
 from std_srvs.srv import Empty
-from sensor_msgs.msg import Image , LaserScan , PointCloud2
-import tf
-import time
 from cv_bridge import CvBridge, CvBridgeError
 from nav_msgs.msg import OccupancyGrid
 from hri_msgs.msg import RecognizedSpeech
 from rospy.exceptions import ROSException
 from vision_msgs.srv import *
-import rospkg
-import yaml
 from act_recog.srv import Recognize,RecognizeResponse,RecognizeRequest
-from object_classification.srv import *
-
-
 from ros_whisper_vosk.srv import SetGrammarVosk
+
+from action_pickup_floor.msg import FollowActionGoal
 
 from utils.grasp_utils import *
 from utils.misc_utils import *
@@ -47,8 +47,8 @@ from utils.know_utils import *
 
 global listener, broadcaster, tfBuffer, tf_static_broadcaster, scene, rgbd, head,train_new_face, wrist, human_detect_server, line_detector, clothes_color , head_mvit
 global clear_octo_client, goal,navclient,segmentation_server  , tf_man , omni_base, brazo, speech_recog_server, bridge, map_msg, pix_per_m, analyze_face , arm , set_grammar
-global recognize_action , classify_client , pointing_detect_server
-rospy.init_node('node_tuner')
+global recognize_action , classify_client,pointing_detect_server , pub_fag
+rospy.init_node('pickup_action_server')
 #head_mvit = moveit_commander.MoveGroupCommander('head')
 #gripper =  moveit_commander.MoveGroupCommander('gripper')
 #whole_body=moveit_commander.MoveGroupCommander('whole_body')
@@ -62,21 +62,19 @@ broadcaster = tf2_ros.TransformBroadcaster()
 tf_static_broadcaster = tf2_ros.StaticTransformBroadcaster()
 clear_octo_client = rospy.ServiceProxy('/clear_octomap', Empty)   ###OGRASPING OBSTACLE 
 human_detect_server = rospy.ServiceProxy('/detect_human' , Human_detector)  ####HUMAN FINDER OPPOSEBASED
-pointing_detect_server = rospy.ServiceProxy('/detect_pointing' , Point_detector)
-segmentation_server = rospy.ServiceProxy('/segment' , Segmentation)
-
-
-    ##### PLANE SEGMENTATION (PARALEL TO FLOOR)
+pointing_detect_server = rospy.ServiceProxy('/detect_pointing' , Point_detector)  ####HUMAN FINDER OPPOSEBASED
+segmentation_server = rospy.ServiceProxy('/segment' , Segmentation)    ##### PLANE SEGMENTATION (PARALEL TO FLOOR)
 navclient=actionlib.SimpleActionClient('/navigate', NavigateAction)   ### PUMAS NAV ACTION LIB
+
 # scene = moveit_commander.PlanningSceneInterface()
 speech_recog_server = rospy.ServiceProxy('/speech_recognition/vosk_service' ,GetSpeech)##############SPEECH VOSK RECOG FULL DICT
 set_grammar = rospy.ServiceProxy('set_grammar_vosk', SetGrammarVosk)                   ###### Get speech vosk keywords from grammar (function get_keywords)         
-
 recognize_face = rospy.ServiceProxy('recognize_face', RecognizeFace)                    #FACE RECOG
 train_new_face = rospy.ServiceProxy('new_face', RecognizeFace)                          #FACE RECOG
 analyze_face = rospy.ServiceProxy('analyze_face', RecognizeFace)    ###DEEP FACE ONLY
 recognize_action = rospy.ServiceProxy('recognize_act', Recognize) 
 classify_client = rospy.ServiceProxy('/classify', Classify)
+pub_fag = rospy.Publisher('/grasp_floor_act_server/goal_action_pickup', FollowActionGoal, queue_size=1)
 
 
 
@@ -100,44 +98,7 @@ brazo = ARM()
 line_detector = LineDetector()
 # arm =  moveit_commander.MoveGroupCommander('arm')
 
-#------------------------------------------------------
-def seg_res_tf(res):
-    origin_map_img=[round(img_map.shape[0]*0.5) ,round(img_map.shape[1]*0.5)]   
-    
-    #brazo.set_named_target('go')
-    if len(res.poses.data)==0:
-        print('no objs')
-        return False
-    else:
-        
-        poses=np.asarray(res.poses.data)
-        quats=np.asarray(res.quats.data)
-        poses=poses.reshape((int(len(poses)/3) ,3     )      )  
-        quats=quats.reshape((int(len(quats)/4) ,4     )      )  
-        num_objs=len(poses)
-        print(f'{num_objs} found')
 
-        for i,cent in enumerate(poses):
-            x,y,z=cent
-            axis=[0,0,1]
-            angle = tf.transformations.euler_from_quaternion(quats[i])[0]
-            rotation_quaternion = tf.transformations.quaternion_about_axis(angle, axis)
-            point_name=f'object_{i}'
-            print (f'{point_name} found at {cent}')
-            tf_man.pub_tf(pos=cent, rot =[0,0,0,1], point_name=point_name+'_norot', ref='map')## which object to choose   #TODO
-            succ=tf_man.pub_tf(pos=cent, rot =rotation_quaternion, point_name=point_name, ref='map')## which object to choose   #TODO
-            #tf_man.pub_static_tf(pos=cent, rot =[0,0,0,1], point_name=point_name+'_norot', ref='map')## which object to choose   #TODO
-            #tf_man.pub_static_tf(pos=cent, rot =rotation_quaternion, point_name=point_name, ref='map')## which object to choose   #TODO
-            rospy.sleep(0.5)                                                                        
-            pose,_= tf_man.getTF(point_name)
-            print (f'Occupancy map at point object {i}-> pixels ',origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m), img_map[origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m)])
-            ## Pixels from augmented image map server published map image
-            if img_map[origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m)]!=0:#### Yes axes seem to be "flipped" !=0:
-                print ('reject point suggested ( for floor), most likely part of arena, occupied inflated map')
-                #tf_man.pub_static_tf(pos=[0,0,0], point_name=point_name, ref='head_rgbd_sensor_rgb_frame')
-                #num_objs-=1
-            print (f"object found at map coords.{pose} ")
-    return succ
 #------------------------------------------------------
 def get_robot_px():
     trans, rot=tf_man.getTF('base_link')
@@ -395,6 +356,44 @@ def gaze_to_face():
 
     return False
 
+#------------------------------------------------------
+def seg_res_tf(res):
+    origin_map_img=[round(img_map.shape[0]*0.5) ,round(img_map.shape[1]*0.5)]   
+    
+    #brazo.set_named_target('go')
+    if len(res.poses.data)==0:
+        print('no objs')
+        return False
+    else:
+        
+        poses=np.asarray(res.poses.data)
+        quats=np.asarray(res.quats.data)
+        poses=poses.reshape((int(len(poses)/3) ,3     )      )  
+        quats=quats.reshape((int(len(quats)/4) ,4     )      )  
+        num_objs=len(poses)
+        print(f'{num_objs} found')
+
+        for i,cent in enumerate(poses):
+            x,y,z=cent
+            axis=[0,0,1]
+            angle = tf.transformations.euler_from_quaternion(quats[i])[0]
+            rotation_quaternion = tf.transformations.quaternion_about_axis(angle, axis)
+            point_name=f'object_{i}'
+            print (f'{point_name} found at {cent}')
+            tf_man.pub_tf(pos=cent, rot =[0,0,0,1], point_name=point_name+'_norot', ref='map')## which object to choose   #TODO
+            #tf_man.pub_tf(pos=cent, rot =rotation_quaternion, point_name=point_name, ref='map')## which object to choose   #TODO
+            #tf_man.pub_static_tf(pos=cent, rot =[0,0,0,1], point_name=point_name+'_norot', ref='map')## which object to choose   #TODO
+            tf_man.pub_static_tf(pos=cent, rot =rotation_quaternion, point_name=point_name, ref='map')## which object to choose   #TODO
+            rospy.sleep(0.5)                                                                        
+            pose,_= tf_man.getTF(point_name)
+            print (f'Occupancy map at point object {i}-> pixels ',origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m), img_map[origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m)])
+            ## Pixels from augmented image map server published map image
+            if img_map[origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m)]!=0:#### Yes axes seem to be "flipped" !=0:
+                print ('reject point suggested ( for floor), most likely part of arena, occupied inflated map')
+                #tf_man.pub_static_tf(pos=[0,0,0], point_name=point_name, ref='head_rgbd_sensor_rgb_frame')
+                #num_objs-=1
+            print (f"object found at map coords.{pose} ")
+    return True
 #------------------------------------------------------
 def detect_human_to_tf():
     humanpose=human_detect_server.call()

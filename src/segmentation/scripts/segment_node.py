@@ -21,8 +21,7 @@ def trigger_response(request):
     image_data = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]   
     image=cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
     image = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]
-    rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB) 
-    
+    rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)    
     #
     ################
     #CORRECT POINTS###################
@@ -39,15 +38,13 @@ def trigger_response(request):
     np_corrected=ros_numpy.numpify(cloud_out)
     corrected=np_corrected.reshape(points_data.shape)
     orig_image= rgb_image.copy()
-    mask= np.zeros(corrected['z'].shape)#mask
-    
+    mask= np.zeros(corrected['z'].shape)#mask    
     ###################################3
     pose, quats=Floats(),Floats()
     pose_c= Floats()
     heights, widths =Floats(),Floats()
     res= SegmentationResponse()
     #############################################
-
     if request.height.data==-1:
         zs_no_nans=corrected['z'][~np.isnan(corrected['z'])]
         counts, bins =(np.histogram(zs_no_nans, bins=100))
@@ -55,7 +52,6 @@ def trigger_response(request):
         low_planes_height=bins[np.add(inds, 1)].flatten()
         print (f'Number of planes found {len(inds[0])} at z=[{bins[ np.add(inds, 1)]}]')
         if (low_planes_height[0] > -0.05) and (low_planes_height[0] < 0.05): low_planes_height=low_planes_height[1:]
-
     else:
         low_plane = (corrected['z'] > request.height.data)      # HEIGHT REQUESTED OR OBTAINED FROM HISTOGRAM
         low_planes_height=[]
@@ -114,19 +110,8 @@ def trigger_response(request):
     pose.data=np.asarray(cents).ravel()
     quats.data=np.asarray(quats_pca).ravel()
     res.poses=pose
-    res.quats=quats
-    
-    
+    res.quats=quats    
     return res        
-    
-
-
-
-
-
-
-
-    
 
 rospy.loginfo("segmentation service available")                    # initialize a ROS node
 my_service = rospy.Service(                        # create a service, specifying its name,

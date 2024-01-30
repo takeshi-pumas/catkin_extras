@@ -569,15 +569,9 @@ Visualization Manager:
       Filter (whitelist): ""
       Frame Timeout: 15
       Frames:
-        007_tuna_fish_can:
-          Value: true
-        024_bowl:
-          Value: true
-        057_racquetball:
-          Value: true
-        070-a_colored_wood_blocks:
-          Value: true
         All Enabled: false
+        Target:
+          Value: true
         arm_flex_link:
           Value: false
         arm_lift_link:
@@ -616,6 +610,8 @@ Visualization Manager:
           Value: false
         base_roll_link:
           Value: false
+        gaze:
+          Value: true
         hand_camera_frame:
           Value: false
         hand_camera_gazebo_frame:
@@ -704,18 +700,6 @@ Visualization Manager:
           Value: true
         object_5_norot:
           Value: true
-        object_6:
-          Value: true
-        object_6_norot:
-          Value: true
-        object_7:
-          Value: true
-        object_7_norot:
-          Value: true
-        object_8:
-          Value: true
-        object_8_norot:
-          Value: true
         odom:
           Value: false
         pca_table:
@@ -724,6 +708,8 @@ Visualization Manager:
           Value: false
         table:
           Value: false
+        target:
+          Value: true
         torso_lift_link:
           Value: false
         wrist_flex_link:
@@ -744,6 +730,10 @@ Visualization Manager:
       Show Names: true
       Tree:
         map:
+          Target:
+            {}
+          gaze:
+            {}
           kitchen:
             {}
           living_room:
@@ -771,18 +761,6 @@ Visualization Manager:
           object_5:
             {}
           object_5_norot:
-            {}
-          object_6:
-            {}
-          object_6_norot:
-            {}
-          object_7:
-            {}
-          object_7_norot:
-            {}
-          object_8:
-            {}
-          object_8_norot:
             {}
           odom:
             base_footprint:
@@ -857,14 +835,7 @@ Visualization Manager:
                         head_rgbd_sensor_gazebo_frame:
                           {}
                         head_rgbd_sensor_rgb_frame:
-                          007_tuna_fish_can:
-                            {}
-                          024_bowl:
-                            {}
-                          057_racquetball:
-                            {}
-                          070-a_colored_wood_blocks:
-                            {}
+                          {}
             base_footprint_wheel:
               {}
           pca_table:
@@ -872,6 +843,8 @@ Visualization Manager:
           pickup:
             {}
           table:
+            {}
+          target:
             {}
           zero:
             {}
@@ -1006,7 +979,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 3.203047275543213
+      Distance: 4.210620880126953
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -1014,17 +987,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 0.1621035933494568
-        Y: 0.43435579538345337
-        Z: -3.7404026898002485e-07
+        X: -0.4843055009841919
+        Y: 0.1820305585861206
+        Z: -7.73270585341379e-07
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.9647967219352722
+      Pitch: 1.0497965812683105
       Target Frame: base_footprint
-      Yaw: 4.6927008628845215
+      Yaw: 4.137700080871582
     Saved: ~
 Window Geometry:
   Displays:

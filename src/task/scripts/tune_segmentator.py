@@ -160,39 +160,8 @@ def callback(points_msg):
             
             #head.set_joint_values([ 0.1, -0.5])
             res=segmentation_server.call(request)
-            #brazo.set_named_target('go')
-            origin_map_img=[round(img_map.shape[0]*0.5) ,round(img_map.shape[1]*0.5)]   
-            if len(res.poses.data)==0:print('no objs')
-            else:
-                
-                poses=np.asarray(res.poses.data)
-                quats=np.asarray(res.quats.data)
-                poses=poses.reshape((int(len(poses)/3) ,3     )      )  
-                quats=quats.reshape((int(len(quats)/4) ,4     )      )  
-                num_objs=len(poses)
-                print(f'{num_objs} found')
-                for i,cent in enumerate(poses):
-                    x,y,z=cent
-                    axis=[0,0,1]
-                    angle = tf.transformations.euler_from_quaternion(quats[i])[0]
-                    rotation_quaternion = tf.transformations.quaternion_about_axis(angle, axis)
-                    point_name=f'object_{i}'
-                    print (f'{point_name} found at {cent}')
-                    tf_man.pub_tf(pos=cent, rot =[0,0,0,1], point_name=point_name+'_norot', ref='map')## which object to choose   #TODO
-                    tf_man.pub_tf(pos=cent, rot =rotation_quaternion, point_name=point_name, ref='map')## which object to choose   #TODO
-                    #tf_man.pub_static_tf(pos=cent, rot =[0,0,0,1], point_name=point_name+'_norot', ref='map')## which object to choose   #TODO
-                    #tf_man.pub_static_tf(pos=cent, rot =rotation_quaternion, point_name=point_name, ref='map')## which object to choose   #TODO
-                    rospy.sleep(0.5)                                                                        
-                    pose,_= tf_man.getTF(point_name)
-                    print (f'Occupancy map at point object {i}-> pixels ',origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m), img_map[origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m)])
-                    ## Pixels from augmented image map server published map image
-                    if img_map[origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m)]!=0:#### Yes axes seem to be "flipped" !=0:
-                        print ('reject point suggested ( for floor), most likely part of arena, occupied inflated map')
-                        #tf_man.pub_static_tf(pos=[0,0,0], point_name=point_name, ref='head_rgbd_sensor_rgb_frame')
-                        #num_objs-=1
-                    print (f"object found at map coords.{pose} ")
-                
-            
+            succ=seg_res_tf(res)
+            print ('usc',succ)
             img=bridge.imgmsg_to_cv2(res.im_out.image_msgs[0])
             cv2.imshow('our of res'  , img)
       
