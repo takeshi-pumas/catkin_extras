@@ -85,9 +85,11 @@ def callback(req):
                     string_msg= String()
                     string_msg.data=model.names[int(cls.cpu().tolist())]
                     res.names.append(string_msg)               
-        np.save('debug.npy',debug_img)  # IMAGE WITH BOUNDING BOX
+        
         print(f'### number of detections -> {num_preds}')
-    res.debug_image.image_msgs.append(bridge.cv2_to_imgmsg(debug_img))
+    rgb_debug_img = cv2.cvtColor(debug_img, cv2.COLOR_BGR2RGB)    
+
+    res.debug_image.image_msgs.append(bridge.cv2_to_imgmsg(rgb_debug_img))
 
     ##### TFS
     
