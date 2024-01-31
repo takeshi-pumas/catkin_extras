@@ -24,7 +24,7 @@ def callback(req):
     res=ClassifyResponse()
     images=[]
     for i in range(len(req.in_.image_msgs)):
-        images.append(bridge.imgmsg_to_cv2(req.in_.image_msgs[i]))
+        images.append(            cv2.cvtColor(bridge.imgmsg_to_cv2(req.in_.image_msgs[i]),cv2.COLOR_BGR2RGB)      )
     for test_img in images:
         img = torch.from_numpy(test_img).to(device) # RGB IMAGE TENSOR (TORCH)
         img = img / 255.0                              #NORMALIZE
