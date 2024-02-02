@@ -52,9 +52,9 @@ class GRIPPER():
         traj.points = [p]
         self._grip_cmd_pub.publish(traj)
         
-    def _apply_force(self):
+    def _apply_force(self, force = 0.5):
         app_force = tmc_control_msgs.msg.GripperApplyEffortActionGoal()
-        app_force.goal.effort = -0.5
+        app_force.goal.effort = -force
         self._grip_cmd_force.publish(app_force)
         
     def change_velocity(self, newVel):
@@ -70,11 +70,11 @@ class GRIPPER():
         self._effort = -0.3
         self._manipulate_gripper()
         
-    def close(self):
+    def close(self, force = 0.5):
         self._position = 0.0
         self._effort = 0.3
         # self._manipulate_gripper()
-        self._apply_force()
+        self._apply_force(force)
         rospy.sleep(0.8)
 
 

@@ -79,8 +79,8 @@ def callback(req):
                                 2
                                 )                
                     print (num_preds,pt_min, pt_max,conf.cpu().tolist(),model.names[int(cls.cpu().tolist())], cc )
-                    for coord in pt_min:    res.pt_min.data.append(coord)
-                    for coord in pt_max:    res.pt_max.data.append(coord)
+                    for coord in pt_min:    res.pt_max.data.append(coord)
+                    for coord in pt_max:    res.pt_min.data.append(coord)
                     res.confidence.data.append(conf)     
                     string_msg= String()
                     string_msg.data=model.names[int(cls.cpu().tolist())]
