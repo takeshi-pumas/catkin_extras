@@ -147,17 +147,16 @@ def detect_pointing(points_msg):
     frame=image
     inHeight = frame.shape[0]
     inWidth = frame.shape[1]
-
-
     # Prepare the frame to be fed to the network
     inpBlob = cv2.dnn.blobFromImage(image, 1.0 / 255, (inWidth, inHeight), (0, 0, 0), swapRB=False, crop=False)
-
     # Set the prepared object as the input blob of the network
     net.setInput(inpBlob)
     output = net.forward()
-    thresh= 0.5
+    thresh= 0.45
     poses=[]
-    deb_img=image[:,:,0]
+    deb_imgr=image[:,:,0]
+    deb_imgg=image[:,:,1]
+    deb_imgb=image[:,:,2]
     res=Point_detectorResponse()
     for i in np.asarray((3,4,6,7)):
         probMap = output[0, i, :, :]
@@ -168,39 +167,56 @@ def detect_pointing(points_msg):
                      np.nanmean(pts['z'][np.where(probMap>=thresh)])]
         poses.append(pose)
         #deb_img= probMap+ deb_img*0.3  #DEBUG IMAGE
-        deb_img[np.where(probMap>=thresh)]= 255
-    deb_img_rgb=cv2.merge((deb_img, image[:,:,1], image[:,:,2]))
+        deb_imgr[np.where(probMap>=thresh)]= 255
+        deb_imgg[np.where(probMap>=thresh)]= 255
+        deb_imgb[np.where(probMap>=thresh)]= 255
+    deb_img_rgb=cv2.merge((deb_imgr, deb_imgg, deb_imgb))
     res.debug_image.append(bridge.cv2_to_imgmsg(deb_img_rgb))
-
     #right elbow       ####
     # right wrist      ####
     # left elbow
     # left wrist
     ##############################
+    try:
+            tt = tfBuffer.lookup_transform('map', 'head_rgbd_sensor_link', rospy.Time())
+                        
+            trans,rot=read_tf(tt)
+            #print ("############head",trans,rot)
+    except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
+            print ( 'No head TF FOUND')
+
     found_joints={}
     for i, name in enumerate(['right_elbow','right_wrist','left_elbow','left_wrist']):
         if np.sum(np.asarray(poses[i]))==0:print(f'no {name} points')
-        else:
-            t=write_tf(poses[i],(0,0,0,1),name,'head_rgbd_sensor_rgb_frame') 
-            b_tf.sendTransform(t)
-            rospy.sleep(0.25)
-            try:
-                tt=tfBuffer.lookup_transform('map',name,rospy.Time(0))
-                pose,quat= read_tf(tt)
-                t=write_tf(pose,(0,0,0,1),name)
-                found_joints[name]=pose
-                b_st.sendTransform(t)
-            except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
-                print (f'{name}  not found.')
+        else:           
+            print (poses[i],f' {name} pose wrt head')
+            found_joints[name]=poses[i]
             
 
     if 'right_wrist' in found_joints.keys() and 'right_elbow' in found_joints.keys():
-        wrist_xyz,elbow_xyz=found_joints['right_wrist'],found_joints['right_elbow']
+        
+        
+        pc_np_array = np.array([(found_joints['right_elbow'][0], found_joints['right_elbow'][1], found_joints['right_elbow'][2]),(found_joints['right_wrist'][0],found_joints['right_wrist'][1],found_joints['right_wrist'][2])]
+         , dtype=[('x', 'f4'), ('y', 'f4'), ('z', 'f4')])
+        #pc_np_array = np.array([found_joints['right_elbow'], found_joints['right_wrist'], (0.0, 0.0, 0.0)], dtype=[('x', 'f4'), ('y', 'f4'), ('z', 'f4')])
+        points_msg=ros_numpy.msgify(PointCloud2,pc_np_array,rospy.Time.now(),'head_rgbd_sensor_rgb_frame')
+        cloud_out = do_transform_cloud(points_msg, tt)
+        np_corrected=ros_numpy.numpify(cloud_out)
+        corrected=np_corrected.reshape(pc_np_array.shape)
+        print(corrected,'########################### Left', found_joints)
+        #t=write_tf((corrected['x'][0],corrected['y'][0],corrected['z'][0]),(0,0,0,1),'right_elbow')
+        #print (t)
+        #b_st.sendTransform(t)
+        #t=write_tf((corrected['x'][1],corrected['y'][1],corrected['z'][1]),(0,0,0,1),'right_wrist')
+        #print (t)
+        #b_st.sendTransform(t)
+        elbow_xyz,wrist_xyz=[corrected['x'][0],corrected['y'][0],corrected['z'][0]],[corrected['x'][1],corrected['y'][1],corrected['z'][1]]
         v= np.asarray(wrist_xyz)-np.asarray(elbow_xyz)
-        print (v,elbow_xyz)
+        
         t= elbow_xyz[2]-   v[2]
         x= elbow_xyz[0]+ t*v[0]
         y= elbow_xyz[1]+ t*v[1]
+        print(x,y,'x,y')
         t=write_tf((x,y,0),(0,0,0,1),'pointing_right')
         b_st.sendTransform(t)
         res.x_r=x
@@ -211,26 +227,49 @@ def detect_pointing(points_msg):
         res.x_r=0.0
         res.y_r=0.0
         res.z_r=0.0
+        t=write_tf((0,0,0),(0,0,0,1),'pointing_right')
+        b_st.sendTransform(t)
 
-
+    
     if 'left_wrist'  in found_joints.keys() and 'left_elbow'  in found_joints.keys():
-        wrist_xyz,elbow_xyz=found_joints['left_wrist'],found_joints['left_elbow']
+        pc_np_array = np.array([(found_joints['left_elbow'][0], found_joints['left_elbow'][1], found_joints['left_elbow'][2]),(found_joints['left_wrist'][0],found_joints['left_wrist'][1],found_joints['left_wrist'][2])]
+         , dtype=[('x', 'f4'), ('y', 'f4'), ('z', 'f4')])
+        #pc_np_array = np.array([found_joints['right_elbow'], found_joints['right_wrist'], (0.0, 0.0, 0.0)], dtype=[('x', 'f4'), ('y', 'f4'), ('z', 'f4')])
+        points_msg=ros_numpy.msgify(PointCloud2,pc_np_array,rospy.Time.now(),'head_rgbd_sensor_rgb_frame')
+        cloud_out = do_transform_cloud(points_msg, tt)
+        np_corrected=ros_numpy.numpify(cloud_out)
+        corrected=np_corrected.reshape(pc_np_array.shape)
+        print(corrected,'###########################Right', found_joints)
+        #t=write_tf((corrected['x'][0],corrected['y'][0],corrected['z'][0]),(0,0,0,1),'right_elbow')
+        #print (t)
+        #b_st.sendTransform(t)
+        #t=write_tf((corrected['x'][1],corrected['y'][1],corrected['z'][1]),(0,0,0,1),'right_wrist')
+        #print (t)
+        #b_st.sendTransform(t)
+        elbow_xyz,wrist_xyz=[corrected['x'][0],corrected['y'][0],corrected['z'][0]],[corrected['x'][1],corrected['y'][1],corrected['z'][1]]
         v= np.asarray(wrist_xyz)-np.asarray(elbow_xyz)
-        print (v,elbow_xyz)
+        
         t= elbow_xyz[2]-   v[2]
         x= elbow_xyz[0]+ t*v[0]
         y= elbow_xyz[1]+ t*v[1]
+        print(x,y, v,'x,y')
         t=write_tf((x,y,0),(0,0,0,1),'pointing_left')
         b_st.sendTransform(t)
-        res.x_r=x
-        res.y_r=y
-        res.z_r=0
+        res.x_l=x
+        res.y_l=y
+        res.z_l=0
+        #
     else:
+
         res.x_l=0.0
         res.y_l=0.0
         res.z_l=0.0
+        t=write_tf((0,0,0),(0,0,0,1),'pointing_left')
+        b_st.sendTransform(t)
+        
             
-    print (found_joints)
+    
+    return res
     #print (poses[0])
     #if np.sum(np.asarray(poses[0]))==0:print('no r.e.')
     #else:
@@ -242,7 +281,6 @@ def detect_pointing(points_msg):
     #    t=write_tf(pose,(0,0,0,1),'right_elbow')
     #    b_st.sendTransform(t)
     
-    return res
     """rospy.sleep(0.2)
                 pose,quat= read_tf(tt)
                 t=write_tf(pose,(0,0,0,1),'right_elbow')

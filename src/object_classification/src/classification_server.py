@@ -24,7 +24,7 @@ def callback(req):
     res=ClassifyResponse()
     images=[]
     for i in range(len(req.in_.image_msgs)):
-        images.append(bridge.imgmsg_to_cv2(req.in_.image_msgs[i]))
+        images.append(            cv2.cvtColor(bridge.imgmsg_to_cv2(req.in_.image_msgs[i]),cv2.COLOR_BGR2RGB)      )
     for test_img in images:
         img = torch.from_numpy(test_img).to(device) # RGB IMAGE TENSOR (TORCH)
         img = img / 255.0                              #NORMALIZE
@@ -85,9 +85,11 @@ def callback(req):
                     string_msg= String()
                     string_msg.data=model.names[int(cls.cpu().tolist())]
                     res.names.append(string_msg)               
-        np.save('debug.npy',debug_img)  # IMAGE WITH BOUNDING BOX
+        
         print(f'### number of detections -> {num_preds}')
-    res.debug_image.image_msgs.append(bridge.cv2_to_imgmsg(debug_img))
+    rgb_debug_img = cv2.cvtColor(debug_img, cv2.COLOR_BGR2RGB)    
+
+    res.debug_image.image_msgs.append(bridge.cv2_to_imgmsg(rgb_debug_img))
 
     ##### TFS
     
@@ -113,7 +115,11 @@ def classify_server():
 
 
     device = select_device('')
-    model=attempt_load('/home/roboworks/catkin_extras/src/yolov5_ros/scripts/yolov5/ycb.pt',device)
+    rospack= rospkg.RosPack()
+    file_path = rospack.get_path('yolov5_ros')
+    ycb_yolo_path=file_path+'/scripts/yolov5/ycb.pt'
+    #model=attempt_load('/home/roboworks/catkin_extras/src/yolov5_ros/scripts/yolov5/ycb.pt',device)
+    model=attempt_load(ycb_yolo_path,device)
     rospy.loginfo("calssification_ YOLOV5 service available")                    # initialize a ROS node
     s = rospy.Service('classify', Classify, callback) 
     print("Classification service available")
