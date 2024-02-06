@@ -106,7 +106,7 @@ class Find_human(smach.State):
         if self.tries==2:head.set_joint_values([ 0.5, 0.1])#looking left
         if self.tries==3:head.set_joint_values([-0.5, 0.1])#looking right        
         
-        humanpose=detect_human_to_tf()  #make sure service is running (pointing detector saver now hosts this service)
+        humanpose=detect_human_to_tf()  #make sure service is running (pointing detector server now hosts this service)
         res=pointing_detect_server.call()
         if humanpose== False or  (res.x_r+res.y_r)==0 and  (res.x_l+res.y_l)==0  :
             print ('no human ')
@@ -126,53 +126,61 @@ class Scan_floor(smach.State):
         rospy.loginfo('STATE : Scan estimated pointing area')
         self.tries+=1  
         if self.tries==1:head.to_tf('pointing_right')
-        if self.tries==2:head.to_tf('pointing_left')     
+        #if self.tries==2:head.to_tf('pointing_left')     
         if self.tries==3:
             self.tries=0
             return 'tries'
         
-        rospy.sleep(2.9)
+        
         ##### Segment and analyze
         #img=rgbd.get_image()
         print ('got image for segmentation')
-        res=segmentation_server.call()
+        ##### Segment and analyze
+        request= segmentation_server.request_class() 
+        request.height.data=0.01
+        res=segmentation_server.call(request)
+        
+        print (res.poses.data)
+        #res=segmentation_server.call()
         origin_map_img=[round(img_map.shape[0]*0.5) ,round(img_map.shape[1]*0.5)]
 
         if len(res.poses.data)==0:
             talk('no Objects in area....')
             return 'failed'
         else:
-            print ('poses',res.poses_corr.data,res.poses.data)
-            poses=np.asarray(res.poses.data)
-            quats=np.asarray(res.quats.data)
-            poses=poses.reshape((int(len(poses)/3) ,3     )      )  
-            quats=quats.reshape((int(len(quats)/4) ,4     )      )  
-            num_objs=len(poses)
-            
-            for i,pose in enumerate(poses):
-                
-                quat=  quats[i]/np.linalg.norm(quats[i])
-                point_name=f'object_{i}'
-                print ('point_name',point_name, pose, quat)
-                print (np.rad2deg(tf.transformations.euler_from_quaternion(quat)))
-                print( f'################## {point_name} estimated rotation PCA {np.rad2deg(tf.transformations.euler_from_quaternion(quat))[0]}') #np.sign(np.rad2deg(tf.transformations.euler_from_quaternion(quat))[0])*np.rad2deg(tf.transformations.euler_from_quaternion(quat))[1]}')
-                axis=[0,0,1]
-                angle = tf.transformations.euler_from_quaternion(quat)[0]
-                rotation_quaternion = tf.transformations.quaternion_about_axis(angle, axis)
-                print ('rot quat',rotation_quaternion)
-                tf_man.pub_static_tf(pos=pose, rot =[0,0,0,1], point_name=point_name+'_norot', ref='head_rgbd_sensor_rgb_frame')## which object to choose   #TODO
-                tf_man.change_ref_frame_tf(point_name=point_name+'_norot', new_frame='map')
-                tf_man.pub_static_tf(pos=pose, rot =rotation_quaternion, point_name=point_name, ref='head_rgbd_sensor_rgb_frame')## which object to choose   #TODO
-                rospy.sleep(0.3)
-                tf_man.change_ref_frame_tf(point_name=point_name,rotational=rotation_quaternion , new_frame='map')
-                rospy.sleep(0.3)
-                pose,_= tf_man.getTF(point_name)
-                print (f'Occupancy map at point object {i}-> pixels ',origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m), img_map[origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m)])
-                if img_map[origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m)]!=0:#### Yes axes seem to be "flipped" !=0:
-                    print ('reject point suggested ( for floor), most likely part of arena, occupied inflated map')
-                print (f"object found at map coords.{pose} ")
-                omni_base
-                return 'succ'
+            succ=seg_res_tf(res)
+            return 'succ'
+            #print ('poses',res.poses_corr.data,res.poses.data)
+            #poses=np.asarray(res.poses.data)
+            #quats=np.asarray(res.quats.data)
+            #poses=poses.reshape((int(len(poses)/3) ,3     )      )  
+            #quats=quats.reshape((int(len(quats)/4) ,4     )      )  
+            #num_objs=len(poses)
+            #
+            #for i,pose in enumerate(poses):
+            #    
+            #    quat=  quats[i]/np.linalg.norm(quats[i])
+            #    point_name=f'object_{i}'
+            #    print ('point_name',point_name, pose, quat)
+            #    print (np.rad2deg(tf.transformations.euler_from_quaternion(quat)))
+            #    print( f'################## {point_name} estimated rotation PCA {np.rad2deg(tf.transformations.euler_from_quaternion(quat))[0]}') #np.sign(np.rad2deg(tf.transformations.euler_from_quaternion(quat))[0])*np.rad2deg(tf.transformations.euler_from_quaternion(quat))[1]}')
+            #    axis=[0,0,1]
+            #    angle = tf.transformations.euler_from_quaternion(quat)[0]
+            #    rotation_quaternion = tf.transformations.quaternion_about_axis(angle, axis)
+            #    print ('rot quat',rotation_quaternion)
+            #    tf_man.pub_static_tf(pos=pose, rot =[0,0,0,1], point_name=point_name+'_norot', ref='head_rgbd_sensor_rgb_frame')## which object to choose   #TODO
+            #    tf_man.change_ref_frame_tf(point_name=point_name+'_norot', new_frame='map')
+            #    tf_man.pub_static_tf(pos=pose, rot =rotation_quaternion, point_name=point_name, ref='head_rgbd_sensor_rgb_frame')## which object to choose   #TODO
+            #    rospy.sleep(0.3)
+            #    tf_man.change_ref_frame_tf(point_name=point_name,rotational=rotation_quaternion , new_frame='map')
+            #    rospy.sleep(0.3)
+            #    pose,_= tf_man.getTF(point_name)
+            #    print (f'Occupancy map at point object {i}-> pixels ',origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m), img_map[origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m)])
+            #    if img_map[origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m)]!=0:#### Yes axes seem to be "flipped" !=0:
+            #        print ('reject point suggested ( for floor), most likely part of arena, occupied inflated map')
+            #    print (f"object found at map coords.{pose} ")
+            #    return 0
+            #    return 'succ'
 
 #########################################################################################################
 
