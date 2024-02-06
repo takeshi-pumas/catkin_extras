@@ -25,7 +25,6 @@ from std_msgs.msg import String
 first= True
 rospack = rospkg.RosPack()
 yaml_file = rospy.get_param("segmentation_params", "/segmentation_params.yaml")
-#yaml_file = "/segmentation_params.yaml"
 file_path = rospack.get_path('segmentation')+'/config_files'  + yaml_file
 
 
