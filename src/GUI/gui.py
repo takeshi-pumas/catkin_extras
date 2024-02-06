@@ -4,7 +4,7 @@ import os
 import signal
 
 # bash command
-def run_command():
+def run_command(command):
     try:
         process = subprocess.Popen(["bash", "-i", "-c", f'source ~/.bashrc && et && {command}'], preexec_fn=os.setsid, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         return process  # Return the process object
@@ -25,14 +25,14 @@ layout = [
     [sg.Text("Press Button 1 to Run Navigation, Press Again to Kill Navigation")],
     [sg.Button("Button 1", key='-NAVIGATION-', button_color=('white', 'green'))],
     [sg.Text("Press Button 2 to Run Node, Press Again to Kill Node")],
-    [sg.Button("Button 2", key='-NODE-', button_color=('white', 'green'))],
+    [sg.Button("Button 2", key='-YOLO-', button_color=('white', 'green'))],
     [sg.Image(key='-IMAGE-')],
 ]
 
 window = sg.Window("ROS GUI", layout)
 
 navigation_process = None
-node_process = None
+yolo_process = None
 processes = []
 
 while True:
@@ -48,11 +48,13 @@ while True:
             navigation_process = run_command('roslaunch nav_pumas navigation_real.launch')
             window['-NAVIGATION-'].update(button_color=('white', 'red'))
             processes.append(navigation_process)
-    elif event == '-NODE-':
-        if node_process:
-            node_process = kill_process(node_process)
+    elif event == '-YOLO-':
+        if yolo_process:
+            yolo_process = kill_process(yolo_process)
+            window['-YOLO-'].update(button_color=('white', 'green'))
         else:
-            node_process = run_command('roslaunch node_package node_launch_file.launch')
-            processes.append(node_process)
+            yolo_process = run_command('rosrun object_classification classification_server.py')
+            window['-YOLO-'].update(button_color=('white', 'red'))
+            processes.append(yolo_process)
 
 window.close()
