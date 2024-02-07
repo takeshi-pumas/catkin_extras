@@ -24,8 +24,10 @@ def cleanup(processes):
 layout = [
     [sg.Text("Press Button 1 to Run Navigation, Press Again to Kill Navigation")],
     [sg.Button("Button 1", key='-NAVIGATION-', button_color=('white', 'green'))],
-    [sg.Text("Press Button 2 to Run Node, Press Again to Kill Node")],
+    [sg.Text("Press Button 2 to Run Object Classification, Press Again to Kill Node")],
     [sg.Button("Button 2", key='-YOLO-', button_color=('white', 'green'))],
+    [sg.Text("Press Button 3 to Run Moveit, Press Again to Kill Node")],
+    [sg.Button("Button 3", key='-MOVEIT-', button_color=('white', 'green'))],
     [sg.Image(key='-IMAGE-')],
 ]
 
@@ -33,6 +35,7 @@ window = sg.Window("ROS GUI", layout)
 
 navigation_process = None
 yolo_process = None
+moveit_process = None
 processes = []
 
 while True:
@@ -56,5 +59,13 @@ while True:
             yolo_process = run_command('rosrun object_classification classification_server.py')
             window['-YOLO-'].update(button_color=('white', 'red'))
             processes.append(yolo_process)
+    elif event == '-MOVEIT-':
+        if moveit_process:
+            moveit_process = kill_process(yolo_process)
+            window['-MOVEIT-'].update(button_color=('white', 'green'))
+        else:
+            moveit_process = run_command('roslaunch hsrb_moveit_config hsrb_demo_with_controller.launch')
+            window['-MOVEIT-'].update(button_color=('white', 'red'))
+            processes.append(moveit_process)
 
 window.close()
