@@ -6,7 +6,7 @@ import signal
 # bash command
 def run_command(command):
     try:
-        process = subprocess.Popen(["bash", "-i", "-c", f'source ~/.bashrc && et && {command}'], preexec_fn=os.setsid, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        process = subprocess.Popen(["bash","-i" ,"-c", f'source ~/.bashrc && et && {command}'], preexec_fn=os.setsid, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         return process  # Return the process object
     except FileNotFoundError:
         sg.popup_error(f"Command '{command.split()[0]}' not found.", title="Error")
@@ -28,6 +28,8 @@ layout = [
     [sg.Button("Button 2", key='-YOLO-', button_color=('white', 'green'))],
     [sg.Text("Press Button 3 to Run Moveit, Press Again to Kill Node")],
     [sg.Button("Button 3", key='-MOVEIT-', button_color=('white', 'green'))],
+    [sg.Text("Press Button 4 to Run Moveit test arm, Press Again to Kill Node")],
+    [sg.Button("Button 4", key='-MOVEIT_ARM-', button_color=('white', 'green'))],
     [sg.Image(key='-IMAGE-')],
 ]
 
@@ -36,6 +38,7 @@ window = sg.Window("ROS GUI", layout)
 navigation_process = None
 yolo_process = None
 moveit_process = None
+moveit_arm_process = None
 processes = []
 
 while True:
@@ -61,11 +64,20 @@ while True:
             processes.append(yolo_process)
     elif event == '-MOVEIT-':
         if moveit_process:
-            moveit_process = kill_process(yolo_process)
+            moveit_process = kill_process(moveit_process)
             window['-MOVEIT-'].update(button_color=('white', 'green'))
         else:
             moveit_process = run_command('roslaunch hsrb_moveit_config hsrb_demo_with_controller.launch')
             window['-MOVEIT-'].update(button_color=('white', 'red'))
             processes.append(moveit_process)
+
+    elif event == '-MOVEIT_ARM-':
+        if moveit_arm_process:
+            moveit_arm_process = kill_process(moveit_arm_process)
+            window['-MOVEIT_ARM-'].update(button_color=('white', 'green'))
+        else:
+            moveit_arm_process = run_command('roslaunch task arm_test.launch')
+            window['-MOVEIT_ARM-'].update(button_color=('white', 'red'))
+            processes.append(moveit_arm_process)
 
 window.close()
