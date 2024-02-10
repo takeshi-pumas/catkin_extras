@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-
 from smach_utils2 import *
+from smach_ros import SimpleActionState
 
 #########################################################################################################
 class Initial(smach.State):
@@ -568,37 +568,7 @@ class Goto_next_room(smach.State):  # ADD KNONW LOCATION DOOR
             self.tries +=-1
             return 'failed'
 
-#########################################################################################################
-class Goto_human(smach.State):
-    def __init__(self):
-        smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
-        self.tries = 0
 
-    def execute(self, userdata):
-
-        rospy.loginfo('STATE : navigate to known location')
-
-        print('Try', self.tries, 'of 3 attempts')
-        self.tries += 1
-        if self.tries == 3:
-            return 'tries'
-        
-      
-        human_pose,_=tf_man.getTF('human')
-        
-        
-      
-        
-        
-        print('getting close to human')
-        head.to_tf('human')
-        res = omni_base.move_d_to(1.65,'human')
-        fag= FollowActionGoal()
-        fag.goal.timeout=10
-        fag.goal.push_hand=True
-        pub_fag.publish(fag)
-
-        return 'failed'
 
 ###########################################################################################################
 class Lead_to_living_room(smach.State):
@@ -880,9 +850,9 @@ class Detect_drink(smach.State):
 
 # --------------------------------------------------
 def init(node_name):
-    global reqAct,recognize_action
+   
     print('smach ready')
-    reqAct = RecognizeRequest()
+   
 
 # --------------------------------------------------
 # Entry point
@@ -905,7 +875,7 @@ if __name__ == '__main__':
         smach.StateMachine.add("SCAN_FLOOR",         Scan_floor(),          transitions={'failed': 'SCAN_FLOOR' ,     'succ': 'PRE_PICKUP' ,    'tries': 'END'})   #
         smach.StateMachine.add("PRE_PICKUP",        Pre_pickup(),           transitions={'failed': 'PRE_PICKUP',        'succ': 'PICKUP'    ,  'tries': 'END'})        
         smach.StateMachine.add("PICKUP",            Pickup(),           transitions={'failed': 'PICKUP',        'succ': 'GOTO_HUMAN'    ,   'tries': 'END'})        
-        smach.StateMachine.add("GOTO_HUMAN",         Goto_human(),          transitions={'failed': 'GOTO_HUMAN',        'succ': 'END' ,   'tries': 'END' })
+        smach.StateMachine.add("GOTO_HUMAN", SimpleActionState('follow_server', FollowAction) ,transitions={'aborted': 'GOTO_HUMAN',        'succeeded': 'END' ,   'preempted': 'END' })
         #smach.StateMachine.add("PICKUP_CEREAL",     Pickup_cereal(),        transitions={'failed': 'PICKUP_CEREAL',        'succ': 'POST_PICKUP'    ,   'tries': 'END'})        
         #smach.StateMachine.add("POST_PICKUP",        Post_pickup(),         transitions={'failed': 'POST_PICKUP',        'succ': 'GOTO_TABLE'    ,   'tries': 'END'})        
         #smach.StateMachine.add("GOTO_TABLE",        Goto_table(),           transitions={'failed': 'GOTO_TABLE',        'succ': 'PLACE_TABLE'    ,   'tries': 'END'})        
