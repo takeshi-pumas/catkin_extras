@@ -92,13 +92,13 @@ int main(int argc, char **argv)
 
 
         // wait to establish connection between the controller
-        while (pub_hsr_head_gp.getNumSubscribers() == 0) {
+        while (pub_hsr_head_gp.getNumSubscribers() == 0 && ros::ok()) {
                 ros::Duration(0.1).sleep();
         }
 
 
         bool running = false;
-        while (running == false) {
+        while (running == false and ros::ok()) {
                 ros::Duration(0.1).sleep();
                 if (client.call(list_controllers)) {
                         for (unsigned int i = 0; i < list_controllers.response.controller.size(); i++) {

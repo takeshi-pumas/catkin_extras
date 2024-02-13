@@ -170,7 +170,7 @@ int main(int argc, char **argv)
 
 
   // wait to establish connection between the controller
-  while (pub_hsr_arm_gp.getNumSubscribers() == 0) {
+  while (pub_hsr_arm_gp.getNumSubscribers() == 0 && ros::ok()) {
     ros::Duration(0.1).sleep();
   }
 
@@ -180,7 +180,7 @@ int main(int argc, char **argv)
       "/hsrb/controller_manager/list_controllers");
   controller_manager_msgs::ListControllers list_controllers;
   bool running = false;
-  while (running == false) {
+  while (running == false && ros::ok()) {
     ros::Duration(0.1).sleep();
     if (client.call(list_controllers)) {
       for (unsigned int i = 0; i < list_controllers.response.controller.size(); i++) {
