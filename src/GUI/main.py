@@ -9,8 +9,8 @@ from ROSnode import BASE_CONTROLLER
 # Initial setup 
 # Find workspace "catkin_extras"
 functions.search_ws(folder="catkin_extras", source=True)
-# os.environ['ROS_MASTER_URI'] = 'http://hsrb.local_et:11311'
-# os.environ['ROS_IP'] = '169.254.2.172'
+os.environ['ROS_MASTER_URI'] = 'http://hsrb.local_et:11311'
+os.environ['ROS_IP'] = '169.254.2.172' #'169.254.2.172'
 
 # roslaunch setup
 global uuid
@@ -21,9 +21,10 @@ layout = tab_content.main_layout
 
 window = sg.Window("ROS GUI", layout, size= tab_content.size_window)
 
-if rospy.is_shutdown():
-    rospy.init_node("ROS_GUI")
-    base = BASE_CONTROLLER('topic')
+#base = None
+#if rospy.is_shutdown():
+rospy.init_node("ROS_GUI")
+base = BASE_CONTROLLER('topic')
 
 
 while True:

@@ -5,8 +5,8 @@ from geometry_msgs.msg import Twist
 class BASE_CONTROLLER:
     def __init__(self, topic):
         self._base_vel_pub = rospy.Publisher(
-            '/hsrb/command_velocity', Twist, queue_size=2)
-        self.MAX_VEL = 0.0005
+            '/hsrb/command_velocity', Twist, queue_size=1)
+        self.MAX_VEL = 0.005
 
     def forward(self, slider_value):
         vel = slider_value * self.MAX_VEL
@@ -21,11 +21,11 @@ class BASE_CONTROLLER:
         vel = slider_value * self.MAX_VEL
         self._publish_msg(velY = vel)
     def turn_l(self, slider_value):
-        vel = slider_value * self.MAX_VEL
-        self._publish_msg(velT= vel)
+        vel = slider_value * 2 * self.MAX_VEL
+        self._publish_msg(velT= -vel)
     def turn_r(self, slider_value):
-        vel = slider_value * self.MAX_VEL
-        self._publish_msg(velT = -vel)
+        vel = slider_value * 2 * self.MAX_VEL
+        self._publish_msg(velT = vel)
     def stop(self):
         self._publish_msg()
 
