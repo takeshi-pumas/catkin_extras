@@ -70,18 +70,14 @@ class MoveGroupPythonInterfaceTutorial(object):
         joint_goal[3] = 0
         joint_goal[4] = 0
         joint_goal[5] = 0  # 1/6 of a turn
-
-        # The go command can be called with joint values, poses, or without any
-        # parameters if you have already set the pose or joint target for the group
         move_group.go(joint_goal, wait=True)
-
-        # Calling ``stop()`` ensures that there is no residual movement
         move_group.stop()
-
-        ## END_SUB_TUTORIAL
-
-        # For testing:
-        current_joints = move_group.get_current_joint_values()
+    
+    def go_to_named_target(self):
+        move_group = self.move_group
+        move_group.set_named_target('go')
+        move_group.go()
+        move_group.stop()
 
    
 
@@ -91,19 +87,12 @@ def main():
         print("----------------------------------------------------------")
         print("Welcome to the MoveIt MoveGroup Python Interface Tutorial")
         print("----------------------------------------------------------")
-        print("Press Ctrl-D to exit at any time")
-        print("")
-        #input(
-        #    "============ Press `Enter` to begin the tutorial by setting up the moveit_commander ..."
-        #)
         tutorial = MoveGroupPythonInterfaceTutorial()
-
-        #input(
-        #    "============ Press `Enter` to execute a movement using a joint state goal ..."
-        #)
         tutorial.go_to_joint_state()
-
+        rospy.sleep(1.0)
+        tutorial.go_to_named_target()
         print("============ Python tutorial demo complete!")
+
     except rospy.ROSInterruptException:
         return
     except KeyboardInterrupt:
