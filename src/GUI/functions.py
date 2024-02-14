@@ -56,3 +56,20 @@ def obtener_direcciones_ip_ethernet():
                         direcciones_ip_ethernet.append(direccion['addr'])
 
     return direcciones_ip_ethernet
+
+def search_ws(folder = 'catkin_extras', source = False):
+    dir = None
+    for root, dirs, files in os.walk("/home/"):
+        if folder in dirs:
+            dir = os.path.join(root, "catkin_extras")
+            break
+    
+    if source:
+        if dir is None :
+            print("Error setting bash")
+        else:
+            setup_bash_path = os.path.join(dir, "devel/setup.bash")
+            os.system(f"source {setup_bash_path}")
+            print(f"Bash setup successfully on {setup_bash_path}!")
+    else:
+        return dir
