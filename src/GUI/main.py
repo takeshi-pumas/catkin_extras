@@ -1,30 +1,29 @@
 import PySimpleGUI as sg
 import tab_content
 import functions
+import interfaces
 import roslaunch
 import os
 import rospy
 from ROSnode import BASE_CONTROLLER
 
 # Initial setup 
-# Find workspace "catkin_extras"
-functions.search_ws(folder="catkin_extras", source=True)
-os.environ['ROS_MASTER_URI'] = 'http://hsrb.local_et:11311'
-os.environ['ROS_IP'] = '169.254.2.172' #'169.254.2.172'
-
-# roslaunch setup
-global uuid
-uuid = roslaunch.rlutil.get_or_generate_uuid(None, False)
-roslaunch.configure_logging(uuid)
-
+uuid = None
+base = None
 layout = tab_content.main_layout
-
 window = sg.Window("ROS GUI", layout, size= tab_content.size_window)
 
-#base = None
-#if rospy.is_shutdown():
-rospy.init_node("ROS_GUI")
-base = BASE_CONTROLLER('topic')
+
+def initial_setup(robot_alias):
+    # Find workspace "catkin_extras"
+    functions.search_ws(folder="catkin_extras", source=True)
+    os.environ['ROS_MASTER_URI'] = f'http://{robot_alias}:11311'
+    os.environ['ROS_IP'] = interfaces.get_ip_ethernet()  #'169.254.2.172' #'169.254.2.172'
+    uuid = roslaunch.rlutil.get_or_generate_uuid(None, False)
+    roslaunch.configure_logging(uuid)
+    rospy.init_node("ROS_GUI")
+    base = BASE_CONTROLLER('topic')
+
 
 
 while True:
@@ -33,7 +32,18 @@ while True:
         functions.cleanup_nodes()
         break
     elif event == '-CONNECT-':
-        pass
+        robot_alias = values['-ROBOT_LIST-'][0]
+        ip = interfaces.get_robot_ip(robot_alias)
+        ip_available = interfaces.ip_is_available(ip)
+        if ip_available:
+            try:
+                initial_setup(robot_alias)
+                window['-INFO_CON-'].update(f"Connected to {robot_alias}")
+            except:
+                window['-INFO_CON-'].update("Error, try again!")
+        else:
+            window['-INFO_CON-'].update("Error, IP address unreachable!")
+
 
     elif event == '-NAVIGATION-':
         functions.manage_node('navigation_real', 'nav_pumas', window_event=window[event], uuid=uuid)
@@ -62,8 +72,6 @@ while True:
     
     elif event == '-TURN_R-':
         base.turn_r(values['-SLIDER-'])
-    
-        # base.stop()
 
 
 window.close()

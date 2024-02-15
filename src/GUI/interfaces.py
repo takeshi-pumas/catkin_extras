@@ -1,6 +1,10 @@
-'''import netifaces
 
-def obtener_ips_interfaz(interfaz):
+import netifaces
+import socket
+import re
+
+
+def get_ip_ethernet(interfaz = 'enp60s0'):
     ips = []
     try:
         direcciones = netifaces.ifaddresses(interfaz)
@@ -10,18 +14,25 @@ def obtener_ips_interfaz(interfaz):
         pass
     return ips
 
-def main():
-    interfaces = ['enp60s0', 'wlp61s0']
-    for interfaz in interfaces:
-        print(f"IPs para la interfaz {interfaz}:")
-        ips = obtener_ips_interfaz(interfaz)
-        for ip in ips:
-            print(ip)
+def is_IPv4(ip):
+        # Expresión regular para validar una dirección IPv4
+    patron_ipv4 = r'^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$'
+    return re.match(patron_ipv4, ip) is not None
 
-if __name__ == "__main__":
-    main()'''
 
-import socket
+def get_hosts(archivo_hosts = '/etc/hosts'):
+    hosts = []
+    with open(archivo_hosts, 'r') as archivo:
+        for linea in archivo:
+            # Ignoramos las líneas que comienzan con "#" (comentarios) o están en blanco
+            if not linea.strip().startswith("#") and len(linea.strip()) > 0 :
+                elementos = linea.split()
+                # El primer elemento es la dirección IP, los siguientes son los alias o nombres de host
+                if is_IPv4(elementos[0]):
+                    hosts.append(elementos[1:])
+                # ip = elementos[0]
+    return hosts
+
 
 def get_robot_ip(nombre_host):
     try:
@@ -38,9 +49,12 @@ def ip_is_available(direccion_ip):
         return True
     except (socket.timeout, ConnectionRefusedError):
         return False
+    
+
 
 def main():
-    nombre_host = "hsrb.local_et"
+    print(get_hosts())
+    nombre_host = "localhost" #"hsrb.local_et"
     direccion_ip = get_robot_ip(nombre_host)
     if direccion_ip:
         print(f"La dirección IP de {nombre_host} es: {direccion_ip}")

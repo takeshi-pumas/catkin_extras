@@ -1,5 +1,6 @@
 import PySimpleGUI as sg
 from functions import get_available_robots, obtener_direcciones_ip_ethernet, search_ws
+from interfaces import get_hosts
 
 font = ('Arial', 12)
 size_launch_btn = (10,2)
@@ -12,9 +13,10 @@ assets_dir = f"{ws}/src/GUI/assets/"
 
 
 robot_connection_tab_layout = [[sg.Text('Seleccione un robot para conectar:', font=font)],
-              [sg.Combo(values=obtener_direcciones_ip_ethernet(), key='-ROBOT_LIST-', font=font, size=(15,1)), 
+              [sg.Combo(values = get_hosts(), key='-ROBOT_LIST-', font=font, size=(15,1)), 
                sg.Button('Connect', key='-CONNECT-', font=font), 
-               sg.Button('Refresh', key='-REFRESH-', font=font)]]
+               sg.Button('Refresh', key='-REFRESH-', font=font),
+               sg.Text('Info', key='-INFO_CON-', font=font)]]
 
 launch_tab_layout = [[sg.Text("")],
     [sg.Text("Press a button to run ROS Nodes, press again to finish them.", key='-Btn info-', font=font, justification='center')],
