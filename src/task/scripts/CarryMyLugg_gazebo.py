@@ -31,15 +31,14 @@ class Initial(smach.State):
         arm.go()
         rospy.sleep(0.3)
 
-        gripper.open()
-        rospy.sleep(0.3)
+        #gripper.open()
+        #rospy.sleep(0.3)
 
-        gripper.close()
-        rospy.sleep(0.3)
+        #gripper.close()
+        #rospy.sleep(0.3)
 
         
         return 'succ'
-
 
 #########################################################################################################
 class Wait_push_hand(smach.State):
@@ -57,13 +56,16 @@ class Wait_push_hand(smach.State):
         if self.tries == 4:
             return 'tries'
         talk('Gently... push my hand to begin')
-        #succ = wait_for_push_hand(100) # NOT GAZEBABLE
-        #if succ:
-        #    return 'succ'
-        #else:
-        #    return 'failed'
+        
+        """
+        succ = wait_for_push_hand(100) # NOT GAZEBABLE
+        if succ:
+            return 'succ'
+        else:
+            return 'failed'
+        """
+        
         return 'succ'
-
 
 #########################################################################################################
 class Goto_living_room(smach.State):  
@@ -79,7 +81,7 @@ class Goto_living_room(smach.State):
         self.tries += 1
         if self.tries == 3:
             return 'tries'
-        if self.tries == 1: talk('Navigating to, pickup')
+        if self.tries == 1: talk('Navigating to, living room')
         res = omni_base.move_base(known_location='living_room', time_out=200)
         print(res)
         if res:
@@ -107,13 +109,21 @@ class Find_human(smach.State):
         if self.tries==3:head.set_joint_values([-0.5, 0.1])#looking right        
         
         humanpose=detect_human_to_tf()  #make sure service is running (pointing detector server now hosts this service)
-        res=pointing_detect_server.call()
-        if humanpose== False or  (res.x_r+res.y_r)==0 and  (res.x_l+res.y_l)==0  :
+        if humanpose== False:
             print ('no human ')
+            return 'failed'
+        talk('Please start pointing at the bag, please')
+        rospy.sleep(2.0)
+        talk('Starting pointing detection')
+        rospy.sleep(0.7)
+        res=pointing_detect_server.call()
+        if (res.x_r+res.y_r)==0 and  (res.x_l+res.y_l)==0  :
+            print ('no pointing ')
             return 'failed'
         if (res.x_r+res.y_r)!=0:tf_man.pub_static_tf(pos=[res.x_r, res.y_r,0], rot =[0,0,0,1], point_name='pointing_right')
         if (res.x_l+res.y_l)!=0:tf_man.pub_static_tf(pos=[res.x_l, res.y_l,0], rot =[0,0,0,1], point_name='pointing_left')
         return 'succ'# There is now a "human TF with humans aprrox location(face)"
+
 #########################################################################################################
 class Scan_floor(smach.State):
     def __init__(self):
@@ -183,7 +193,6 @@ class Scan_floor(smach.State):
             #    return 'succ'
 
 #########################################################################################################
-
 class Scan_table(smach.State):
     def __init__(self):
         smach.State.__init__(
@@ -521,8 +530,7 @@ class Place_table(smach.State):
             
         return 'failed'
 
-
-
+#########################################################################################################
 class Goto_next_room(smach.State):  # ADD KNONW LOCATION DOOR
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
@@ -568,8 +576,6 @@ class Goto_next_room(smach.State):  # ADD KNONW LOCATION DOOR
             self.tries +=-1
             return 'failed'
 
-
-
 ###########################################################################################################
 class Lead_to_living_room(smach.State):
     def __init__(self):
@@ -608,9 +614,6 @@ class Lead_to_living_room(smach.State):
             talk('Navigation Failed, retrying')
             return 'failed'
 
-    
-        
-    
 ###########################################################################################################
 class Analyze_human(smach.State):
     def __init__(self):
@@ -665,8 +668,6 @@ class Analyze_human(smach.State):
             ##
         return 'succ'
 
-
-    
 #########################################################################################################
 class Analyze_area(smach.State):
     def __init__(self):
@@ -737,11 +738,7 @@ class Analyze_area(smach.State):
             return 'succ'
         talk('Rule no littering Observed... There is no Trash in area next to human....')
         return 'failed'
-
-
-
-
-        
+ 
 ###########################################################################################################
 class Detect_drink(smach.State):
     def __init__(self):
@@ -844,8 +841,7 @@ class Detect_drink(smach.State):
             talk('Scanning...')
             return 'tries'
     
-        
-    
+
 ###########################################################################################################
 
 # --------------------------------------------------
@@ -868,14 +864,30 @@ if __name__ == '__main__':
 
     with sm:
         # State machine STICKLER
-        smach.StateMachine.add("INITIAL",           Initial(),              transitions={'failed': 'INITIAL',           'succ': 'WAIT_PUSH_HAND',   'tries': 'END'})
-        smach.StateMachine.add("WAIT_PUSH_HAND",    Wait_push_hand(),       transitions={'failed': 'WAIT_PUSH_HAND',    'succ': 'GOTO_LIVING_ROOM',       'tries': 'END'})
-        smach.StateMachine.add("GOTO_LIVING_ROOM",  Goto_living_room(),     transitions={'failed': 'GOTO_LIVING_ROOM',        'succ': 'FIND_HUMAN'    ,   'tries': 'INITIAL'})  
-        smach.StateMachine.add("FIND_HUMAN",         Find_human(),          transitions={'failed': 'FIND_HUMAN',        'succ': 'SCAN_FLOOR'    ,   'tries': 'GOTO_LIVING_ROOM'})
-        smach.StateMachine.add("SCAN_FLOOR",         Scan_floor(),          transitions={'failed': 'SCAN_FLOOR' ,     'succ': 'PRE_PICKUP' ,    'tries': 'END'})   #
-        smach.StateMachine.add("PRE_PICKUP",        Pre_pickup(),           transitions={'failed': 'PRE_PICKUP',        'succ': 'PICKUP'    ,  'tries': 'END'})        
-        smach.StateMachine.add("PICKUP",            Pickup(),           transitions={'failed': 'PICKUP',        'succ': 'GOTO_HUMAN'    ,   'tries': 'END'})        
-        smach.StateMachine.add("GOTO_HUMAN", SimpleActionState('follow_server', FollowAction) ,transitions={'aborted': 'GOTO_HUMAN',        'succeeded': 'END' ,   'preempted': 'END' })
+        smach.StateMachine.add("INITIAL",           Initial(),              transitions={'failed': 'INITIAL',           
+                                                                                         'succ': 'WAIT_PUSH_HAND',   
+                                                                                         'tries': 'END'})
+        smach.StateMachine.add("WAIT_PUSH_HAND",    Wait_push_hand(),       transitions={'failed': 'WAIT_PUSH_HAND',    
+                                                                                         'succ': 'GOTO_LIVING_ROOM',       
+                                                                                         'tries': 'END'})
+        smach.StateMachine.add("GOTO_LIVING_ROOM",  Goto_living_room(),     transitions={'failed': 'GOTO_LIVING_ROOM',        
+                                                                                         'succ': 'FIND_HUMAN',   
+                                                                                         'tries': 'INITIAL'})  
+        smach.StateMachine.add("FIND_HUMAN",         Find_human(),          transitions={'failed': 'FIND_HUMAN',        
+                                                                                         'succ': 'SCAN_FLOOR',   
+                                                                                         'tries': 'GOTO_LIVING_ROOM'})
+        smach.StateMachine.add("SCAN_FLOOR",         Scan_floor(),          transitions={'failed': 'SCAN_FLOOR',     
+                                                                                         'succ': 'PRE_PICKUP',    
+                                                                                         'tries': 'END'})   #
+        smach.StateMachine.add("PRE_PICKUP",        Pre_pickup(),           transitions={'failed': 'PRE_PICKUP',        
+                                                                                         'succ': 'PICKUP',  
+                                                                                         'tries': 'END'})        
+        smach.StateMachine.add("PICKUP",            Pickup(),           transitions={'failed': 'PICKUP',        
+                                                                                     'succ': 'GOTO_HUMAN',   
+                                                                                     'tries': 'END'})        
+        smach.StateMachine.add("GOTO_HUMAN", SimpleActionState('follow_server', FollowAction) ,transitions={'aborted': 'GOTO_HUMAN',        
+                                                                                                            'succeeded': 'END' ,   
+                                                                                                            'preempted': 'END' })
         #smach.StateMachine.add("PICKUP_CEREAL",     Pickup_cereal(),        transitions={'failed': 'PICKUP_CEREAL',        'succ': 'POST_PICKUP'    ,   'tries': 'END'})        
         #smach.StateMachine.add("POST_PICKUP",        Post_pickup(),         transitions={'failed': 'POST_PICKUP',        'succ': 'GOTO_TABLE'    ,   'tries': 'END'})        
         #smach.StateMachine.add("GOTO_TABLE",        Goto_table(),           transitions={'failed': 'GOTO_TABLE',        'succ': 'PLACE_TABLE'    ,   'tries': 'END'})        
