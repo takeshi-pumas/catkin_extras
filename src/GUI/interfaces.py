@@ -60,7 +60,7 @@ def ping_to_ip(ip):
 
 def main():
     print(get_hosts())
-    nombre_host = "Ruben" #"localhost" #"hsrb.local_et"
+    nombre_host = "hsrb.local_et" #"localhost" #"hsrb.local_et"
     direccion_ip = get_robot_ip(nombre_host)
     if direccion_ip:
         print(f"La dirección IP de {nombre_host} es: {direccion_ip}")
@@ -71,6 +71,7 @@ def main():
         print('ip is available')
     else:
         print('ip is not available')
+    print(get_ip_ethernet())
 
 if __name__ == "__main__":
     main()

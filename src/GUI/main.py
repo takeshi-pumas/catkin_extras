@@ -16,14 +16,17 @@ setup_completed = False
 
 
 def initial_setup(robot_alias):
-    # Find workspace "catkin_extras"
+    # Find workspace "catkin_extras")
     os.environ['ROS_MASTER_URI'] = f'http://{robot_alias}:11311'
-    os.environ['ROS_IP'] = interfaces.get_ip_ethernet()  #'169.254.2.172' #'169.254.2.172'
-    functions.search_ws(folder="catkin_extras", source=True)    
+    print("ROS master set")
+    os.environ['ROS_IP'] = interfaces.get_ip_ethernet()[0]  #'169.254.2.172' #'169.254.2.172'
+    print("ROS ip set")
+    functions.search_ws(folder="catkin_extras", source=True)  
+
     uuid = roslaunch.rlutil.get_or_generate_uuid(None, False)
     roslaunch.configure_logging(uuid)
     rospy.init_node("ROS_GUI")
-    base = ROSnode.BASE_CONTROLLER('topic')
+    return uuid, ROSnode.BASE_CONTROLLER('topic')
 
 
 
@@ -38,7 +41,7 @@ while True:
         ip_available = interfaces.ping_to_ip(ip)
         if ip_available:
             try:
-                initial_setup(robot_alias)
+                uuid, base = initial_setup(robot_alias)
                 window['-INFO_CON-'].update(f"Connected to {robot_alias}")
                 setup_completed = True
             except:
