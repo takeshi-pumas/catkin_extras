@@ -53,7 +53,7 @@ def get_robot_ip(nombre_host):
     
 def ping_to_ip(ip):
     try:
-        output = subprocess.check_output(['ping', '-c', '1', {ip}])
+        output = subprocess.check_output(['ping', '-c', '1', ip])
         return True
     except subprocess.CalledProcessError:
         return False
