@@ -5,7 +5,7 @@ import interfaces
 import roslaunch
 import os
 import rospy
-from ROSnode import BASE_CONTROLLER
+import ROSnode
 
 # Initial setup 
 uuid = None
@@ -22,7 +22,7 @@ def initial_setup(robot_alias):
     uuid = roslaunch.rlutil.get_or_generate_uuid(None, False)
     roslaunch.configure_logging(uuid)
     rospy.init_node("ROS_GUI")
-    base = BASE_CONTROLLER('topic')
+    base = ROSnode.BASE_CONTROLLER('topic')
 
 
 
@@ -34,7 +34,7 @@ while True:
     elif event == '-CONNECT-':
         robot_alias = values['-ROBOT_LIST-'][0]
         ip = interfaces.get_robot_ip(robot_alias)
-        ip_available = interfaces.ip_is_available(ip)
+        ip_available = interfaces.ping_to_ip(ip)
         if ip_available:
             try:
                 initial_setup(robot_alias)

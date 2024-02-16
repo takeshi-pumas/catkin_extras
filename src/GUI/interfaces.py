@@ -2,6 +2,7 @@
 import netifaces
 import socket
 import re
+import subprocess
 
 
 def get_ip_ethernet(interfaz = 'enp60s0'):
@@ -41,27 +42,32 @@ def get_robot_ip(nombre_host):
     except socket.gaierror:
         return None
 
-def ip_is_available(direccion_ip):
-    try:
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.settimeout(1)  # Establece un tiempo de espera de 1 segundo para la conexión
-            s.connect((direccion_ip, 80))
-        return True
-    except (socket.timeout, ConnectionRefusedError):
-        return False
+# def ip_is_available(direccion_ip):
+#     try:
+#         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+#             s.settimeout(1)  # Establece un tiempo de espera de 1 segundo para la conexión
+#             s.connect((direccion_ip, 80))
+#         return True
+#     except (socket.timeout, ConnectionRefusedError):
+#         return False
     
-
+def ping_to_ip(ip):
+    try:
+        output = subprocess.check_output(['ping', '-c', '1', {ip}])
+        return True
+    except subprocess.CalledProcessError:
+        return False
 
 def main():
     print(get_hosts())
-    nombre_host = "localhost" #"hsrb.local_et"
+    nombre_host = "Ruben" #"localhost" #"hsrb.local_et"
     direccion_ip = get_robot_ip(nombre_host)
     if direccion_ip:
         print(f"La dirección IP de {nombre_host} es: {direccion_ip}")
     else:
         print(f"No se pudo resolver la dirección IP para {nombre_host}")
     
-    if ip_is_available(direccion_ip):
+    if ping_to_ip(direccion_ip):
         print('ip is available')
     else:
         print('ip is not available')
