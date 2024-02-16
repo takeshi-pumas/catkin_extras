@@ -130,6 +130,15 @@ def callback(points_msg):
             req      = classify_client.request_class()
             req.in_.image_msgs.append(img_msg)
             res      = classify_client(req)
+
+
+            for i in range(len(res.poses)):
+                tf_man.getTF("head_rgbd_sensor_rgb_frame")
+                tf_man.pub_static_tf(pos=[res.poses[i].position.x ,res.poses[i].position.y,res.poses[i].position.z], rot=[0,0,0,1],ref="head_rgbd_sensor_rgb_frame",point_name=res.names[i].data[4:] )   
+                rospy.sleep(0.3)
+                tf_man.change_ref_frame_tf(res.names[i].data[4:])
+            
+
             debug_image=bridge.imgmsg_to_cv2(res.debug_image.image_msgs[0])
             cv2.imshow('our of res'  , debug_image)
 

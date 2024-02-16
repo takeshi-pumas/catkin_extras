@@ -47,15 +47,16 @@ from utils.know_utils import *
 
 global listener, broadcaster, tfBuffer, tf_static_broadcaster, scene, rgbd, head,train_new_face, wrist, human_detect_server, line_detector, clothes_color , head_mvit
 global clear_octo_client, goal,navclient,segmentation_server  , tf_man , omni_base, brazo, speech_recog_server, bridge, map_msg, pix_per_m, analyze_face , arm , set_grammar
-global recognize_action , classify_client,pointing_detect_server 
+global recognize_action , classify_client,pointing_detect_server  , hand_cam
 rospy.init_node('follow_action_server')
+arm =  moveit_commander.MoveGroupCommander('arm')
 #head_mvit = moveit_commander.MoveGroupCommander('head')
 #gripper =  moveit_commander.MoveGroupCommander('gripper')
 #whole_body=moveit_commander.MoveGroupCommander('whole_body')
 
 #broadcaster = tf.TransformBroadcaster()
-#arm =  moveit_commander.MoveGroupCommander('arm')
 tfBuffer = tf2_ros.Buffer()
+hand_cam= HAND_RGB()
 
 listener = tf2_ros.TransformListener(tfBuffer)
 broadcaster = tf2_ros.TransformBroadcaster()
