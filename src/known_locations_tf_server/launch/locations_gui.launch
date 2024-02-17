@@ -1,0 +1,4 @@
+<launch>
+	<node name="known_locs" pkg="known_locations_tf_server" type="location_server_gui.py" output="screen">
+	</node>
+</launch>

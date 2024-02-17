@@ -8,6 +8,7 @@ import rospy
 import ROSnode
 
 # Initial setup 
+global uuid, base
 uuid = None
 base = None
 layout = tab_content.main_layout
@@ -16,6 +17,7 @@ setup_completed = False
 
 
 def initial_setup(robot_alias):
+    global uuid, base
     # Find workspace "catkin_extras")
     os.environ['ROS_MASTER_URI'] = f'http://{robot_alias}:11311'
     print("ROS master set")
@@ -26,7 +28,8 @@ def initial_setup(robot_alias):
     uuid = roslaunch.rlutil.get_or_generate_uuid(None, False)
     roslaunch.configure_logging(uuid)
     rospy.init_node("ROS_GUI")
-    return uuid, ROSnode.BASE_CONTROLLER('topic')
+    ROSnode.BASE_CONTROLLER()
+    # return uuid, ROSnode.BASE_CONTROLLER('base_controller_topic')
 
 
 
@@ -35,13 +38,14 @@ while True:
     if event == sg.WINDOW_CLOSED:
         functions.cleanup_nodes()
         break
+    # Start up
     elif event == '-CONNECT-':
         robot_alias = values['-ROBOT_LIST-'][0]
         ip = interfaces.get_robot_ip(robot_alias)
         ip_available = interfaces.ping_to_ip(ip)
         if ip_available:
             try:
-                uuid, base = initial_setup(robot_alias)
+                initial_setup(robot_alias)
                 window['-INFO_CON-'].update(f"Connected to {robot_alias}")
                 setup_completed = True
             except:
@@ -49,7 +53,7 @@ while True:
         else:
             window['-INFO_CON-'].update("Error, IP address unreachable!")
 
-
+    #Launcher
     elif event == '-NAVIGATION-' and setup_completed:
         functions.manage_node('navigation_real', 'nav_pumas', window_event=window[event], uuid=uuid)
 
@@ -58,10 +62,13 @@ while True:
 
     elif event == '-MOVEIT_ARM-' and setup_completed:
         functions.manage_node('arm_test', 'task', window_event=window[event], uuid=uuid)
-    
+
+    elif event == '-LOC-SRV-' and setup_completed:
+        functions.manage_node('locations_gui', 'known_locations_tf_server', window_event=window[event], uuid=uuid)
+
+    #Robot control
     elif event == '-FORWARD-' and setup_completed:
         base.forward(values['-SLIDER-'])
-        rospy.sleep(0.3)
 
     elif event == '-BACKWARD-' and setup_completed:
         base.backward(values['-SLIDER-'])
@@ -77,6 +84,13 @@ while True:
     
     elif event == '-TURN_R-' and setup_completed:
         base.turn_r(values['-SLIDER-'])
+    
+    # Service callers
+    elif event == '-TO_LOCS-' and setup_completed:
+        ROSnode.call_known_location_add(values['-LOC_NAME-'])
+
+    elif event == '-TO_KNOWLEDGE-' and setup_completed:
+        ROSnode.call_knowledge_place_add()
 
 
 window.close()

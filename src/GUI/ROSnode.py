@@ -1,6 +1,6 @@
 import rospy
 from geometry_msgs.msg import Twist
-
+from known_locations_tf_server.srv import Locations_server
 
 class BASE_CONTROLLER:
     def __init__(self, topic):
@@ -36,6 +36,29 @@ class BASE_CONTROLLER:
         twist.linear.y = velY
         twist.angular.z = velT
         self._base_vel_pub.publish(twist)
+
+
+# Llamada de servicios
+def call_known_location_add(location_name):
+    rospy.wait_for_service('/known_location_add', timeout=5)  # Espera a que el servicio esté disponible
+    try:
+        known_location_add = rospy.ServiceProxy('/known_location_add', Locations_server)  # Crea un proxy para el servicio
+        resp = known_location_add(location_name)  # Llama al servicio con el nombre de la ubicación
+        return resp.success  # Retorna True si el servicio fue exitoso, False de lo contrario
+    except rospy.ServiceException as e:
+        print("Error al llamar al servicio: ", e)
+        return False
+
+# Función para llamar al servicio de agregar lugar de conocimiento
+def call_knowledge_place_add():
+    rospy.wait_for_service('/knowledge_place_add', timeout=5)  # Espera a que el servicio esté disponible
+    try:
+        knowledge_place_add = rospy.ServiceProxy('/knowledge_place_add', Locations_server)  # Crea un proxy para el servicio
+        resp = knowledge_place_add()
+        return resp.success  # Retorna True si el servicio fue exitoso, False de lo contrario
+    except rospy.ServiceException as e:
+        print("Error al llamar al servicio: ", e)
+        return False
 
 
 

@@ -3,6 +3,7 @@ from functions import get_available_robots, obtener_direcciones_ip_ethernet, sea
 from interfaces import get_hosts
 
 font = ('Arial', 12)
+font2 = ['Arial', 10]
 size_launch_btn = (10,2)
 size_window = (700, 400)
 
@@ -16,7 +17,7 @@ robot_connection_tab_layout = [[sg.Text('Seleccione un robot para conectar:', fo
               [sg.Combo(values = get_hosts(), key='-ROBOT_LIST-', font=font, size=(15,1)), 
                sg.Button('Connect', key='-CONNECT-', font=font), 
                sg.Button('Refresh', key='-REFRESH-', font=font),
-               sg.Text('Info', key='-INFO_CON-', font=font)]]
+               sg.Text('Robot is not connected', key='-INFO_CON-', font=font, text_color='yellow')]]
 
 launch_tab_layout = [[sg.Text("")],
     [sg.Text("Press a button to run ROS Nodes, press again to finish them.", key='-Btn info-', font=font, justification='center')],
@@ -25,6 +26,16 @@ launch_tab_layout = [[sg.Text("")],
     sg.Button("Moveit", key='-MOVEIT-', button_color=('white', 'green'), font=font, size=size_launch_btn),
     sg.Button("Moveit arm test", key='-MOVEIT_ARM-', button_color=('white', 'green'), font=font, size=size_launch_btn)]
     ]
+
+hri_tab_layout = [
+    [sg.Text("Main services to start tasks", font=font, justification='center')],
+    [sg.HorizontalSeparator()],
+    [sg.Button("Start location service node", key='-LOC-SRV-', font=font2, button_color=('white', 'green'))], 
+    [sg.Text("Location_name:", font=font2), 
+     sg.InputText(key='-LOC_NAME-', size = (15, 1)), sg.Button("Add to known locations", key='-TO_LOCS-', font=font2), 
+     sg.Button("Add to knowledge (receptionist)", "-TO_KNOWLEDGE-", font=font2)],
+     [sg.HorizontalSeparator()]
+]
 
 robot_controls_layout = [
     [sg.Text("")],
@@ -59,7 +70,8 @@ robot_controller_tab_layout = [
 main_layout = [robot_connection_tab_layout,
     [sg.TabGroup(
         [[sg.Tab("Robot controllers tab", robot_controller_tab_layout, font=font, element_justification='center'),
-            sg.Tab("ROS node launch tab", launch_tab_layout, font=font, element_justification='center')]], size=size_window, key='-TAB_GROUP-')]
+            sg.Tab("ROS node launch tab", launch_tab_layout, font=font, element_justification='center'),
+            sg.Tab("HRI tab", hri_tab_layout)]], size=size_window, key='-TAB_GROUP-')]
 ]
 
 # initial_layout = [robot_connection_tab_layout,
