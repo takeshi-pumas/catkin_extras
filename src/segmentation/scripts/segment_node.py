@@ -50,7 +50,8 @@ def trigger_response(request):
         counts, bins =(np.histogram(zs_no_nans, bins=100))
         inds=np.where(counts>5000)
         low_planes_height=bins[np.add(inds, 1)].flatten()
-        print (f'Number of planes found {len(inds[0])} at z=[{bins[ np.add(inds, 1)]}]')
+        print (f'Number of planes found {len(inds[0])} at z=[{bins[ np.add(inds, 1)]}]#############3')
+
         if (low_planes_height[0] > -0.05) and (low_planes_height[0] < 0.05): low_planes_height=low_planes_height[1:]
     else:
         low_plane = (corrected['z'] > request.height.data)      # HEIGHT REQUESTED OR OBTAINED FROM HISTOGRAM
@@ -99,10 +100,7 @@ def trigger_response(request):
                 else: print(f'Centroid_y out of range {cY} ,{reg_ly_v},{reg_hy_v}')
             else: print(f'Area of contour outside of range {area} ,{lower_v},{higher_v}')
         
-    if len(cents)==0:
-        img_msg=bridge.cv2_to_imgmsg(rgb_image)
-        res.im_out.image_msgs.append(img_msg)
-        return res
+    
     img_msg=bridge.cv2_to_imgmsg(image_with_contours)
     #plt.imshow(img)
     #plt.imshow (image_with_contours)
