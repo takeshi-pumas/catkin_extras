@@ -5,10 +5,9 @@ from interfaces import get_hosts
 font = ('Arial', 12)
 font2 = ['Arial', 10]
 size_launch_btn = (10,2)
-size_window = (700, 400)
+size_window = (600, 400)
 
-size_column = (300, size_window[1])
-
+size_column = (200, size_window[1])
 ws = search_ws()
 assets_dir = f"{ws}/src/GUI/assets/"
 
@@ -37,8 +36,8 @@ hri_tab_layout = [
      [sg.HorizontalSeparator()]
 ]
 
-robot_controls_layout = [
-    [sg.Text("")],
+robot_base_controls_layout = [
+    [sg.Text("Base controls", font=font2)],
     [sg.RealtimeButton('', size=(1, 1), key='-TURN_L-',     button_color='white', image_filename=f'{assets_dir}arrow_l.png'), 
      sg.RealtimeButton('', size=(1, 1), key='-FORWARD-',    button_color='white', image_filename=f'{assets_dir}arrow_up.png'), 
      sg.RealtimeButton('', size=(1, 1), key='-TURN_R-',     button_color='white', image_filename=f'{assets_dir}arrow_r.png')],
@@ -48,30 +47,47 @@ robot_controls_layout = [
     [sg.Text('', size=(1, 1)), 
      sg.RealtimeButton('', size=(1, 1), key='-BACKWARD-',   button_color='white', image_filename=f'{assets_dir}arrow_down.png'),
      sg.Text('', size=(1, 1))],
-     [sg.Text('Velocidad:', font=font),
-    sg.Slider(range=(0, 100), default_value=50, orientation='h', size=(20, 13), key='-SLIDER-')],
+     [sg.Text('Velocidad:', font=font2),
+    sg.Slider(range=(0, 100), default_value=40, orientation='h', size=(13, 13), key='-SLIDER-')],
+    # [sg.HorizontalSeparator()],[sg.Text("Head controls", font= font2)]
 
 ]
 
+robot_head_controls_layout = [
+    [sg.Text("Head controls", font=font2)],
+    [sg.Text(''), 
+     sg.RealtimeButton('', size=(1, 1), key='-HEAD_UP-',    button_color='white', image_filename=f'{assets_dir}arrow_up.png'), 
+     sg.Text('')],
+    [sg.RealtimeButton('', size=(1, 1), key='-HEAD_LEFT-',       button_color='white', image_filename=f'{assets_dir}arrow_left.png'), 
+     sg.RealtimeButton('', size=(1, 1), button_color='white'), 
+     sg.RealtimeButton('', size=(1, 1), key='-HEAD_RIGHT-',      button_color='white', image_filename=f'{assets_dir}arrow_right.png')],
+    [sg.Text('', size=(1, 1)), 
+     sg.RealtimeButton('', size=(1, 1), key='HEAD_DOWN-',   button_color='white', image_filename=f'{assets_dir}arrow_down.png'),
+     sg.Text('', size=(1, 1))],
+    #  [sg.Text('Velocidad:', font=font2),
+    # sg.Slider(range=(0, 100), default_value=50, orientation='h', size=(20, 13), key='-SLIDER-')],
+]
+
+
 robot_controller_tab_layout = [
-    [sg.Column(
-        robot_controls_layout, vertical_alignment='top', size=size_column,element_justification='center'),  # Alinea la columna izquierda en la parte superior
-     sg.VerticalSeparator(),  # Separador vertical
+    [sg.Column(robot_base_controls_layout, vertical_alignment='top', element_justification='center', size=(None, None), expand_x=True),  # Alinea la columna izquierda en la parte superior
+     sg.Column(robot_head_controls_layout, vertical_alignment='top', element_justification='center', size=(None, None), expand_x=True),
+    #  sg.VerticalSeparator(),  # Separador vertical
      sg.Column([
         # Elementos para la parte derecha de la pestaña
         [sg.Text('Contenido de la parte derecha')],
         [sg.Button('Botón 3')],
         [sg.Button('Botón 4')],
-        ],size=size_column, vertical_alignment='top')  # Alinea la columna derecha en la parte superior
+        ], vertical_alignment='top', element_justification='center', size=(None, None), expand_x=True)  # Alinea la columna derecha en la parte superior
     ]
 ]
 
 
 main_layout = [robot_connection_tab_layout,
     [sg.TabGroup(
-        [[sg.Tab("Robot controllers tab", robot_controller_tab_layout, font=font, element_justification='center'),
-            sg.Tab("ROS node launch tab", launch_tab_layout, font=font, element_justification='center'),
-            sg.Tab("HRI tab", hri_tab_layout)]], size=size_window, key='-TAB_GROUP-')]
+        [[sg.Tab("Robot controllers tab", robot_controller_tab_layout, key='-CONTROL_TAB-', font=font, element_justification='center'),
+            sg.Tab("ROS node launch tab", launch_tab_layout, key='-LAUNCH_TAB-', font=font, element_justification='center'),
+            sg.Tab("HRI tab", hri_tab_layout, key='-SERVICE_TAB-')]], size=size_window, key='-TAB_GROUP-', enable_events=True)]
 ]
 
 # initial_layout = [robot_connection_tab_layout,

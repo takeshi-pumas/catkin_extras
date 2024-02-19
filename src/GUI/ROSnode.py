@@ -37,6 +37,9 @@ class BASE_CONTROLLER:
         twist.angular.z = velT
         self._base_vel_pub.publish(twist)
 
+# class HEAD_CONTROLLER:
+#     def __init__(self, topic):
+        
 
 # Llamada de servicios
 def call_known_location_add(location_name):

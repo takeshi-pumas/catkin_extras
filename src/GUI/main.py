@@ -30,16 +30,16 @@ def initial_setup(robot_alias):
     rospy.init_node("ROS_GUI")
     ROSnode.BASE_CONTROLLER()
     # return uuid, ROSnode.BASE_CONTROLLER('base_controller_topic')
-
-
+active_tab = '-CONTROL_TAB-'
 
 while True:
     event, values = window.read()
+    # print(values)
     if event == sg.WINDOW_CLOSED:
         functions.cleanup_nodes()
         break
     # Start up
-    elif event == '-CONNECT-':
+    elif event == '-CONNECT-' and values['-ROBOT_LIST-'] != '':
         robot_alias = values['-ROBOT_LIST-'][0]
         ip = interfaces.get_robot_ip(robot_alias)
         ip_available = interfaces.ping_to_ip(ip)
@@ -52,45 +52,51 @@ while True:
                 window['-INFO_CON-'].update("Error, robot is not connected,try again!")
         else:
             window['-INFO_CON-'].update("Error, IP address unreachable!")
+    
+    elif event == '-TAB_GROUP-':
+        active_tab = values['-TAB_GROUP-']
 
     #Launcher
-    elif event == '-NAVIGATION-' and setup_completed:
-        functions.manage_node('navigation_real', 'nav_pumas', window_event=window[event], uuid=uuid)
+    if active_tab == '-LAUNCH_TAB-' and setup_completed:
+        if event == '-NAVIGATION-':
+            functions.manage_node('navigation_real', 'nav_pumas', window_event=window[event], uuid=uuid)
 
-    elif event == '-MOVEIT-' and setup_completed:
-        functions.manage_node('hsrb_demo_with_controller', 'hsrb_moveit_config', window_event=window[event], uuid=uuid)
+        elif event == '-MOVEIT-':
+            functions.manage_node('hsrb_demo_with_controller', 'hsrb_moveit_config', window_event=window[event], uuid=uuid)
 
-    elif event == '-MOVEIT_ARM-' and setup_completed:
-        functions.manage_node('arm_test', 'task', window_event=window[event], uuid=uuid)
+        elif event == '-MOVEIT_ARM-':
+            functions.manage_node('arm_test', 'task', window_event=window[event], uuid=uuid)
 
-    elif event == '-LOC-SRV-' and setup_completed:
-        functions.manage_node('locations_gui', 'known_locations_tf_server', window_event=window[event], uuid=uuid)
+        elif event == '-LOC-SRV-':
+            functions.manage_node('locations_gui', 'known_locations_tf_server', window_event=window[event], uuid=uuid)
 
     #Robot control
-    elif event == '-FORWARD-' and setup_completed:
-        base.forward(values['-SLIDER-'])
+    elif active_tab == '-CONTROL_TAB-' and setup_completed:
+        if event == '-FORWARD-':
+            base.forward(values['-SLIDER-'])
 
-    elif event == '-BACKWARD-' and setup_completed:
-        base.backward(values['-SLIDER-'])
+        elif event == '-BACKWARD-':
+            base.backward(values['-SLIDER-'])
 
-    elif event == '-LEFT-' and setup_completed:
-        base.left(values['-SLIDER-'])
+        elif event == '-LEFT-':
+            base.left(values['-SLIDER-'])
 
-    elif event == '-RIGHT-' and setup_completed:
-        base.right(values['-SLIDER-'])
+        elif event == '-RIGHT-':
+            base.right(values['-SLIDER-'])
 
-    elif event == '-TURN_L-' and setup_completed:
-        base.turn_l(values['-SLIDER-'])
-    
-    elif event == '-TURN_R-' and setup_completed:
-        base.turn_r(values['-SLIDER-'])
-    
+        elif event == '-TURN_L-':
+            base.turn_l(values['-SLIDER-'])
+        
+        elif event == '-TURN_R-':
+            base.turn_r(values['-SLIDER-'])
+        
     # Service callers
-    elif event == '-TO_LOCS-' and setup_completed:
-        ROSnode.call_known_location_add(values['-LOC_NAME-'])
+    elif active_tab == '-SERVICE_TAB-' and setup_completed:
+        if event == '-TO_LOCS-':
+            ROSnode.call_known_location_add(values['-LOC_NAME-'])
 
-    elif event == '-TO_KNOWLEDGE-' and setup_completed:
-        ROSnode.call_knowledge_place_add()
+        elif event == '-TO_KNOWLEDGE-':
+            ROSnode.call_knowledge_place_add()
 
 
 window.close()
