@@ -14,6 +14,7 @@ base = None
 layout = tab_content.main_layout
 window = sg.Window("ROS GUI", layout, size= tab_content.size_window)
 setup_completed = False
+active_tab = '-CONTROL_TAB-'
 
 
 def initial_setup(robot_alias):
@@ -28,9 +29,8 @@ def initial_setup(robot_alias):
     uuid = roslaunch.rlutil.get_or_generate_uuid(None, False)
     roslaunch.configure_logging(uuid)
     rospy.init_node("ROS_GUI")
-    ROSnode.BASE_CONTROLLER()
+    base = ROSnode.BASE_CONTROLLER("base_controller_topic")
     # return uuid, ROSnode.BASE_CONTROLLER('base_controller_topic')
-active_tab = '-CONTROL_TAB-'
 
 while True:
     event, values = window.read()
@@ -48,8 +48,9 @@ while True:
                 initial_setup(robot_alias)
                 window['-INFO_CON-'].update(f"Connected to {robot_alias}")
                 setup_completed = True
-            except:
+            except Exception as e:
                 window['-INFO_CON-'].update("Error, robot is not connected,try again!")
+                print(e)
         else:
             window['-INFO_CON-'].update("Error, IP address unreachable!")
     
@@ -67,8 +68,6 @@ while True:
         elif event == '-MOVEIT_ARM-':
             functions.manage_node('arm_test', 'task', window_event=window[event], uuid=uuid)
 
-        elif event == '-LOC-SRV-':
-            functions.manage_node('locations_gui', 'known_locations_tf_server', window_event=window[event], uuid=uuid)
 
     #Robot control
     elif active_tab == '-CONTROL_TAB-' and setup_completed:
@@ -91,8 +90,12 @@ while True:
             base.turn_r(values['-SLIDER-'])
         
     # Service callers
-    elif active_tab == '-SERVICE_TAB-' and setup_completed:
-        if event == '-TO_LOCS-':
+    elif active_tab == '-SERVICES_TAB-' and setup_completed:
+
+        if event == '-LOC_SRV-':
+            functions.manage_node('locations_gui', 'known_locations_tf_server', window_event=window[event], uuid=uuid)
+        
+        elif event == '-TO_LOCS-':
             ROSnode.call_known_location_add(values['-LOC_NAME-'])
 
         elif event == '-TO_KNOWLEDGE-':

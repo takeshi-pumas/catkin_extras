@@ -29,7 +29,7 @@ launch_tab_layout = [[sg.Text("")],
 hri_tab_layout = [
     [sg.Text("Main services to start tasks", font=font, justification='center')],
     [sg.HorizontalSeparator()],
-    [sg.Button("Start location service node", key='-LOC-SRV-', font=font2, button_color=('white', 'green'))], 
+    [sg.Button("Start location service node", key='-LOC_SRV-', font=font2, button_color=('white', 'green'))], 
     [sg.Text("Location_name:", font=font2), 
      sg.InputText(key='-LOC_NAME-', size = (15, 1)), sg.Button("Add to known locations", key='-TO_LOCS-', font=font2), 
      sg.Button("Add to knowledge (receptionist)", "-TO_KNOWLEDGE-", font=font2)],
@@ -87,7 +87,7 @@ main_layout = [robot_connection_tab_layout,
     [sg.TabGroup(
         [[sg.Tab("Robot controllers tab", robot_controller_tab_layout, key='-CONTROL_TAB-', font=font, element_justification='center'),
             sg.Tab("ROS node launch tab", launch_tab_layout, key='-LAUNCH_TAB-', font=font, element_justification='center'),
-            sg.Tab("HRI tab", hri_tab_layout, key='-SERVICE_TAB-')]], size=size_window, key='-TAB_GROUP-', enable_events=True)]
+            sg.Tab("HRI tab", hri_tab_layout, key='-SERVICES_TAB-')]], size=size_window, key='-TAB_GROUP-', enable_events=True)]
 ]
 
 # initial_layout = [robot_connection_tab_layout,

@@ -75,7 +75,7 @@ class LocationServer:
             quat = [data[3]['qx'], data[4]['qy'], data[5]['qz'], data[6]['qw']]
             transform = self.create_transform(pose, quat, location_name)
             self.tf_static_broadcaster.sendTransform(transform)
-            # rospy.sleep(0.3)
+            rospy.sleep(0.03)
 
     def publish_tf_knowledge(self, knowledge):
         for place_name, place_data in knowledge["Places"].items():
@@ -83,7 +83,7 @@ class LocationServer:
             quat = tf.transformations.quaternion_from_euler(0, 0, place_data["location"]["theta"])
             transform = self.create_transform(pose, quat, place_name)
             self.tf_static_broadcaster.sendTransform(transform)
-            # rospy.sleep(0.3)
+            rospy.sleep(0.03)
 
     def publish_tf_by_data(self, pose, quat, tf_name):
         transform = self.create_transform(pose, quat, tf_name)
@@ -125,7 +125,7 @@ class LocationServer:
             location_name = req.location_name
             self.known_locations[location_name] = [
                 {'x': round(pose[0], 2)}, {'y': round(pose[1], 2)}, {'theta': round(tf.transformations.euler_from_quaternion(quat)[2], 2)},
-                {'qx': quat[0], 'qy': quat[1]}, {'qz': quat[2]}, {'qw': quat[3]}
+                {'qx': quat[0]}, {'qy': quat[1]}, {'qz': quat[2]}, {'qw': quat[3]}
             ]
             resp.success = self.write_yaml(self.file_name, self.known_locations)
             self.publish_tf_by_data(pose, quat, location_name)
