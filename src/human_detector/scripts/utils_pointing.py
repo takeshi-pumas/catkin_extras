@@ -144,6 +144,7 @@ def detect_pointing(points_msg):
     image=cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
     pts= points_data
     print (image.shape)
+    cv2.imwrite("/home/takeshi/Pictures/tmpTest.jpg",image)
     frame=image
     inHeight = frame.shape[0]
     inWidth = frame.shape[1]
@@ -192,7 +193,8 @@ def detect_pointing(points_msg):
             print (poses[i],f' {name} pose wrt head')
             found_joints[name]=poses[i]
             
-
+    print("FOUND JOINTS: ",found_joints)
+    vd=[0,0,0]
     if 'right_wrist' in found_joints.keys() and 'right_elbow' in found_joints.keys():
         
         
@@ -212,6 +214,9 @@ def detect_pointing(points_msg):
         #b_st.sendTransform(t)
         elbow_xyz,wrist_xyz=[corrected['x'][0],corrected['y'][0],corrected['z'][0]],[corrected['x'][1],corrected['y'][1],corrected['z'][1]]
         v= np.asarray(wrist_xyz)-np.asarray(elbow_xyz)
+        #print("ELBOW RIGHT",elbow_xyz)
+        #print("WRIST RIGHT",wrist_xyz)
+        vd = [-(wrist_xyz[0] - elbow_xyz[0]), -(wrist_xyz[1]-elbow_xyz[1]),-1-(wrist_xyz[2]-elbow_xyz[2])]
         
         t= elbow_xyz[2]-   v[2]
         x= elbow_xyz[0]+ t*v[0]
@@ -230,7 +235,7 @@ def detect_pointing(points_msg):
         t=write_tf((0,0,0),(0,0,0,1),'pointing_right')
         b_st.sendTransform(t)
 
-    
+    vi=[0,0,0]
     if 'left_wrist'  in found_joints.keys() and 'left_elbow'  in found_joints.keys():
         pc_np_array = np.array([(found_joints['left_elbow'][0], found_joints['left_elbow'][1], found_joints['left_elbow'][2]),(found_joints['left_wrist'][0],found_joints['left_wrist'][1],found_joints['left_wrist'][2])]
          , dtype=[('x', 'f4'), ('y', 'f4'), ('z', 'f4')])
@@ -247,7 +252,10 @@ def detect_pointing(points_msg):
         #print (t)
         #b_st.sendTransform(t)
         elbow_xyz,wrist_xyz=[corrected['x'][0],corrected['y'][0],corrected['z'][0]],[corrected['x'][1],corrected['y'][1],corrected['z'][1]]
+        #print("ELBOW LEFT",elbow_xyz)
+        #print("WRIST LEFT",wrist_xyz)
         v= np.asarray(wrist_xyz)-np.asarray(elbow_xyz)
+        vi = [-(wrist_xyz[0] - elbow_xyz[0]), -(wrist_xyz[1]-elbow_xyz[1]),-1-(wrist_xyz[2]-elbow_xyz[2])]
         
         t= elbow_xyz[2]-   v[2]
         x= elbow_xyz[0]+ t*v[0]
@@ -266,8 +274,13 @@ def detect_pointing(points_msg):
         res.z_l=0.0
         t=write_tf((0,0,0),(0,0,0,1),'pointing_left')
         b_st.sendTransform(t)
+
+    
+    if np.linalg.norm(vd)>np.linalg.norm(vi):
+        print("Mano DERECHA levantada")
+    else:
+        print("Mano IZQUIERDA levantada")
         
-            
     
     return res
     #print (poses[0])
