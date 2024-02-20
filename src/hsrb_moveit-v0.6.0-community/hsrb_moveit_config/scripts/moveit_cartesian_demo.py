@@ -17,7 +17,7 @@ class MoveItCartesianDemo(object):
         rospy.init_node("moveit_demo", anonymous=True)
 
         arm = moveit_commander.MoveGroupCommander("arm")
-        base = moveit_commander.MoveGroupCommander("base")
+        #ase = moveit_commander.MoveGroupCommander("base")
         head = moveit_commander.MoveGroupCommander("head")
         whole_body = moveit_commander.MoveGroupCommander("whole_body")
         scene = moveit_commander.PlanningSceneInterface()
@@ -31,7 +31,7 @@ class MoveItCartesianDemo(object):
 
         # move_to_neutral
         rospy.loginfo("step1: move_to_neutral")
-        base.go()
+        #base.go()
         arm.set_named_target("neutral")
         arm.go()
         head.set_named_target("neutral")

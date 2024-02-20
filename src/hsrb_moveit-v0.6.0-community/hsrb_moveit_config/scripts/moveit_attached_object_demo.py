@@ -15,7 +15,7 @@ class MoveAttachedObjectDemo(object):
         rospy.init_node("moveit_demo", anonymous=True)
 
         arm = moveit_commander.MoveGroupCommander("arm")
-        base = moveit_commander.MoveGroupCommander("base")
+        #base = moveit_commander.MoveGroupCommander("base")
         head = moveit_commander.MoveGroupCommander("head")
         whole_body = moveit_commander.MoveGroupCommander("whole_body_weighted")
         scene = moveit_commander.PlanningSceneInterface()
@@ -32,7 +32,7 @@ class MoveAttachedObjectDemo(object):
 
         # move_to_neutral
         rospy.loginfo("step1: move_to_neutral")
-        base.go()
+        #base.go()
         arm.set_named_target("neutral")
         arm.go()
         head.set_named_target("neutral")

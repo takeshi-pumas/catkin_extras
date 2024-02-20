@@ -22,10 +22,10 @@ class MoveItPickAndPlaceDemo(object):
 
         self.reference_frame = "odom"
         arm = moveit_commander.MoveGroupCommander("arm")
-        base = moveit_commander.MoveGroupCommander("base")
+        #base = moveit_commander.MoveGroupCommander("base")
         gripper = moveit_commander.MoveGroupCommander("gripper")
         head = moveit_commander.MoveGroupCommander("head")
-        self.whole_body = moveit_commander.MoveGroupCommander("whole_body")
+        self.whole_body = moveit_commander.MoveGroupCommander("whole_body_weighted")
         self.scene = moveit_commander.PlanningSceneInterface()
         self.whole_body.allow_replanning(True)
         self.whole_body.set_planning_time(5)
@@ -40,7 +40,7 @@ class MoveItPickAndPlaceDemo(object):
 
         # move_to_neutral
         rospy.loginfo("step1: move_to_neutral")
-        base.go()
+        #base.go()
         arm.set_named_target("neutral")
         arm.go()
         head.set_named_target("neutral")
@@ -60,8 +60,8 @@ class MoveItPickAndPlaceDemo(object):
         self.add_box("target1",
                      [0.02, 0.02, 0.2],
                      [0.5, 0.10, 0.5 + 0.2 / 2])
-        self.add_cylinder("target2",
-                          0.03, 0.08,
+        self.add_box("target2",
+                          [0.03, 0.03, 0.08],
                           [0.5, 0.25, 0.5 + 0.08 / 2])
         rospy.sleep(1)
 
@@ -238,23 +238,6 @@ class MoveItPickAndPlaceDemo(object):
         p.pose.position.z = pos[2]
         p.pose.orientation.w = 1.0
         self.scene.add_box(name, p, size)
-
-    def add_cylinder(self, name, radius, height, pos):
-        co = moveit_msgs.msg.CollisionObject()
-        co.operation = moveit_msgs.msg.CollisionObject.ADD
-        co.id = name
-        co.header.frame_id = self.reference_frame
-        box = shape_msgs.msg.SolidPrimitive()
-        box.type = shape_msgs.msg.SolidPrimitive.CYLINDER
-        box.dimensions = [height, radius]
-        co.primitives = [box]
-        p = geometry_msgs.msg.Pose()
-        p.position.x = pos[0]
-        p.position.y = pos[1]
-        p.position.z = pos[2]
-        co.primitive_poses = [p]
-        self.scene._pub_co.publish(co)
-
 
 if __name__ == "__main__":
     MoveItPickAndPlaceDemo(float(sys.argv[1]) if len(sys.argv) > 1 else 0.0)
