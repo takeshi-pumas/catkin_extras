@@ -62,6 +62,9 @@ while True:
         if event == '-NAVIGATION-':
             functions.manage_node('navigation_real', 'nav_pumas', window_event=window[event], uuid=uuid)
 
+        elif event == '-YOLO-':
+            functions.manage_node('object_classification', "object_classification", window_event=window[event], uuid=uuid)
+
         elif event == '-MOVEIT-':
             functions.manage_node('hsrb_demo_with_controller', 'hsrb_moveit_config', window_event=window[event], uuid=uuid)
 
