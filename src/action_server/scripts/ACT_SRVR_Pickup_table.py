@@ -88,7 +88,7 @@ class Find_object(smach.State):  # ADD KNONW LOCATION DOOR
         
         for i  in range(len(res.names)):
         
-            if target_object==res.names[i].data[4:]:
+            if target_object==res.names[i].data[4:] or 'bowl'==res.names[i].data[4:] :
                 talk (f'{target_object} found')
                 tf_man.pub_static_tf(pos=[res.poses[i].position.x ,res.poses[i].position.y,res.poses[i].position.z], rot=[0,0,0,1],ref="head_rgbd_sensor_rgb_frame",point_name=target_object )   
                 rospy.sleep(0.3)
@@ -175,7 +175,9 @@ class Move_arm_pregrasp(smach.State):
 
         self.tries += 1
         print(f'Try {self.tries} of 4 attempts')
-        pickup_pose=[0.65,-1.2,0.0,-1.9, 0.0, 0.0]
+        trans,_=tf_man.getTF(target_object,ref_frame="base_link")
+        pickup_pose=[min(trans[2],0.66),-1.2,0.0,-1.9, 0.0, 0.0]
+        #pickup_pose=[0.65,-1.2,0.0,-1.9, 0.0, 0.0]
         succ= arm.go(pickup_pose)
         gripper.open()
 
@@ -228,7 +230,10 @@ class Move_arm_grasp(smach.State):
         clear_octo_client()
         av=arm.get_current_joint_values()
         
-        av[0]+= -0.17###LAB
+        pose,_=tf_man.getTF(target_frame='hand_palm_link',ref_frame='apple')
+        av[0]+=0.07-pose[2]
+
+        #av[0]+= -0.17###LAB
         #av[0]+= -0.35###GAZ
         arm.go(av)
         rospy.sleep(0.5)

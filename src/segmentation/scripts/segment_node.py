@@ -41,6 +41,7 @@ def trigger_response(request):
     mask= np.zeros(corrected['z'].shape)#mask    
     ###################################3
     pose, quats=Floats(),Floats()
+    heights_res, widths_res=Floats(),Floats()
     pose_c= Floats()
     heights, widths =Floats(),Floats()
     res= SegmentationResponse()
@@ -59,6 +60,8 @@ def trigger_response(request):
         low_planes_height.append(request.height.data)
     cents=[]
     quats_pca=[]
+    heights=[]
+    widths=[]
     for low_planes_h in low_planes_height:
         print(f'segmenting at {low_planes_h} ')        
         low_plane = (corrected['z'] > low_planes_h)      # HEIGHT REQUESTED OR OBTAINED FROM HISTOGRAM
@@ -89,6 +92,12 @@ def trigger_response(request):
                     cents.append(cent)        
                     ################################PCA
                     points_c=np.asarray((corrected['x'][np.where(individual_mask==1)],corrected['y'][np.where(individual_mask==1)],corrected['z'][np.where(individual_mask==1)]))
+
+                    heights.append(max(corrected['z'][np.where(individual_mask==1)]) - min(corrected['z'][np.where(individual_mask==1)]))
+                    widths.append (max(corrected['y'][np.where(individual_mask==1)]) - min(corrected['y'][np.where(individual_mask==1)]))
+                    print ('Estimated Height #######################',max(corrected['z'][np.where(individual_mask==1)]) - min(corrected['z'][np.where(individual_mask==1)]))                              
+                    print ('Estimated Width  #######################',max(corrected['y'][np.where(individual_mask==1)]) - min(corrected['y'][np.where(individual_mask==1)]))
+                    print ('Estimated Depth  #######################',max(corrected['x'][np.where(individual_mask==1)]) - min(corrected['x'][np.where(individual_mask==1)]))
                     E_R=points_to_PCA(points_c.transpose())
                     e_ER=tf.transformations.euler_from_matrix(E_R)
                     quat= tf. transformations.quaternion_from_euler(e_ER[0],e_ER[1],e_ER[2])
@@ -100,7 +109,7 @@ def trigger_response(request):
                 else: print(f'Centroid_y out of range {cY} ,{reg_ly_v},{reg_hy_v}')
             else: print(f'Area of contour outside of range {area} ,{lower_v},{higher_v}')
         
-    
+     
     img_msg=bridge.cv2_to_imgmsg(image_with_contours)
     #plt.imshow(img)
     #plt.imshow (image_with_contours)
@@ -109,6 +118,11 @@ def trigger_response(request):
     quats.data=np.asarray(quats_pca).ravel()
     res.poses=pose
     res.quats=quats    
+    quats.data=np.asarray(quats_pca).ravel()
+    widths_res=np.asarray(widths).ravel()
+    res.widths=widths_res
+    heights_res=np.asarray(heights).ravel()
+    res.heights=heights_res
     return res        
 
 rospy.loginfo("segmentation service available")                    # initialize a ROS node

@@ -169,7 +169,7 @@ def callback(points_msg):
             #head.set_joint_values([ 0.1, -0.5])
             res=segmentation_server.call(request)
             succ=seg_res_tf(res)
-           
+            print (f'heights{res.heights.data}, widths {res.widths.data}')
             img=bridge.imgmsg_to_cv2(res.im_out.image_msgs[0])
             cv2.imshow('our of res'  , img)
       
