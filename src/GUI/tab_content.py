@@ -70,8 +70,10 @@ robot_head_controls_layout = [
 
 
 robot_controller_tab_layout = [
-    [sg.Column(robot_base_controls_layout, vertical_alignment='top', element_justification='center', size=(None, None), expand_x=True),  # Alinea la columna izquierda en la parte superior
-     sg.Column(robot_head_controls_layout, vertical_alignment='top', element_justification='center', size=(None, None), expand_x=True),
+    [sg.Column(robot_base_controls_layout, vertical_alignment='top', element_justification='center',
+                size=(None, None), expand_x=True),  # Alinea la columna izquierda en la parte superior
+     sg.Column(robot_head_controls_layout, vertical_alignment='top', element_justification='center', 
+               size=(None, None), expand_x=True),
     #  sg.VerticalSeparator(),  # Separador vertical
      sg.Column([
         # Elementos para la parte derecha de la pestaña

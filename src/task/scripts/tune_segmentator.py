@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-
-
 #!/usr/bin/env python
     
 import numpy as np
@@ -14,22 +12,16 @@ from sensor_msgs.msg import Image , LaserScan , PointCloud2
 from geometry_msgs.msg import TransformStamped
 from tf2_sensor_msgs.tf2_sensor_msgs import do_transform_cloud
 import rospkg
-
 from smach_tuner import *
-
 from object_classification.srv import *
 #from utils_srv import RGBD
-
-
 from std_msgs.msg import String
+
+
 first= True
 rospack = rospkg.RosPack()
 yaml_file = rospy.get_param("segmentation_params", "/segmentation_params.yaml")
 file_path = rospack.get_path('segmentation')+'/config_files'  + yaml_file
-
-
-
-
 
 def read_segmentation_yaml(yaml_file = "/segmentation_params.yaml"):
     
@@ -45,25 +37,16 @@ def nothing(x):
 
 ##############################################################################################################################################################################################################################################################################################################################
 def callback(points_msg):
-
     global first , rospack , file_path
- 
-
-
     #print('got imgs msgs')
     points_data = ros_numpy.numpify(points_msg)    
     image_data = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]   #JUST TO MANTAIN DISPLAY
     image=cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
 
-
-
-
     img=rgbd.get_image()
     img=cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
    
-
     #cv2.imshow('xtion rgb'	, image)
-
      
     if first:
         print (first)
@@ -80,32 +63,22 @@ def callback(points_msg):
         cv2.setTrackbarPos('Hi limit pix y','class rgbd',df['reg_hy']) 
         cv2.setTrackbarPos('Lo limit pix y','class rgbd',df['reg_ly']) 
         first=False
-    cv2.imshow('class rgbd'  , img)
+    cv2.imshow('class rgbd' , img)
     #print (r)
 
     # Process any keyboard commands
     keystroke = cv2.waitKey(1)
     
-   
-    
-    
-
-    
     if 32 <= keystroke and keystroke < 128:
         key = chr(keystroke).lower()
         print (key)
-    #    
-    #    
-    #   
-        
         if key=='u': 
 
             print('cha')
             ptcld_lis.unregister()
             
             
-        if key=='f': 
-            
+        elif key=='f': 
             
             print('file_path',file_path)
             df = read_segmentation_yaml()
@@ -124,7 +97,7 @@ def callback(points_msg):
                 documents = yaml.dump(df, file, default_flow_style=False)
             return True
 
-        if key=='y':
+        elif key=='y':
             print ('#############YOLO SERVICE YCB REQUESTED')
             img_msg  = bridge.cv2_to_imgmsg(image)
             req      = classify_client.request_class()
@@ -134,20 +107,19 @@ def callback(points_msg):
 
             for i in range(len(res.poses)):
                 tf_man.getTF("head_rgbd_sensor_rgb_frame")
-                tf_man.pub_static_tf(pos=[res.poses[i].position.x ,res.poses[i].position.y,res.poses[i].position.z], rot=[0,0,0,1],ref="head_rgbd_sensor_rgb_frame",point_name=res.names[i].data[4:] )   
+                position = [res.poses[i].position.x ,res.poses[i].position.y,res.poses[i].position.z]
+                tf_man.pub_static_tf(pos= position, rot=[0,0,0,1], ref="head_rgbd_sensor_rgb_frame", point_name=res.names[i].data[4:] )   
                 rospy.sleep(0.3)
                 tf_man.change_ref_frame_tf(res.names[i].data[4:])
-            
 
             debug_image=bridge.imgmsg_to_cv2(res.debug_image.image_msgs[0])
             cv2.imshow('our of res'  , debug_image)
 
-        if key=='p':
+        elif key=='p':
             print ('#############Pointing  SERVICE openPose REQUESTED')
             
             res=pointing_detect_server.call()
             print (f'xr{res.x_r} yr{res.y_r} xl{res.x_l} yl{res.y_l} ')
-
            
             if (res.x_r+res.y_r)!=0:
                 print('right')
@@ -158,7 +130,7 @@ def callback(points_msg):
             debug_image=bridge.imgmsg_to_cv2(res.debug_image[0])
             cv2.imshow('our of res'  , debug_image)
 
-        if key=='s': 
+        elif key=='s': 
 
             request= segmentation_server.request_class() 
             r = cv2.getTrackbarPos('Plane height (cms)', 'class rgbd')
@@ -173,7 +145,7 @@ def callback(points_msg):
             img=bridge.imgmsg_to_cv2(res.im_out.image_msgs[0])
             cv2.imshow('our of res'  , img)
       
-        if key=='q':
+        elif key=='q':
             rospy.signal_shutdown("User hit q key to quit.")
 
 
@@ -193,14 +165,6 @@ def listener():
     # spin() simply keeps python from exiting until this node is stopped
     rospy.spin()
 
-
-
-    
-
-
 if __name__ == '__main__':
-    
-    
-    
     listener()
 
