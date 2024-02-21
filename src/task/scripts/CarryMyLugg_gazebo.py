@@ -21,7 +21,7 @@ class Initial(smach.State):
         #READ YAML ROOMS XYS
         
         global arm ,  hand_rgb
-        hand_rgb= HAND_RGB()
+        hand_rgb = HAND_RGB()
 
         arm = moveit_commander.MoveGroupCommander('arm')
         head.set_named_target('neutral')
@@ -57,15 +57,12 @@ class Wait_push_hand(smach.State):
             return 'tries'
         talk('Gently... push my hand to begin')
         
-        """
+        
         succ = wait_for_push_hand(100) # NOT GAZEBABLE
         if succ:
             return 'succ'
         else:
             return 'failed'
-        """
-        
-        return 'succ'
 
 #########################################################################################################
 class Goto_living_room(smach.State):  
@@ -112,16 +109,20 @@ class Find_human(smach.State):
         if humanpose== False:
             print ('no human ')
             return 'failed'
-        talk('Please start pointing at the bag, please')
-        rospy.sleep(2.0)
-        talk('Starting pointing detection')
-        rospy.sleep(0.7)
+        talk('Please start pointing at the bag, please. In three')
+        rospy.sleep(1.0)
+        talk('Two')
+        rospy.sleep(1.0)
+        talk('One')
+        rospy.sleep(1.5)
         res=pointing_detect_server.call()
         if (res.x_r+res.y_r)==0 and  (res.x_l+res.y_l)==0  :
+            talk('I did not find a pointing arm, I will try again')
             print ('no pointing ')
             return 'failed'
-        if (res.x_r+res.y_r)!=0:tf_man.pub_static_tf(pos=[res.x_r, res.y_r,0], rot =[0,0,0,1], point_name='pointing_right')
-        if (res.x_l+res.y_l)!=0:tf_man.pub_static_tf(pos=[res.x_l, res.y_l,0], rot =[0,0,0,1], point_name='pointing_left')
+        if res.x_r ==-1: tf_man.pub_static_tf(pos=[res.x_l, res.y_l,0], rot =[0,0,0,1], point_name='pointing_')
+        else: tf_man.pub_static_tf(pos=[res.x_r, res.y_r,0], rot =[0,0,0,1], point_name='pointing_')
+        #if (res.x_l+res.y_l)!=0:tf_man.pub_static_tf(pos=[res.x_l, res.y_l,0], rot =[0,0,0,1], point_name='pointing_left')
         return 'succ'# There is now a "human TF with humans aprrox location(face)"
 
 #########################################################################################################
@@ -135,7 +136,7 @@ class Scan_floor(smach.State):
 
         rospy.loginfo('STATE : Scan estimated pointing area')
         self.tries+=1  
-        if self.tries==1:head.to_tf('pointing_right')
+        if self.tries==1:head.to_tf('pointing_')
         #if self.tries==2:head.to_tf('pointing_left')     
         if self.tries==3:
             self.tries=0
@@ -146,10 +147,12 @@ class Scan_floor(smach.State):
         #img=rgbd.get_image()
         print ('got image for segmentation')
         ##### Segment and analyze
+        rospy.sleep(1.5)
         request= segmentation_server.request_class() 
         request.height.data=0.01
         res=segmentation_server.call(request)
-        
+        img=bridge.imgmsg_to_cv2(res.im_out.image_msgs[0])
+        save_image(img)
         print (res.poses.data)
         #res=segmentation_server.call()
         origin_map_img=[round(img_map.shape[0]*0.5) ,round(img_map.shape[1]*0.5)]
@@ -319,7 +322,7 @@ class Pickup(smach.State):
 
         succ = False
         
-        while not succ:
+        '''while not succ:
             #trans,rot = tf_man.getTF(target_frame='static003_cracker_box', ref_frame='hand_palm_link')
             trans,_ = tf_man.getTF(target_frame=target_object, ref_frame='hand_palm_link')
             _,rot = tf_man.getTF(target_frame='base_link', ref_frame='map')
@@ -338,17 +341,17 @@ class Pickup(smach.State):
                     eT = 0
                 succ =  eX == 0 and eY == 0 and eT==0
                     # grasp_base.tiny_move(velY=-0.4*trans[1], std_time=0.2, MAX_VEL=0.3)
-                omni_base.tiny_move(velX=0.13*eX, velY=-0.4*eY, velT=-0.3*eT, std_time=0.2, MAX_VEL=0.3) #Pending test
-
+                omni_base.tiny_move(velX=0.13*eX, velY=-0.4*eY, velT=0.3*eT, std_time=0.2, MAX_VEL=0.3) #Pending test'''
+        brazo.move_hand_to_target(target_frame= target_object)
 
         gripper.close()
         arm.set_named_target('go')
         arm.go()
-        omni_base.move_base(known_location='living_room')
-        return 'succ'
-
-            
-        return 'failed'
+        res  = omni_base.move_base(known_location='living_room')
+        if res:
+            return 'succ'
+        else:
+            return 'failed'
 
 #########################################################################################################
 class Pickup_cereal(smach.State):

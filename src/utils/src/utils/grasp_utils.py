@@ -450,7 +450,7 @@ class ARM():
                 succ = e_norm < THRESHOLD #and abs(eT) < THRESHOLD_T
                 #grasp_base.tiny_move(velX=0.4*e[0], velY=0.6*e[1], velT=0.7*eT,  std_time=0.2, MAX_VEL=0.3, MAX_VEL_THETA=0.9)
                 self._grasp_base.tiny_move(velX=0.4*e[0], velY=0.6*e[1], std_time=0.2, MAX_VEL=0.3)
-            except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException) as e:
+            except (tf2.LookupException, tf2.ConnectivityException, tf2.ExtrapolationException) as e:
                 rospy.logwarn("Failed to get transform: {}".format(str(e)))
                 continue
         return succ
