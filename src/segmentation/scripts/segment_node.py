@@ -57,7 +57,8 @@ def trigger_response(request):
     else:
         low_plane = (corrected['z'] > request.height.data)      # HEIGHT REQUESTED OR OBTAINED FROM HISTOGRAM
         low_planes_height=[]
-        low_planes_height.append(request.height.data)
+        if request.height.data==0:low_planes_height.append(request.height.data - 0.075)
+        else:low_planes_height.append(request.height.data)
     cents=[]
     quats_pca=[]
     heights=[]

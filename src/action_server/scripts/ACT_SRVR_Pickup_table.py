@@ -106,7 +106,7 @@ class Get_close_to_object(smach.State):  # ADD KNONW LOCATION DOOR
         global target_object
         rospy.loginfo('STATE : Navigate to known location')
         print (target_object)
-        talk (f'Getting close to {target_object} ')
+        talk (f'Getting close to {target_object} using move D to ')
 
 
         print('getting close to Target')
