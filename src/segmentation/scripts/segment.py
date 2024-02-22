@@ -13,7 +13,7 @@ def trigger_response(request):
     print ('Segmenting')
     points_msg=rospy.wait_for_message("/hsrb/head_rgbd_sensor/depth_registered/rectified_points",PointCloud2,timeout=5)
     
-    cents,xyz, images, img = plane_seg2(points_msg)
+    cents,xyz, images, img,_,_ = plane_seg(points_msg)
 
     print(len(cents))
 
