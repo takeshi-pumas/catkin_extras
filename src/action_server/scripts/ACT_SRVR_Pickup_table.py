@@ -2,6 +2,7 @@
 from utils_action import *
 from smach_ros import ActionServerWrapper
 from action_server.msg import PickUpAction
+
 ##### Define state INITIAL #####
 
 # --------------------------------------------------
@@ -9,17 +10,27 @@ class Initial(smach.State):
 
     def __init__(self):
 
-        smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
+        smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'],input_keys=['goal'])
         self.tries = 0
         
     def execute(self, userdata):
         
-        global target_object
-        target_object='apple'   ### GET FROM REQUEST
+
         self.tries += 1
-        print(f'First? {self.tries==1} ')
         if self.tries == 1:
-            return 'tries'
+            return 'failed'
+        if 'goal' not in userdata:
+            rospy.logwarn("No goal received yet.")
+            return 'failed'
+
+        
+        
+        
+
+        global target_object
+        target_object= userdata.goal.target.data #'apple'   ### GET FROM REQUEST
+        
+
         rospy.loginfo('STATE : INITIAL')
         print('Robot neutral pose')
         print(f'Try {self.tries} of 5 attempts')
@@ -367,7 +378,9 @@ if __name__ == '__main__':
     print("Takeshi STATE MACHINE...")
     init("takeshi_smach")
     # State machine, final state "END"
-    sm = smach.StateMachine(outcomes=['succeeded','preempted','failed'])
+    sm = smach.StateMachine(outcomes=['succeeded','preempted','failed'], input_keys=['goal'])
+
+    
     
     # sm.userdata.clear = False
     sis = smach_ros.IntrospectionServer('SMACH_VIEW_SERVER', sm, '/SM_PICKUP_table')
@@ -375,7 +388,7 @@ if __name__ == '__main__':
 
     with sm:
         # State machine for Restaurant
-        smach.StateMachine.add("INITIAL",       Initial(),      transitions={'failed': 'INITIAL',       'succ': 'FIND_OBJECT',       'tries': 'succeeded'})
+        smach.StateMachine.add("INITIAL",       Initial(),      transitions={'failed': 'preempted',       'succ': 'FIND_OBJECT',       'tries': 'succeeded'} ,remapping={'goal': 'goal'} )
         #################################################################################################################################################################
         smach.StateMachine.add("FIND_OBJECT",  Find_object(),   transitions={'failed': 'FIND_OBJECT',       'succ': 'GET_CLOSE_TO_OBJECT',       'tries': 'failed'})
         smach.StateMachine.add("GET_CLOSE_TO_OBJECT",  Get_close_to_object(),   transitions={'failed': 'GET_CLOSE_TO_OBJECT',       'succ': 'MOVE_ARM_PREGRASP',       'tries': 'INITIAL'})
@@ -395,10 +408,13 @@ if __name__ == '__main__':
         
     asw = ActionServerWrapper(
         'grasp_table_act_server', PickUpAction,
+       
         wrapped_container = sm,
         succeeded_outcomes = ['succeeded'],
         aborted_outcomes = ['failed'],
-        preempted_outcomes = ['preempted'] )
+        preempted_outcomes = ['preempted'],
+        goal_key='goal',
+        result_key = 'egad_its_a_result' )
     asw.run_server()
 
     
