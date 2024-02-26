@@ -70,7 +70,7 @@ def search_ws(folder = 'catkin_extras', source = False):
         if dir is None :
             print("Error setting bash")
         else:
-            print("Aqui anda el asunto")
+            #print("Aqui anda el asunto")
             setup_bash_path = os.path.join(dir, "devel/setup.bash")
             os.system(f"source {setup_bash_path}")
             print(f"Bash setup successfully on {setup_bash_path}!")
