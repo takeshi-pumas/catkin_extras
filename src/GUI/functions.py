@@ -10,15 +10,17 @@ def cleanup_nodes():
         for node in nodes.values():
             node.shutdown()
 
-def set_node(package, launch_file, uuid):
+def set_node(package, launch_file, uuid, launch_args = []):
     cli_args = [package, f'{launch_file}.launch']
+    while len(launch_args) > 0:
+        cli_args.append(launch_args.pop())
     roslaunch_file = roslaunch.rlutil.resolve_launch_arguments(cli_args)
     parent = roslaunch.parent.ROSLaunchParent(uuid, roslaunch_file)
     return parent
 
-def manage_node(node_name, package, window_event, uuid):
+def manage_node(node_name, package, window_event, uuid, launch_args = []):
     if nodes.get(node_name) == None:
-        nodes[node_name] = set_node(package, node_name, uuid)
+        nodes[node_name] = set_node(package, node_name, uuid, launch_args)
         nodes[node_name].start()
         window_event.update(button_color = ('white', 'red'))
     else:

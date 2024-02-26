@@ -66,7 +66,7 @@ while True:
             functions.manage_node('object_classification', "object_classification", window_event=window[event], uuid=uuid)
 
         elif event == '-MOVEIT-':
-            functions.manage_node('hsrb_demo_with_controller', 'hsrb_moveit_config', window_event=window[event], uuid=uuid)
+            functions.manage_node('hsrb_demo_with_controller', 'hsrb_moveit_config', window_event=window[event], uuid=uuid, launch_args=['use_gui:=false'])
 
         elif event == '-MOVEIT_ARM-':
             functions.manage_node('arm_test', 'task', window_event=window[event], uuid=uuid)
