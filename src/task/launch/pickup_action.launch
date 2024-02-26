@@ -1,0 +1,4 @@
+<launch>
+    <!-- Inicializar el nodo ROS -->
+    <node name="pickup_action_server" pkg="task" type="ACT_SRVR_Pickup_table.py" output="screen"/>
+</launch>

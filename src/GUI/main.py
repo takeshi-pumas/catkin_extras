@@ -70,6 +70,9 @@ while True:
 
         elif event == '-MOVEIT_ARM-':
             functions.manage_node('arm_test', 'task', window_event=window[event], uuid=uuid)
+        
+        elif event == '-PICKUP_ACT-':
+            functions.manage_node("pickup_action", 'task', window_event=window[event], uuid=uuid)
 
 
     #Robot control

@@ -18,12 +18,15 @@ robot_connection_tab_layout = [[sg.Text('Seleccione un robot para conectar:', fo
                sg.Button('Refresh', key='-REFRESH-', font=font),
                sg.Text('Robot is not connected', key='-INFO_CON-', font=font, text_color='yellow')]]
 
-launch_tab_layout = [[sg.Text("")],
-    [sg.Text("Press a button to run ROS Nodes, press again to finish them.", key='-Btn info-', font=font, justification='center')],
+launch_tab_layout = [[sg.Text("Press a button to run ROS Nodes, press again to finish them.", font=font)],
+    [sg.HorizontalSeparator()],
+    [sg.Text("Start Navigation, Object Classificacion and Moveit, then Pickup action", font=font)],
     [sg.Button("Navigation", key='-NAVIGATION-', button_color=('white', 'green'), font=font, size=size_launch_btn), 
     sg.Button("Object classification", key='-YOLO-', button_color=('white', 'green'), font=font, size=size_launch_btn),
-    sg.Button("Moveit", key='-MOVEIT-', button_color=('white', 'green'), font=font, size=size_launch_btn),
-    sg.Button("Moveit arm test", key='-MOVEIT_ARM-', button_color=('white', 'green'), font=font, size=size_launch_btn)]
+    sg.Button("Moveit", key='-MOVEIT-', button_color=('white', 'green'), font=font, size=size_launch_btn)],
+    #sg.Button("Moveit arm test", key='-MOVEIT_ARM-', button_color=('white', 'green'), font=font, size=size_launch_btn, disabled=True)],
+    [sg.Text("Action launcher", font=font)],
+    [sg.Button("Pickup Action", key="-PICKUP_ACT-",button_color=('white', 'green'), font=font, size=size_launch_btn)]
     ]
 
 hri_tab_layout = [
