@@ -101,6 +101,18 @@ line_detector = LineDetector()
 # arm =  moveit_commander.MoveGroupCommander('arm')
 #------------------------------------------------------
 
+def call_yolo_service(height = -1):
+    request = segmentation_server.request_class() 
+    request.height.data = height
+
+    #head.set_joint_values([ 0.1, -0.5])
+    response = segmentation_server.call(request)
+    succ = seg_res_tf(response)
+    print (f'heights{response.heights.data}, widths {response.widths.data}')
+    #img = bridge.imgmsg_to_cv2(response.im_out.image_msgs[0])
+    #cv2.imshow('our of res'  , img)
+    return response
+
 def detect_object_yolo(object_name,res):
     # find object_name in the response message from object_classification service (Yolo)
     for i,name in enumerate(res.names):
