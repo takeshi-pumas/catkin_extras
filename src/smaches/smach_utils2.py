@@ -1,43 +1,47 @@
 #!/usr/bin/env python3
 
+import cv2  
+import rospy 
+import numpy as np
+import pandas as pd
 import smach
 import smach_ros
-from geometry_msgs.msg import PoseStamped, Point , PointStamped , Quaternion , TransformStamped , Twist
-from std_srvs.srv import Trigger, TriggerResponse 
+import actionlib
+import rospkg
+import yaml
+import tf
+import time
 import moveit_commander
 import moveit_msgs.msg
 import tf2_ros
+from geometry_msgs.msg import PoseStamped, Point , PointStamped , Quaternion , TransformStamped , Twist
+from std_srvs.srv import Trigger, TriggerResponse 
+from sensor_msgs.msg import Image , LaserScan , PointCloud2
 from tf2_sensor_msgs.tf2_sensor_msgs import do_transform_cloud
 from object_classification.srv import *
 from segmentation.srv import *
 from human_detector.srv import Human_detector ,Human_detectorResponse 
+from human_detector.srv import Point_detector ,Point_detectorResponse 
 from ros_whisper_vosk.srv import GetSpeech
+from object_classification.srv import *
 from face_recog.msg import *
 from face_recog.srv import *
 #import face_recognition 
-import cv2  
-import rospy 
-import numpy as np
-import actionlib
 from hmm_navigation.msg import NavigateActionGoal, NavigateAction
 from cv_bridge import CvBridge, CvBridgeError
-import pandas as pd
 from std_srvs.srv import Empty
-from sensor_msgs.msg import Image , LaserScan , PointCloud2
-import tf
-import time
 from cv_bridge import CvBridge, CvBridgeError
 from nav_msgs.msg import OccupancyGrid
 from hri_msgs.msg import RecognizedSpeech
 from rospy.exceptions import ROSException
 from vision_msgs.srv import *
-import rospkg
-import yaml
 from act_recog.srv import Recognize,RecognizeResponse,RecognizeRequest
-from object_classification.srv import *
-
-
 from ros_whisper_vosk.srv import SetGrammarVosk
+
+from action_server.msg import FollowActionGoal ,  FollowAction
+
+
+    
 
 from utils.grasp_utils import *
 from utils.misc_utils import *
@@ -46,8 +50,8 @@ from utils.know_utils import *
 
 global listener, broadcaster, tfBuffer, tf_static_broadcaster, scene, rgbd, head,train_new_face, wrist, human_detect_server, line_detector, clothes_color , head_mvit
 global clear_octo_client, goal,navclient,segmentation_server  , tf_man , omni_base, brazo, speech_recog_server, bridge, map_msg, pix_per_m, analyze_face , arm , set_grammar
-global recognize_action , classify_client
-rospy.init_node('smach_smaches')
+global recognize_action , classify_client,pointing_detect_server , pub_fag
+rospy.init_node('smach')
 #head_mvit = moveit_commander.MoveGroupCommander('head')
 #gripper =  moveit_commander.MoveGroupCommander('gripper')
 #whole_body=moveit_commander.MoveGroupCommander('whole_body')
@@ -59,19 +63,21 @@ tfBuffer = tf2_ros.Buffer()
 listener = tf2_ros.TransformListener(tfBuffer)
 broadcaster = tf2_ros.TransformBroadcaster()
 tf_static_broadcaster = tf2_ros.StaticTransformBroadcaster()
-clear_octo_client = rospy.ServiceProxy('/clear_octomap', Empty)   ###OGRASPING OBSTACLE 
+clear_octo_client = rospy.ServiceProxy('/clear_octomap', Empty)   ###GRASPING OBSTACLE 
 human_detect_server = rospy.ServiceProxy('/detect_human' , Human_detector)  ####HUMAN FINDER OPPOSEBASED
+pointing_detect_server = rospy.ServiceProxy('/detect_pointing' , Point_detector)  ####HUMAN FINDER OPPOSEBASED
 segmentation_server = rospy.ServiceProxy('/segment' , Segmentation)    ##### PLANE SEGMENTATION (PARALEL TO FLOOR)
 navclient=actionlib.SimpleActionClient('/navigate', NavigateAction)   ### PUMAS NAV ACTION LIB
+
 # scene = moveit_commander.PlanningSceneInterface()
 speech_recog_server = rospy.ServiceProxy('/speech_recognition/vosk_service' ,GetSpeech)##############SPEECH VOSK RECOG FULL DICT
 set_grammar = rospy.ServiceProxy('set_grammar_vosk', SetGrammarVosk)                   ###### Get speech vosk keywords from grammar (function get_keywords)         
-
 recognize_face = rospy.ServiceProxy('recognize_face', RecognizeFace)                    #FACE RECOG
 train_new_face = rospy.ServiceProxy('new_face', RecognizeFace)                          #FACE RECOG
 analyze_face = rospy.ServiceProxy('analyze_face', RecognizeFace)    ###DEEP FACE ONLY
 recognize_action = rospy.ServiceProxy('recognize_act', Recognize) 
 classify_client = rospy.ServiceProxy('/classify', Classify)
+pub_fag = rospy.Publisher('/grasp_floor_act_server/goal_action_pickup', FollowActionGoal, queue_size=1)
 
 
 
@@ -81,7 +87,6 @@ img_map=inflated_map.reshape((map_msg.info.width,map_msg.info.height))
 pix_per_m=map_msg.info.resolution
 contours, hierarchy = cv2.findContours(img_map.astype('uint8'),cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
 contoured=cv2.drawContours(img_map.astype('uint8'), contours, 1, (255,255,255), 1)
-
 rgbd= RGBD()
 bridge = CvBridge()
 #segmentation_server = rospy.ServiceProxy('/segment_2_tf', Trigger) 
@@ -94,8 +99,54 @@ head = GAZE()
 brazo = ARM()
 line_detector = LineDetector()
 # arm =  moveit_commander.MoveGroupCommander('arm')
+#------------------------------------------------------
 
+def detect_object_yolo(object_name,res):
+    # find object_name in the response message from object_classification service (Yolo)
+    for i,name in enumerate(res.names):
+        if name.data[4:]==object_name:return res.poses[i]
+    return False
+#############################################################################################
+def seg_res_tf(res):
+    # Extract pose information from segmentation response an publish a tf... 
+    # No rot is tf with pose relating to map  zero angles (robot facing)
+    # the object_number tf is the PCA axis  orientation
+    origin_map_img=[round(img_map.shape[0]*0.5) ,round(img_map.shape[1]*0.5)]   
+    
+    #brazo.set_named_target('go')
+    if len(res.poses.data)==0:
+        print('no objs')
+        return False
+    else:
+        
+        poses=np.asarray(res.poses.data)
+        quats=np.asarray(res.quats.data)
+        poses=poses.reshape((int(len(poses)/3) ,3     )      )  
+        quats=quats.reshape((int(len(quats)/4) ,4     )      )  
+        num_objs=len(poses)
+        print(f'{num_objs} found')
 
+        for i,cent in enumerate(poses):
+            x,y,z=cent
+            axis=[0,0,1]
+            angle = tf.transformations.euler_from_quaternion(quats[i])[0]
+            rotation_quaternion = tf.transformations.quaternion_about_axis(angle, axis)
+            point_name=f'object_{i}'
+            print (f'{point_name} found at {cent}')
+            # tf_man.pub_tf(pos=cent, rot =[0,0,0,1], point_name=point_name+'_norot', ref='map')## which object to choose   #TODO
+            # succ=tf_man.pub_tf(pos=cent, rot =rotation_quaternion, point_name=point_name, ref='map')## which object to choose   #TODO
+            tf_man.pub_static_tf(pos=cent, rot =[0,0,0,1], point_name=point_name+'_norot', ref='map')## which object to choose   #TODO
+            succ=tf_man.pub_static_tf(pos=cent, rot =rotation_quaternion, point_name=point_name, ref='map')## which object to choose   #TODO
+            rospy.sleep(0.5)                                                                        
+            pose,_= tf_man.getTF(point_name)
+            print (f'Occupancy map at point object {i}-> pixels ',origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m), img_map[origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m)])
+            ## Pixels from augmented image map server published map image
+            if img_map[origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m)]!=0:#### Yes axes seem to be "flipped" !=0:
+                print ('reject point suggested ( for floor), most likely part of arena, occupied inflated map')
+                #tf_man.pub_static_tf(pos=[0,0,0], point_name=point_name, ref='head_rgbd_sensor_rgb_frame')
+                #num_objs-=1
+            print (f"object found at map coords.{pose} ")
+    return succ
 #------------------------------------------------------
 def get_robot_px():
     trans, rot=tf_man.getTF('base_link')
@@ -157,6 +208,7 @@ def train_face(image, name):
     return res.Ids.ids[0].data.split(' ')[0] == 'trained'
 
     #------------------------------------------------------
+
 def wait_for_face(timeout=10 , name=''):
     
     rospy.sleep(0.3)
@@ -331,8 +383,22 @@ def yaml_to_df(known_locations_file='/known_locations.yaml'):
 
 
 
-
-
+#------------------------------------------------------
+def read_tf(t):
+    # trasnform message to np arrays
+    pose=np.asarray((
+        t.transform.translation.x,
+        t.transform.translation.y,
+        t.transform.translation.z
+        ))
+    quat=np.asarray((
+        t.transform.rotation.x,
+        t.transform.rotation.y,
+        t.transform.rotation.z,
+        t.transform.rotation.w
+        ))
+    
+    return pose, quat
 #------------------------------------------------------
 
 def gaze_to_face():
@@ -382,3 +448,8 @@ def check_room_px(px_pose,living_room_px_region,kitchen_px_region,bedroom_px_reg
         if (px_pose[1]< px_region[1,1]) and (px_pose[1]> px_region[0,1]) and (px_pose[0]> px_region[0,0]) and (px_pose[0]< px_region[1,0]) : 
             print (f'in  {region}')
             return region
+
+def save_image(img, dir = "/home/takeshi/Pictures/"):
+    if dir[-1]!="/":
+        dir+="/"
+    cv2.imwrite(dir+"imageTmp.jpg",img)

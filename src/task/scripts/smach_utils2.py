@@ -100,7 +100,17 @@ brazo = ARM()
 line_detector = LineDetector()
 # arm =  moveit_commander.MoveGroupCommander('arm')
 #------------------------------------------------------
+
+def detect_object_yolo(object_name,res):
+    # find object_name in the response message from object_classification service (Yolo)
+    for i,name in enumerate(res.names):
+        if name.data[4:]==object_name:return res.poses[i]
+    return False
+#############################################################################################
 def seg_res_tf(res):
+    # Extract pose information from segmentation response an publish a tf... 
+    # No rot is tf with pose relating to map  zero angles (robot facing)
+    # the object_number tf is the PCA axis  orientation
     origin_map_img=[round(img_map.shape[0]*0.5) ,round(img_map.shape[1]*0.5)]   
     
     #brazo.set_named_target('go')
