@@ -68,6 +68,7 @@ find_package(catkin REQUIRED COMPONENTS
 #   FILES
    DIRECTORY action FILES PickUp.action
    Follow.action
+   Grasp.action
  )
 
 ## Generate added messages and services with any dependencies listed here
