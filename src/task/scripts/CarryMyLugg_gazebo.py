@@ -149,10 +149,10 @@ class Scan_floor(smach.State):
         ##### Segment and analyze
         rospy.sleep(1.5)
         request= segmentation_server.request_class() 
-        request.height.data=0.01
+        request.height.data=0.00
         res=segmentation_server.call(request)
         img=bridge.imgmsg_to_cv2(res.im_out.image_msgs[0])
-        save_image(img)
+        save_image(img,dir="home/roboworks/Pictures")
         print (res.poses.data)
         #res=segmentation_server.call()
         origin_map_img=[round(img_map.shape[0]*0.5) ,round(img_map.shape[1]*0.5)]
@@ -298,6 +298,63 @@ class Pre_pickup(smach.State):
 
 #########################################################################################################
 class Pickup(smach.State):
+    def __init__(self):
+        smach.State.__init__(
+            self, outcomes=['succ', 'failed', 'tries'])
+        self.tries = 0
+        self.target='object_0'
+    def execute(self, userdata):
+        rospy.loginfo('State :  PICKUP ')
+        clear_octo_client()
+        self.tries += 1
+        target_object=self.target
+
+        if self.tries >= 4:
+            self.tries = 0
+            return'tries'
+        
+        clear_octo_client()
+
+        pickup_pose=[0.0,-1.4,0.0,-1.74, 0.0, 0.0]
+        succ= arm.go(pickup_pose)
+        
+
+
+        succ = False
+        
+        '''while not succ:
+            #trans,rot = tf_man.getTF(target_frame='static003_cracker_box', ref_frame='hand_palm_link')
+            trans,_ = tf_man.getTF(target_frame=target_object, ref_frame='hand_palm_link')
+            _,rot = tf_man.getTF(target_frame='base_link', ref_frame='map')
+
+            
+            if type(trans) is not bool:
+                eX, eY, eZ = trans
+                eY+=-0.05
+                eT= tf.transformations.euler_from_quaternion(rot)[2] - 0.5*np.pi    #(known loc pickup change to line finder?)   NO! THERE ARE  ROUND TABLES !
+                rospy.loginfo("Distance to goal: {:.2f}, {:.2f}, angle {:.2f}, target obj frame {}".format(eX, eY , eT,target_object))
+                if abs(eX) < 0.03:
+                    eX = 0
+                if abs(eY) < 0.04:
+                    eY = 0
+                if abs(eT   ) < 0.05:
+                    eT = 0
+                succ =  eX == 0 and eY == 0 and eT==0
+                    # grasp_base.tiny_move(velY=-0.4*trans[1], std_time=0.2, MAX_VEL=0.3)
+                omni_base.tiny_move(velX=0.13*eX, velY=-0.4*eY, velT=0.3*eT, std_time=0.2, MAX_VEL=0.3) #Pending test'''
+        brazo.move_hand_to_target(target_frame= target_object)
+
+        gripper.close()
+        arm.set_named_target('go')
+        arm.go()
+        res  = omni_base.move_base(known_location='living_room')
+        if res:
+            return 'succ'
+        else:
+            return 'failed'
+
+#########################################################################################################
+class Pickup_two(smach.State):
     def __init__(self):
         smach.State.__init__(
             self, outcomes=['succ', 'failed', 'tries'])
@@ -885,9 +942,9 @@ if __name__ == '__main__':
         smach.StateMachine.add("PRE_PICKUP",        Pre_pickup(),           transitions={'failed': 'PRE_PICKUP',        
                                                                                          'succ': 'PICKUP',  
                                                                                          'tries': 'END'})        
-        smach.StateMachine.add("PICKUP",            Pickup(),           transitions={'failed': 'PICKUP',        
-                                                                                     'succ': 'GOTO_HUMAN',   
-                                                                                     'tries': 'END'})        
+        smach.StateMachine.add("PICKUP",            Pickup(),               transitions={'failed': 'PICKUP',        
+                                                                                         'succ': 'GOTO_HUMAN',   
+                                                                                         'tries': 'END'})        
         smach.StateMachine.add("GOTO_HUMAN", SimpleActionState('follow_server', FollowAction) ,transitions={'aborted': 'GOTO_HUMAN',        
                                                                                                             'succeeded': 'END' ,   
                                                                                                             'preempted': 'END' })
