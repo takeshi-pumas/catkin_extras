@@ -14,6 +14,7 @@ import time
 import moveit_commander
 import moveit_msgs.msg
 import tf2_ros
+from os import path
 from geometry_msgs.msg import PoseStamped, Point , PointStamped , Quaternion , TransformStamped , Twist
 from std_srvs.srv import Trigger, TriggerResponse 
 from sensor_msgs.msg import Image , LaserScan , PointCloud2
@@ -202,6 +203,7 @@ def check_point_map(x,y):
 def point_to_px(x,y):
     safe_xy=np.asarray((x,y))
     return np.round(safe_xy/pix_per_m).astype('int')
+
 def px_to_point(px,py):
     return np.asarray((px,py))*pix_per_m
 
@@ -221,6 +223,7 @@ def train_face(image, name):
 
     #------------------------------------------------------
 
+#------------------------------------------------------
 def wait_for_face(timeout=10 , name=''):
     
     rospy.sleep(0.3)
@@ -271,10 +274,6 @@ def wait_for_face(timeout=10 , name=''):
                 print('return res,img',new_res)
                 ds_to_faces=[]
                 return new_res , img
-
-
-
-
 
 #------------------------------------------------------
 #def wait_for_face(timeout=10):
@@ -364,8 +363,6 @@ def bbox_3d_mean(points,boundRect):
     else:
         return np.ones(3)
 
-
-
 #------------------------------------------------------
 def read_yaml(known_locations_file='/known_locations.yaml'):
     rospack = rospkg.RosPack()
@@ -374,6 +371,7 @@ def read_yaml(known_locations_file='/known_locations.yaml'):
     with open(file_path, 'r') as file:
         content = yaml.safe_load(file)
     return content
+
 #----------------------------------------------------------
 def yaml_to_df(known_locations_file='/known_locations.yaml'):
     con = read_yaml(known_locations_file)
@@ -391,10 +389,6 @@ def yaml_to_df(known_locations_file='/known_locations.yaml'):
     df['child_id_frame']=locations
     return df
 
-
-
-
-
 #------------------------------------------------------
 def read_tf(t):
     # trasnform message to np arrays
@@ -411,8 +405,8 @@ def read_tf(t):
         ))
     
     return pose, quat
-#------------------------------------------------------
 
+#------------------------------------------------------
 def gaze_to_face():
 
     return False
@@ -428,8 +422,8 @@ def detect_human_to_tf():
         tf_man.pub_static_tf(np.asarray((humanpose.x,humanpose.x,humanpose.z)),point_name='human', ref='head_rgbd_sensor_link')
         succ=tf_man.change_ref_frame_tf('human')
         return succ
-#------------------------------------------------------
 
+#------------------------------------------------------
 def get_keywords_speech(timeout=5):
     try:
         msg = rospy.wait_for_message('/speech_recognition/final_result', String, timeout)
@@ -440,6 +434,7 @@ def get_keywords_speech(timeout=5):
         rospy.loginfo('timeout')
         return 'timeout'
 
+#------------------------------------------------------
 def check_room_px(px_pose,living_room_px_region,kitchen_px_region,bedroom_px_region,dining_room_px_region ):
 
     
@@ -461,7 +456,10 @@ def check_room_px(px_pose,living_room_px_region,kitchen_px_region,bedroom_px_reg
             print (f'in  {region}')
             return region
 
-def save_image(img, dir = "/home/takeshi/Pictures/"):
-    if dir[-1]!="/":
+#------------------------------------------------------
+def save_image(img, dir = ""):
+    if dir == "":
+        dir = path.expanduser('~')+"/Pictures/"
+    elif dir != "" and dir[-1]!="/":
         dir+="/"
     cv2.imwrite(dir+"imageTmp.jpg",img)
