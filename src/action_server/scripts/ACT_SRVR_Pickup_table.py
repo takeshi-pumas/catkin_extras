@@ -128,12 +128,12 @@ class Get_close_to_object(smach.State):  # ADD KNONW LOCATION DOOR
 
         _,rot= tf_man.getTF("base_link",ref_frame='map')
         original_rot=tf.transformations.euler_from_quaternion(rot)[2]
-        target_object='apple'
+        
 
 
         succ = False
         start_time = rospy.get_time()          
-        timeout=10.0
+        timeout=30.0
         while not succ  and rospy.get_time() - start_time < timeout: 
             
             _,rot= tf_man.getTF("base_link",ref_frame='map')
@@ -209,10 +209,14 @@ class Move_arm_grasp(smach.State):
 
         rospy.loginfo('STATE : fine adjustments using hand cam yolo')
         talk ('fine adjustments using hand cam yolo')
+        #####################################################
+        if target_object=='pear':common_misid='tennis_ball'
+        if target_object=='apple':common_misid='orange'
+        #########################################################
 
         eX,eY= 0.3,0.3 
 
-        while abs(eX) > 0.05 or abs(eY) > 0.05:
+        while abs(eX) > 0.08 or abs(eY) > 0.08:
             image= cv2.cvtColor(hand_cam.get_image(), cv2.COLOR_RGB2BGR)
             img_msg  = bridge.cv2_to_imgmsg(image)
             req      = classify_client.request_class()
@@ -221,7 +225,7 @@ class Move_arm_grasp(smach.State):
 
 
             for i in range(len(res.names)):
-                if res.names[i].data== '013_apple' or res.names[i].data== '017_orange':
+                if res.names[i].data[4:]== target_object or res.names[i].data[4:]== common_misid:#'013_apple' or res.names[i].data== '017_orange':
                     bbM=res.pt_min.data[2*i:2*i+2]
                     bbm=res.pt_max.data[2*i:2*i+2]
                     bbx=[bbM,bbm]
@@ -235,13 +239,13 @@ class Move_arm_grasp(smach.State):
                 #eY=(bbx[1][1]-215)/215    #experience value
 
                 print(f'error relative to gripper cam ex={eX} ey={eY}')
-                omni_base.tiny_move(velX=0.5*eX, velY=0.5*-eY, MAX_VEL=0.05) 
+                omni_base.tiny_move(velX=0.015*eX, velY=0.06*-eY, std_time=0.2,MAX_VEL=0.05) 
                 print(f'error relative to gripper cam ex={eX} ey={eY}:::::: Error within tolerance')
         talk ('ready to grasp')
         clear_octo_client()
         av=arm.get_current_joint_values()
         
-        pose,_=tf_man.getTF(target_frame='hand_palm_link',ref_frame='apple')
+        pose,_=tf_man.getTF(target_frame='hand_palm_link',ref_frame=target_object)
         av[0]+=0.07-pose[2]
 
         #av[0]+= -0.17###LAB
