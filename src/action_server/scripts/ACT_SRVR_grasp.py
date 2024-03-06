@@ -50,9 +50,6 @@ class GraspingStateMachine:
         print(self.planning_frame)
         self.gripper.open()
 
-        
-        #return "0"
-
         # Definir la posición objetivo (cambiar según necesidad)
         self.target_pose = Pose()
         self.target_pose.position.x = 0.8
