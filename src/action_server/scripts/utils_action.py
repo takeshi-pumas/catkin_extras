@@ -22,7 +22,6 @@ from object_classification.srv import *
 from segmentation.srv import *
 from human_detector.srv import Human_detector ,Human_detectorResponse 
 from human_detector.srv import Point_detector ,Point_detectorResponse 
-from ros_whisper_vosk.srv import GetSpeech
 from object_classification.srv import *
 from face_recog.msg import *
 from face_recog.srv import *
@@ -37,7 +36,7 @@ from rospy.exceptions import ROSException
 from vision_msgs.srv import *
 from act_recog.srv import Recognize,RecognizeResponse,RecognizeRequest
 from ros_whisper_vosk.srv import SetGrammarVosk
-
+from ros_whisper_vosk.srv import GetSpeech
 from action_server.msg import FollowActionGoal
 
 from utils.grasp_utils import *
@@ -409,13 +408,21 @@ def detect_human_to_tf():
 #------------------------------------------------------
 
 def get_keywords_speech(timeout=5):
+    pub = rospy.Publisher('/talk_now', String, queue_size=10)
+    rospy.sleep(0.8)
+    msg = String()
+    msg.data='start'
+    pub.publish(msg)
     try:
         msg = rospy.wait_for_message('/speech_recognition/final_result', String, timeout)
         result = msg.data
+        pub.publish(String())
+        rospy.sleep(1.0)
         return result
             
     except ROSException:
         rospy.loginfo('timeout')
+        pub.publish(String())
         return 'timeout'
 
 def check_room_px(px_pose,living_room_px_region,kitchen_px_region,bedroom_px_region,dining_room_px_region ):
@@ -438,3 +445,9 @@ def check_room_px(px_pose,living_room_px_region,kitchen_px_region,bedroom_px_reg
         if (px_pose[1]< px_region[1,1]) and (px_pose[1]> px_region[0,1]) and (px_pose[0]> px_region[0,0]) and (px_pose[0]< px_region[1,0]) : 
             print (f'in  {region}')
             return region
+
+def match_speech(speech, to_match):
+    for element in to_match:
+        if element in speech:
+            return True
+    return False

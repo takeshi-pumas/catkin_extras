@@ -173,12 +173,25 @@ class Follow_human(smach.State):
                 print ('legs stopped... Are we there yet?')#,   np.var(self.last_legs,axis=0).mean()   )     
 
                 talk ('are we there yet ?')
+
+                confirmation = get_keywords_speech(10)
+                confirmation = confirmation.split(' ')
+                talk (confirmation)
+                print (confirmation,"#################################################")
+                if confirmation in ['yes','jack','juice', 'takeshi yes','yeah']:
+                
+                    talk ('arrival confirmed, exiting action')
+                    return 'arrived' 
+                else: 
+                    talk ( f' I head {confirmation}')
+                
+                talk ('ok I will continue to follow you')
                 msg_bool=Bool()
                 msg_bool.data= False
                 enable_legs.publish(msg_bool)
                 enable_follow.publish(msg_bool)
                 rospy.sleep(2)
-                return 'arrived'
+                return 'succ'
             self.last_legs.pop(0)
         
 
