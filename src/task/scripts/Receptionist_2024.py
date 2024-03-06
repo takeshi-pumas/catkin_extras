@@ -1,10 +1,39 @@
 #!/usr/bin/env python3
-
+from smach_utils2 import *
 from utils.receptionist_knowledge import *
 
 ##### Define state INITIAL #####
 
 # --------------------------------------------------
+class ReceptionistTaskStateMachine:
+    def __init__(self):
+
+        self.party = RECEPTIONIST()
+        self.voice = TALKER()
+        self.sm = smach.StateMachine(outcomes=['success', 'failure'])
+        with self.sm:
+            smach.StateMachine.add('WAIT_PUSH_HAND', smach.CBState(self.wait_push_hand, outcomes=['succ', 'failed']),
+                                   transitions={'success':'GRASP'})
+            smach.StateMachine.add('GRASP', smach.CBState(self.grasp, outcomes=['success']),
+                                   transitions={'success':'RETREAT'})
+            smach.StateMachine.add('RETREAT', smach.CBState(self.retreat, outcomes=['success']),
+                                   transitions={'success':'success'})
+    def wait_push_hand(self, userdata):
+
+        rospy.loginfo('STATE : Wait for push hand')
+        rospy.loginfo('Waiting for hand to be pushed')
+
+        head.set_named_target('neutral')
+        brazo.set_named_target('go')
+        self.voice.talk('Gently... push my hand to begin')
+        succ = wait_for_push_hand(100)
+
+        if succ:
+            return 'succ'
+        else:
+            return 'failed'
+
+
 class Initial(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed'])
@@ -18,6 +47,7 @@ class Initial(smach.State):
         print(f'Try {self.tries} of 5 attempts')
 
         #object party = RECEPTIONIST() is needed 
+        party = RECEPTIONIST()
 
         party.clean_knowledge()
         places_2_tf()
