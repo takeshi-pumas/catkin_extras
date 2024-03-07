@@ -163,7 +163,7 @@ class Scan_floor(smach.State):
             talk('no Objects in area....')
             return 'failed'
         else:
-            succ=seg_res_tf(res)
+            succ=seg_res_tf_pointing(res)   # Cambia ya que depende de tf pointing_
             return 'succ'
             #print ('poses',res.poses_corr.data,res.poses.data)
             #poses=np.asarray(res.poses.data)
