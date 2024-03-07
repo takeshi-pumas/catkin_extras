@@ -50,7 +50,7 @@ class Wait_push_hand(smach.State):
         print(f'Try {self.tries} of 4 attempts')
         if self.tries == 4:
             return 'tries'
-        talk('Gently... push my hand to begin')
+        #talk('Gently... push my hand to begin')
         succ = wait_for_push_hand(100)
 
         if succ:
@@ -72,7 +72,7 @@ class Find_human(smach.State):
         
 
         rospy.loginfo('State : Find_human')
-        talk('Scanning the room for humans')
+        #talk('Scanning the room for humans')
         self.tries += 1
         if self.tries >= 4:
             self.tries = 0
@@ -113,7 +113,7 @@ class Find_legs(smach.State):
         enable_legs.publish(msg_bool)
         enable_follow.publish(msg_bool)
         ############################
-        talk('Leg finder activated')
+        #talk('Leg finder activated')
         print ('Leg finder activated ')
         
         timeout=2
@@ -130,7 +130,7 @@ class Find_legs(smach.State):
         except Exception:
             
             print ('No legs found')
-            talk( 'I can not  find you, please stand in front of me')
+            #talk( 'I can not  find you, please stand in front of me')
       
             
             msg_bool.data= False
@@ -152,53 +152,43 @@ class Follow_human(smach.State):
         self.tries+=1
         if self.tries == 1: 
             print('Legs Found, Following')
-            talk('Human found, Following')
+            #talk('Human found, Following')
 
         try :
             punto=rospy.wait_for_message("/hri/leg_finder/leg_pose", PointStamped , timeout=2.0)
             
-        except Exception:
-            
+        except Exception:            
             print ('legs _lost')
-            talk( 'I lost you, please stand in front of me')
+            #talk( 'I lost you, please stand in front of me')
             return 'lost'
-
-        x,y=punto.point.x,    punto.point.y
-        
+        x,y=punto.point.x,    punto.point.y        
         self.last_legs.append((x,y))
         print(np.linalg.norm(np.asarray(self.last_legs).mean(axis=0)))
         if len (self.last_legs)>=6:
             #if (np.var(self.last_legs,axis=0).mean() < 0.001):
             if (np.linalg.norm(np.asarray(self.last_legs).mean(axis=0)) < 1.0):
-                print ('legs stopped... Are we there yet?')#,   np.var(self.last_legs,axis=0).mean()   )     
-
-                talk ('are we there yet ?')
-
-                confirmation = get_keywords_speech(10)
-                confirmation = confirmation.split(' ')
-                talk (confirmation)
-                print (confirmation,"#################################################")
-                if confirmation in ['yes','jack','juice', 'takeshi yes','yeah']:
-                
-                    talk ('arrival confirmed, exiting action')
+                print ('legs stopped... Are we there yet?')#,   np.var(self.last_legs,axis=0).mean()   )    
+                #talk ('are we there yet ?')
+                print ('are we there yet ?')                
+                speech = get_keywords_speech(10)
+                speech = speech.split(' ')
+                confirmation_list=['yes','jack','juice', 'takeshi yes','yeah']
+                confirm = any(word in confirmation_list for word in speech)
+                #talk (confirmation)
+                print (speech,"#################################################",confirm)               
+                if confirm:
+                    #talk ('arrival confirmed, exiting action')
+                    print ('We are athere')
+                    msg_bool=Bool()
+                    msg_bool.data= False
+                    enable_legs.publish(msg_bool)
+                    enable_follow.publish(msg_bool)
                     return 'arrived' 
-                else: 
-                    talk ( f' I head {confirmation}')
-                
-                talk ('ok I will continue to follow you')
-                msg_bool=Bool()
-                msg_bool.data= False
-                enable_legs.publish(msg_bool)
-                enable_follow.publish(msg_bool)
-                rospy.sleep(2)
-                return 'succ'
+                    #talk ( f' I head {confirmation}')                
+                #talk ('ok I will continue to follow you')
+                print('ok I will continue to follow you')
             self.last_legs.pop(0)
-        
-
-        
-            
         print ('legs moving... Cruising',   np.var(self.last_legs,axis=0).mean()   )          #if (np.var(last_legs,axis=0).mean() < 0.0001):
-
         return 'succ'
 
 
