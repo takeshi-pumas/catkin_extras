@@ -163,6 +163,56 @@ def seg_res_tf(res):
                 #num_objs-=1
             print (f"object found at map coords.{pose} ")
     return succ
+
+#------------------------------------------------------
+def seg_res_tf_pointing(res):
+    # Extract pose information from segmentation response an publish a tf... 
+    # No rot is tf with pose relating to map  zero angles (robot facing)
+    # the object_number tf is the PCA axis  orientation
+    origin_map_img=[round(img_map.shape[0]*0.5) ,round(img_map.shape[1]*0.5)]   
+    
+    #brazo.set_named_target('go')
+    if len(res.poses.data)==0:
+        print('no objs')
+        return False
+    else:
+        
+        poses=np.asarray(res.poses.data)
+        quats=np.asarray(res.quats.data)
+        poses=poses.reshape((int(len(poses)/3) ,3     )      )  
+        quats=quats.reshape((int(len(quats)/4) ,4     )      )  
+        num_objs=len(poses)
+        print(f'{num_objs} found')
+
+        pointPose,_= tf_man.getTF('pointing_')
+        rospy.sleep(0.8)
+        print(f'Point pose head: {pointPose}')
+        dist=10000
+        for i,cent in enumerate(poses):
+            print(f'Objeto {i} de la lista con coordenada X:{cent[0]},Y:{cent[1]},Z:{cent[2]}')
+            if abs(np.linalg.norm(pointPose-cent)) < dist:
+                objIndex = i
+                dist = abs(np.linalg.norm(pointPose-cent))
+                print(f'Distancia menor, objeto {i} respecto a pointing_ : {dist}')
+
+        axis=[0,0,1]
+        angle = tf.transformations.euler_from_quaternion(quats[objIndex])[0]
+        rotation_quaternion = tf.transformations.quaternion_about_axis(angle, axis)
+        point_name=f'object_0'
+        tf_man.pub_static_tf(pos=poses[objIndex], rot =[0,0,0,1], point_name=point_name+'_norot', ref='map')## which object to choose   #TODO
+        succ=tf_man.pub_static_tf(pos=poses[objIndex], rot =rotation_quaternion, point_name=point_name, ref='map')## which object to choose   #TODO
+        rospy.sleep(0.5)                                                                        
+        pose,_= tf_man.getTF(point_name)
+        print (f'Occupancy map at point object {i}-> pixels ',origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(poses[objIndex][0]/pix_per_m), img_map[origin_map_img[1]+ round(poses[objIndex][1]/pix_per_m),origin_map_img[0]+ round(poses[objIndex][0]/pix_per_m)])
+        ## Pixels from augmented image map server published map image
+        if img_map[origin_map_img[1]+ round(poses[objIndex][1]/pix_per_m),origin_map_img[0]+ round(poses[objIndex][0]/pix_per_m)]!=0:#### Yes axes seem to be "flipped" !=0:
+            print ('reject point suggested ( for floor), most likely part of arena, occupied inflated map')
+            #tf_man.pub_static_tf(pos=[0,0,0], point_name=point_name, ref='head_rgbd_sensor_rgb_frame')
+            #num_objs-=1
+        print (f"object found at map coords.{pose} ")
+        
+    return succ
+
 #------------------------------------------------------
 def get_robot_px():
     trans, rot=tf_man.getTF('base_link')
