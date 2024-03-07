@@ -1,52 +1,23 @@
 #!/usr/bin/env python3
 from smach_utils2 import *
+
+from utils.grasp_utils import *
+from utils.misc_utils import *
+from utils.nav_utils import *
+#from utils.know_utils import *
 from utils.receptionist_knowledge import *
 
 ##### Define state INITIAL #####
-
-# --------------------------------------------------
-class ReceptionistTaskStateMachine:
-    def __init__(self):
-
-        self.party = RECEPTIONIST()
-        self.voice = TALKER()
-        self.sm = smach.StateMachine(outcomes=['success', 'failure'])
-        with self.sm:
-            smach.StateMachine.add('WAIT_PUSH_HAND', smach.CBState(self.wait_push_hand, outcomes=['succ', 'failed']),
-                                   transitions={'success':'GRASP'})
-            smach.StateMachine.add('GRASP', smach.CBState(self.grasp, outcomes=['success']),
-                                   transitions={'success':'RETREAT'})
-            smach.StateMachine.add('RETREAT', smach.CBState(self.retreat, outcomes=['success']),
-                                   transitions={'success':'success'})
-    def wait_push_hand(self, userdata):
-
-        rospy.loginfo('STATE : Wait for push hand')
-        rospy.loginfo('Waiting for hand to be pushed')
-
-        head.set_named_target('neutral')
-        brazo.set_named_target('go')
-        self.voice.talk('Gently... push my hand to begin')
-        succ = wait_for_push_hand(100)
-
-        if succ:
-            return 'succ'
-        else:
-            return 'failed'
-
-
 class Initial(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed'])
         self.tries = 0
 
     def execute(self, userdata):
-
-        rospy.loginfo('STATE : INITIAL')
-        print('Robot neutral pose')
         self.tries += 1
-        print(f'Try {self.tries} of 5 attempts')
+        rospy.loginfo('STATE : INITIAL')
+        rospy.loginfo(f'Try {self.tries} of 5 attempts')
 
-        #object party = RECEPTIONIST() is needed 
         party = RECEPTIONIST()
 
         party.clean_knowledge()
@@ -61,28 +32,27 @@ class Initial(smach.State):
         names = [' my name is' , 'i am','adel', 'angel', 'axel', 'charlie', 'jane', 'john', 'jules', 'morgan', 'paris', 'robin', 'simone']
         confirmation = ['yes','no', 'robot yes', 'robot no','not','now','nope','yeah']                     
         gram = drinks + names + confirmation                                                                                
+        
         if self.tries == 1:
             set_grammar(gram)  ##PRESET DRINKS
         elif self.tries == 3:
             return 'failed'
-        
-        rospy.sleep(0.8)
-        return 'succ'
+        else:
+            rospy.sleep(0.8)
+            return 'succ'
 
 # --------------------------------------------------
 
 class Wait_push_hand(smach.State):
     def __init__(self):
-        smach.State.__init__(self, outcomes=['succ', 'failed'])
+        smach.State.__init__(self, outcomes=['succ', 'tries', 'failed'])
         self.tries = 0
 
     def execute(self, userdata):
-
-        rospy.loginfo('STATE : Wait for Wait_push_hand')
-        print('Waiting for hand to be pushed')
-
+        rospy.loginfo(f'Try {self.tries} of 4 attempts')
         self.tries += 1
-        print(f'Try {self.tries} of 4 attempts')
+        rospy.loginfo('STATE : Wait for hand to be pushed')
+
         if self.tries == 4:
             return 'tries'
         head.set_named_target('neutral')
@@ -103,26 +73,8 @@ class Wait_door_opened(smach.State):
         self.tries = 0
 
     def execute(self, userdata):
+        pass
 
-        rospy.loginfo('STATE : Wait for door to be opened')
-        print('Waiting for door to be opened')
-
-        self.tries += 1
-        print(f'Try {self.tries} of 4 attempts')
-
-        if self.tries == 100:
-            return 'tries'
-        voice.talk('I am ready for receptionist task.')
-        rospy.sleep(0.8)
-        voice.talk('I am waiting for the door to be opened')
-        succ = line_detector.line_found()
-        #succ = wait_for_push_hand(100)
-        rospy.sleep(1.0)
-        if succ:
-            self.tries = 0
-            return 'succ'
-        else:
-            return 'failed'
 
 # --------------------------------------------------
 
