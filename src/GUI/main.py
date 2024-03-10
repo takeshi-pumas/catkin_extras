@@ -17,13 +17,14 @@ setup_completed = False
 active_tab = '-CONTROL_TAB-'
 
 
-def initial_setup(robot_alias):
+def initial_setup(robot_alias, sim):
     global uuid, base
     # Find workspace "catkin_extras")
     os.environ['ROS_MASTER_URI'] = f'http://{robot_alias}:11311'
     print("ROS master set")
-    os.environ['ROS_IP'] = interfaces.get_ip_ethernet()[0]  #'169.254.2.172' #'169.254.2.172'
-    print("ROS ip set")
+    if not sim:
+        os.environ['ROS_IP'] = interfaces.get_ip_ethernet()[0]  #'169.254.2.172' #'169.254.2.172'
+        print("ROS ip set")
     functions.search_ws(folder="catkin_extras", source=True)  
 
     uuid = roslaunch.rlutil.get_or_generate_uuid(None, False)
@@ -41,11 +42,17 @@ while True:
     # Start up
     elif event == '-CONNECT-' and values['-ROBOT_LIST-'] != '':
         robot_alias = values['-ROBOT_LIST-'][0]
+        sim = values['-SIM-']
+        print(sim)
         ip = interfaces.get_robot_ip(robot_alias)
         ip_available = interfaces.ping_to_ip(ip)
-        if ip_available:
+        if sim:
+            initial_setup(robot_alias, sim)
+            window['-INFO_CON-'].update(f"Connected to {robot_alias}")
+            setup_completed = True
+        elif ip_available:
             try:
-                initial_setup(robot_alias)
+                initial_setup(robot_alias, sim)
                 window['-INFO_CON-'].update(f"Connected to {robot_alias}")
                 setup_completed = True
             except Exception as e:
@@ -60,19 +67,31 @@ while True:
     #Launcher
     if active_tab == '-LAUNCH_TAB-' and setup_completed:
         if event == '-NAVIGATION-':
-            functions.manage_node('navigation_real', 'nav_pumas', window_event=window[event], uuid=uuid)
+            functions.manage_node('navigation_real', 'nav_pumas', 
+                                  window_event=window[event], uuid=uuid)
 
         elif event == '-YOLO-':
-            functions.manage_node('object_classification', "object_classification", window_event=window[event], uuid=uuid)
+            functions.manage_node('object_classification', "object_classification", 
+                                  window_event=window[event], uuid=uuid)
 
         elif event == '-MOVEIT-':
-            functions.manage_node('hsrb_demo_with_controller', 'hsrb_moveit_config', window_event=window[event], uuid=uuid, launch_args=['use_gui:=false'])
+            functions.manage_node('hsrb_demo_with_controller', 'hsrb_moveit_config', 
+                                  window_event=window[event], uuid=uuid, launch_args=["use_gui:=false"])
 
         elif event == '-MOVEIT_ARM-':
-            functions.manage_node('arm_test', 'task', window_event=window[event], uuid=uuid)
+            functions.manage_node('arm_test', 'task', 
+                                  window_event=window[event], uuid=uuid)
         
         elif event == '-PICKUP_ACT-':
-            functions.manage_node("pickup_action", 'task', window_event=window[event], uuid=uuid)
+            functions.manage_node("pickup_action", 'task', 
+                                  window_event=window[event], uuid=uuid)
+            
+        elif event == '-START_PICKUP-':
+            goal = values['-GOAL_OBJ-']
+            print(goal)
+            if len(goal) > 0:
+                ROSnode.set_pickup_goal(goal)
+
 
 
     #Robot control
@@ -99,7 +118,8 @@ while True:
     elif active_tab == '-SERVICES_TAB-' and setup_completed:
 
         if event == '-LOC_SRV-':
-            functions.manage_node('locations_gui', 'known_locations_tf_server', window_event=window[event], uuid=uuid)
+            functions.manage_node('locations_gui', 'known_locations_tf_server', 
+                                  window_event=window[event], uuid=uuid)
         
         elif event == '-TO_LOCS-':
             ROSnode.call_known_location_add(values['-LOC_NAME-'])

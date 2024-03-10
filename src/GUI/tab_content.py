@@ -5,7 +5,7 @@ from interfaces import get_hosts
 font = ('Arial', 12)
 font2 = ['Arial', 10]
 size_launch_btn = (10,2)
-size_window = (600, 400)
+size_window = (600, 450)
 
 size_column = (200, size_window[1])
 ws = search_ws()
@@ -16,7 +16,8 @@ robot_connection_tab_layout = [[sg.Text('Seleccione un robot para conectar:', fo
               [sg.Combo(values = get_hosts(), key='-ROBOT_LIST-', font=font, size=(15,1)), 
                sg.Button('Connect', key='-CONNECT-', font=font), 
                sg.Button('Refresh', key='-REFRESH-', font=font),
-               sg.Text('Robot is not connected', key='-INFO_CON-', font=font, text_color='yellow')]]
+               sg.Text('Robot is not connected', key='-INFO_CON-', font=font, text_color='yellow')], 
+               sg.Checkbox("Simulation mode", key='-SIM-')]
 
 launch_tab_layout = [[sg.Text("Press a button to run ROS Nodes, press again to finish them.", font=font)],
     [sg.HorizontalSeparator()],
@@ -26,7 +27,8 @@ launch_tab_layout = [[sg.Text("Press a button to run ROS Nodes, press again to f
     sg.Button("Moveit", key='-MOVEIT-', button_color=('white', 'green'), font=font, size=size_launch_btn)],
     #sg.Button("Moveit arm test", key='-MOVEIT_ARM-', button_color=('white', 'green'), font=font, size=size_launch_btn, disabled=True)],
     [sg.Text("Action launcher", font=font)],
-    [sg.Button("Pickup Action", key="-PICKUP_ACT-",button_color=('white', 'green'), font=font, size=size_launch_btn)]
+    [sg.Button("Pickup Action", key="-PICKUP_ACT-",button_color=('white', 'green'), font=font, size=size_launch_btn), 
+     sg.Text("Goal object:", font=font2), sg.InputText(key='-GOAL_OBJ-', size = (15, 1)), sg.Button("Start action", key='-START_PICKUP-',font=font2, button_color=('white', "blue"))]
     ]
 
 hri_tab_layout = [

@@ -15,7 +15,6 @@ class Initial(smach.State):
         
     def execute(self, userdata):
         
-
         self.tries += 1
         if self.tries == 1:
             return 'failed'
@@ -23,14 +22,9 @@ class Initial(smach.State):
             rospy.logwarn("No goal received yet.")
             return 'failed'
 
-        
-        
-        
-
         global target_object
         target_object= userdata.goal.target.data #'apple'   ### GET FROM REQUEST
         
-
         rospy.loginfo('STATE : INITIAL')
         print('Robot neutral pose')
         print(f'Try {self.tries} of 5 attempts')
@@ -38,9 +32,6 @@ class Initial(smach.State):
         rospy.sleep(0.4)
         talk (f'ready to take {target_object} in table')
         print (f'ready to take {target_object} in table')
-        #print('head listo')
-        #brazo.set_named_target('go')
-        #print('brazo listo')
         rospy.sleep(0.8)
 
         return 'succ'
@@ -56,7 +47,6 @@ class Wait_push_hand(smach.State):
 
         rospy.loginfo('STATE : Wait for Wait_push_hand')
         print('Waiting for hand to be pushed')
-
         self.tries += 1
         print(f'Try {self.tries} of 4 attempts')
         if self.tries == 4:
@@ -85,6 +75,8 @@ class Find_object(smach.State):  # ADD KNONW LOCATION DOOR
         self.tries += 1
         if self.tries == 4:
             self.tries=0
+            talk("I failed finding the object, please help")
+            talk("Ending action")
             return 'tries'
 
         head.set_joint_values([0.0,-0.65])
@@ -101,10 +93,12 @@ class Find_object(smach.State):  # ADD KNONW LOCATION DOOR
         
             if target_object==res.names[i].data[4:] or 'bowl'==res.names[i].data[4:] :
                 talk (f'{target_object} found')
-                tf_man.pub_static_tf(pos=[res.poses[i].position.x ,res.poses[i].position.y,res.poses[i].position.z], rot=[0,0,0,1],ref="head_rgbd_sensor_rgb_frame",point_name=target_object )   
+                tf_man.pub_static_tf(pos=[res.poses[i].position.x ,res.poses[i].position.y,res.poses[i].position.z], 
+                                     rot=[0,0,0,1], ref="head_rgbd_sensor_rgb_frame", point_name=target_object )   
                 rospy.sleep(0.3)
                 tf_man.change_ref_frame_tf(target_object)
                 return 'succ'
+                
         talk (f'I could not find the {target_object}')
         return 'failed'
 # --------------------------------------------------
@@ -124,13 +118,9 @@ class Get_close_to_object(smach.State):  # ADD KNONW LOCATION DOOR
         res = omni_base.move_d_to(0.66,target_object)
         head.set_named_target('neutral')
 
-
-
         _,rot= tf_man.getTF("base_link",ref_frame='map')
         original_rot=tf.transformations.euler_from_quaternion(rot)[2]
-        
-
-
+    
         succ = False
         start_time = rospy.get_time()          
         timeout=30.0
@@ -161,17 +151,10 @@ class Get_close_to_object(smach.State):  # ADD KNONW LOCATION DOOR
             if abs(eT   ) < 0.1:
                 eT = 0
             succ =  eX == 0 and eY == 0 and eT==0
-
-            
-            omni_base.tiny_move( velX=0.2*+eX,velY=0.3*eY, velT=-eT,std_time=0.2, MAX_VEL=0.3) 
-
-
-
+            omni_base.tiny_move( velX=0.2*+eX, velY=0.3*eY, velT=-eT, std_time=0.2, MAX_VEL=0.3) 
         
         if succ:return 'succ'
         return 'failed'   ### ADD TIMEOUT
-
-
 
 
 class Move_arm_pregrasp(smach.State):
@@ -278,7 +261,6 @@ class Plan_arm(smach.State):
 
         rospy.loginfo('STATE : plan arm using IK')
         
-
         self.tries += 1
         print(f'Try {self.tries} of 10 attempts')
         if self.tries == 10:
@@ -289,9 +271,6 @@ class Plan_arm(smach.State):
         pose, quat=tf_man.getTF('Target')
 
         wb_gp=whole_body.get_current_pose()
-        
-
-
         wb_gp.pose.position.x= pose[0]
         wb_gp.pose.position.y= pose[1]
         wb_gp.pose.position.z= pose[2]+0.35
@@ -342,8 +321,6 @@ class Execute_plan(smach.State):
         
 
 # --------------------------------------------------
-
-
 class Goto_exit(smach.State):  # ADD KNONW LOCATION DOOR
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
@@ -363,7 +340,7 @@ class Goto_exit(smach.State):  # ADD KNONW LOCATION DOOR
         print(res)
 
         if res == 3:
-            talk('test done! thanks for your attenntion!')
+            talk('test done! thanks for your attention!')
             return 'succ'
 
         else:
@@ -392,22 +369,25 @@ if __name__ == '__main__':
 
     with sm:
         # State machine for Restaurant
-        smach.StateMachine.add("INITIAL",       Initial(),      transitions={'failed': 'preempted',       'succ': 'FIND_OBJECT',       'tries': 'succeeded'} ,remapping={'goal': 'goal'} )
+        smach.StateMachine.add("INITIAL",       Initial(),      
+                               transitions={'failed': 'preempted', 'succ': 'FIND_OBJECT', 'tries': 'succeeded'} ,remapping={'goal': 'goal'} )
         #################################################################################################################################################################
-        smach.StateMachine.add("FIND_OBJECT",  Find_object(),   transitions={'failed': 'FIND_OBJECT',       'succ': 'GET_CLOSE_TO_OBJECT',       'tries': 'failed'})
-        smach.StateMachine.add("GET_CLOSE_TO_OBJECT",  Get_close_to_object(),   transitions={'failed': 'GET_CLOSE_TO_OBJECT',       'succ': 'MOVE_ARM_PREGRASP',       'tries': 'INITIAL'})
-        smach.StateMachine.add("MOVE_ARM_PREGRASP",  Move_arm_pregrasp(),   transitions={      'failed': 'MOVE_ARM_PREGRASP', 'succ': 'MOVE_ARM_GRASP'})
-        smach.StateMachine.add("MOVE_ARM_GRASP",  Move_arm_grasp(),   transitions={      'failed': 'MOVE_ARM_PREGRASP', 'succ': 'succeeded',      'tries': 'failed'})
-
-        smach.StateMachine.add("PLAN_ARM",           Plan_arm(),      transitions={      'failed': 'PLAN_ARM', 'succ': 'EXECUTE_PLAN',      'tries': 'FIND_OBJECT'})
-        smach.StateMachine.add("EXECUTE_PLAN",      Execute_plan(),   transitions={      'failed': 'EXECUTE_PLAN', 'succ': 'succeeded',      'tries': 'failed'})
-
-        
-
-
-
-        smach.StateMachine.add("WAIT_HAND",     Wait_push_hand(),       transitions={'failed': 'WAIT_HAND',    'succ': 'GOTO_EXIT', 'tries': 'WAIT_HAND'})
-        smach.StateMachine.add("GOTO_EXIT",     Goto_exit(),     transitions={'failed': 'succeeded','succ': 'succeeded'    , 'tries': 'succeeded'})
+        smach.StateMachine.add("FIND_OBJECT", Find_object(),   
+                               transitions={'failed': 'FIND_OBJECT', 'succ': 'GET_CLOSE_TO_OBJECT', 'tries': 'failed'})
+        smach.StateMachine.add("GET_CLOSE_TO_OBJECT", Get_close_to_object(),   
+                               transitions={'failed': 'GET_CLOSE_TO_OBJECT', 'succ': 'MOVE_ARM_PREGRASP', 'tries': 'INITIAL'})
+        smach.StateMachine.add("MOVE_ARM_PREGRASP", Move_arm_pregrasp(),   
+                               transitions={'failed': 'MOVE_ARM_PREGRASP', 'succ': 'MOVE_ARM_GRASP'})
+        smach.StateMachine.add("MOVE_ARM_GRASP", Move_arm_grasp(),   
+                               transitions={'failed': 'MOVE_ARM_PREGRASP', 'succ': 'succeeded', 'tries': 'failed'})
+        smach.StateMachine.add("PLAN_ARM", Plan_arm(),      
+                               transitions={'failed': 'PLAN_ARM', 'succ': 'EXECUTE_PLAN', 'tries': 'FIND_OBJECT'})
+        smach.StateMachine.add("EXECUTE_PLAN", Execute_plan(),   
+                               transitions={'failed': 'EXECUTE_PLAN', 'succ': 'succeeded','tries': 'failed'})
+        smach.StateMachine.add("WAIT_HAND", Wait_push_hand(),       
+                               transitions={'failed': 'WAIT_HAND','succ': 'GOTO_EXIT', 'tries': 'WAIT_HAND'})
+        smach.StateMachine.add("GOTO_EXIT", Goto_exit(),     
+                               transitions={'failed': 'succeeded','succ': 'succeeded', 'tries': 'succeeded'})
         ##################################################################################################################################################################
         
     asw = ActionServerWrapper(

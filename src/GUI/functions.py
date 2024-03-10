@@ -1,6 +1,7 @@
 import roslaunch
 import os
 import netifaces
+import numpy as np
 
 
 nodes = {}
@@ -12,8 +13,8 @@ def cleanup_nodes():
 
 def set_node(package, launch_file, uuid, launch_args = []):
     cli_args = [package, f'{launch_file}.launch']
-    while len(launch_args) > 0:
-        cli_args.append(launch_args.pop())
+    cli_args.extend(launch_args)
+
     roslaunch_file = roslaunch.rlutil.resolve_launch_arguments(cli_args)
     parent = roslaunch.parent.ROSLaunchParent(uuid, roslaunch_file)
     return parent

@@ -1,5 +1,6 @@
 import rospy
 from geometry_msgs.msg import Twist
+from action_server.msg import PickUpActionGoal
 from known_locations_tf_server.srv import Locations_server
 
 class BASE_CONTROLLER:
@@ -63,5 +64,10 @@ def call_knowledge_place_add():
         print("Error al llamar al servicio: ", e)
         return False
 
+def set_pickup_goal(goal):
+    pickup_goal_publisher = rospy.Publisher("grasp_table_act_server/goal", PickUpActionGoal, queue_size=1)
+    action_request = PickUpActionGoal()
+    action_request.goal.target.data = goal
+    pickup_goal_publisher.publish(action_request)
 
 
