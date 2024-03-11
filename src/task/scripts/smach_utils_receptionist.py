@@ -41,10 +41,7 @@ from utils.receptionist_knowledge import *
 global listener, broadcaster, tfBuffer, tf_static_broadcaster, scene, rgbd, head,train_new_face, wrist, human_detect_server, line_detector, clothes_color
 global clear_octo_client, goal,navclient,segmentation_server  , tf_man , omni_base, brazo, speech_recog_server, bridge, map_msg, pix_per_m, analyze_face , arm , set_grammar
 
-rospy.init_node('smach')
-# head = moveit_commander.MoveGroupCommander('head')
-#gripper =  moveit_commander.MoveGroupCommander('gripper')
-#whole_body=moveit_commander.MoveGroupCommander('whole_body')
+rospy.init_node('smach_receptionist')
 
 #broadcaster = tf.TransformBroadcaster()
 tfBuffer = tf2_ros.Buffer()
@@ -87,7 +84,7 @@ party = RECEPTIONIST()
 # arm =  moveit_commander.MoveGroupCommander('arm')
 
 
-def places_2_tf():
+'''def places_2_tf():
     #tf_man = TF_MANAGER()
     locs = return_places()
     #print(locs)
@@ -102,13 +99,13 @@ def pub_places():
         pos = [loc[0], loc[1], 0.85]
         rot = tf.transformations.quaternion_from_euler(0.0, 0.0, loc[2])
         tf_man.pub_static_tf(pos=pos, rot=rot, point_name=f'Place_{i+1}')
-        tf_man.pub_static_tf(pos=[1.0, 0, 0], rot=rot, point_name=f'Place_face{i+1}', ref=f'Place_{i+1}')
+        tf_man.pub_static_tf(pos=[1.0, 0, 0], rot=rot, point_name=f'Place_face{i+1}', ref=f'Place_{i+1}')'''
 #------------------------------------------------------
-def get_robot_px():
+'''def get_robot_px():
     trans, rot=tf_man.getTF('base_link')
     robot=np.asarray(trans[:2])
     print (trans)
-    return np.asarray((robot/pix_per_m).round(),dtype='int')
+    return np.asarray((robot/pix_per_m).round(),dtype='int')'''
 
 #------------------------------------------------------
 def check_point_map(x,y):
@@ -233,11 +230,10 @@ def wait_for_push_hand(time=10):
     while rospy.get_time() - start_time < time:
         torque = wrist.get_torque()
         if np.abs(torque[1])>1.0:
-            print(' Hand Pused Ready TO start')
+            print(' Hand Pused Ready To Start')
             #takeshi_talk_pub.publish(string_to_Voice())
-            talk('Im ready to start')
+            #talk('Im ready to start')
             return True
-            break
 
     if (rospy.get_time() - start_time >= time):
         print(time, 'secs have elapsed with no hand push')

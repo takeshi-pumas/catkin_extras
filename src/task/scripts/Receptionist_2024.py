@@ -1,11 +1,6 @@
 #!/usr/bin/env python3
-from smach_utils2 import *
+from smach_utils_receptionist import *
 
-from utils.grasp_utils import *
-from utils.misc_utils import *
-from utils.nav_utils import *
-#from utils.know_utils import *
-from utils.receptionist_knowledge import *
 
 ##### Define state INITIAL #####
 class Initial(smach.State):
@@ -18,18 +13,19 @@ class Initial(smach.State):
         rospy.loginfo('STATE : INITIAL')
         rospy.loginfo(f'Try {self.tries} of 5 attempts')
 
-        party = RECEPTIONIST()
 
-        party.clean_knowledge()
+        party.clean_knowledge(host_name = "Oscar", host_location = "Place_2")
         places_2_tf()
 
         ###-----INIT GRAMMAR FOR VOSK
         ###-----Use with get_keywords_speech()
         ###-----------SPEECH REC
         #drinks=['coke','juice','beer', 'water', 'soda', 'wine', 'i want a', 'i would like a']
-        drinks = ['coke','juice','milk', 'water', 'soda', 'wine', 'i want a', 'i would like a', 'tea', 'icedtea', 'cola', 'redwine', 'orangejuice', 'tropicaljuice']
+        drinks = ['coke','juice','milk', 'water', 'soda', 'wine', 
+                  'i want a', 'i would like a', 'tea', 'icedtea', 'cola', 'redwine', 'orangejuice', 'tropicaljuice']
         #names=['rebeca','ana','jack', 'michael', ' my name is' , 'i am','george','mary','ruben','oscar','yolo','mitzi']
-        names = [' my name is' , 'i am','adel', 'angel', 'axel', 'charlie', 'jane', 'john', 'jules', 'morgan', 'paris', 'robin', 'simone']
+        names = [' my name is' , 'i am','adel', 'angel', 'axel', 
+                 'charlie', 'jane', 'john', 'jules', 'morgan', 'paris', 'robin', 'simone']
         confirmation = ['yes','no', 'robot yes', 'robot no','not','now','nope','yeah']                     
         gram = drinks + names + confirmation                                                                                
         
@@ -67,15 +63,58 @@ class Wait_push_hand(smach.State):
 
 # --------------------------------------------------
 
-class Wait_door_opened(smach.State):
+class Wait_push_hand(smach.State):
     def __init__(self):
-        smach.State.__init__(self, outcomes=['succ', 'failed'])
+        smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
         self.tries = 0
 
     def execute(self, userdata):
-        pass
 
+        rospy.loginfo('STATE : Wait for Wait_push_hand')
+        print('Waiting for hand to be pushed')
 
+        self.tries += 1
+        print(f'Try {self.tries} of 4 attempts')
+        if self.tries == 4:
+            return 'tries'
+        head.set_named_target('neutral')
+        brazo.set_named_target('go')
+        voice.talk('Gently... push my hand to begin')
+        succ = wait_for_push_hand(100)
+
+        if succ:
+            return 'succ'
+        else:
+            return 'failed'
+
+# --------------------------------------------------
+
+class Wait_door_opened(smach.State):
+    def __init__(self):
+        smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
+        self.tries = 0
+
+    def execute(self, userdata):
+
+        rospy.loginfo('STATE : Wait for door to be opened')
+        print('Waiting for door to be opened')
+
+        self.tries += 1
+        print(f'Try {self.tries} of 4 attempts')
+
+        if self.tries == 100:
+            return 'tries'
+        voice.talk('I am ready for receptionist task.')
+        rospy.sleep(0.8)
+        voice.talk('I am waiting for the door to be opened')
+        succ = line_detector.line_found()
+        #succ = wait_for_push_hand(100)
+        rospy.sleep(1.0)
+        if succ:
+            self.tries = 0
+            return 'succ'
+        else:
+            return 'failed'
 # --------------------------------------------------
 
 class Goto_door(smach.State):  # ADD KNONW LOCATION DOOR
@@ -502,10 +541,14 @@ if __name__ == '__main__':
     with sm:
         # State machine for Receptionist task
 
-        smach.StateMachine.add("INITIAL",           Initial(),              transitions={'failed': 'INITIAL',           'succ': 'WAIT_PUSH_HAND'})
-        smach.StateMachine.add("WAIT_PUSH_HAND",    Wait_push_hand(),       transitions={'failed': 'WAIT_PUSH_HAND',    'succ': 'GOTO_DOOR'})
-        smach.StateMachine.add("WAIT_DOOR_OPENED",  Wait_door_opened(),     transitions={'failed': 'WAIT_DOOR_OPENED',  'succ': 'GOTO_DOOR'})
-        smach.StateMachine.add("GOTO_DOOR",         Goto_door(),            transitions={'failed': 'GOTO_DOOR',         'succ': 'SCAN_FACE'})
+        smach.StateMachine.add("INITIAL",           Initial(),              
+                               transitions={'failed': 'INITIAL',           'succ': 'WAIT_PUSH_HAND'})
+        smach.StateMachine.add("WAIT_PUSH_HAND",    Wait_push_hand(),       
+                               transitions={'failed': 'WAIT_PUSH_HAND',    'succ': 'GOTO_DOOR'})
+        smach.StateMachine.add("WAIT_DOOR_OPENED",  Wait_door_opened(),     
+                               transitions={'failed': 'WAIT_DOOR_OPENED',  'succ': 'GOTO_DOOR'})
+        smach.StateMachine.add("GOTO_DOOR",         Goto_door(),            
+                               transitions={'failed': 'GOTO_DOOR',         'succ': 'SCAN_FACE'})
         
         smach.StateMachine.add("SCAN_FACE",         Scan_face(),    transitions={'failed': 'SCAN_FACE',     'succ': 'GET_DRINK',    'tries': 'GOTO_DOOR', 'unknown': 'NEW_FACE',})
         smach.StateMachine.add("NEW_FACE",          New_face(),     transitions={'failed': 'NEW_FACE',      'succ': 'GET_DRINK'})
