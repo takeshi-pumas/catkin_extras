@@ -78,16 +78,19 @@ train_new_face = rospy.ServiceProxy('new_face', RecognizeFace)                  
 analyze_face = rospy.ServiceProxy('analyze_face', RecognizeFace)    ###DEEP FACE ONLY
 recognize_action = rospy.ServiceProxy('recognize_act', Recognize) 
 classify_client = rospy.ServiceProxy('/classify', Classify)
-pub_fag = rospy.Publisher('/grasp_floor_act_server/goal_action_pickup', FollowActionGoal, queue_size=1)
 
 
 
+####################################################################
 map_msg= rospy.wait_for_message('/augmented_map', OccupancyGrid , 20)####WAIT for nav pumas map .. 
 inflated_map= np.asarray(map_msg.data)
 img_map=inflated_map.reshape((map_msg.info.width,map_msg.info.height))
 pix_per_m=map_msg.info.resolution
 contours, hierarchy = cv2.findContours(img_map.astype('uint8'),cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
 contoured=cv2.drawContours(img_map.astype('uint8'), contours, 1, (255,255,255), 1)
+####################################################################3
+
+
 rgbd= RGBD()
 bridge = CvBridge()
 #segmentation_server = rospy.ServiceProxy('/segment_2_tf', Trigger) 
