@@ -64,7 +64,9 @@ class Wait_push_hand(smach.State):
         self.tries = 0
 
     def execute(self, userdata):
-        return 'succ'## REMOVE  THIS IS ONLY FOR GAZEBO TESTING (no push hand simulated just skip)
+        #############################################################################################
+        #return 'succ'## REMOVE  THIS IS ONLY FOR GAZEBO TESTING (no push hand simulated just skip)
+        #############################################################################################
         rospy.loginfo('STATE : Wait for Wait_push_hand')
         print('Waiting for hand to be pushed')
 

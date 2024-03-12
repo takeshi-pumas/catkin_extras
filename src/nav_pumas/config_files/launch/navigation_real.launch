@@ -134,7 +134,7 @@
     </node-->
   
   
-  <node pkg="hmm_navigation"  name="pumas_nav_actionserver" type="pumas_nav_actionserver.py"/>
+  <!--node pkg="hmm_navigation"  name="pumas_nav_actionserver" type="pumas_nav_actionserver.py"/-->
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(find nav_pumas)/config_files/rviz/takeshi_navigation.rviz"/>
 
 </launch>
