@@ -29,6 +29,7 @@ from nav_msgs.msg import OccupancyGrid
 from hri_msgs.msg import RecognizedSpeech
 from rospy.exceptions import ROSException
 from vision_msgs.srv import *
+from std_msgs.msg import String
 
 from ros_whisper_vosk.srv import SetGrammarVosk
 

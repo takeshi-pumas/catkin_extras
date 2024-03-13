@@ -10,9 +10,9 @@ class RECEPTIONIST:
         self.file_path = rospack.get_path('config_files') + knowledge_file
         self.informacion_fiesta = self.load_data_from_yaml()
         rospy.Subscriber('/analyze_result', String, self.callback)
-        self.last_seat_assigned = 'None'  # Place_0, Place_1, Place_2
+        #self.last_seat_assigned = 'None'  # Place_0, Place_1, Place_2
         self.active_guest = 'None'  # Guest_0, Guest_1, Guest_2
-        self.active_seat = 'None'
+        self.active_seat = 'None' # Place_0, Place_1, Place_2
 
     # --- YAML read and write ---
     def load_data_from_yaml(self):
@@ -93,6 +93,12 @@ class RECEPTIONIST:
                 locs.append(xyt)
         return places, locs
     
+    def get_active_seat(self):
+        if self.active_seat != 'None':
+            return True, self.active_seat
+        else:
+            return False, self.active_seat
+
     # Gets X, Y, Theta location of active seat, if there is no active seat returns False
     def get_active_seat_location(self):
         if self.active_seat != 'None':
