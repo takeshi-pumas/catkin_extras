@@ -227,8 +227,7 @@ class New_face(smach.State):
             voice.talk ('lets try again')
             return 'failed'
 
-
-# --------------------------------------------------
+# Get drink STATE: Ask guest for their favourite drink
 
 class Get_drink(smach.State):
     def __init__(self):
@@ -244,7 +243,7 @@ class Get_drink(smach.State):
         rospy.loginfo('STATE : GET DRINK')
 
         if self.tries == 1:
-            analyze_face_background(userdata.face_img, userdata.name)
+            analyze_face_background(userdata.face_img, party.get_active_guest_name())#userdata.name)
 
         elif self.tries == 3:
             voice.talk ('I am having trouble understanding you, lets keep going')
@@ -278,7 +277,7 @@ class Get_drink(smach.State):
         self.tries = 0
         return 'succ'
 
-# --------------------------------------------------
+# Lead to living room STATE: Ask guest to be followed to living room
 
 class Lead_to_living_room(smach.State):
     def __init__(self):
@@ -299,7 +298,7 @@ class Lead_to_living_room(smach.State):
             voice.talk('Navigation Failed, retrying')
             return 'failed'
 
-# --------------------------------------------------
+# Find sitting place STATE: Find a place to sit according to previous knowledge of the world
 
 class Find_sitting_place(smach.State):
     def __init__(self):
@@ -352,7 +351,7 @@ class Find_sitting_place(smach.State):
             voice.talk(f'I am sorry, here is {occupant_name}, I will find another place for you')
             return 'failed'
 
-# --------------------------------------------------
+# Find host from previous knowledge or find them by vision
 
 class Find_host(smach.State):
     def __init__(self):
@@ -427,6 +426,41 @@ class Find_host(smach.State):
                 reset_occupancy(who=host_name)
                 return 'failed'
 
+
+class Find_host_alternative(smach.State):
+    def __init__(self):
+        smach.State.__init__(outcomes= ['succ', 'failed', 'tries'])
+        self.tries = 0
+    def execute(self, userdata):
+        rospy.loginfo("STATE: Find host alternative")
+        
+        host_name, host_loc = party.get_host_info()
+        if host_loc == "None":
+            #iterate once over the seats
+            seats, _ = party.get_places_location()
+            for seat in seats:
+                tf_face_seat = seat.replace('_', '_face')
+                head.to_tf(tf_face_seat)
+                res, _ = wait_for_face()
+                if res is not None:
+                    pass
+        else:
+            tf_name = host_loc.replace('_','_face')
+            head.to_tf(tf_name)
+            res, _ = wait_for_face()
+            if res is not None:
+                person_name = res.Ids.ids
+                if person_name != host_name:
+                    #someone was found but is not the host
+                    return 'failed'
+                else:
+                    #the host is found
+                    return 'succ'
+            else:
+                #there is nobody on this seat
+                pass
+
+        
 # --------------------------------------------------
 class Introduce_guest(smach.State):
     def __init__(self):
