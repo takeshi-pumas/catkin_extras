@@ -66,7 +66,7 @@ class Wait_push_hand(smach.State):
     def execute(self, userdata):
         #############################################################################################
         #return 'succ'## REMOVE  THIS IS ONLY FOR GAZEBO TESTING (no push hand simulated just skip)
-        #############################################################################################
+        #############################################################################################  
         rospy.loginfo('STATE : Wait for Wait_push_hand')
         print('Waiting for hand to be pushed')
 
@@ -114,13 +114,17 @@ class Scan_table(smach.State):
        
     def execute(self, userdata):
         rospy.loginfo('State : Scanning_table')
-        talk('Scanning table')
+        talk('Scanning ')
         self.tries += 1
-        if self.tries >= 4:self.tries = 0
+        if self.tries >= 4:
+            self.tries = 0
+            return 'succ'
         if self.tries==1:head.set_joint_values([ 0.0, -0.7])
         if self.tries==2:head.set_joint_values([ 0.2, -0.7])
         if self.tries==3:head.set_joint_values([-0.2, -0.7])
-        rospy.sleep(1.3)                    
+        rospy.sleep(1.3)    
+        talk('Table')
+                
         img_msg  = bridge.cv2_to_imgmsg(rgbd.get_image())
         req      = classify_client.request_class()
         req.in_.image_msgs.append(img_msg)
@@ -135,14 +139,15 @@ class Scan_table(smach.State):
                 tf_man.change_ref_frame_tf(res.names[i].data[4:])
                 rospy.sleep(0.3)
                 pose , _=tf_man.getTF(res.names[i].data[4:])
-                new_row = {'x': pose[0], 'y': pose[1], 'z': pose[2], 'obj_name': res.names[i].data[4:]}
-                objs.loc[len(objs)] = new_row
+                if type (pose)!= bool:
+                    new_row = {'x': pose[0], 'y': pose[1], 'z': pose[2], 'obj_name': res.names[i].data[4:]}
+                    objs.loc[len(objs)] = new_row
         else:
             print('Objects list empty')
             return 'failed'
         print(objs)
         
-        return 'succ'
+        return 'failed'
 #########################################################################################################
     
 class Goto_shelf(smach.State):  
