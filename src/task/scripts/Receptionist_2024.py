@@ -41,15 +41,15 @@ class Initial(smach.State):
 
 class Wait_push_hand(smach.State):
     def __init__(self):
-        smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
+        smach.State.__init__(self, outcomes=['succ', 'failed'])
         self.tries = 0
 
     def execute(self, userdata):
         rospy.loginfo('STATE : Wait for Wait_push_hand')
         self.tries += 1
         print(f'Try {self.tries} of 4 attempts')
-        if self.tries == 4:
-            return 'tries'
+        # if self.tries == 4:
+        #     return 'failed'
         head.set_named_target('neutral')
         brazo.set_named_target('go')
         voice.talk('Gently... push my hand to begin')
@@ -64,7 +64,7 @@ class Wait_push_hand(smach.State):
 
 class Wait_door_opened(smach.State):
     def __init__(self):
-        smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
+        smach.State.__init__(self, outcomes=['succ', 'failed'])
         self.tries = 0
 
     def execute(self, userdata):
@@ -75,8 +75,8 @@ class Wait_door_opened(smach.State):
         self.tries += 1
         print(f'Try {self.tries} of 4 attempts')
 
-        if self.tries == 100:
-            return 'tries'
+        # if self.tries == 100:
+        #     return 'tries'
         voice.talk('I am ready for receptionist task.')
         rospy.sleep(0.8)
         voice.talk('I am waiting for the door to be opened')
@@ -282,7 +282,7 @@ class Get_drink(smach.State):
 
 class Lead_to_living_room(smach.State):
     def __init__(self):
-        smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
+        smach.State.__init__(self, outcomes=['succ', 'failed'])
         self.tries = 0
 
     def execute(self, userdata):
@@ -537,7 +537,7 @@ if __name__ == '__main__':
         # Guest recognition states
         smach.StateMachine.add("SCAN_FACE", Scan_face(),    
                                transitions={'failed': 'SCAN_FACE', 'succ': 'DECIDE_FACE'})
-        smach.StateMachine.add("DECIDE_FACE",
+        smach.StateMachine.add("DECIDE_FACE", Decide_face(),
                                transitions={'failed': 'SCAN_FACE', 'succ': 'GET_DRINK', 'unknown': 'NEW_FACE'})
         smach.StateMachine.add("NEW_FACE", New_face(),     
                                transitions={'failed': 'NEW_FACE', 'succ': 'GET_DRINK'})
