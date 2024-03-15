@@ -3,6 +3,10 @@ import rospkg
 import rospy
 import random
 from std_msgs.msg import String
+from geometry_msgs.msg import TransformStamped
+from tf.transformations import quaternion_from_euler
+
+import tf2_ros
 
 class RECEPTIONIST:
     def __init__(self, knowledge_file='/receptionist_knowledge.yaml'):
@@ -13,6 +17,11 @@ class RECEPTIONIST:
         #self.last_seat_assigned = 'None'  # Place_0, Place_1, Place_2
         self.active_guest = 'None'  # Guest_0, Guest_1, Guest_2
         self.active_seat = 'None' # Place_0, Place_1, Place_2
+
+        # TF2_ROS publisher
+        self.tf2_buffer = tf2_ros.Buffer()
+        self.listener = tf2_ros.TransformListener(self.tf2_buffer)
+        self.br = tf2_ros.StaticTransformBroadcaster()
 
     # --- YAML read and write ---
     def load_data_from_yaml(self):
@@ -111,6 +120,13 @@ class RECEPTIONIST:
     # Gets every place number on party context (unused)
     def get_places(self):
         return list(self.informacion_fiesta['Places'].keys())
+    
+    def get_guests_seat_assignments(self):
+        seats = {}
+        for place, info in self.informacion_fiesta['Places'].items():
+            if info['occupied'] != 'None':
+                seats[place] = info['occupied']
+        return seats
 
     #Gets active guest description
     def get_active_guest_description(self):
@@ -191,3 +207,31 @@ class RECEPTIONIST:
         takeshi_line = msg.data
         if len(takeshi_line) > 2:
             self.add_guest_description(takeshi_line)
+
+    def publish_tf_seats(self):
+        seat_transform = TransformStamped()
+        face_seat_transform = TransformStamped()
+        
+        seat_transform.header.stamp = rospy.Time.now()
+        seat_transform.header.frame_id = "map"
+
+        face_seat_transform.header.stamp = rospy.Time.now()
+
+        locations = self.get_places_location()
+
+        for place, loc in locations:
+            # Publish seats tf
+            seat_transform.child_frame_id = place
+            seat_transform.transform.translation.x = loc[0]
+            seat_transform.transform.translation.y = loc[1]
+            seat_transform.transform.rotation = quaternion_from_euler(0,0,loc[2])
+            self.br.sendTransform(seat_transform)
+
+            # Publish an approximation of face position of a seat
+            face_seat_transform.header.frame_id = place
+            face_seat_transform.child_frame_id = place.replace('_', '_face')
+            face_seat_transform.transform.translation.x = 0.5
+            face_seat_transform.transform.translation.z = 1.2
+            face_seat_transform.transform.rotation.w = 1
+            self.br.sendTransform(face_seat_transform)
+        return True
