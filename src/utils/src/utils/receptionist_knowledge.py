@@ -3,7 +3,7 @@ import rospkg
 import rospy
 import random
 from std_msgs.msg import String
-from geometry_msgs.msg import TransformStamped
+from geometry_msgs.msg import TransformStamped, Quaternion
 from tf.transformations import quaternion_from_euler
 
 import tf2_ros
@@ -19,8 +19,8 @@ class RECEPTIONIST:
         self.active_seat = 'None' # Place_0, Place_1, Place_2
 
         # TF2_ROS publisher
-        self.tf2_buffer = tf2_ros.Buffer()
-        self.listener = tf2_ros.TransformListener(self.tf2_buffer)
+        #self.tf2_buffer = tf2_ros.Buffer()
+        #self.listener = tf2_ros.TransformListener(self.tf2_buffer)
         self.br = tf2_ros.StaticTransformBroadcaster()
 
     # --- YAML read and write ---
@@ -217,21 +217,21 @@ class RECEPTIONIST:
 
         face_seat_transform.header.stamp = rospy.Time.now()
 
-        locations = self.get_places_location()
+        places, locs = self.get_places_location()
 
-        for place, loc in locations:
+        for place, loc in zip(places, locs):
             # Publish seats tf
             seat_transform.child_frame_id = place
             seat_transform.transform.translation.x = loc[0]
             seat_transform.transform.translation.y = loc[1]
-            seat_transform.transform.rotation = quaternion_from_euler(0,0,loc[2])
+            seat_transform.transform.rotation = Quaternion(*quaternion_from_euler(0,0,loc[2]))
             self.br.sendTransform(seat_transform)
 
             # Publish an approximation of face position of a seat
             face_seat_transform.header.frame_id = place
             face_seat_transform.child_frame_id = place.replace('_', '_face')
             face_seat_transform.transform.translation.x = 0.5
-            face_seat_transform.transform.translation.z = 1.2
+            face_seat_transform.transform.translation.z = 1.0
             face_seat_transform.transform.rotation.w = 1
             self.br.sendTransform(face_seat_transform)
         return True
