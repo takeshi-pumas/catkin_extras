@@ -14,9 +14,11 @@ class Initial(smach.State):
         rospy.loginfo('STATE : INITIAL')
         rospy.loginfo(f'Try {self.tries} of 5 attempts')
 
-        party.clean_knowledge(host_name = "Oscar", host_location = "Place_2")
+        party.clean_knowledge(host_name = "Joel", host_location = "Place_1")
+        #party.clean_knowledge()
         #places_2_tf()
-        party.publish_tf_seats()
+        #party.publish_tf_seats()
+        places_2_tf()
 
         ###-----INIT GRAMMAR FOR VOSK
         ###-----Use with get_keywords_speech()
@@ -26,7 +28,7 @@ class Initial(smach.State):
                   'i want a', 'i would like a', 'tea', 'icedtea', 'cola', 'redwine', 'orangejuice', 'tropicaljuice']
         #names=['rebeca','ana','jack', 'michael', ' my name is' , 'i am','george','mary','ruben','oscar','yolo','mitzi']
         names = [' my name is' , 'i am','adel', 'angel', 'axel', 
-                 'charlie', 'jane', 'john', 'jules', 'morgan', 'paris', 'robin', 'simone']
+                 'charlie', 'jane', 'john', 'jules', 'morgan', 'paris', 'robin', 'simone', 'jack']
         confirmation = ['yes','no', 'robot yes', 'robot no','not','now','nope','yeah']                     
         gram = drinks + names + confirmation                                                                                
         
@@ -128,7 +130,7 @@ class Scan_face(smach.State):
         rospy.loginfo('State : Scan face')
         head.set_joint_values([0.0, 0.3])
         voice.talk('Scanning for faces, look at me, please')
-        res, userdata.img_face = wait_for_face()  # default 10 secs
+        res, userdata.face_img = wait_for_face()  # default 10 secs
         #rospy.sleep(0.7)
         if res != None:
             userdata.name = res.Ids.ids
@@ -219,8 +221,9 @@ class New_face(smach.State):
         confirmation = confirmation.split(' ')
         confirm = match_speech(confirmation, ['yes','yeah','jack','juice'])
         if confirm:
-            name = userdata.name
+            userdata.name = name
             voice.talk (f'Nice to Meet You {userdata.name}')
+            party.add_guest(userdata.name)
             train_face(userdata.face_img, userdata.name)
             self.tries = 0
             return 'succ'
@@ -244,7 +247,7 @@ class Get_drink(smach.State):
         rospy.loginfo('STATE : GET DRINK')
 
         if self.tries == 1:
-            analyze_face_background(userdata.face_img, party.get_active_guest_name())#userdata.name)
+            analyze_face_background(userdata.face_img, userdata.name)#userdata.name)
 
         elif self.tries == 3:
             voice.talk ('I am having trouble understanding you, lets keep going')
@@ -450,11 +453,12 @@ class Find_host_alternative(smach.State):
             seats = party.get_guests_seat_assignments()
 
             for guest, place in seats.items():
-                if guest != party.get_active_guest():
+                if (guest != party.get_active_guest()) and (place != "Place_0"):
                     host_loc = place
                     dont_compare = True
                     break
         
+        print("host location is: ", host_loc)
         tf_host = host_loc.replace('_', '_face')
         head.to_tf(tf_host)
         res, _ = wait_for_face()

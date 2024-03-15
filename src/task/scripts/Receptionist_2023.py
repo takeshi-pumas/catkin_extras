@@ -19,7 +19,7 @@ class Initial(smach.State):
 
             
         clean_knowledge()
-        places_2_tf()
+        #places_2_tf()
         ###-----INIT GRAMMAR FOR VOSK
         ###-----Use with get_keywords_speech()
         ###-----------SPEECH REC
@@ -535,13 +535,14 @@ if __name__ == '__main__':
 
     with sm:
         # State machine for Receptionist task
+        smach.StateMachine.add("NEW_FACE",          New_face(),     transitions={'failed': 'NEW_FACE',      'succ': 'GET_DRINK',            'tries': 'NEW_FACE'})
 
         smach.StateMachine.add("INITIAL",           Initial(),              transitions={'failed': 'INITIAL',           'succ': 'WAIT_PUSH_HAND',   'tries': 'END'})
         smach.StateMachine.add("WAIT_PUSH_HAND",    Wait_push_hand(),       transitions={'failed': 'WAIT_PUSH_HAND',    'succ': 'GOTO_DOOR',        'tries': 'WAIT_PUSH_HAND'})
         smach.StateMachine.add("WAIT_DOOR_OPENED",  Wait_door_opened(),     transitions={'failed': 'WAIT_DOOR_OPENED',  'succ': 'GOTO_DOOR',        'tries': 'WAIT_DOOR_OPENED'})
         
         smach.StateMachine.add("SCAN_FACE",         Scan_face(),    transitions={'failed': 'SCAN_FACE',     'succ': 'GET_DRINK',            'tries': 'GOTO_DOOR', 'unknown': 'NEW_FACE',})
-        smach.StateMachine.add("NEW_FACE",          New_face(),     transitions={'failed': 'NEW_FACE',      'succ': 'GET_DRINK',            'tries': 'NEW_FACE'})
+        #smach.StateMachine.add("NEW_FACE",          New_face(),     transitions={'failed': 'NEW_FACE',      'succ': 'GET_DRINK',            'tries': 'NEW_FACE'})
         smach.StateMachine.add("GET_DRINK",         Get_drink(),    transitions={'failed': 'GET_DRINK',     'succ': 'LEAD_TO_LIVING_ROOM',  'tries': 'GET_DRINK'})
 
         smach.StateMachine.add("GOTO_DOOR",             Goto_door(),            transitions={'failed': 'GOTO_DOOR',             'succ': 'SCAN_FACE',            'tries': 'SCAN_FACE'})

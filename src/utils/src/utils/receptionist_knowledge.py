@@ -19,8 +19,8 @@ class RECEPTIONIST:
         self.active_seat = 'None' # Place_0, Place_1, Place_2
 
         # TF2_ROS publisher
-        #self.tf2_buffer = tf2_ros.Buffer()
-        #self.listener = tf2_ros.TransformListener(self.tf2_buffer)
+        self.tf2_buffer = tf2_ros.Buffer()
+        self.listener = tf2_ros.TransformListener(self.tf2_buffer)
         self.br = tf2_ros.StaticTransformBroadcaster()
 
     # --- YAML read and write ---
@@ -41,8 +41,9 @@ class RECEPTIONIST:
 
     # Adds description to active guest
     def add_guest_description(self, description):
-        self.informacion_fiesta['People'][self.active_guest]['description'] = description
-        self.save_data_to_yaml(self.informacion_fiesta)
+        if self.active_guest != 'None':
+            self.informacion_fiesta['People'][self.active_guest]['description'] = description
+            self.save_data_to_yaml(self.informacion_fiesta)
     
     # Adds a drink to active guest
     def add_guest_drink(self, drink):
@@ -198,7 +199,7 @@ class RECEPTIONIST:
             if place == host_location:
                 info['occupied'] = host_name
             elif place == 'Place_0':
-                info['occupied'] = 'Not available'
+                info['occupied'] = 'Not_available'
             else:
                 info['occupied'] = 'None'
         self.save_data_to_yaml(self.informacion_fiesta)
@@ -212,10 +213,10 @@ class RECEPTIONIST:
         seat_transform = TransformStamped()
         face_seat_transform = TransformStamped()
         
-        seat_transform.header.stamp = rospy.Time.now()
+        seat_transform.header.stamp = rospy.Time(0)
         seat_transform.header.frame_id = "map"
 
-        face_seat_transform.header.stamp = rospy.Time.now()
+        face_seat_transform.header.stamp = rospy.Time(0)
 
         places, locs = self.get_places_location()
 
