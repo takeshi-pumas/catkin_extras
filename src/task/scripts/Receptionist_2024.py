@@ -15,7 +15,8 @@ class Initial(smach.State):
         rospy.loginfo(f'Try {self.tries} of 5 attempts')
 
         party.clean_knowledge(host_name = "Oscar", host_location = "Place_2")
-        places_2_tf()
+        #places_2_tf()
+        party.publish_tf_seats()
 
         ###-----INIT GRAMMAR FOR VOSK
         ###-----Use with get_keywords_speech()
@@ -465,7 +466,6 @@ class Find_host_alternative(smach.State):
                 return 'failed'
         else:
             return 'failed'
-
 
         
 # --------------------------------------------------
