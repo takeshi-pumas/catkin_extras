@@ -353,7 +353,7 @@ class Find_sitting_place(smach.State):
 
 # Find host from previous knowledge or find them by vision
 
-class Find_host(smach.State):
+'''class Find_host(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
         self.tries = 0
@@ -425,40 +425,47 @@ class Find_host(smach.State):
             else:
                 reset_occupancy(who=host_name)
                 return 'failed'
-
+'''
 
 class Find_host_alternative(smach.State):
     def __init__(self):
-        smach.State.__init__(outcomes= ['succ', 'failed', 'tries'])
+        smach.State.__init__(self, outcomes= ['succ', 'failed'])
         self.tries = 0
     def execute(self, userdata):
+        self.tries += 1
         rospy.loginfo("STATE: Find host alternative")
         
-        host_name, host_loc = party.get_host_info()
-        if host_loc == "None":
-            #iterate once over the seats
-            seats, _ = party.get_places_location()
-            for seat in seats:
-                tf_face_seat = seat.replace('_', '_face')
-                head.to_tf(tf_face_seat)
-                res, _ = wait_for_face()
-                if res is not None:
-                    pass
+        host_name = ""
+        host_loc = ""
+        dont_compare = False
+
+        # First try: looks for the real host
+        # Next tries: looks for anyone
+        if self.tries == 1:
+            host_name, host_loc = party.get_host_info()
+            if host_loc == 'None':
+                return 'failed'
         else:
-            tf_name = host_loc.replace('_','_face')
-            head.to_tf(tf_name)
-            res, _ = wait_for_face()
-            if res is not None:
-                person_name = res.Ids.ids
-                if person_name != host_name:
-                    #someone was found but is not the host
-                    return 'failed'
-                else:
-                    #the host is found
-                    return 'succ'
+            seats = party.get_guests_seat_assignments()
+
+            for guest, place in seats.items():
+                if guest != party.get_active_guest():
+                    host_loc = place
+                    dont_compare = True
+                    break
+        
+        tf_host = host_loc.replace('_', '_face')
+        head.to_tf(tf_host)
+        res, _ = wait_for_face()
+        if res is not None:
+            person_name = res.Ids.ids
+            if (person_name == host_name) or dont_compare:
+                return 'succ'
             else:
-                #there is nobody on this seat
-                pass
+                return 'failed'
+        else:
+            return 'failed'
+
 
         
 # --------------------------------------------------
@@ -542,7 +549,7 @@ if __name__ == '__main__':
                                transitions={'failed': 'LEAD_TO_LIVING_ROOM', 'succ': 'FIND_SITTING_PLACE'})
         smach.StateMachine.add("FIND_SITTING_PLACE", Find_sitting_place(),
                                transitions={'failed': 'FIND_SITTING_PLACE', 'succ': 'FIND_HOST'})
-        smach.StateMachine.add("FIND_HOST", Find_host(),
+        smach.StateMachine.add("FIND_HOST", Find_host_alternative(),
                                transitions={'failed': 'FIND_HOST', 'succ':'INTRODUCE_GUEST'})
         smach.StateMachine.add("INTRODUCE_GUEST", Introduce_guest(),
                                transitions={'failed': 'INTRODUCE_GUEST', 'succ':'WAIT_PUSH_HAND', 'tries':'END'})
