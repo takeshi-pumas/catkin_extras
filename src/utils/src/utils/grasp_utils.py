@@ -216,7 +216,7 @@ class GAZE():
                 succ = abs(eT) < THRESHOLD 
             if succ:
                 eT = 0
-            base.tiny_move(velT = eT, MAX_VEL_THETA=0.9)
+            base.tiny_move(velT = eT, MAX_VEL_THETA=1.1)
         return True
 
 def set_pose_goal(pos=[0,0,0], rot=[0,0,0,1]):

@@ -336,6 +336,7 @@ class Find_sitting_place(smach.State):
 
             print("Place is: ",place)
             guest = party.get_active_guest_name()
+            head.turn_base_gaze(tf = place, to_gaze = 'arm_flex_link')
             head.set_named_target('neutral')
             rospy.sleep(0.8)
 
@@ -453,7 +454,7 @@ class Find_host_alternative(smach.State):
             seats = party.get_guests_seat_assignments()
 
             for guest, place in seats.items():
-                if (guest != party.get_active_guest()) and (place != "Place_0"):
+                if guest != party.get_active_guest():
                     host_loc = place
                     dont_compare = True
                     break

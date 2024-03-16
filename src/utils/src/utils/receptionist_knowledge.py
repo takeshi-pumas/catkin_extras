@@ -126,7 +126,8 @@ class RECEPTIONIST:
         seats = {}
         for place, info in self.informacion_fiesta['Places'].items():
             if info['occupied'] != 'None':
-                seats[place] = info['occupied']
+                if place != 'Place_0':
+                    seats[place] = info['occupied']
         return seats
 
     #Gets active guest description
