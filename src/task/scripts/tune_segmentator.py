@@ -144,6 +144,21 @@ def callback(points_msg):
             print (f'heights{res.heights.data}, widths {res.widths.data}')
             img=bridge.imgmsg_to_cv2(res.im_out.image_msgs[0])
             cv2.imshow('our of res'  , img)
+        elif key=='l': #PLACING FINDER
+
+            request= segmentation_server.request_class() 
+            r = cv2.getTrackbarPos('Plane height (cms)', 'class rgbd')
+            request.height.data=r * 0.01
+            if r == 100:request.height.data=-1.0
+            print ('#############Finding placing in plane####################',request.height.data)
+            
+            #head.set_joint_values([ 0.1, -0.5])
+            res=placing_finder_server.call(request)
+            #succ=seg_res_tf(res)
+            print (f'Placing Area at {res.poses.data}')
+            tf_man.pub_static_tf(pos=[res.poses.data[0], res.poses.data[1],res.poses.data[2]], rot =[0,0,0,1], point_name='placing_area')
+            img=bridge.imgmsg_to_cv2(res.im_out.image_msgs[0])
+            cv2.imshow('our of res'  , img)
       
         elif key=='q':
             rospy.signal_shutdown("User hit q key to quit.")

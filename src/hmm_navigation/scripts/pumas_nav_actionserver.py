@@ -96,7 +96,6 @@ class PumasNavServer():
                 XYT = loc[:3]
                 x, y, yaw = XYT[0]['x'], XYT[1]['y'], XYT[2]['theta']
                 goal.x, goal.y, goal.yaw = x, y, yaw
-
         #publish head and arm movements instead of making them here
         head.set_joint_values(head_pose=[0.0, -0.5])
         # Fill result message (could be modified)
@@ -109,6 +108,40 @@ class PumasNavServer():
         goal_pose.pose.orientation = Quaternion(*rot)
         goal_nav_publish.publish(goal_pose)
 
+        ###CHECK IF ROBOT ALREADY IN POSE BEFORE NAVIGATING
+        c_pose, q_rob = tf_man.getTF(target_frame='base_link')
+        _, _, rob_yaw = tf.transformations.euler_from_quaternion(q_rob)
+        #rob_yaw = rob_yaw % (2 * np.pi)
+        #anglD = (yaw - rob_yaw)
+        anglD = (yaw - rob_yaw)
+            #UGLY
+        if anglD < -2*np.pi :
+            anglD= -1*anglD%(2*np.pi)
+        elif anglD > 2*np.pi :
+            anglD= anglD%(2*np.pi)
+        if anglD < -np.pi :
+            anglD= (anglD%np.pi)
+        elif anglD > np.pi:
+            anglD=(anglD%np.pi)*-1
+
+        euclD = np.linalg.norm(np.asarray((x, y)) - c_pose[:2])
+        print (anglD)
+
+        if (anglD <0.1 and euclD <0.3):
+            print ( "WE ARE THERE ALREADY")
+            timeleft = timeout 
+            feed = pose2feedback(c_pose, q_rob, timeleft, euclD,anglD)
+
+            head.set_joint_values(head_pose = [0.0, 0.0])
+            rospy.sleep(0.8)
+            pub_stop.publish()
+            self.pumas_nav_server.set_succeeded()
+
+
+
+
+
+
         # Feedback publisher and timeout checker
         while (timeout >= rospy.Time.now().to_sec()) and not success:
             # Goal distance and orientation calculation
@@ -117,7 +150,6 @@ class PumasNavServer():
             #rob_yaw = rob_yaw % (2 * np.pi)
             #anglD = (yaw - rob_yaw)
             anglD = (yaw - rob_yaw)
-
                 #UGLY
             if anglD < -2*np.pi :
                 anglD= -1*anglD%(2*np.pi)

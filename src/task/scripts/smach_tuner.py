@@ -47,7 +47,7 @@ from utils.know_utils import *
 
 global listener, broadcaster, tfBuffer, tf_static_broadcaster, scene, rgbd, head,train_new_face, wrist, human_detect_server, line_detector, clothes_color , head_mvit
 global clear_octo_client, goal,navclient,segmentation_server  , tf_man , omni_base, brazo, speech_recog_server, bridge, map_msg, pix_per_m, analyze_face , arm , set_grammar
-global recognize_action , classify_client , pointing_detect_server
+global recognize_action , classify_client , pointing_detect_server,placing_finder_server
 rospy.init_node('node_tuner')
 #head_mvit = moveit_commander.MoveGroupCommander('head')
 #gripper =  moveit_commander.MoveGroupCommander('gripper')
@@ -64,6 +64,7 @@ clear_octo_client = rospy.ServiceProxy('/clear_octomap', Empty)   ###OGRASPING O
 human_detect_server = rospy.ServiceProxy('/detect_human' , Human_detector)  ####HUMAN FINDER OPPOSEBASED
 pointing_detect_server = rospy.ServiceProxy('/detect_pointing' , Point_detector)
 segmentation_server = rospy.ServiceProxy('/segment' , Segmentation)
+placing_finder_server = rospy.ServiceProxy('/placing_finder' , Segmentation)
 
 
     ##### PLANE SEGMENTATION (PARALEL TO FLOOR)
@@ -138,7 +139,7 @@ def seg_res_tf(res):
             #tf_man.pub_static_tf(pos=cent, rot =rotation_quaternion, point_name=point_name, ref='map')## which object to choose   #TODO
             rospy.sleep(0.5)                                                                        
             pose,_= tf_man.getTF(point_name)
-            print (f'Occupancy map at point object {i}-> pixels ',origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m), img_map[origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m)])
+            #print (f'Occupancy map at point object {i}-> pixels ',origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m), img_map[origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m)])
             ## Pixels from augmented image map server published map image
             if img_map[origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m)]!=0:#### Yes axes seem to be "flipped" !=0:
                 print ('reject point suggested ( for floor), most likely part of arena, occupied inflated map')

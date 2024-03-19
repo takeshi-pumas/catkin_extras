@@ -47,11 +47,11 @@ from action_server.msg import FollowActionGoal ,  FollowAction
 from utils.grasp_utils import *
 from utils.misc_utils import *
 from utils.nav_utils import *
-from utils.know_utils import *
+#from utils.know_utils import *
 
 global listener, broadcaster, tfBuffer, tf_static_broadcaster, scene, rgbd, head,train_new_face, wrist, human_detect_server, line_detector, clothes_color , head_mvit
 global clear_octo_client, goal,navclient,segmentation_server  , tf_man , omni_base, brazo, speech_recog_server, bridge, map_msg, pix_per_m, analyze_face , arm , set_grammar
-global recognize_action , classify_client,pointing_detect_server 
+global recognize_action , classify_client,pointing_detect_server ,placing_finder_server
 rospy.init_node('smach')
 #head_mvit = moveit_commander.MoveGroupCommander('head')
 #gripper =  moveit_commander.MoveGroupCommander('gripper')
@@ -68,6 +68,7 @@ clear_octo_client = rospy.ServiceProxy('/clear_octomap', Empty)   ###GRASPING OB
 human_detect_server = rospy.ServiceProxy('/detect_human' , Human_detector)  ####HUMAN FINDER OPPOSEBASED
 pointing_detect_server = rospy.ServiceProxy('/detect_pointing' , Point_detector)  ####HUMAN FINDER OPPOSEBASED
 segmentation_server = rospy.ServiceProxy('/segment' , Segmentation)    ##### PLANE SEGMENTATION (PARALEL TO FLOOR)
+placing_finder_server = rospy.ServiceProxy('/placing_finder' , Segmentation)### WHERE TO PLACE THINGS IN SHELVES
 navclient=actionlib.SimpleActionClient('/navigate', NavigateAction)   ### PUMAS NAV ACTION LIB
 
 # scene = moveit_commander.PlanningSceneInterface()
