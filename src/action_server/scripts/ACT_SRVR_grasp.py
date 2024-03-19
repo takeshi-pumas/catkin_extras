@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import rospy
 import sys
 import tf2_ros
@@ -13,13 +14,14 @@ from action_server.msg import GraspAction
 
 from tf.transformations import euler_from_quaternion, quaternion_from_euler
 
-from utils import grasp_utils
+from utils.src.utils import grasp_utils
 #from utils.grasp_utils import *
 
 class GraspingStateMachine:
     def __init__(self):
         # Import gripper controller
         self.gripper = grasp_utils.GRIPPER()
+        self.brazo = grasp_utils.ARM()
 
         # Inicializar tf2_ros
         self.tf2_buffer = tf2_ros.Buffer()
@@ -60,7 +62,9 @@ class GraspingStateMachine:
             smach.StateMachine.add('GRASP', smach.CBState(self.grasp, outcomes=['success', 'failed']),
                                    transitions={'success':'RETREAT', 'failed': 'GRASP'})
             smach.StateMachine.add('RETREAT', smach.CBState(self.retreat, outcomes=['success', 'failed']),
-                                   transitions={'success':'success', 'failed': 'RETREAT'})
+                                   transitions={'success':'NEUTRAL_POSE', 'failed': 'RETREAT'})
+            smach.StateMachine.add('NEUTRAL_POSE', smach.CBState(self.neutral_pose, outcomes=['success', 'failed']),
+                        transitions={'success':'success', 'failed': 'NEUTRAL_POSE'})
 
         self.wrapper = ActionServerWrapper("grasp_server", GraspAction,
                                            wrapped_container = self.sm,
@@ -97,34 +101,43 @@ class GraspingStateMachine:
 
     def grasp(self, userdata):
         #Plan to grasp object
-        pose_goal = self.target_pose
-        grasp_pose = pose_goal
-        if self.grasp_approach == "frontal":
+        #pose_goal = self.target_pose
+        #grasp_pose = pose_goal
+        '''if self.grasp_approach == "frontal":
             grasp_pose.position.x += 0.05   # Adelantarse a la pieza
         elif self.grasp_approach == "above":
             grasp_pose.position.z -= 0.05  # Descender hacia la pieza
-        succ = self.move_to_pose(self.whole_body, grasp_pose)
+        succ = self.move_to_pose(self.whole_body, grasp_pose)'''
+
+        joint_values = self.brazo.get_joint_values()
+        joint_values[0] -= 0.8
+        self.brazo.set_joint_values(joint_values)
         self.gripper.close(0.03)
         #self.attach_object()
-        if succ:
-            return 'success'
-        else:
-            return 'failed'
+        return 'success'
+        # if succ:
+        #     return 'success'
+        # else:
+        #     return 'failed'
 
     def retreat(self, userdata):
-        pose_goal = self.target_pose
+        # pose_goal = self.target_pose
         #pose_goal.position.x -= 0.13
-        pose_goal.position.z += 0.13
-        position_goal = [pose_goal.position.x, pose_goal.position.y, pose_goal.position.z]
-        succ = self.move_to_position(self.whole_body, position_goal)  # Retirarse a una posición segura
-        if succ:
-            return 'success'
-        else:
-            return 'failed'
+        # pose_goal.position.z += 0.13
+        # position_goal = [pose_goal.position.x, pose_goal.position.y, pose_goal.position.z]
+        # succ = self.move_to_position(self.whole_body, position_goal)  # Retirarse a una posición segura
+        joint_values = self.brazo.get_joint_values()
+        joint_values[0] += 0.15
+        self.brazo.set_joint_values(joint_values)
+        return 'success'
+        # if succ:
+        #     return 'success'
+        # else:
+        #     return 'failed'
     
     def neutral_pose(self, userdata):
-        self.whole_body.set_named_target("neutral")
-        self.whole_body.go()
+        self.brazo.set_named_target('neutral')
+        # self.whole_body.go()
         return "success"
     
     # ----------------------------------------------------------
