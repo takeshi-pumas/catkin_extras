@@ -183,7 +183,7 @@ class TF_MANAGER:
     def getTF(self, target_frame='', ref_frame='map'):
         try:
             tf = self._tfbuff.lookup_transform(
-                ref_frame, target_frame, rospy.Time(0))
+                ref_frame, target_frame, rospy.Time(0), rospy.Duration(1.5))
             return self.tf2_obj_2_arr(tf)
         except:
             return [False, False]

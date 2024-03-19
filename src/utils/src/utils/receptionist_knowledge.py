@@ -91,6 +91,10 @@ class RECEPTIONIST:
             if info['occupied'] == guest_name:
                 return place
         return 'None'
+    
+    def get_active_guest_drink(self):
+        return self.informacion_fiesta['People'][self.active_guest]['drink']
+
 
     # Gets every place X, Y, Theta and place number on party context
     def get_places_location(self):
@@ -140,6 +144,7 @@ class RECEPTIONIST:
     # Gets host name and location
     def get_host_info(self):
         host = self.informacion_fiesta['People']['Guest_0']
+        print(host)
         return host['name'], host['location']
     
     #Gets active guest

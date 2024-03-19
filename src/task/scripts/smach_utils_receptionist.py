@@ -33,7 +33,7 @@ from std_msgs.msg import String
 
 from ros_whisper_vosk.srv import SetGrammarVosk
 
-from utils.src.utils import grasp_utils, misc_utils, nav_utils, receptionist_knowledge
+from utils import grasp_utils, misc_utils, nav_utils, receptionist_knowledge
 
 global listener, broadcaster, tfBuffer, tf_static_broadcaster, scene, rgbd, head,train_new_face, wrist, human_detect_server, line_detector, clothes_color
 global clear_octo_client, goal,navclient,segmentation_server  , tf_man , omni_base, brazo, speech_recog_server, bridge, map_msg, pix_per_m, analyze_face , arm , set_grammar
@@ -70,11 +70,14 @@ party = receptionist_knowledge.RECEPTIONIST()
 def places_2_tf():
     places, locs = party.get_places_location()
     for place, loc in zip(places, locs):
+        print(place, loc)
         pos = [loc[0], loc[1], 0.85]
         rot = tf.transformations.quaternion_from_euler(0.0, 0.0, loc[2])
         tf_man.pub_static_tf(pos=pos, rot=rot, point_name=place)
+        rospy.sleep(0.6)
         tf_face = place.replace('_', '_face')
         tf_man.pub_static_tf(pos=[1.0, 0, 0], rot=rot, point_name=tf_face, ref=place)
+        rospy.sleep(0.6)
 #------------------------------------------------------
 def train_face(image, name):
     req=RecognizeFaceRequest()
@@ -152,7 +155,7 @@ def wait_for_push_hand(time=10):
     start_time = rospy.get_time()
     time= 10
     print('timeout will be ',time,'seconds')
-    while rospy.get_time() - start_time < time:
+    while rospy.get_time() - start_time < time and not rospy.is_shutdown():
         torque = wrist.get_torque()
         if np.abs(torque[1])>1.0:
             print(' Hand Pused Ready To Start')

@@ -14,7 +14,7 @@ class Initial(smach.State):
         rospy.loginfo('STATE : INITIAL')
         rospy.loginfo(f'Try {self.tries} of 5 attempts')
 
-        party.clean_knowledge(host_name = "Joel", host_location = "Place_1")
+        party.clean_knowledge(host_name = "charlie", host_location = "Place_1")
         #party.clean_knowledge()
         #places_2_tf()
         #party.publish_tf_seats()
@@ -360,7 +360,8 @@ class Find_sitting_place(smach.State):
 
 class Find_host_alternative(smach.State):
     def __init__(self):
-        smach.State.__init__(self, outcomes= ['succ', 'failed'])
+        smach.State.__init__(self, outcomes= ['succ', 'failed'],
+                             output_keys=['name_like_host'])
         self.tries = 0
     def execute(self, userdata):
         self.tries += 1
@@ -378,20 +379,24 @@ class Find_host_alternative(smach.State):
                 return 'failed'
         else:
             seats = party.get_guests_seat_assignments()
+            print("seats: ", seats)
 
-            for guest, place in seats.items():
+            for place, guest in seats.items():
                 if guest != party.get_active_guest():
                     host_loc = place
                     dont_compare = True
                     break
         
-        print("host location is: ", host_loc)
+        #print("host location is: ", host_loc)
+        #print("host name is: ", host_name)
+        voice.talk(f'looking for host on: {host_loc}')
         tf_host = host_loc.replace('_', '_face')
         head.to_tf(tf_host)
         res, _ = wait_for_face()
         if res is not None:
             person_name = res.Ids.ids
             if (person_name == host_name) or dont_compare:
+                userdata.name_like_host = person_name
                 return 'succ'
             else:
                 return 'failed'
@@ -402,21 +407,22 @@ class Find_host_alternative(smach.State):
 # --------------------------------------------------
 class Introduce_guest(smach.State):
     def __init__(self):
-        smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
+        smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'],
+                             input_keys=['name_like_host'])
         self.tries = 0
 
     def execute(self, userdata):
-        global name_like_host
+        #global name_like_host
         rospy.loginfo('STATE : Find host')
 
         self.tries += 1
         print('Try', self.tries, 'of 3 attempts')
 
-        voice.talk(f'Host like name is {name_like_host}')
+        voice.talk(f'Host like name is {userdata.name_like_host}')
 
         active_guest = party.get_active_guest_name()
-        takeshi_line = party.get_guest_description(active_guest)                    
-        drink = party.get_guest_drink(active_guest)
+        takeshi_line = party.get_active_guest_description()                    
+        drink = party.get_active_guest_drink()
 
         if drink == 'something':
             drink_line = ""
@@ -425,11 +431,11 @@ class Introduce_guest(smach.State):
 
         if takeshi_line != 'None':
             print("Description found")
-            speech = f'{name_like_host}, {takeshi_line}, {drink_line}'
+            speech = f'{userdata.name_like_host}, {takeshi_line}, {drink_line}'
             timeout = 14.0
         else:
             print('No description found')
-            speech = f'{name_like_host}, {active_guest} has arrived, {drink_line}'
+            speech = f'{userdata.name_like_host}, {active_guest} has arrived, {drink_line}'
             timeout = 7.0
 
         voice.talk(speech, timeout)

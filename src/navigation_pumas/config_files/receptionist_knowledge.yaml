@@ -2,13 +2,20 @@ People:
   Guest_0:
     drink: Coke
     location: Place_1
-    name: Joel
+    name: charlie
   Guest_1:
-    description: '[unk] has arrived... he is a Man... I believe he is  around 27 years
-      old... I would say he is a bit neutral. I might guess he is of white descent.'
-    drink: wine
+    description: john has arrived... he is a Man... I believe he is  around 22 years
+      old... I would say he is a bit angry. I might guess he is of asian descent.
+    drink: water
     location: Place_2
-    name: '[unk]'
+    name: john
+  Guest_2:
+    description: jack has arrived... he is a Man... I believe he is  around 30 years
+      old... I would say he is a bit neutral. I might guess he is of middle eastern
+      descent.
+    drink: tea
+    location: Place_3
+    name: jack
 Places:
   Place_0:
     location:
@@ -21,7 +28,7 @@ Places:
       theta: -1.0
       x: 9.33
       y: -3.69
-    occupied: Joel
+    occupied: charlie
   Place_2:
     location:
       theta: -0.03
@@ -33,4 +40,4 @@ Places:
       theta: 0.02
       x: 9.79
       y: -2.42
-    occupied: None
+    occupied: Guest_2
