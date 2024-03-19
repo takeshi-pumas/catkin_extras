@@ -4,10 +4,9 @@ from utils.nav_utils import OMNIBASE
 
 
 #Class to get wrist sensor info (Force and torque)
-class WRIST_SENSOR():
-    def __init__(self):
-        self._cam_sub = rospy.Subscriber(
-            '/hsrb/wrist_wrench/compensated',
+class WRIST_SENSOR:
+    def __init__(self, topic_wrench_sensor = '/hsrb/wrist_wrench/compensated'):
+        self._cam_sub = rospy.Subscriber(topic_wrench_sensor,
             WrenchStamped, self._callback)
         self.force = None
         self.torque = None
@@ -25,7 +24,7 @@ class WRIST_SENSOR():
         return torque
 
 #Class to handle end effector (gripper)
-class GRIPPER():
+class GRIPPER:
     def __init__(self):
         self._grip_cmd_pub = rospy.Publisher(
             '/hsrb/gripper_controller/command',
@@ -57,7 +56,7 @@ class GRIPPER():
         app_force.goal.effort = -force
         self._grip_cmd_force.publish(app_force)
         
-    def change_velocity(self, newVel):
+    def change_velocity(self, newVel: int):
         self._velocity = newVel
     
     def open(self):
@@ -79,8 +78,8 @@ class GRIPPER():
 
 
 
-class GAZE():
-    def __init__(self):
+class GAZE:
+    def __init__(self, head_controller_topic = '/hsrb/head_trajectory_controller/command'):
         self._x = 0
         self._y = 0
         self._z = 0
@@ -89,8 +88,7 @@ class GAZE():
         self._base = 'base_link'
         self._hand = 'hand_palm_link'
         self._tf_man = TF_MANAGER()
-        self._pub = rospy.Publisher(
-            '/hsrb/head_trajectory_controller/command',
+        self._pub = rospy.Publisher( head_controller_topic,
             trajectory_msgs.msg.JointTrajectory, queue_size=10)
     def _gaze_point(self):
     ###Moves head to make center point of rgbd image to coordinates w.r.t.map
@@ -133,12 +131,12 @@ class GAZE():
         self.set_joint_values(head_pose)
         return head_pose
 
-    def absolute(self, x, y, z):
+    def absolute(self, x: float, y:float, z: float):
         #Head gaze to a x, y, z point relative to map
         self._reference = 'map'
         return self._gaze_abs_rel(x,y,z)
 
-    def relative(self, x, y, z):
+    def relative(self, x:float, y:float, z:float):
         #Head gaze to a x, y, z point relative to base_link
         self._reference = 'base_link'
         return self._gaze_abs_rel(x,y,z)
@@ -226,16 +224,17 @@ def set_pose_goal(pos=[0,0,0], rot=[0,0,0,1]):
     return pose_goal
 
 
-class ARM():
-    def __init__(self):
-        import tf2_ros
-        self._joint_names = ["arm_lift_joint", "arm_flex_joint", "arm_roll_joint", "wrist_flex_joint", "wrist_roll_joint"]
-        self._cli = actionlib.SimpleActionClient(
-            '/hsrb/arm_trajectory_controller/follow_joint_trajectory',
+class ARM:
+    def __init__(self, joint_names = ["arm_lift_joint", "arm_flex_joint", "arm_roll_joint", "wrist_flex_joint", "wrist_roll_joint"],
+                 arm_controller_action_client = '/hsrb/arm_trajectory_controller/follow_joint_trajectory'):
+        # import tf2_ros
+        self._joint_names = joint_names
+        self._cli = actionlib.SimpleActionClient(arm_controller_action_client,
             control_msgs.msg.FollowJointTrajectoryAction)
         self._tf_man = TF_MANAGER()
         self._grasp_base = OMNIBASE()
-        self._wrist=WRIST_SENSOR()
+        self._wrist = WRIST_SENSOR()
+
     def set_joint_values(self, joint_values = [0.0, 0.0, -1.6, -1.6, 0.0]):
         goal = control_msgs.msg.FollowJointTrajectoryGoal()
         traj = trajectory_msgs.msg.JointTrajectory()
@@ -253,6 +252,7 @@ class ARM():
 
         # wait for the action server to complete the order
         return self._cli.wait_for_result()
+    
     def get_joint_values(self):
         states = rospy.wait_for_message('/hsrb/joint_states', JointState)
         st = states.position
@@ -284,6 +284,7 @@ class ARM():
                 return True
             else:
                 return False
+            
     def move_hand_to_target(self, target_frame = 'target', offset=[0,0,0], THRESHOLD = 0.05):
         succ = False
         #THRESHOLD = 0.05
@@ -292,7 +293,7 @@ class ARM():
         hand = 'hand_palm_link'
         base = 'base_link'
 
-        while not succ:
+        while not succ and not rospy.is_shutdown():
             try:
                 target_base, _ = self._tf_man.getTF(target_frame = hand, ref_frame=base)
                 dist, _ = self._tf_man.getTF(target_frame = target_frame, ref_frame=base)
