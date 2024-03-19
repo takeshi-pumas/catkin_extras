@@ -26,11 +26,10 @@ from sensor_msgs.msg import LaserScan
 # Class to get XTION camera info (head)
 
 
-class RGBD():
-    def __init__(self):
+class RGBD:
+    def __init__(self, PC_rectified_point_topic = "/hsrb/head_rgbd_sensor/depth_registered/rectified_points"):
         self._br = tf.TransformBroadcaster()
-        self._cloud_sub = rospy.Subscriber(
-            "/hsrb/head_rgbd_sensor/depth_registered/rectified_points",
+        self._cloud_sub = rospy.Subscriber(PC_rectified_point_topic,
             PointCloud2, self._cloud_cb)
         self._points_data = None
         self._image_data = None
@@ -109,10 +108,9 @@ class RGBD():
 # Class to get hand camera images(RGB)
 
 
-class HAND_RGB():
-    def __init__(self):
-        self.cam_sub = rospy.Subscriber(
-            '/hsrb/hand_camera/image_raw',
+class HAND_RGB:
+    def __init__(self, hand_camera_topic = '/hsrb/hand_camera/image_raw'):
+        self.cam_sub = rospy.Subscriber(hand_camera_topic,
             ImageMsg, self._callback)
         self._points_data = None
         self._image_data = None
@@ -147,7 +145,7 @@ class HAND_RGB():
         return pos
 
 
-class TF_MANAGER():
+class TF_MANAGER:
     def __init__(self):
         self._tfbuff = tf2.Buffer()
         self._lis = tf2.TransformListener(self._tfbuff)
@@ -205,59 +203,10 @@ class TF_MANAGER():
         return [pos, rot]
 
 
-class TF():
-    def __init__(self):
-        self._listener = tf.TransformListener()
-        self._br = tf.TransformBroadcaster()
-
-    def getTF(self, target="", reference="map", duration=2.0):
-        # True / False is a success flag
-        now = rospy.Time(0)
-        try:
-            self._listener.waitForTransform(reference, target, now, rospy.Duration(duration))
-            (trans, rot) = self._listener.lookupTransform(
-                reference, target, now)
-            return (True, trans, rot)
-        except :
-            return False, 0.0, 0.0
-
-    def pubTF(self, pos=[0, 0, 0], rot=[0, 0, 0, 1], TF_name="", reference="map"):
-        try:
-            self._br.sendTransform(
-                pos, rot, rospy.Time.now(), TF_name, reference)
-            return True
-        except:
-            return False
-
-        # Maybe could not be used
-    '''def pubStaticTF(self, pos = [0,0,0], rot = [0,0,0,1], TF_name ="", reference="map"):
-        static_ts = self._fillMsg(pos, rot, point_name, ref)
-        self._tf_static_broad.sendTransform(static_ts)'''
-
-    def changeRefFrameTF(self, TF_name='', rot=[0, 0, 0, 1], new_ref="map"):
-        try:
-            t, r = self._listener.lookupTransform(
-                new_ref, TF_name, rospy.Time(0))
-            self._br.sendTransform(t, r, rospy.Time.now(), TF_name, new_ref)
-            return True
-        except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-            return False
-
-    @staticmethod
-    def quat_to_eu(quat=[0, 0, 0, ]):
-        roll, pitch, yaw = tf.transformations.euler_from_quaternion(quat)
-        return [roll, pitch, yaw]
-
-    @staticmethod
-    def eu_to_quat(eu=[0, 0, 0]):
-        q1,q2,q3,q4 = tf.transformations.quaternion_from_euler(*eu)
-        return [q1,q2,q3,q4]
-
-
-class LineDetector():
-    def __init__(self):
-        self.scan_sub = rospy.Subscriber(
-            "/hsrb/base_scan", LaserScan, self._scan_callback)
+class LineDetector:
+    def __init__(self, laser_scan_topic = "/hsrb/base_scan"):
+        self.scan_sub = rospy.Subscriber(laser_scan_topic,
+                                          LaserScan, self._scan_callback)
         # self.scan_sub = rospy.Subscriber("/hsrb/base_scan/fix", LaserScan, self._scan_callback)
         self._result = False
 
@@ -306,9 +255,9 @@ def talk(msg, time_out=5):
     return talk_client.wait_for_result(timeout=rospy.Duration(time_out))
 
 
-class TALKER():
-    def __init__(self):
-        self.talk_client = actionlib.SimpleActionClient('/talk_request_action', TalkRequestAction)
+class TALKER:
+    def __init__(self, talk_request_action = '/talk_request_action'):
+        self.talk_client = actionlib.SimpleActionClient(talk_request_action, TalkRequestAction)
     @staticmethod
     def _fillMsg(msg):
         voice = TalkRequestActionGoal()

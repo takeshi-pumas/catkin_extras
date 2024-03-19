@@ -2,10 +2,10 @@
 from utils.misc_utils import *
 
 
-class OMNIBASE():
-    def __init__(self):
+class OMNIBASE:
+    def __init__(self, cmd_vel_topic = '/hsrb/command_velocity'):
         self._base_vel_pub = rospy.Publisher(
-            '/hsrb/command_velocity', Twist, queue_size=10)
+            cmd_vel_topic , Twist, queue_size=10)
         self.velX = 0
         self.velY = 0
         self.velT = 0
@@ -120,7 +120,7 @@ class OMNIBASE():
         return content
 
 
-    def _match_location(self, location):
+    def _match_location(self, location: str):
         content = self._read_yaml()
         try:
             return True, content[location]
@@ -138,10 +138,11 @@ class OMNIBASE():
 
 
 
-class NAVIGATION():
-    def __init__(self):
+class NAVIGATION:
+    def __init__(self, cmd_vel_topic = '/hsrb/command_velocity', known_locations_file = '/known_locations.yaml'):
         self._base_vel_pub = rospy.Publisher(
-            '/hsrb/command_velocity', Twist, queue_size=10)
+            cmd_vel_topic, Twist, queue_size=10)
+        self.known_locations_file = known_locations_file
         self.velX = 0
         self.velY = 0
         self.velT = 0
@@ -222,11 +223,11 @@ class NAVIGATION():
         msg.pose.orientation = orientation
         return msg
 
-    def move_base(self, goal_x = 0.0, goal_y = 0.0, goal_theta = 0.0, known_location = 'None', timeout=90):
+    def move_base(self, goal_x = 0.0, goal_y = 0.0, goal_theta = 0.0, known_location:str = None, timeout=90):
         #process new request
         self.arrived = False
         self.failed = False
-        if known_location != 'None':
+        if known_location != None:
             x, y, theta = self.get_known_location(known_location)
         else:
             x, y, theta = goal_x, goal_y, goal_theta
@@ -250,9 +251,9 @@ class NAVIGATION():
             rate.sleep()
 
     #-----Known location parser-------
-    def _read_yaml(self, known_locations_file='/known_locations.yaml'):
+    def _read_yaml(self):
         rospack = rospkg.RosPack()
-        file_path = rospack.get_path('config_files') + known_locations_file
+        file_path = rospack.get_path('config_files') + self.known_locations_file
 
         with open(file_path, 'r') as file:
             content = yaml.safe_load(file)
@@ -266,7 +267,7 @@ class NAVIGATION():
         except:
             return False, 'No location found'
 
-    def get_known_location(self, location):
+    def get_known_location(self, location:str):
         succ, loc = self._match_location(location)
         if succ:
             XYT = loc[:3]

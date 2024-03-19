@@ -56,6 +56,7 @@ class LocationServer:
     def write_yaml(self, file_name, data):
         try:
             file_path = self.rospack.get_path('config_files') + file_name
+            rospy.loginfo("escibiendo...")
             with open(file_path, 'w') as file:
                 yaml.dump(data, file, default_flow_style=False)
             return True
@@ -70,7 +71,7 @@ class LocationServer:
 
     def publish_tf_locations(self, known_locations):
         for location_name, data in known_locations.items():
-            print(data)
+            #print(data)
             pose = [data[0]['x'], data[1]['y'], 0]  # Z coordinate assumed to be 0
             quat = [data[3]['qx'], data[4]['qy'], data[5]['qz'], data[6]['qw']]
             transform = self.create_transform(pose, quat, location_name)
@@ -108,19 +109,22 @@ class LocationServer:
         quat = None
         succ = False
         try:
-            transform = self.tf_buffer.lookup_transform('map', 'base_link', rospy.Time(0))
+            transform = self.tf_buffer.lookup_transform('map', 'base_link', rospy.Time(0),)
             pose = [transform.transform.translation.x, transform.transform.translation.y, 0]
             quat = [transform.transform.rotation.x, transform.transform.rotation.y, transform.transform.rotation.z, transform.transform.rotation.w]
             succ = True
+
+            print(pose, quat, succ)
         except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException) as e:
             rospy.ERROR("Failed to get robot position")
         finally:
-            return succ , pose, quat 
+            return succ, pose, quat 
 
 
     def handle_location_add(self, req):
         resp = Locations_serverResponse()
         succ, pose, quat = self.get_robot_location()
+        print(succ, pose)
         if succ:
             location_name = req.location_name
             self.known_locations[location_name] = [

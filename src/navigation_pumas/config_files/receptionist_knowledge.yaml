@@ -1,50 +1,36 @@
 People:
   Guest_0:
     drink: Coke
-    location: None
-    name: Juan
-  Guest_1:
-    description: None
-    drink: Coke
     location: Place_1
-    name: Ruben
-  Guest_2:
-    description: None
-    drink: None
-    location: Place_3
-    name: Oscar
-  Guest_3:
-    description: None
-    drink: Water
+    name: Joel
+  Guest_1:
+    description: '[unk] has arrived... he is a Man... I believe he is  around 27 years
+      old... I would say he is a bit neutral. I might guess he is of white descent.'
+    drink: wine
     location: Place_2
-    name: Joshua
-  Guest_4:
-    description: None
-    drink: Tea
-    location: None
-    name: Mitzi
+    name: '[unk]'
 Places:
   Place_0:
     location:
       theta: 0.0
       x: 0.0
       y: 0.0
-    occupied: occupied
+    occupied: Not_available
   Place_1:
     location:
-      theta: 0.05
-      x: 9.71
-      y: -3.14
-    occupied: Guest_1
+      theta: -1.0
+      x: 9.33
+      y: -3.69
+    occupied: Joel
   Place_2:
     location:
-      theta: 4.72
-      x: 9.76
-      y: -3.31
-    occupied: Guest_3
+      theta: -0.03
+      x: 9.66
+      y: -3.29
+    occupied: Guest_1
   Place_3:
     location:
-      theta: 0.06
-      x: 9.75
-      y: -2.47
-    occupied: Guest_2
+      theta: 0.02
+      x: 9.79
+      y: -2.42
+    occupied: None

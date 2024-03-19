@@ -33,122 +33,48 @@ from std_msgs.msg import String
 
 from ros_whisper_vosk.srv import SetGrammarVosk
 
-from utils.grasp_utils import *
-from utils.misc_utils import *
-from utils.nav_utils import *
-from utils.know_utils import *
-from utils.receptionist_knowledge import *
+from utils.src.utils import grasp_utils, misc_utils, nav_utils, receptionist_knowledge
 
 global listener, broadcaster, tfBuffer, tf_static_broadcaster, scene, rgbd, head,train_new_face, wrist, human_detect_server, line_detector, clothes_color
 global clear_octo_client, goal,navclient,segmentation_server  , tf_man , omni_base, brazo, speech_recog_server, bridge, map_msg, pix_per_m, analyze_face , arm , set_grammar
 
 rospy.init_node('smach_receptionist')
-
-#broadcaster = tf.TransformBroadcaster()
+# TF2_ROS setup
 tfBuffer = tf2_ros.Buffer()
-
 listener = tf2_ros.TransformListener(tfBuffer)
 broadcaster = tf2_ros.TransformBroadcaster()
 tf_static_broadcaster = tf2_ros.StaticTransformBroadcaster()
-# clear_octo_client = rospy.ServiceProxy('/clear_octomap', Empty)   ###OGRASPING OBSTACLE 
+
+# Service callers
 human_detect_server = rospy.ServiceProxy('/detect_human' , Human_detector)  ####HUMAN FINDER OPPOSEBASED
-# segmentation_server = rospy.ServiceProxy('/segment' , Segmentation)    ##### PLANE SEGMENTATION (PARALEL TO FLOOR)
-# navclient=actionlib.SimpleActionClient('/navigate', NavigateAction)   ### PUMAS NAV ACTION LIB
-# scene = moveit_commander.PlanningSceneInterface()
 speech_recog_server = rospy.ServiceProxy('/speech_recognition/vosk_service' ,GetSpeech)##############SPEECH VOSK RECOG FULL DICT
 set_grammar = rospy.ServiceProxy('set_grammar_vosk', SetGrammarVosk)                   ###### Get speech vosk keywords from grammar (function get_keywords)         
-
 recognize_face = rospy.ServiceProxy('recognize_face', RecognizeFace)                    #FACE RECOG
 train_new_face = rospy.ServiceProxy('new_face', RecognizeFace)                          #FACE RECOG
 analyze_face = rospy.ServiceProxy('analyze_face', RecognizeFace)    ###DEEP FACE ONLY
 
-
-#map_msg= rospy.wait_for_message('/augmented_map', OccupancyGrid)####WAIT for nav pumas map
-#inflated_map= np.asarray(map_msg.data)
-#img_map=inflated_map.reshape((map_msg.info.width,map_msg.info.height))
-#pix_per_m=map_msg.info.resolution
-#contours, hierarchy = cv2.findContours(img_map.astype('uint8'),cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
-#contoured=cv2.drawContours(img_map.astype('uint8'), contours, 1, (255,255,255), 1)
-
-rgbd= RGBD()
+# Utils
+rgbd= misc_utils.RGBD()
 bridge = CvBridge()
-#segmentation_server = rospy.ServiceProxy('/segment_2_tf', Trigger) 
-tf_man = TF_MANAGER()
-gripper = GRIPPER()
-omni_base=NAVIGATION()
-wrist= WRIST_SENSOR()
-head = GAZE()
-brazo = ARM()
-line_detector = LineDetector()
-voice = TALKER()
-party = RECEPTIONIST()
-# arm =  moveit_commander.MoveGroupCommander('arm')
+tf_man = misc_utils.TF_MANAGER()
+gripper = grasp_utils.GRIPPER()
+omni_base = nav_utils.NAVIGATION()
+wrist= grasp_utils.WRIST_SENSOR()
+head = grasp_utils.GAZE()
+brazo = grasp_utils.ARM()
+line_detector = misc_utils.LineDetector()
+voice = misc_utils.TALKER()
+party = receptionist_knowledge.RECEPTIONIST()
 
-
-'''def places_2_tf():
-    #tf_man = TF_MANAGER()
-    locs = return_places()
-    #print(locs)
-    for i, loc in enumerate(locs):
+# Functions
+def places_2_tf():
+    places, locs = party.get_places_location()
+    for place, loc in zip(places, locs):
         pos = [loc[0], loc[1], 0.85]
         rot = tf.transformations.quaternion_from_euler(0.0, 0.0, loc[2])
-        tf_man.pub_static_tf(pos=pos, rot=rot, point_name=f'Place_{i+1}')
-        tf_man.pub_static_tf(pos=[1.0, 0, 0], rot=rot, point_name=f'Place_face{i+1}', ref=f'Place_{i+1}')
-def pub_places():
-    locs = party.get_places_location()
-    for i, loc in enumerate(locs):
-        pos = [loc[0], loc[1], 0.85]
-        rot = tf.transformations.quaternion_from_euler(0.0, 0.0, loc[2])
-        tf_man.pub_static_tf(pos=pos, rot=rot, point_name=f'Place_{i+1}')
-        tf_man.pub_static_tf(pos=[1.0, 0, 0], rot=rot, point_name=f'Place_face{i+1}', ref=f'Place_{i+1}')'''
-#------------------------------------------------------
-'''def get_robot_px():
-    trans, rot=tf_man.getTF('base_link')
-    robot=np.asarray(trans[:2])
-    print (trans)
-    return np.asarray((robot/pix_per_m).round(),dtype='int')'''
-
-#------------------------------------------------------
-def check_point_map(x,y):
-
-    # Quiero saber punto 0,-7 m esta libre?
-    ##meters, map (not pixels)
-    #x,y=0.2,8
-    #px=check_point_map(x,y)  # px is closest safe goal
-    #px*pix_per_m
-    xrob,yrob=get_robot_px()
-    safe_xy=np.asarray((x,-1*y))
-    safe_xy_px=point_to_px (x,y)
-    delta_px=  safe_xy_px-np.asarray((xrob,yrob))
-    delta_px= delta_px / np.linalg.norm(delta_px).round()
-    delta_px=np.round(delta_px*10)
-    newxy=np.zeros(2)
-    
-    for i in range(9):
-        if (contoured[1024+ safe_xy_px[1].astype('int'),1024-safe_xy_px[0].astype('int')]!=0):   ## axis are twisted cause y sign
-                    print ('not safe at', safe_xy_px , safe_xy_px*pix_per_m)
-                    
-                    xrob,yrob=get_robot_px()
-                    delta_px=  safe_xy_px-np.asarray((xrob,yrob))
-                    delta_px= delta_px / np.linalg.norm(delta_px).round()
-                    delta_px=np.round(delta_px*10)
-
-
-                    newxy[0]=safe_xy_px[0]-delta_px[0].astype('int')
-                    newxy[1]=safe_xy_px[1]-delta_px[1].astype('int')
-                    safe_xy_px=newxy
-        else:
-                print ('safe at', safe_xy_px, safe_xy_px*pix_per_m)
-                return safe_xy_px
-    return safe_xy_px
-    
-#------------------------------------------------------
-def point_to_px(x,y):
-    safe_xy=np.asarray((x,y))
-    return np.round(safe_xy/pix_per_m).astype('int')
-def px_to_point(px,py):
-    return np.asarray((px,py))*pix_per_m
-
+        tf_man.pub_static_tf(pos=pos, rot=rot, point_name=place)
+        tf_face = place.replace('_', '_face')
+        tf_man.pub_static_tf(pos=[1.0, 0, 0], rot=rot, point_name=tf_face, ref=place)
 #------------------------------------------------------
 def train_face(image, name):
     req=RecognizeFaceRequest()
@@ -219,8 +145,6 @@ def wait_for_face(timeout=10 , name=''):
 
 
 
-
-
 #------------------------------------------------------
 
 def wait_for_push_hand(time=10):
@@ -281,23 +205,6 @@ def analyze_face_background(img, name=" "):
     img_msg = bridge.cv2_to_imgmsg(img)
     img_pub.publish(img_msg)
 
-
-
-#------------------------------------------------------
-def bbox_3d_mean(points,boundRect):
-    #Gets the mean of the Points from the pincloud enclosed in the bound Rect of the RGBD image
-
-    xyz=[]
-    xyz_n=points[['x','y','z']][boundRect[0]:boundRect[2],boundRect[3]:boundRect[1]]
-    for i in range(xyz_n.shape[0]):
-        for j in range(xyz_n.shape[1]):
-            if ~np.isnan(xyz_n['x'][i,j]) and ~np.isnan(xyz_n['y'][i,j]) and ~np.isnan(xyz_n['z'][i,j]):
-                xyz.append(np.asarray([xyz_n['x'][i,j],xyz_n['y'][i,j],xyz_n['z'][i,j]]))
-                
-    if len(xyz)!=0:
-        return np.asarray(xyz).mean(axis=0)
-    else:
-        return np.ones(3)
 
 #------------------------------------------------------
 def detect_human_to_tf():
