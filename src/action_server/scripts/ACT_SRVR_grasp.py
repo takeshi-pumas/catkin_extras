@@ -14,7 +14,7 @@ from action_server.msg import GraspAction
 
 from tf.transformations import euler_from_quaternion, quaternion_from_euler
 
-from utils.src.utils import grasp_utils
+from utils import grasp_utils
 #from utils.grasp_utils import *
 
 class GraspingStateMachine:
@@ -179,11 +179,11 @@ class GraspingStateMachine:
     def execute_cb(self, goal):
         rospy.loginfo('Received action goal: %s', goal)
         self.sm.userdata.goal = goal
-        self.wrapper.server.set_succeeded()
-        outcome = self.sm.execute()
-        # result = FollowResult()
-        # result.success = True if outcome == 'success' else False
-        # self.server.set_succeeded(result)
+        if len(goal) == 3:
+            self.wrapper.server.set_succeeded()
+            outcome = self.sm.execute()
+        else:
+            rospy.loginfo("Goal not valid")
 
     def calculate_frontal_approach(self, target_position = [0.0, 0.0, 0.0]):
         object_point = PointStamped()
