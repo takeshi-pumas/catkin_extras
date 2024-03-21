@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-
-import cv2  
+import cv2
 import rospy 
 import numpy as np
 import pandas as pd
@@ -15,7 +14,8 @@ import moveit_commander
 import moveit_msgs.msg
 import tf2_ros
 from geometry_msgs.msg import PoseStamped, Point , PointStamped , Quaternion , TransformStamped , Twist
-from std_srvs.srv import Trigger, TriggerResponse 
+from std_msgs.msg import Bool
+from std_srvs.srv import Trigger, TriggerResponse, Empty
 from sensor_msgs.msg import Image , LaserScan , PointCloud2
 from tf2_sensor_msgs.tf2_sensor_msgs import do_transform_cloud
 from object_classification.srv import *
@@ -28,15 +28,12 @@ from face_recog.srv import *
 #import face_recognition 
 from hmm_navigation.msg import NavigateActionGoal, NavigateAction
 from cv_bridge import CvBridge, CvBridgeError
-from std_srvs.srv import Empty
-from cv_bridge import CvBridge, CvBridgeError
 from nav_msgs.msg import OccupancyGrid
 from hri_msgs.msg import RecognizedSpeech
 from rospy.exceptions import ROSException
 from vision_msgs.srv import *
 from act_recog.srv import Recognize,RecognizeResponse,RecognizeRequest
-from ros_whisper_vosk.srv import SetGrammarVosk
-from ros_whisper_vosk.srv import GetSpeech
+from ros_whisper_vosk.srv import SetGrammarVosk, GetSpeech
 from action_server.msg import FollowActionGoal
 
 from utils.grasp_utils import *
@@ -77,7 +74,7 @@ classify_client = rospy.ServiceProxy('/classify', Classify)
 
 
 
-
+enable_mic_pub = rospy.Publisher('/talk_now', Bool, queue_size=10)
 map_msg= rospy.wait_for_message('/augmented_map', OccupancyGrid , 20)####WAIT for nav pumas map .. 
 inflated_map= np.asarray(map_msg.data)
 img_map=inflated_map.reshape((map_msg.info.width,map_msg.info.height))
@@ -408,21 +405,24 @@ def detect_human_to_tf():
 #------------------------------------------------------
 
 def get_keywords_speech(timeout=5):
-    pub = rospy.Publisher('/talk_now', String, queue_size=10)
-    rospy.sleep(0.8)
-    msg = String()
-    msg.data='start'
-    pub.publish(msg)
+    enabled_msg = Bool()
+    enabled_msg.data = True
+    enable_mic_pub.publish(enabled_msg)
+    rospy.sleep(0.5)
     try:
         msg = rospy.wait_for_message('/speech_recognition/final_result', String, timeout)
         result = msg.data
-        pub.publish(String())
-        rospy.sleep(1.0)
+        enabled_msg = Bool()
+        enabled_msg.data = False
+        enable_mic_pub.publish(enabled_msg)
+        #rospy.sleep(1.0)
         return result
             
     except ROSException:
         rospy.loginfo('timeout')
-        pub.publish(String())
+        enabled_msg = Bool()
+        enabled_msg.data = False
+        enable_mic_pub.publish(enabled_msg)
         return 'timeout'
 
 def check_room_px(px_pose,living_room_px_region,kitchen_px_region,bedroom_px_region,dining_room_px_region ):
