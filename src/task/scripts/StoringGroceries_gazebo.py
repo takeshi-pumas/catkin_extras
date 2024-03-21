@@ -20,43 +20,27 @@ class Initial(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
         self.tries = 0
-
-    def execute(self, userdata):
-
-        
+    def execute(self, userdata):        
         rospy.loginfo('STATE : INITIAL')
         print('Robot neutral pose')
         self.tries += 1
         print(f'Try {self.tries} of 5 attempts')
         if self.tries == 3:
-            return 'tries'
-        
-        #READ YAML ROOMS XYS   objs csv, known initial object locations
-        
+            return 'tries'        
+        #READ YAML ROOMS XYS   objs csv, known initial object locations        
         global arm ,  hand_rgb , objs
         hand_rgb = HAND_RGB()
         rospack = rospkg.RosPack()
         file_path = rospack.get_path('config_files') 
         objs = pd.read_csv (file_path+'/objects.csv')
         objs=objs.drop(columns='Unnamed: 0')
-
         print (objs)
-
         arm = moveit_commander.MoveGroupCommander('arm')
         head.set_named_target('neutral')
-
         rospy.sleep(0.8)
         arm.set_named_target('go')
         arm.go()
         rospy.sleep(0.3)
-
-        #gripper.open()
-        #rospy.sleep(0.3)
-
-        #gripper.close()
-        #rospy.sleep(0.3)
-
-        
         return 'succ'
 
 #########################################################################################################
@@ -99,8 +83,7 @@ class Goto_pickup(smach.State):
         self.tries += 1
         if self.tries == 3:
             self.tries = 0
-            return 'tries'
-        
+            return 'tries'        
         res = omni_base.move_base(known_location='pickup', time_out=200)
         print(res)
 ##################################################################First TIme Only go        
@@ -137,9 +120,7 @@ class Scan_table(smach.State):
             talk('Scanning Table')
         if self.tries==2:head.set_joint_values([ 0.2, -0.7])
         global objs 
-        rospy.sleep(3.0)    
-        
-                
+        rospy.sleep(3.0)                        
         img_msg  = bridge.cv2_to_imgmsg( cv2.cvtColor(rgbd.get_image(), cv2.COLOR_RGB2BGR))### GAZEBO BGR!?!??!
         req      = classify_client.request_class()
         req.in_.image_msgs.append(img_msg)
@@ -172,8 +153,7 @@ class Scan_table(smach.State):
             objs[name]=pd.Series(in_region)
         cats=[]
         for name in objs['obj_name']:cats.append(categorize_objs(name))
-        objs['category'] = cats   
-        
+        objs['category'] = cats           
         return 'failed'
 #########################################################################################################
 class Pickup(smach.State):   
@@ -183,7 +163,7 @@ class Pickup(smach.State):
 
     def execute(self, userdata):
 
-        
+        global cat
         rospy.loginfo('STATE : PICKUP')
         rob_pos,_=tf_man.getTF('base_link')
         pickup_objs=objs[objs['pickup']==True]
@@ -194,13 +174,10 @@ class Pickup(smach.State):
         name, cat=pickup_objs[['obj_name','category']].iloc[ix]
         print('closest',name , cat)
         talk ( f'closest pickup object is {name,cat}')
-
-
+        ##################################################
         clear_octo_client()
-
         _,rot= tf_man.getTF("base_link",ref_frame='map')
         original_rot=tf.transformations.euler_from_quaternion(rot)[2]
-
         succ = False 
         target_object= name        
         while not succ:
@@ -280,6 +257,78 @@ class Goto_shelf(smach.State):
             return 'failed'
 
 #########################################################################################################
+class Goto_place_shelf(smach.State):  
+    def __init__(self):
+        smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
+        self.tries = 0
+
+    def execute(self, userdata):
+
+        rospy.loginfo('STATE : Navigate to known location')
+
+        print(f'Try {self.tries} of 3 attempts')
+        self.tries += 1
+        if self.tries == 3:
+            return 'tries'
+        arm.set_named_target('neutral')    
+        arm.set_named_target('go')    
+        arm.go()
+        if self.tries == 1: talk('Navigating to, shelf')
+        res = omni_base.move_base(known_location='place_shelf', time_out=200)
+        print(res)
+
+        if res:
+            return 'succ'
+        else:
+            talk('Navigation Failed, retrying')
+            return 'failed'
+
+#########################################################################################################
+class Place_shelf(smach.State):  
+    def __init__(self):
+        smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
+        self.tries = 0
+    def execute(self, userdata):
+        rospy.loginfo('STATE : Placing in shelf')
+        print(f'Try {self.tries} of 3 attempts')
+        self.tries += 1
+        print(f'shelves_cats{shelves_cats}, object picked up cat {cat}')
+        ###########################################
+        high_shelf_place=[0.4337,         -1.3139,         0.08621,        -0.4260,        0.02285,         0.0]
+        mid_shelf_place= [0.1425,         -1.3179,         0.0864,         -0.4286,        0.0230,          0.0]
+        low_shelf_place= [0.0,            -1.8875,         0.0864,          0.3040,        0.0229,          0.0]
+        placing_poses=np.asarray((high_shelf_place,mid_shelf_place,low_shelf_place))        
+        ###########################################
+        placing_places=np.asarray(('placing_area_top_shelf1','placing_area_mid_shelf1','placing_area_low_shelf1'))
+        #tf_man.getTF('placing_area_low_shelf1' )
+        ###########################################
+        if cat in shelves_cats:
+            placing_pose=placing_poses[np.argmax(shelves_cats == cat)]
+            placing_place=placing_places[np.argmax(shelves_cats == cat)]
+        else: 
+            print ( 'No category found, placing at random')
+            ind=np.random.randint(0,len(placing_poses))
+            placing_pose=placing_poses[ind]
+            placing_place=placing_places[ind]
+        succ=arm.go(placing_pose)
+        print(placing_place,cat,shelves_cats)
+        intended_placing_area= tf_man.getTF(placing_place)
+        print ('################################')
+        print ('################################')
+        print ('################################')
+        print ('################################')
+        print ('################################')
+        print ('################################')
+        print ('################################')
+        print (f'###########intended_placing_area{intended_placing_area}#####################')
+        return 0
+
+        if succ:return'succ'
+        return'failed'
+        
+        
+
+#########################################################################################################
 class Scan_shelf(smach.State):
     def __init__(self):
         smach.State.__init__(
@@ -353,14 +402,14 @@ class Scan_shelf(smach.State):
             arm.go(av)
             head.set_joint_values([-np.pi/2 , -0.5])
             request.height.data=0.67  #TOP SHELF FOR PLACING 
-            area_name_numbered= 'placing_area_top_shelf'
+            area_name_numbered= 'top_shelf'
             rospy.sleep(1.3)            
         if self.tries==2:
             av=arm.get_current_joint_values()
             av[0]=0.05
             arm.go(av)
             request.height.data=0.38  #MID SHELF FOR PLACING 
-            area_name_numbered= 'placing_area_mid_shelf'
+            area_name_numbered= 'mid_shelf'
             rospy.sleep(1.3)
         if self.tries==3:
             head.set_joint_values([-np.pi/2 , -0.8])
@@ -369,7 +418,7 @@ class Scan_shelf(smach.State):
             av[1]=-0.5
             arm.go(av)
             request.height.data=0.06  #TOP SHELF FOR PLACING 
-            area_name_numbered= 'placing_area_low_shelf'
+            area_name_numbered= 'low_shelf'
             rospy.sleep(1.3)
         rospy.sleep(1.3)
         ###############################################3
@@ -439,8 +488,14 @@ if __name__ == '__main__':
         smach.StateMachine.add("GOTO_SHELF",    Goto_shelf(),       transitions={'failed': 'GOTO_SHELF',    
                                                                                          'succ': 'SCAN_SHELF',       
                                                                                          'tries': 'GOTO_SHELF'})
-        smach.StateMachine.add("SCAN_SHELF",    Scan_shelf(),       transitions={'failed': 'SCAN_SHELF',    
+        smach.StateMachine.add("GOTO_PLACE_SHELF",    Goto_place_shelf(),       transitions={'failed': 'GOTO_PLACE_SHELF',    
+                                                                                         'succ': 'PLACE_SHELF',       
+                                                                                         'tries': 'GOTO_SHELF'})
+        smach.StateMachine.add("PLACE_SHELF",    Place_shelf(),       transitions={'failed': 'SCAN_SHELF',    
                                                                                          'succ': 'GOTO_PICKUP',       
+                                                                                         'tries': 'GOTO_SHELF'})
+        smach.StateMachine.add("SCAN_SHELF",    Scan_shelf(),       transitions={'failed': 'SCAN_SHELF',    
+                                                                                         'succ': 'GOTO_PLACE_SHELF',       
                                                                                          'tries': 'END'})
         smach.StateMachine.add("PICKUP",    Pickup(),       transitions={'failed': 'PICKUP',    
                                                                                          'succ': 'GOTO_SHELF',       

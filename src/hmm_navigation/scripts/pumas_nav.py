@@ -108,37 +108,18 @@ class PumasNavServer():
         goal_pose.pose.position = Point(x, y, 0)
         goal_pose.pose.orientation = Quaternion(*rot)
         goal_nav_publish.publish(goal_pose)
-
         # Feedback publisher and timeout checker
         while (timeout >= rospy.Time.now().to_sec()) and not success:
             # Goal distance and orientation calculation
             c_pose, q_rob = tf_man.getTF(target_frame='base_link')
             _, _, rob_yaw = tf.transformations.euler_from_quaternion(q_rob)
-            #rob_yaw = rob_yaw % (2 * np.pi)
-            #anglD = (yaw - rob_yaw)
             anglD = (yaw - rob_yaw)
-
-                #UGLY
-            if anglD < -2*np.pi :
-                anglD= -1*anglD%(2*np.pi)
-            elif anglD > 2*np.pi :
-                anglD= anglD%(2*np.pi)
-
-
-            if anglD < -np.pi :
-                anglD= (anglD%np.pi)
-            elif anglD > np.pi:
-                anglD=(anglD%np.pi)*-1
-
+            anglD = (anglD + np.pi) % (2 * np.pi) - np.pi
             euclD = np.linalg.norm(np.asarray((x, y)) - c_pose[:2])
             timeleft = timeout - rospy.Time.now().to_sec()
             if timeleft > 0:
                 feed = pose2feedback(c_pose, q_rob, timeleft, euclD,anglD)
                 self.pumas_nav_server.publish_feedback(feed.feedback)
-
-            # state = NS.get_status()
-
-            # success = state == 3 and euclD < 0.05 and anglD < 0.3
             success = euclD < 0.45 and abs(anglD) < 0.1
 
         # state = NS.get_status()

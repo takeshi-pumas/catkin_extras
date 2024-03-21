@@ -61,10 +61,13 @@ class OMNIBASE:
         else:
             return False
         delta = np.asarray(target) - np.asarray(robot)
-        dist = np.linalg.norm(delta)
+        dist = np.linalg.norm(delta)            
         theta_goal = np.arctan2(delta[1], delta[0])
-        x_goal = target[0] - target_distance * np.cos(theta_goal)
-        y_goal = target[1] - target_distance * np.sin(theta_goal)
+        if dist <= target_distance:
+            x_goal,y_goal=robot[0],robot[1]
+        else:
+            x_goal = target[0] - target_distance * np.cos(theta_goal)
+            y_goal = target[1] - target_distance * np.sin(theta_goal)
         succ = self.move_base(
             goal_x=x_goal, goal_y=y_goal, goal_yaw=theta_goal)
         return True

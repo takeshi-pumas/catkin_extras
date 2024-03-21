@@ -47,7 +47,6 @@ def trigger_response(request):
         print (f'Plane heights detected {planes_heights} maximum  z=[{planes_heights.max()}]#############3')    
     else:planes_heights=[request.height.data]
     for plane_height in planes_heights:
-        print ('WWWSSSS##############')
         low_plane = (corrected['z'] > (plane_height-0.02)) #plane height
         high_plane = (corrected['z'] < (plane_height+0.02))#plane height + obj height
         orig_image= rgb_image.copy()
@@ -58,19 +57,21 @@ def trigger_response(request):
         mask[result_indices]=200
         _, binary_image = cv2.threshold(mask, 20, 255, cv2.THRESH_BINARY)
         eroded_image=cv2.erode(binary_image,kernel = np.ones((40, 40), np.uint8))
-        print('np.where(eroded_image==255)',np.where(eroded_image==255))
+        deb_image=np.copy(orig_image)
         print ('quick estimation',np.nanmean(corrected['x'][np.where(eroded_image==255)]),np.nanmean(corrected['y'][np.where(eroded_image==255)]),np.nanmean(corrected['z'][np.where(eroded_image==255)]))
         contours, hierarchy = cv2.findContours(eroded_image.astype(np.uint8) ,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
         cc=[]
         for contour in contours:
             M = cv2.moments(contour)
             area = cv2.contourArea(contour)
-            if area > 200:                
+            if area > 200:          
+                print (area)      
             # calculate x,y coordinate of center
                 cX = int(M["m10"] / M["m00"])
                 cY = int(M["m01"] / M["m00"])
                 cc.append((cX,cY))
                 deb_image=cv2.circle(orig_image, (cX, cY), 5, (200, 200, 0), -1)
+            else:print ('area too small') 
         poses=[]
         for (cX,cY) in cc:
             x,y = cX,cY

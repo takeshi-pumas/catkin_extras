@@ -39,8 +39,6 @@ from action_server.msg import FollowActionGoal
 from utils.grasp_utils import *
 from utils.misc_utils import *
 from utils.nav_utils import *
-#from utils.know_utils import *
-
 global listener, broadcaster, tfBuffer, tf_static_broadcaster, scene, rgbd, head,train_new_face, wrist, human_detect_server, line_detector, clothes_color , head_mvit
 global clear_octo_client, goal,navclient,segmentation_server  , tf_man , omni_base, brazo, speech_recog_server, bridge, map_msg, pix_per_m, analyze_face , arm , set_grammar
 global recognize_action , classify_client,pointing_detect_server  , hand_cam
