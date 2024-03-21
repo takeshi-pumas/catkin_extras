@@ -145,7 +145,9 @@ add_executable(head_node
 add_executable(gaze_node
   src/gaze_node.cpp)
 add_executable(led_node
-  src/led_node.cpp)  
+  src/led_node.cpp)
+add_executable(mic_node
+  src/mic_controller.cpp)  
 
 
 ## Rename C++ executable without prefix
@@ -172,6 +174,10 @@ target_link_libraries(gaze_node
 ${catkin_LIBRARIES} 
 ${tf2_LIBRARIES} 
 ${tf2_ros_LIBRARIES})
+
+target_link_libraries(mic_node
+  ${catkin_LIBRARIES}
+  )
 
 #############
 ## Install ##

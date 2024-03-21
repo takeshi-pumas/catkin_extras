@@ -29,7 +29,7 @@ from nav_msgs.msg import OccupancyGrid
 from hri_msgs.msg import RecognizedSpeech
 from rospy.exceptions import ROSException
 from vision_msgs.srv import *
-from std_msgs.msg import String
+from std_msgs.msg import String, Bool
 
 from ros_whisper_vosk.srv import SetGrammarVosk
 
@@ -52,6 +52,8 @@ set_grammar = rospy.ServiceProxy('set_grammar_vosk', SetGrammarVosk)            
 recognize_face = rospy.ServiceProxy('recognize_face', RecognizeFace)                    #FACE RECOG
 train_new_face = rospy.ServiceProxy('new_face', RecognizeFace)                          #FACE RECOG
 analyze_face = rospy.ServiceProxy('analyze_face', RecognizeFace)    ###DEEP FACE ONLY
+
+enable_mic_pub = rospy.Publisher('/talk_now', Bool, queue_size=10)
 
 # Utils
 rgbd= misc_utils.RGBD()
@@ -223,21 +225,24 @@ def detect_human_to_tf():
 
 
 def get_keywords_speech(timeout=5):
-    pub = rospy.Publisher('/talk_now', String, queue_size=10)
-    rospy.sleep(0.8)
-    msg = String()
-    msg.data='start'
-    pub.publish(msg)
+    enabled_msg = Bool()
+    enabled_msg.data = True
+    enable_mic_pub.publish(enabled_msg)
+    rospy.sleep(0.5)
     try:
         msg = rospy.wait_for_message('/speech_recognition/final_result', String, timeout)
         result = msg.data
-        pub.publish(String())
-        rospy.sleep(1.0)
+        enabled_msg = Bool()
+        enabled_msg.data = False
+        enable_mic_pub.publish(enabled_msg)
+        #rospy.sleep(1.0)
         return result
             
     except ROSException:
         rospy.loginfo('timeout')
-        pub.publish(String())
+        enabled_msg = Bool()
+        enabled_msg.data = False
+        enable_mic_pub.publish(enabled_msg)
         return 'timeout'
 
 def match_speech(speech, to_match):

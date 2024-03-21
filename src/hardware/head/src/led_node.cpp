@@ -1,5 +1,5 @@
 #include <ros/ros.h>
-#include <std_msgs/String.h>
+#include <std_msgs/Bool.h>
 #include <tmc_msgs/SetColor.h>
 #include "actionlib_msgs/GoalStatus.h"
 
@@ -57,10 +57,10 @@ void nav_msg_Callback(const actionlib_msgs::GoalStatus::ConstPtr& msg) {
 
 }
 
-void talk_now_Callback(const std_msgs::String::ConstPtr& msg) {
-  std::string data = msg -> data;
+void talk_now_Callback(const std_msgs::Bool::ConstPtr& msg) {
+  bool enabled = msg -> data;
   float r, g, b;
-  if(data == "start"){
+  if(enabled){
     r = mapToFloat(102);
     g = mapToFloat(204);
     b = mapToFloat(255);

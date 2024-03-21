@@ -203,7 +203,7 @@ class New_face(smach.State):
         
         #Asking for name
         voice.talk('Please, tell me your name')
-        rospy.sleep(1.0)
+        #rospy.sleep(1.0)
         speech = get_keywords_speech(10)
         # in case thinks like I am , my name is . etc
         if len(speech.split(' ')) > 1: name = (speech.split(' ')[-1])
@@ -214,7 +214,7 @@ class New_face(smach.State):
             return 'failed'
 
         voice.talk(f'Is {name} your name?')
-        rospy.sleep(2.0)
+        #rospy.sleep(2.0)
         confirmation = get_keywords_speech(10)
         print (confirmation)
 
@@ -258,7 +258,7 @@ class Get_drink(smach.State):
             return 'succ'
         #Asking for drink
         voice.talk('What would you like to drink?')
-        rospy.sleep(2.0)
+        #rospy.sleep(2.0)
         drink = get_keywords_speech(10)
 
         if len(drink.split(' '))>1: drink=(drink.split(' ')[-1])
@@ -270,7 +270,7 @@ class Get_drink(smach.State):
             return 'failed' 
         voice.talk(f'Did you say {drink}?')
 
-        rospy.sleep(2.5)
+        #rospy.sleep(2.5)
         confirmation = get_keywords_speech(10)
         confirmation = confirmation.split(' ')
         confirm = match_speech(confirmation, ['yes','yeah','jack','juice'])
