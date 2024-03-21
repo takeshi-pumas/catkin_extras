@@ -1,8 +1,9 @@
 <launch>  
   
+  <!--
   <include file="$(find hsrb_moveit_config)/launch/hsrb_demo_with_controller.launch"> 
   <arg name="use_gui" value="true"/> 
-  </include>
+  </include> -->
   
   <node pkg="object_classification"  name="objs_reco" type="classification_server.py"  />  
   <node pkg="action_server"  name="action_server" type="ACT_SRVR_grasp.py"/>   

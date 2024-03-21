@@ -153,25 +153,21 @@ class Decide_grasp(smach.State):
         for idx, obj_name in enumerate(userdata.obj_detected[0]):
             obj = obj_name.data.split('_', 1)
             print(obj)
-            if obj[1] == 'spoon':
+            target_object = 'spoon'
+            if obj[1] == target_object:
                 succ = True
                 position.append(userdata.obj_detected[1][idx].position.x)
                 position.append(userdata.obj_detected[1][idx].position.y)
                 position.append(userdata.obj_detected[1][idx].position.z)
-                tf_man.pub_static_tf(pos = position, point_name = 'spoon', ref = 'head_rgbd_sensor_link')
+                tf_man.pub_static_tf(pos = position, point_name = target_object, ref = 'head_rgbd_sensor_link')
                 rospy.sleep(0.8)
                 break
         if succ:
-            #print(position)
-
-            pos, _ = tf_man.getTF(target_frame = 'spoon', ref_frame = 'odom')
+            pos, _ = tf_man.getTF(target_frame = target_object, ref_frame = 'odom')
             target_pose = Float32MultiArray()
+            pos[2] += 0.03
             target_pose.data = pos
-            
             userdata.target_pose = target_pose
-
-            #head.set_named_target('neutral')
-
             return 'succ'
         else:
             return 'failed'
@@ -196,7 +192,7 @@ if __name__ == '__main__':
         smach.StateMachine.add("DECIDE_GRASP", Decide_grasp(),              
                         transitions={'failed': 'SCAN_CONTAINER', 'succ': 'GRASP_GOAL'})
         smach.StateMachine.add("GRASP_GOAL", SimpleActionState('grasp_server', GraspAction, goal_slots=['target_pose']),              
-                        transitions={'preempted': 'END', 'succeeded': 'END', 'aborted': 'SCAN_CONTAINER'})
+                        transitions={'preempted': 'END', 'succeeded': 'END', 'aborted': 'END'})
     
     outcome = sm.execute()
 
