@@ -2,16 +2,17 @@ cmake_minimum_required(VERSION 2.8.3)
 project(head)
 
 find_package(catkin REQUIRED COMPONENTS
-  tf2 REQUIRED
-  tf2_ros REQUIRED
-  controller_manager_msgs
-  trajectory_msgs
-  geometry_msgs
   roscpp
   rospy
   std_msgs
+  geometry_msgs
   sensor_msgs
+  controller_manager_msgs
+  trajectory_msgs
   tf2_sensor_msgs
+  tf2 REQUIRED
+  tf2_ros REQUIRED
+  pcl_ros
 )
 
 
