@@ -15,7 +15,9 @@ import moveit_commander
 import moveit_msgs.msg
 import tf2_ros
 from os import path
-from geometry_msgs.msg import PoseStamped, Point , PointStamped , Quaternion , TransformStamped , Twist
+from geometry_msgs.msg import PoseStamped, Point  , Quaternion , TransformStamped , Twist
+from tf2_geometry_msgs import PointStamped
+
 from std_srvs.srv import Trigger, TriggerResponse 
 from sensor_msgs.msg import Image , LaserScan , PointCloud2
 from tf2_sensor_msgs.tf2_sensor_msgs import do_transform_cloud
@@ -51,7 +53,7 @@ from utils.nav_utils import *
 
 global listener, broadcaster, tfBuffer, tf_static_broadcaster, scene, rgbd, head,train_new_face, wrist, human_detect_server, line_detector, clothes_color , head_mvit
 global clear_octo_client, goal,navclient,segmentation_server  , tf_man , omni_base, brazo, speech_recog_server, bridge, map_msg, pix_per_m, analyze_face , arm , set_grammar
-global recognize_action , classify_client,pointing_detect_server ,placing_finder_server
+global recognize_action , classify_client,pointing_detect_server ,placing_finder_server,tfBuffer
 rospy.init_node('smach')
 #head_mvit = moveit_commander.MoveGroupCommander('head')
 #gripper =  moveit_commander.MoveGroupCommander('gripper')
@@ -510,9 +512,46 @@ def check_room_px(px_pose,living_room_px_region,kitchen_px_region,bedroom_px_reg
             return region
 
 #------------------------------------------------------
+def base_grasp_D(tf_name,d_x=0.66,d_y=-0.1,timeout=1.0):
+    timeout = rospy.Time.now().to_sec() + timeout
+    rob_pos,rot=tf_man.getTF('base_link')    
+    original_rot=tf.transformations.euler_from_quaternion(rot)[2]
+    succ = False 
+    target_object= tf_name        
+    while (timeout >= rospy.Time.now().to_sec()) and not succ and not rospy.is_shutdown():
+        _,rot= tf_man.getTF("base_link",ref_frame='map')
+        trans,_=tf_man.getTF(target_object,ref_frame="base_link")
+        #trans
+        eX, eY, eZ = trans
+        eX+= -d_x  #x offest
+        eY+= -d_y #y Offset
+        eT= tf.transformations.euler_from_quaternion(rot)[2] - original_rot #Original 
+        print (eT)
+        if eT > np.pi: eT=-2*np.pi+eT
+        if eT < -np.pi: eT= 2*np.pi+eT
+        rospy.loginfo("error: {:.2f}, {:.2f}, angle {:.2f}, target obj frame {}".format(eX, eY , eT,target_object))
+        X, Y, Z = trans
+        rospy.loginfo("Pose: {:.2f}, {:.2f}, angle {:.2f}, target obj frame {}".format(X, Y , eT,target_object))
+        if abs(eX) <=0.05 :
+            print ('here')
+            eX = 0
+        if abs(eY) <=0.05  :
+            eY = 0
+        if abs(eT   ) < 0.1:
+            eT = 0
+        succ =  eX == 0 and eY == 0 and eT==0            
+        omni_base.tiny_move( velX=0.2*+eX,velY=0.3*eY, velT=-eT,std_time=0.2, MAX_VEL=0.3) 
+
+    
+    
+#------------------------------------------------------
 def save_image(img, dir = ""):
     if dir == "":
         dir = path.expanduser('~')+"/Pictures/"
     elif dir != "" and dir[-1]!="/":
         dir+="/"
     cv2.imwrite(dir+"imageTmp.jpg",img)
+
+###################################################
+
+

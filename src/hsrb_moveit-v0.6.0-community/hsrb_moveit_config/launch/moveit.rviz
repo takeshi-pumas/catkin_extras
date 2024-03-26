@@ -569,9 +569,9 @@ Visualization Manager:
       Filter (whitelist): ""
       Frame Timeout: 15
       Frames:
-        All Enabled: false
-        Target:
+        002_master_chef_can:
           Value: true
+        All Enabled: false
         arm_flex_link:
           Value: false
         arm_lift_link:
@@ -610,8 +610,6 @@ Visualization Manager:
           Value: false
         base_roll_link:
           Value: false
-        gaze:
-          Value: true
         hand_camera_frame:
           Value: false
         hand_camera_gazebo_frame:
@@ -676,40 +674,18 @@ Visualization Manager:
           Value: false
         map:
           Value: false
-        object_0:
-          Value: true
-        object_0_norot:
-          Value: true
-        object_1:
-          Value: true
-        object_1_norot:
-          Value: true
-        object_2:
-          Value: true
-        object_2_norot:
-          Value: true
-        object_3:
-          Value: true
-        object_3_norot:
-          Value: true
-        object_4:
-          Value: true
-        object_4_norot:
-          Value: true
-        object_5:
-          Value: true
-        object_5_norot:
-          Value: true
         odom:
           Value: false
         pca_table:
           Value: false
         pickup:
           Value: false
+        place_shelf:
+          Value: true
+        shelf:
+          Value: true
         table:
           Value: false
-        target:
-          Value: true
         torso_lift_link:
           Value: false
         wrist_flex_link:
@@ -730,37 +706,9 @@ Visualization Manager:
       Show Names: true
       Tree:
         map:
-          Target:
-            {}
-          gaze:
-            {}
           kitchen:
             {}
           living_room:
-            {}
-          object_0:
-            {}
-          object_0_norot:
-            {}
-          object_1:
-            {}
-          object_1_norot:
-            {}
-          object_2:
-            {}
-          object_2_norot:
-            {}
-          object_3:
-            {}
-          object_3_norot:
-            {}
-          object_4:
-            {}
-          object_4_norot:
-            {}
-          object_5:
-            {}
-          object_5_norot:
             {}
           odom:
             base_footprint:
@@ -835,16 +783,19 @@ Visualization Manager:
                         head_rgbd_sensor_gazebo_frame:
                           {}
                         head_rgbd_sensor_rgb_frame:
-                          {}
+                          002_master_chef_can:
+                            {}
             base_footprint_wheel:
               {}
           pca_table:
             {}
           pickup:
             {}
-          table:
+          place_shelf:
             {}
-          target:
+          shelf:
+            {}
+          table:
             {}
           zero:
             {}

@@ -121,8 +121,7 @@ class Scan_table(smach.State):
     def __init__(self):
         smach.State.__init__(
             self, outcomes=['succ', 'failed', 'tries'])
-        self.tries = 0
-       
+        self.tries = 0       
     def execute(self, userdata):
         rospy.loginfo('State : Scanning_table')
         self.tries += 1
@@ -135,29 +134,52 @@ class Scan_table(smach.State):
         if self.tries==2:head.set_joint_values([ 0.2, -0.7])
         global objs 
         rospy.sleep(3.0)    
-        
-                
         img_msg  = bridge.cv2_to_imgmsg(rgbd.get_image())
         req      = classify_client.request_class()
         req.in_.image_msgs.append(img_msg)
         res      = classify_client(req)
         objects=detect_object_yolo('all',res)   
+        #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
         if len (objects)!=0 :
             for i in range(len(res.poses)):
-                tf_man.getTF("head_rgbd_sensor_rgb_frame")
+                #tf_man.getTF("head_rgbd_sensor_rgb_frame")
                 position = [res.poses[i].position.x ,res.poses[i].position.y,res.poses[i].position.z]
                 print ('position,name',position,res.names[i].data[4:])
-                tf_man.pub_static_tf(pos= position, rot=[0,0,0,1], ref="head_rgbd_sensor_rgb_frame", point_name=res.names[i].data[4:] )   
-                rospy.sleep(0.3)
-                tf_man.change_ref_frame_tf(res.names[i].data[4:])
-                rospy.sleep(0.3)
-                pose , _=tf_man.getTF(res.names[i].data[4:])
-                if type (pose)!= bool:
-                    new_row = {'x': pose[0], 'y': pose[1], 'z': pose[2], 'obj_name': res.names[i].data[4:]}
-                    objs.loc[len(objs)] = new_row
+                ##########################################################
+                object_point = PointStamped()
+                object_point.header.frame_id = "head_rgbd_sensor_rgb_frame"
+                object_point.point.x = position[0]
+                object_point.point.y = position[1]
+                object_point.point.z = position[2]
+                position_map = tfBuffer.transform(object_point, "map", timeout=rospy.Duration(1))
+                print ('position_map',position_map)
+                tf_man.pub_static_tf(pos= [position_map.point.x,position_map.point.y,position_map.point.z], rot=[0,0,0,1], ref="map", point_name=res.names[i].data[4:] )
+                new_row = {'x': position_map.point.x, 'y': position_map.point.y, 'z': position_map.point.z, 'obj_name': res.names[i].data[4:]}
+                objs.loc[len(objs)] = new_row
+                ###########################################################
+
         else:
             print('Objects list empty')
             return 'failed'
+
+        ##>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+        #if len (objects)!=0 :
+        #    for i in range(len(res.poses)):
+        #        tf_man.getTF("head_rgbd_sensor_rgb_frame")
+        #        position = [res.poses[i].position.x ,res.poses[i].position.y,res.poses[i].position.z]
+        #        print ('position,name',position,res.names[i].data[4:])
+        #        tf_man.pub_static_tf(pos= position, rot=[0,0,0,1], ref="head_rgbd_sensor_rgb_frame", point_name=res.names[i].data[4:] )   
+        #        rospy.sleep(0.3)
+        #        tf_man.change_ref_frame_tf(res.names[i].data[4:])
+        #        rospy.sleep(0.3)
+        #        pose , _=tf_man.getTF(res.names[i].data[4:])
+        #        if type (pose)!= bool:
+        #            new_row = {'x': pose[0], 'y': pose[1], 'z': pose[2], 'obj_name': res.names[i].data[4:]}
+        #            objs.loc[len(objs)] = new_row
+        #else:
+        #    print('Objects list empty')
+        #    return 'failed'
+        #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    
         rospack = rospkg.RosPack()
         file_path = rospack.get_path('config_files')         
         regions={'shelves':np.load('/home/roboworks/Documents/shelves_region.npy'),'pickup':np.load('/home/roboworks/Documents/pickup_region.npy')}
@@ -183,7 +205,7 @@ class Pickup(smach.State):
         rospy.loginfo('STATE : PICKUP')
         rob_pos,_=tf_man.getTF('base_link')
         pickup_objs=objs[objs['pickup']==True]
-        pickup_objs=pickup_objs[pickup_objs['z']>0.5]        
+        pickup_objs=pickup_objs[pickup_objs['z']>0.65]        
         print ('pickup_objs',pickup_objs)        
         ix=np.argmin(np.linalg.norm(rob_pos-pickup_objs[['x','y','z']]  .values  , axis=1))
         name, cat=pickup_objs[['obj_name','category']].iloc[ix]
@@ -196,7 +218,7 @@ class Pickup(smach.State):
         original_rot=tf.transformations.euler_from_quaternion(rot)[2]
         succ = False 
         target_object= name        
-        while not succ:
+        while not succ and not rospy.is_shutdown(): 
             
             _,rot= tf_man.getTF("base_link",ref_frame='map')
             trans,_=tf_man.getTF(target_object,ref_frame="base_link")
@@ -207,7 +229,7 @@ class Pickup(smach.State):
             eX+= -0.41  #REAL
             #eX+= -0.46  #GAZEBO
             
-            eY+= -.14 #REAL
+            eY+= -.06 #REAL
             #eY+= -.1 #GAZEBO
             
             eT= tf.transformations.euler_from_quaternion(rot)[2] - original_rot #Original 
@@ -319,14 +341,34 @@ class Place_shelf(smach.State):
         high_shelf_place=[0.1505,-0.586,0.0850,-0.934,0.0220,0.0]
         mid_shelf_place=[ 0.2556,-1.6040,-0.0080,-0.0579,0.0019,0.0]
         low_shelf_place=[ 0.0457,-2.2625,0.0,0.7016,-0.0,0.0]
-        placing_poses=np.asarray((high_shelf_place,mid_shelf_place,low_shelf_place))
-        
-        if cat in shelves_cats:    placing_pose=placing_poses[np.where(shelves_cats=='kitchen')]
-        else: 
+        placing_poses=np.asarray((high_shelf_place,mid_shelf_place,low_shelf_place))        
+        placing_places=np.asarray(('placing_area_high_shelf1','placing_area_mid_shelf1','placing_area_low_shelf1'))
+
+        if cat in shelves_cats:
+                    ind=np.argmax(shelves_cats == cat)
+                    placing_pose=placing_poses[ind]
+                    placing_place=placing_places[ind]
+        else:  
             print ( 'No category found, placing at random')
-            placing_pose=placing_poses[np.random.randint(0,len(placing_poses))]
+            ind=np.random.randint(0,len(placing_poses))
+            placing_pose=placing_poses[ind]
+            placing_place=placing_places[ind]
         clear_octo_client()
         succ=arm.go(placing_pose)
+        intended_placing_area= tf_man.getTF(placing_place)
+        print (f'#placing_poses {placing_poses}, index{ind} , placing_places{placing_places} , placing_place {placing_place}' )
+        print ('################################')
+        print ('################################')
+        print ('################################')
+        print ('################################')
+        print ('################################')
+        print ('################################')
+        print (f'###########intended_placing_area{intended_placing_area}#####################')
+        base_grasp_D(tf_name=placing_place,d_x=0.76, d_y=0.0,timeout=30)
+        succ=arm.go(placing_pose)
+        base_grasp_D(tf_name=placing_place,d_x=0.6, d_y=0.0,timeout=30)
+        gripper.open()
+        rospy.sleep(1.0)
 
         if succ:return'succ'
         return'failed'
@@ -368,7 +410,7 @@ class Scan_shelf(smach.State):
             print ('################################')
             shelf_objs=objs[objs['shelves']==True ]         
 
-            sh_o_btm=shelf_objs[shelf_objs['z']<0.2]
+            sh_o_btm=shelf_objs[shelf_objs['z']<0.15]
             #sh_o_mdl=shelf_objs[(shelf_objs['z']>0.2 )& (shelf_objs['z']<0.5) ] #SIM
             sh_o_mdl=shelf_objs[(shelf_objs['z']>0.2 )& (shelf_objs['z']<0.7) ]
             sh_o_top=shelf_objs[(shelf_objs['z']>0.7 ) ]
@@ -412,14 +454,14 @@ class Scan_shelf(smach.State):
             arm.go(av)
             head.set_joint_values([-np.pi/2 , -0.5])
             request.height.data=0.87  #TOP SHELF FOR PLACING 
-            area_name_numbered= 'placing_area_high_shelf'
+            area_name_numbered= 'high_shelf'
             rospy.sleep(1.3)            
         if self.tries==2:
             av=arm.get_current_joint_values()
             av[0]=0.05
             arm.go(av)            
             request.height.data=0.41  #MiD SHELF FOR PLACING 
-            area_name_numbered= 'placing_area_mid_shelf'
+            area_name_numbered= 'mid_shelf'
             rospy.sleep(1.3)
         if self.tries==3:
             head.set_joint_values([-np.pi/2 , -0.8])
@@ -428,7 +470,7 @@ class Scan_shelf(smach.State):
             av[1]=-0.5
             arm.go(av)
             request.height.data=0.00  #BTM SHELF FOR PLACING 
-            area_name_numbered= 'placing_area_low_shelf'
+            area_name_numbered= 'low_shelf'
             rospy.sleep(1.3)
         rospy.sleep(1.3)                
         ###############################################3
@@ -444,7 +486,30 @@ class Scan_shelf(smach.State):
         req      = classify_client.request_class()
         req.in_.image_msgs.append(img_msg)
         res      = classify_client(req)
-        objects=detect_object_yolo('all',res)   
+        objects=detect_object_yolo('all',res)  
+        #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+        if len (objects)!=0 :
+            for i in range(len(res.poses)):
+                #tf_man.getTF("head_rgbd_sensor_rgb_frame")
+                position = [res.poses[i].position.x ,res.poses[i].position.y,res.poses[i].position.z]
+                print ('position,name',position,res.names[i].data[4:])
+                ##########################################################
+                object_point = PointStamped()
+                object_point.header.frame_id = "head_rgbd_sensor_rgb_frame"
+                object_point.point.x = position[0]
+                object_point.point.y = position[1]
+                object_point.point.z = position[2]
+                position_map = tfBuffer.transform(object_point, "map", timeout=rospy.Duration(1))
+                print ('position_map',position_map)
+                tf_man.pub_static_tf(pos= [position_map.point.x,position_map.point.y,position_map.point.z], rot=[0,0,0,1], ref="map", point_name=res.names[i].data[4:] )
+                new_row = {'x': position_map.point.x, 'y': position_map.point.y, 'z': position_map.point.z, 'obj_name': res.names[i].data[4:]}
+                objs.loc[len(objs)] = new_row
+                ###########################################################
+
+        else:
+            print('Objects list empty')
+            return 'failed' 
+        #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
         if len (objects)!=0 :
             for i in range(len(res.poses)):
                 tf_man.getTF("head_rgbd_sensor_rgb_frame")
@@ -460,6 +525,7 @@ class Scan_shelf(smach.State):
         else:
             print('Objects list empty')
             return 'failed'
+        #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
         print(objs)
         
         return 'failed'
@@ -507,7 +573,7 @@ if __name__ == '__main__':
                                                                                          'succ': 'PLACE_SHELF',       
                                                                                          'tries': 'GOTO_SHELF'})
         smach.StateMachine.add("PLACE_SHELF",    Place_shelf(),       transitions={'failed': 'SCAN_SHELF',    
-                                                                                         'succ': 'END',       
+                                                                                         'succ': 'GOTO_PICKUP',       
                                                                                          'tries': 'GOTO_SHELF'})
         smach.StateMachine.add("SCAN_SHELF",    Scan_shelf(),       transitions={'failed': 'SCAN_SHELF',    
                                                                                          'succ': 'GOTO_PLACE_SHELF',       
