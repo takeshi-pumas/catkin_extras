@@ -108,6 +108,7 @@ def callback(points_msg):
             for i in range(len(res.poses)):
                 tf_man.getTF("head_rgbd_sensor_rgb_frame")
                 position = [res.poses[i].position.x ,res.poses[i].position.y,res.poses[i].position.z]
+                print(position )
                 tf_man.pub_static_tf(pos= position, rot=[0,0,0,1], ref="head_rgbd_sensor_rgb_frame", point_name=res.names[i].data[4:] )   
                 rospy.sleep(0.3)
                 tf_man.change_ref_frame_tf(res.names[i].data[4:])

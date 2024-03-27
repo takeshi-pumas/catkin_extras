@@ -27,7 +27,7 @@ class Initial(smach.State):
         print(f'Try {self.tries} of 5 attempts')
         if self.tries == 3:
             return 'tries'        
-        #READ YAML ROOMS XYS   objs csv, known initial object locations        
+             
         global arm ,  hand_rgb , objs
         hand_rgb = HAND_RGB()
         rospack = rospkg.RosPack()
@@ -60,8 +60,7 @@ class Wait_push_hand(smach.State):
         print(f'Try {self.tries} of 4 attempts')
         if self.tries == 4:
             return 'tries'
-        talk('Gently... push my hand to begin')
-        
+        talk('Gently... push my hand to begin')    
         
         succ = wait_for_push_hand(100) # NOT GAZEBABLE
         if succ:
@@ -107,8 +106,7 @@ class Scan_table(smach.State):
     def __init__(self):
         smach.State.__init__(
             self, outcomes=['succ', 'failed', 'tries'])
-        self.tries = 0
-       
+        self.tries = 0       
     def execute(self, userdata):
         rospy.loginfo('State : Scanning_table')
         self.tries += 1
@@ -128,17 +126,31 @@ class Scan_table(smach.State):
         objects=detect_object_yolo('all',res)   
         if len (objects)!=0 :
             for i in range(len(res.poses)):
-                tf_man.getTF("head_rgbd_sensor_rgb_frame")
+                #tf_man.getTF("head_rgbd_sensor_rgb_frame")
                 position = [res.poses[i].position.x ,res.poses[i].position.y,res.poses[i].position.z]
                 print ('position,name',position,res.names[i].data[4:])
-                tf_man.pub_static_tf(pos= position, rot=[0,0,0,1], ref="head_rgbd_sensor_rgb_frame", point_name=res.names[i].data[4:] )   
-                rospy.sleep(0.3)
-                tf_man.change_ref_frame_tf(res.names[i].data[4:])
-                rospy.sleep(0.3)
-                pose , _=tf_man.getTF(res.names[i].data[4:])
-                if type (pose)!= bool:
-                    new_row = {'x': pose[0], 'y': pose[1], 'z': pose[2], 'obj_name': res.names[i].data[4:]}
-                    objs.loc[len(objs)] = new_row
+                ##########################################################
+
+                object_point = PointStamped()
+                object_point.header.frame_id = "head_rgbd_sensor_rgb_frame"
+                object_point.point.x = position[0]
+                object_point.point.y = position[1]
+                object_point.point.z = position[2]
+                position_map = tfBuffer.transform(object_point, "map", timeout=rospy.Duration(1))
+                print ('position_map',position_map)
+                tf_man.pub_static_tf(pos= [position_map.point.x,position_map.point.y,position_map.point.z], rot=[0,0,0,1], ref="map", point_name=res.names[i].data[4:] )
+                new_row = {'x': position_map.point.x, 'y': position_map.point.y, 'z': position_map.point.z, 'obj_name': res.names[i].data[4:]}
+                objs.loc[len(objs)] = new_row
+                ###########################################################
+
+                #tf_man.pub_static_tf(pos= position, rot=[0,0,0,1], ref="head_rgbd_sensor_rgb_frame", point_name=res.names[i].data[4:] )   
+                #rospy.sleep(0.3)
+                #tf_man.change_ref_frame_tf(res.names[i].data[4:])
+                #rospy.sleep(0.3)
+                #pose , _=tf_man.getTF(res.names[i].data[4:])
+                #if type (pose)!= bool:
+                #    new_row = {'x': pose[0], 'y': pose[1], 'z': pose[2], 'obj_name': res.names[i].data[4:]}
+                #    objs.loc[len(objs)] = new_row
         else:
             print('Objects list empty')
             return 'failed'
@@ -180,7 +192,7 @@ class Pickup(smach.State):
         original_rot=tf.transformations.euler_from_quaternion(rot)[2]
         succ = False 
         target_object= name        
-        while not succ:
+        while not succ  and not rospy.is_shutdown():
             
             _,rot= tf_man.getTF("base_link",ref_frame='map')
             trans,_=tf_man.getTF(target_object,ref_frame="base_link")
@@ -189,9 +201,9 @@ class Pickup(smach.State):
             eX, eY, eZ = trans
             
             #eX+= -0.3  #REAL
-            eX+= -0.46  #GAZEBO
+            eX+= -0.45  #GAZEBO
             #eY+= -.1 #REAL
-            eY+= -.1 #GAZEBO
+            eY+= -.08 #GAZEBO
             
             eT= tf.transformations.euler_from_quaternion(rot)[2] - original_rot #Original 
             print (eT)
@@ -274,7 +286,7 @@ class Goto_place_shelf(smach.State):
         arm.set_named_target('go')    
         arm.go()
         if self.tries == 1: talk('Navigating to, shelf')
-        res = omni_base.move_base(known_location='place_shelf', time_out=200)
+        res = omni_base.move_base(known_location='place_shelf', time_out=10)
         print(res)
 
         if res:
@@ -303,14 +315,14 @@ class Place_shelf(smach.State):
         #tf_man.getTF('placing_area_low_shelf1' )
         ###########################################
         if cat in shelves_cats:
-            placing_pose=placing_poses[np.argmax(shelves_cats == cat)]
-            placing_place=placing_places[np.argmax(shelves_cats == cat)]
+            ind=np.argmax(shelves_cats == cat)
+            placing_pose=placing_poses[ind]
+            placing_place=placing_places[ind]
         else: 
             print ( 'No category found, placing at random')
             ind=np.random.randint(0,len(placing_poses))
             placing_pose=placing_poses[ind]
             placing_place=placing_places[ind]
-        succ=arm.go(placing_pose)
         print(placing_place,cat,shelves_cats)
         intended_placing_area= tf_man.getTF(placing_place)
         print ('################################')
@@ -320,9 +332,13 @@ class Place_shelf(smach.State):
         print ('################################')
         print ('################################')
         print ('################################')
-        print (f'###########intended_placing_area{intended_placing_area}#####################')
-        return 0
+        print (f'###########intended_placing_area{intended_placing_area},{placing_places[ind]}#####################')
 
+        base_grasp_D(tf_name=placing_place,d_x=0.76, d_y=0.0,timeout=30)
+        succ=arm.go(placing_pose)
+        base_grasp_D(tf_name=placing_place,d_x=0.6, d_y=0.0,timeout=30)
+        gripper.open()
+        rospy.sleep(1.0)
         if succ:return'succ'
         return'failed'
         
@@ -344,8 +360,10 @@ class Scan_shelf(smach.State):
         area_number=0
         self.tries += 1
         if self.tries >= 4:
-            self.tries = 0
-            ####REMOVE THIS LINE; ONLY FOR DEBGNG PURPOSES
+            return 'succ'
+
+
+            
             regions={'shelves':np.load('/home/roboworks/Documents/shelf_sim.npy'),'pickup':np.load('/home/roboworks/Documents/pickup_sim.npy')}
             rospack = rospkg.RosPack()
             file_path = rospack.get_path('config_files') 
@@ -437,16 +455,21 @@ class Scan_shelf(smach.State):
         objects=detect_object_yolo('all',res)   
         if len (objects)!=0 :
             for i in range(len(res.poses)):
-                tf_man.getTF("head_rgbd_sensor_rgb_frame")
+                #tf_man.getTF("head_rgbd_sensor_rgb_frame")
                 position = [res.poses[i].position.x ,res.poses[i].position.y,res.poses[i].position.z]
-                tf_man.pub_static_tf(pos= position, rot=[0,0,0,1], ref="head_rgbd_sensor_rgb_frame", point_name=res.names[i].data[4:] )   
-                rospy.sleep(0.3)
-                tf_man.change_ref_frame_tf(res.names[i].data[4:])
-                rospy.sleep(0.3)
-                pose , _=tf_man.getTF(res.names[i].data[4:])
-                if type (pose)!= bool:
-                    new_row = {'x': pose[0], 'y': pose[1], 'z': pose[2], 'obj_name': res.names[i].data[4:]}
-                    objs.loc[len(objs)] = new_row
+                print ('position,name',position,res.names[i].data[4:])
+                ##########################################################
+                object_point = PointStamped()
+                object_point.header.frame_id = "head_rgbd_sensor_rgb_frame"
+                object_point.point.x = position[0]
+                object_point.point.y = position[1]
+                object_point.point.z = position[2]
+                position_map = tfBuffer.transform(object_point, "map", timeout=rospy.Duration(1))
+                print ('position_map',position_map)
+                tf_man.pub_static_tf(pos= [position_map.point.x,position_map.point.y,position_map.point.z], rot=[0,0,0,1], ref="map", point_name=res.names[i].data[4:] )
+                new_row = {'x': position_map.point.x, 'y': position_map.point.y, 'z': position_map.point.z, 'obj_name': res.names[i].data[4:]}
+                objs.loc[len(objs)] = new_row
+                ###########################################################
         else:
             print('Objects list empty')
             return 'failed'

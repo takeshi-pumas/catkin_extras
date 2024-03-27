@@ -5,7 +5,7 @@ import tf2_ros
 import tf2_geometry_msgs
 import numpy as np
 import smach
-from smach_ros import ActionServerWrapper
+from smach_ros import ActionServerWrapper , IntrospectionServer
 import moveit_commander
 from geometry_msgs.msg import Pose, Point, Quaternion, PointStamped, PoseStamped, TransformStamped
 from shape_msgs.msg import SolidPrimitive
@@ -46,7 +46,7 @@ class GraspingStateMachine:
         #self.whole_body_w.allow_replanning(True)
         #self.whole_body_w.set_num_planning_attempts(10)
         #self.whole_body_w.set_planning_time(10.0)
-        self.whole_body.set_workspace([-2.0, -2.0, 0.0, 2.0, 2.0, 2.0])
+        self.whole_body.set_workspace([-20.0, -20.0, 0.0, 20.0, 20.0, 2.0])
         #self.whole_body_w.set_workspace([-2.0, -2.0, 2.0, 2.0])
         self.planning_frame = self.whole_body.get_planning_frame()
         print(self.planning_frame)
@@ -56,6 +56,8 @@ class GraspingStateMachine:
         # Crear la máquina de estados SMACH
         self.sm = smach.StateMachine(outcomes=['success', 'failure'],
                                      input_keys=["goal"])
+        sis = IntrospectionServer('SMACH_VIEW_SERVER', self.sm, '/GRASP ACTION')
+        sis.start()
         with self.sm:
             smach.StateMachine.add('APPROACH', smach.CBState(self.approach, outcomes=['success', 'failed']),
                                    transitions={'success':'GRASP', 'failed':'APPROACH'})
@@ -74,6 +76,7 @@ class GraspingStateMachine:
                                            goal_key='goal',
                                            result_key="action_done")
         self.wrapper.run_server()
+
 
 
 
