@@ -85,8 +85,6 @@ add_executable(led_node
   src/led_node.cpp)
 add_executable(mic_node
   src/mic_controller.cpp)
-add_executable(pc_filter_node
-  src/pc_filter_node.cpp)  
 
 
 ## Rename C++ executable without prefix
@@ -115,9 +113,5 @@ ${tf2_LIBRARIES}
 ${tf2_ros_LIBRARIES})
 
 target_link_libraries(mic_node
-  ${catkin_LIBRARIES}
-  )
-
-target_link_libraries(pc_filter_node
   ${catkin_LIBRARIES}
   )
