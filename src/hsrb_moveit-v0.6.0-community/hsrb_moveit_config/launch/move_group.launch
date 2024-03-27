@@ -52,7 +52,7 @@
     <param name="allow_trajectory_execution" value="$(arg allow_trajectory_execution)"/>
     <param name="max_safe_path_cost" value="$(arg max_safe_path_cost)"/>
     <param name="jiggle_fraction" value="$(arg jiggle_fraction)" />
-    <param name="default_workspace_bounds" value="2.0" />
+    <param name="default_workspace_bounds" value="20.0" />
 
     <!-- MoveGroup capabilities to load -->
     <param name="capabilities" value="move_group/MoveGroupCartesianPathService

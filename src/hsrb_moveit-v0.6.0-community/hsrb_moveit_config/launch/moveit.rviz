@@ -571,13 +571,47 @@ Visualization Manager:
       Frames:
         002_master_chef_can:
           Value: true
+        003_cracker_box:
+          Value: true
+        007_tuna_fish_can:
+          Value: true
+        012_strawberry:
+          Value: true
+        013_apple:
+          Value: true
+        019-a_pitcher_base:
+          Value: true
+        024_bowl:
+          Value: true
+        030_fork:
+          Value: true
+        031_spoon:
+          Value: true
+        033_spatula:
+          Value: true
+        050_medium_clamp:
+          Value: true
+        054_softball:
+          Value: true
+        065-h_cups:
+          Value: true
+        070-b_colored_wood_blocks:
+          Value: true
+        071_nine_hole_peg_test:
+          Value: true
         All Enabled: false
+        a_pitcher_base:
+          Value: true
+        apple:
+          Value: true
         arm_flex_link:
           Value: false
         arm_lift_link:
           Value: false
         arm_roll_link:
           Value: false
+        b_colored_wood_blocks:
+          Value: true
         base_b_bumper_link:
           Value: false
         base_f_bumper_link:
@@ -610,6 +644,14 @@ Visualization Manager:
           Value: false
         base_roll_link:
           Value: false
+        bowl:
+          Value: true
+        cracker_box:
+          Value: true
+        fork:
+          Value: true
+        h_cups:
+          Value: true
         hand_camera_frame:
           Value: false
         hand_camera_gazebo_frame:
@@ -674,6 +716,12 @@ Visualization Manager:
           Value: false
         map:
           Value: false
+        master_chef_can:
+          Value: true
+        medium_clamp:
+          Value: true
+        nine_hole_peg_test:
+          Value: true
         odom:
           Value: false
         pca_table:
@@ -682,12 +730,28 @@ Visualization Manager:
           Value: false
         place_shelf:
           Value: true
+        placing_area_low_shelf1:
+          Value: true
+        placing_area_mid_shelf1:
+          Value: true
+        placing_area_top_shelf1:
+          Value: true
         shelf:
+          Value: true
+        softball:
+          Value: true
+        spatula:
+          Value: true
+        spoon:
+          Value: true
+        strawberry:
           Value: true
         table:
           Value: false
         torso_lift_link:
           Value: false
+        tuna_fish_can:
+          Value: true
         wrist_flex_link:
           Value: false
         wrist_ft_sensor_frame:
@@ -706,9 +770,29 @@ Visualization Manager:
       Show Names: true
       Tree:
         map:
+          a_pitcher_base:
+            {}
+          apple:
+            {}
+          b_colored_wood_blocks:
+            {}
+          bowl:
+            {}
+          cracker_box:
+            {}
+          fork:
+            {}
+          h_cups:
+            {}
           kitchen:
             {}
           living_room:
+            {}
+          master_chef_can:
+            {}
+          medium_clamp:
+            {}
+          nine_hole_peg_test:
             {}
           odom:
             base_footprint:
@@ -785,6 +869,34 @@ Visualization Manager:
                         head_rgbd_sensor_rgb_frame:
                           002_master_chef_can:
                             {}
+                          003_cracker_box:
+                            {}
+                          007_tuna_fish_can:
+                            {}
+                          012_strawberry:
+                            {}
+                          013_apple:
+                            {}
+                          019-a_pitcher_base:
+                            {}
+                          024_bowl:
+                            {}
+                          030_fork:
+                            {}
+                          031_spoon:
+                            {}
+                          033_spatula:
+                            {}
+                          050_medium_clamp:
+                            {}
+                          054_softball:
+                            {}
+                          065-h_cups:
+                            {}
+                          070-b_colored_wood_blocks:
+                            {}
+                          071_nine_hole_peg_test:
+                            {}
             base_footprint_wheel:
               {}
           pca_table:
@@ -793,9 +905,25 @@ Visualization Manager:
             {}
           place_shelf:
             {}
+          placing_area_low_shelf1:
+            {}
+          placing_area_mid_shelf1:
+            {}
+          placing_area_top_shelf1:
+            {}
           shelf:
             {}
+          softball:
+            {}
+          spatula:
+            {}
+          spoon:
+            {}
+          strawberry:
+            {}
           table:
+            {}
+          tuna_fish_can:
             {}
           zero:
             {}
@@ -930,7 +1058,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 4.210620880126953
+      Distance: 5.853999137878418
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -938,17 +1066,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: -0.4843055009841919
-        Y: 0.1820305585861206
+        X: 3.1665756702423096
+        Y: -0.4069337844848633
         Z: -7.73270585341379e-07
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.0497965812683105
+      Pitch: 0.9647960662841797
       Target Frame: base_footprint
-      Yaw: 4.137700080871582
+      Yaw: 4.7826995849609375
     Saved: ~
 Window Geometry:
   Displays:

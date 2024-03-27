@@ -8,6 +8,7 @@ from cv_bridge import CvBridge, CvBridgeError
 from action_server.msg import GraspAction
 from std_msgs.msg import Float32MultiArray
 import numpy as np 
+from std_srvs.srv import Empty
 from smach_utils2 import OMNIBASE
 
 from utils import misc_utils, grasp_utils, nav_utils
@@ -23,9 +24,9 @@ brazo = grasp_utils.ARM()
 wrist = grasp_utils.WRIST_SENSOR()
 tf_man = misc_utils.TF_MANAGER()
 classify_client = rospy.ServiceProxy('/classify', Classify)
+clear_octo_client = rospy.ServiceProxy('/clear_octomap', Empty)   ###GRASPING OBSTACLE 
 
 bridge = CvBridge()
-
 def wait_for_push_hand(time=10):
 
     start_time = rospy.get_time()
@@ -123,13 +124,16 @@ class Scan_container(smach.State):
     def execute(self, userdata):
         rospy.loginfo("SMACH: Scan breakfast container")
         self.tries += 1
-        head.set_joint_values([0.0,-0.9])
-        rospy.sleep(1.0)
+        head.set_joint_values([0.0,-0.45])
+        rospy.sleep(3.0)
         image= cv2.cvtColor(rgbd.get_image(), cv2.COLOR_RGB2BGR)
         img_msg  = bridge.cv2_to_imgmsg(image)
         req      = classify_client.request_class()
         req.in_.image_msgs.append(img_msg)
         res      = classify_client(req)
+        print("WAITING")
+        rospy.sleep(3.0)
+        print("WAITING")
 
         userdata.obj_detected = [res.names, res.poses]#, res.confidence
         
@@ -157,13 +161,13 @@ class Decide_grasp(smach.State):
         for idx, obj_name in enumerate(userdata.obj_detected[0]):
             obj = obj_name.data.split('_', 1)
             print(obj)
-            target_object = 'spoon'
+            target_object = 'apple'
             if obj[1] == target_object:
                 succ = True
                 position.append(userdata.obj_detected[1][idx].position.x)
                 position.append(userdata.obj_detected[1][idx].position.y)
                 position.append(userdata.obj_detected[1][idx].position.z)
-                tf_man.pub_static_tf(pos = position, point_name = target_object, ref = 'head_rgbd_sensor_link')
+                tf_man.pub_tf(pos = position, point_name = target_object, ref = 'head_rgbd_sensor_link')
                 rospy.sleep(0.8)
                 break
         if succ:
@@ -172,10 +176,12 @@ class Decide_grasp(smach.State):
             pos[2] += 0.03
             target_pose.data = pos
             userdata.target_pose = target_pose
+            head.set_named_target('neutral')
+            clear_octo_client()
+
             return 'succ'
         else:
             return 'failed'
-
 
 
 if __name__ == '__main__':
@@ -195,6 +201,9 @@ if __name__ == '__main__':
         
         smach.StateMachine.add("DECIDE_GRASP", Decide_grasp(),              
                         transitions={'failed': 'SCAN_CONTAINER', 'succ': 'GRASP_GOAL'})
+
+
+        
         smach.StateMachine.add("GRASP_GOAL", SimpleActionState('grasp_server', GraspAction, goal_slots=['target_pose']),              
                         transitions={'preempted': 'END', 'succeeded': 'END', 'aborted': 'END'})
     

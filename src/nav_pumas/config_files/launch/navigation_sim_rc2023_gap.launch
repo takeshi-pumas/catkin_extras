@@ -89,8 +89,7 @@
   <node pkg="human_detector"  name="human_detector" type="pointing_detector_server.py"/>  
   <node pkg="leg_finder"  name="leg_finder_node" type="leg_finder_node"/>  
   <node pkg="human_follower"  name="human_follower_node" type="human_follower_node"/>  
-  <node pkg="action_server"  name="action_server_follow" type="ACT_SRVR_Follow.py"/>
-  <node pkg="action_server"  name="action_server_pickup" type="ACT_SRVR_Pickup_table.py"/>  
+  <node pkg="action_server"  name="action_server_grasp" type="ACT_SRVR_grasp_manoseado.py"/>  
   <node pkg="smach_viewer"  name="smach_viewer" type="smach_viewer.py"  />  
   
 

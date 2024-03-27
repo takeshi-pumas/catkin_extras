@@ -243,6 +243,10 @@ class Pickup(smach.State):
             omni_base.tiny_move(velX=-0.3, std_time=4.0)
             arm.set_named_target('go')
             arm.go()
+            
+            objs.drop(objs[objs['obj_name'] == target_object].index, inplace=True)
+            
+
         return 'succ'
         
 class Goto_shelf(smach.State):  
@@ -359,11 +363,8 @@ class Scan_shelf(smach.State):
         request= segmentation_server.request_class() 
         area_number=0
         self.tries += 1
-        if self.tries >= 4:
-            return 'succ'
-
-
-            
+        if self.tries >= 5:return 'succ'
+        if self.tries == 4:     
             regions={'shelves':np.load('/home/roboworks/Documents/shelf_sim.npy'),'pickup':np.load('/home/roboworks/Documents/pickup_sim.npy')}
             rospack = rospkg.RosPack()
             file_path = rospack.get_path('config_files') 
@@ -439,8 +440,7 @@ class Scan_shelf(smach.State):
             area_name_numbered= 'low_shelf'
             rospy.sleep(1.3)
         rospy.sleep(1.3)
-        ###############################################3
-        
+        ###############################################3        
         res=placing_finder_server.call(request)
         #succ=seg_res_tf(res)
         print (f'Placing Area at {res.poses.data}')
@@ -523,6 +523,8 @@ if __name__ == '__main__':
         smach.StateMachine.add("PICKUP",    Pickup(),       transitions={'failed': 'PICKUP',    
                                                                                          'succ': 'GOTO_SHELF',       
                                                                                          'tries': 'GOTO_PICKUP'})
+
+        
         
         ###################################################################################################################################################################
         
