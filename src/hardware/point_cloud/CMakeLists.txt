@@ -17,12 +17,23 @@ find_package(catkin REQUIRED COMPONENTS
   tf2
   tf2_ros
   tf2_geometry_msgs
+  message_generation
 )
 
+add_service_files(
+  FILES
+  PointCloudFilter.srv
+)
+
+generate_messages(
+  DEPENDENCIES
+  std_msgs
+  sensor_msgs
+)
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES point_cloud
-CATKIN_DEPENDS pcl_conversions pcl_ros roscpp rospy sensor_msgs std_msgs tf2 tf2_ros tf2_geometry_msgs
+CATKIN_DEPENDS pcl_conversions pcl_ros roscpp rospy sensor_msgs std_msgs tf2 tf2_ros tf2_geometry_msgs message_runtime
 #  DEPENDS system_lib
 )
 
@@ -38,11 +49,11 @@ include_directories(
 )
 
 
-add_executable(example src/example.cpp)
-target_link_libraries(example ${catkin_LIBRARIES})
+add_executable(plane_detector src/plane_detector.cpp)
+target_link_libraries(plane_detector ${catkin_LIBRARIES})
 
-add_executable(passthrough src/passthrough.cpp)
-target_link_libraries(passthrough 
+add_executable(passthrough_filter src/passthrough.cpp)
+target_link_libraries(passthrough_filter 
 ${catkin_LIBRARIES}
 ${tf2_LIBRARIES} 
 ${tf2_ros_LIBRARIES}
