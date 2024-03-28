@@ -33,11 +33,13 @@ class Initial(smach.State):
              
         global arm ,  hand_rgb , objs
         hand_rgb = HAND_RGB()
-        rospack = rospkg.RosPack()
+        ####KNOWLEDGE DATAFRAME 
+        rospack = rospkg.RosPack()        
         file_path = rospack.get_path('config_files') 
-        objs = pd.read_csv (file_path+'/objects.csv')
+        objs = pd.read_csv (file_path+'/objects.csv') #EMPTY DATAFRAME
         objs=objs.drop(columns='Unnamed: 0')
         print (objs)
+        ############################
         arm = moveit_commander.MoveGroupCommander('arm')
         head.set_named_target('neutral')
         rospy.sleep(0.8)
@@ -157,9 +159,11 @@ class Scan_table(smach.State):
         else:
             print('Objects list empty')
             return 'failed'
+        
         rospack = rospkg.RosPack()
-        file_path = rospack.get_path('config_files')         
-        regions={'shelves':np.load('/home/roboworks/Documents/shelf_sim.npy'),'pickup':np.load('/home/roboworks/Documents/pickup_sim.npy')}
+        file_path = rospack.get_path('config_files')+'/regions'         
+        regions={'shelves':np.load(file_path+'/shelf_sim.npy'),'pickup':np.load(file_path+'/pickup_sim.npy')}
+        #regions={'shelves':np.load('/home/roboworks/Documents/shelf_sim.npy'),'pickup':np.load('/home/roboworks/Documents/pickup_sim.npy')}
         def is_inside(x,y):return ((area_box[:,1].max() > y) and (area_box[:,1].min() < y)) and ((area_box[:,0].max() > x) and (area_box[0,0].min() < x)) 
         for name in regions:
             in_region=[]
@@ -171,6 +175,7 @@ class Scan_table(smach.State):
         objs['category'] = cats           
         return 'failed'
 #########################################################################################################
+
 class Pickup(smach.State):   
     def __init__(self):
         smach.State.__init__(self, output_keys=['target_pose'],outcomes=['succ', 'failed', 'tries'])
@@ -178,12 +183,12 @@ class Pickup(smach.State):
 
     def execute(self, userdata):
 
-        global cat
+        global cat,target_object
         rospy.loginfo('STATE : PICKUP')
         rob_pos,_=tf_man.getTF('base_link')
         pickup_objs=objs[objs['pickup']==True]
-        pickup_objs=pickup_objs[pickup_objs['z']>0.4]
-        print (objs)
+        pickup_objs=pickup_objs[pickup_objs['z']>0.4]#PICKUP AREA HEIGHT
+        
         print ('pickup_objs',pickup_objs)        
         ix=np.argmin(np.linalg.norm(rob_pos-pickup_objs[['x','y','z']]  .values  , axis=1))
         name, cat=pickup_objs[['obj_name','category']].iloc[ix]
@@ -201,6 +206,8 @@ class Pickup(smach.State):
         ###################
         head.set_named_target('neutral')
         rospy.sleep(0.5)
+        
+
         clear_octo_client()
         
             
@@ -220,11 +227,13 @@ class Goto_shelf(smach.State):
         self.tries += 1
         if self.tries == 3:
             return 'tries'
+        omni_base.tiny_move( velX=-0.2,std_time=4.2) 
         if self.tries == 1: talk('Navigating to, shelf')
         res = omni_base.move_base(known_location='shelf', time_out=200)
         print(res)
 
         if res:
+            self.tries=0
             return 'succ'
         else:
             talk('Navigation Failed, retrying')
@@ -305,7 +314,77 @@ class Place_shelf(smach.State):
         return'failed'
         
         
+#########################################################################################################
+class Check_grasp(smach.State):   
+    def __init__(self):
+        smach.State.__init__(self, output_keys=['target_pose'],outcomes=['succ', 'failed', 'tries'])
+        self.tries=0
 
+    def execute(self, userdata):
+        self.tries+=1
+        if self.tries>=4:
+            self.tries=0
+            return 'tries'
+        rospy.loginfo('STATE : Check Grasp')
+        omni_base.tiny_move( velX=-0.2,std_time=4.2) 
+
+        arm.set_named_target('go')
+
+        arm.go()
+        head.to_tf(target_object)
+        rospy.sleep(1.0)
+        img_msg  = bridge.cv2_to_imgmsg( cv2.cvtColor(rgbd.get_image(), cv2.COLOR_RGB2BGR))### GAZEBO BGR!?!??!
+        req      = classify_client.request_class()
+        req.in_.image_msgs.append(img_msg)
+        res      = classify_client(req)
+        objects=detect_object_yolo('all',res)   
+
+        def check_if_grasped(pose_target,test_pt,tolerance=0.05):return np.linalg.norm(pose_target-test_pt)<tolerance
+        ##############################
+        pose_target,_=tf_man.getTF(target_object)
+        #########################
+
+        if len (objects)!=0 :
+            for i in range(len(res.poses)):
+                
+                position = [res.poses[i].position.x ,res.poses[i].position.y,res.poses[i].position.z]
+                
+                object_point = PointStamped()
+                object_point.header.frame_id = "head_rgbd_sensor_rgb_frame"
+                object_point.point.x = position[0]
+                object_point.point.y = position[1]
+                object_point.point.z = position[2]
+                position_map = tfBuffer.transform(object_point, "map", timeout=rospy.Duration(1))
+                
+                tf_man.pub_static_tf(pos= [position_map.point.x,position_map.point.y,position_map.point.z], rot=[0,0,0,1], ref="map", point_name=res.names[i].data[4:] )
+                new_row = {'x': position_map.point.x, 'y': position_map.point.y, 'z': position_map.point.z, 'obj_name': res.names[i].data[4:]}
+                objs.loc[len(objs)] = new_row
+
+                
+                test_pt=np.asarray((position_map.point.x,position_map.point.y,position_map.point.z))
+                print (np.linalg.norm(pose_target-test_pt))
+                if check_if_grasped(pose_target,test_pt):
+                    print (f'Centroid found in area {test_pt}, obj_name: {res.names[i].data[4:]}')
+                    print ('Grasping May have failed')
+                    print (f'recalling grasp action on coordinates{test_pt} wrt map, converting to odom and action goal slot  ')
+                    pos, _ = tf_man.getTF(target_frame = target_object, ref_frame = 'odom')
+                    target_pose = Float32MultiArray()
+                    pos[2] += 0.03
+                    target_pose.data = pos
+                    userdata.target_pose = target_pose
+                    ###################
+                    head.set_named_target('neutral')
+                    rospy.sleep(0.5)
+                    clear_octo_client()
+                    return 'failed'
+        objs.drop(objs[objs['obj_name'] == target_object].index, inplace=True)
+        self.tries=0
+        return'succ'    
+                
+                
+                
+                
+                
 #########################################################################################################
 class Scan_shelf(smach.State):
     def __init__(self):
@@ -321,12 +400,12 @@ class Scan_shelf(smach.State):
         request= segmentation_server.request_class() 
         area_number=0
         self.tries += 1
-        if self.tries >= 5:return 'succ'
+        if self.tries >= 5:return 'succ' # ADJUST POSES AND HEIGHTS ,SHELVES TO BE SCANNED
         if self.tries == 4:     
-            regions={'shelves':np.load('/home/roboworks/Documents/shelf_sim.npy'),'pickup':np.load('/home/roboworks/Documents/pickup_sim.npy')}
+            
             rospack = rospkg.RosPack()
-            file_path = rospack.get_path('config_files') 
-            #regions={'shelves':np.load(file_path+'/shelves_region.npy'),'pickup':np.load(file_path+'/pickup_region.npy')}
+            file_path = rospack.get_path('config_files')+'/regions'         
+            regions={'shelves':np.load(file_path+'/shelf_sim.npy'),'pickup':np.load(file_path+'/pickup_sim.npy')}
             def is_inside(x,y):return ((area_box[:,1].max() > y) and (area_box[:,1].min() < y)) and ((area_box[:,0].max() > x) and (area_box[0,0].min() < x)) 
             for name in regions:
                 in_region=[]
@@ -482,8 +561,12 @@ if __name__ == '__main__':
                                                                                          'succ': 'GRASP_GOAL',       
                                                                                          'tries': 'GOTO_PICKUP'})
 
+        smach.StateMachine.add("CHECK_GRASP",    Check_grasp(),       transitions={'failed': 'GRASP_GOAL',    
+                                                                                         'succ': 'GOTO_SHELF',
+                                                                                         'tries': 'GOTO_PICKUP'})
+
         smach.StateMachine.add("GRASP_GOAL", SimpleActionState('grasp_server', GraspAction, goal_slots=['target_pose']),              
-                        transitions={'preempted': 'END', 'succeeded': 'GOTO_SHELF', 'aborted': 'GOTO_SHELF'})
+                        transitions={'preempted': 'END', 'succeeded': 'CHECK_GRASP', 'aborted': 'CHECK_GRASP'})
         
         ###################################################################################################################################################################
         

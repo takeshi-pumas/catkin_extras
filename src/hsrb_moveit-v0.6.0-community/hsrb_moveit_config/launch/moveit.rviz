@@ -569,7 +569,6 @@ Visualization Manager:
       Filter (whitelist): ""
       Frame Timeout: 15
       Frames:
-<<<<<<< HEAD
         002_master_chef_can:
           Value: true
         003_cracker_box:
@@ -604,10 +603,6 @@ Visualization Manager:
         a_pitcher_base:
           Value: true
         apple:
-=======
-        All Enabled: false
-        Target:
->>>>>>> b91a6fd6382909b50e0548425adc4f94968973bc
           Value: true
         arm_flex_link:
           Value: false
@@ -649,7 +644,6 @@ Visualization Manager:
           Value: false
         base_roll_link:
           Value: false
-<<<<<<< HEAD
         bowl:
           Value: true
         cracker_box:
@@ -657,9 +651,6 @@ Visualization Manager:
         fork:
           Value: true
         h_cups:
-=======
-        gaze:
->>>>>>> b91a6fd6382909b50e0548425adc4f94968973bc
           Value: true
         hand_camera_frame:
           Value: false
@@ -725,37 +716,11 @@ Visualization Manager:
           Value: false
         map:
           Value: false
-<<<<<<< HEAD
         master_chef_can:
           Value: true
         medium_clamp:
           Value: true
         nine_hole_peg_test:
-=======
-        object_0:
-          Value: true
-        object_0_norot:
-          Value: true
-        object_1:
-          Value: true
-        object_1_norot:
-          Value: true
-        object_2:
-          Value: true
-        object_2_norot:
-          Value: true
-        object_3:
-          Value: true
-        object_3_norot:
-          Value: true
-        object_4:
-          Value: true
-        object_4_norot:
-          Value: true
-        object_5:
-          Value: true
-        object_5_norot:
->>>>>>> b91a6fd6382909b50e0548425adc4f94968973bc
           Value: true
         odom:
           Value: false
@@ -763,7 +728,6 @@ Visualization Manager:
           Value: false
         pickup:
           Value: false
-<<<<<<< HEAD
         place_shelf:
           Value: true
         placing_area_low_shelf1:
@@ -782,12 +746,8 @@ Visualization Manager:
           Value: true
         strawberry:
           Value: true
-=======
->>>>>>> b91a6fd6382909b50e0548425adc4f94968973bc
         table:
           Value: false
-        target:
-          Value: true
         torso_lift_link:
           Value: false
         tuna_fish_can:
@@ -810,7 +770,6 @@ Visualization Manager:
       Show Names: true
       Tree:
         map:
-<<<<<<< HEAD
           a_pitcher_base:
             {}
           apple:
@@ -824,47 +783,16 @@ Visualization Manager:
           fork:
             {}
           h_cups:
-=======
-          Target:
-            {}
-          gaze:
->>>>>>> b91a6fd6382909b50e0548425adc4f94968973bc
             {}
           kitchen:
             {}
           living_room:
             {}
-<<<<<<< HEAD
           master_chef_can:
             {}
           medium_clamp:
             {}
           nine_hole_peg_test:
-=======
-          object_0:
-            {}
-          object_0_norot:
-            {}
-          object_1:
-            {}
-          object_1_norot:
-            {}
-          object_2:
-            {}
-          object_2_norot:
-            {}
-          object_3:
-            {}
-          object_3_norot:
-            {}
-          object_4:
-            {}
-          object_4_norot:
-            {}
-          object_5:
-            {}
-          object_5_norot:
->>>>>>> b91a6fd6382909b50e0548425adc4f94968973bc
             {}
           odom:
             base_footprint:
@@ -939,7 +867,6 @@ Visualization Manager:
                         head_rgbd_sensor_gazebo_frame:
                           {}
                         head_rgbd_sensor_rgb_frame:
-<<<<<<< HEAD
                           002_master_chef_can:
                             {}
                           003_cracker_box:
@@ -970,16 +897,12 @@ Visualization Manager:
                             {}
                           071_nine_hole_peg_test:
                             {}
-=======
-                          {}
->>>>>>> b91a6fd6382909b50e0548425adc4f94968973bc
             base_footprint_wheel:
               {}
           pca_table:
             {}
           pickup:
             {}
-<<<<<<< HEAD
           place_shelf:
             {}
           placing_area_low_shelf1:
@@ -1001,11 +924,6 @@ Visualization Manager:
           table:
             {}
           tuna_fish_can:
-=======
-          table:
-            {}
-          target:
->>>>>>> b91a6fd6382909b50e0548425adc4f94968973bc
             {}
           zero:
             {}

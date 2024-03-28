@@ -14,6 +14,7 @@ import time
 import moveit_commander
 import moveit_msgs.msg
 import tf2_ros
+import logging 
 from os import path
 from geometry_msgs.msg import PoseStamped, Point  , Quaternion , TransformStamped , Twist
 from tf2_geometry_msgs import PointStamped
@@ -55,6 +56,8 @@ global listener, broadcaster, tfBuffer, tf_static_broadcaster, scene, rgbd, head
 global clear_octo_client, goal,navclient,segmentation_server  , tf_man , omni_base, brazo, speech_recog_server, bridge, map_msg, pix_per_m, analyze_face , arm , set_grammar
 global recognize_action , classify_client,pointing_detect_server ,placing_finder_server,tfBuffer
 rospy.init_node('smach')
+logger = logging.getLogger('rosout')
+logger.setLevel(logging.ERROR)
 #head_mvit = moveit_commander.MoveGroupCommander('head')
 #gripper =  moveit_commander.MoveGroupCommander('gripper')
 #whole_body=moveit_commander.MoveGroupCommander('whole_body')

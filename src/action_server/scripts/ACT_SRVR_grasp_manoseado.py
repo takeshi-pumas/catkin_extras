@@ -86,6 +86,7 @@ class GraspingStateMachine:
         goal = self.sm.userdata.goal.target_pose.data
         pos = [goal[0], goal[1], goal[2]]
         self.add_collision_object(position = pos,dimensions = [0.05, 0.05, 0.05])
+        self.publish_known_areas()# Add Table
 
         self.gripper.open()
         pose_goal = [goal[0], goal[1], goal[2]]
@@ -161,6 +162,18 @@ class GraspingStateMachine:
         group.stop()
         return succ
 
+    def publish_known_areas(self, position = [6.0,5.2,0.3], rotation = [0,0,0,1], dimensions = [1.0 ,1.0, 0.2]):
+        
+        object_pose = PoseStamped()
+        object_pose.header.frame_id = self.whole_body.get_planning_frame()
+        object_pose.pose.position.x = position[0]
+        object_pose.pose.position.y = position[1]
+        object_pose.pose.position.z = position[2]
+        object_pose.pose.orientation.x = rotation[0]
+        object_pose.pose.orientation.y = rotation[1]
+        object_pose.pose.orientation.z = rotation[2]
+        object_pose.pose.orientation.w = rotation[3]
+        self.scene.add_box('table_storing', object_pose, size = (dimensions[0], dimensions[1], dimensions[2]))
     def add_collision_object(self, position = [0, 0, 0], rotation = [0,0,0,1], dimensions = [0.1 ,0.1, 0.1]):
         object_pose = PoseStamped()
         object_pose.header.frame_id = self.whole_body.get_planning_frame()

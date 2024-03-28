@@ -1,6 +1,7 @@
 <launch>  
  <remap from="/static_map" to="/get_distance_map"/>
  <remap from="/laser_2d_pose" to= "/global_pose"/>
+ <param name="log_level" value="error"/> 
  
   <!--node name="killer_node" pkg="killer_node" type="killer_node.py" output="screen"/-->
   <!--node name="fake_global_pose" pkg="killer_node" type="fake_global_pose.py" output="screen"/-->
