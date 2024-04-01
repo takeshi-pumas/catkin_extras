@@ -173,7 +173,7 @@ class Pickup(smach.State):
         self.tries = 0
 
     def execute(self, userdata):
-        global cat
+        global cat , target_object
         rospy.loginfo('STATE : PICKUP')
         rob_pos,_=tf_man.getTF('base_link')
         pickup_objs=objs[objs['pickup']==True]
@@ -231,7 +231,9 @@ class Pickup(smach.State):
         av=arm.get_current_joint_values()        
         pose,_=tf_man.getTF(target_frame='hand_palm_link',ref_frame=target_object)
         av[0]+=0.07-pose[2]
-        arm.go(av)
+        #arm.go(av)
+        #print (av)
+        brazo.set_joint_values(av[:-1])
         rospy.sleep(0.5)
         gripper.close(force=0.06)
         succ=brazo.check_grasp()
@@ -502,6 +504,80 @@ class Scan_shelf(smach.State):
         print(objs)
         
         return 'failed'
+class Check_grasp(smach.State):   
+    def __init__(self):
+        smach.State.__init__(self, output_keys=['target_pose'],outcomes=['succ', 'failed', 'tries'])
+        self.tries=0
+
+    def execute(self, userdata):
+        self.tries+=1
+        if self.tries>=4:
+            self.tries=0
+            return 'tries'
+        rospy.loginfo('STATE : Check Grasp')
+        omni_base.tiny_move( velX=-0.2,std_time=4.2) 
+
+        arm.set_named_target('go')
+
+        arm.go()
+        head.to_tf(target_object)
+        rospy.sleep(1.0)
+        img_msg  = bridge.cv2_to_imgmsg( cv2.cvtColor(rgbd.get_image(), cv2.COLOR_RGB2BGR))### GAZEBO BGR!?!??!
+        req      = classify_client.request_class()
+        req.in_.image_msgs.append(img_msg)
+        res      = classify_client(req)
+        objects=detect_object_yolo('all',res)   
+
+        def check_if_grasped(pose_target,test_pt,tolerance=0.05):return np.linalg.norm(pose_target-test_pt)<tolerance
+        ##############################
+        pose_target,_=tf_man.getTF(target_object)
+        #########################
+
+        if len (objects)!=0 :
+            for i in range(len(res.poses)):
+                
+                position = [res.poses[i].position.x ,res.poses[i].position.y,res.poses[i].position.z]
+                
+                object_point = PointStamped()
+                object_point.header.frame_id = "head_rgbd_sensor_rgb_frame"
+                object_point.point.x = position[0]
+                object_point.point.y = position[1]
+                object_point.point.z = position[2]
+                position_map = tfBuffer.transform(object_point, "map", timeout=rospy.Duration(1))
+                
+                tf_man.pub_static_tf(pos= [position_map.point.x,position_map.point.y,position_map.point.z], rot=[0,0,0,1], ref="map", point_name=res.names[i].data[4:] )
+                new_row = {'x': position_map.point.x, 'y': position_map.point.y, 'z': position_map.point.z, 'obj_name': res.names[i].data[4:]}
+                objs.loc[len(objs)] = new_row
+
+                
+                test_pt=np.asarray((position_map.point.x,position_map.point.y,position_map.point.z))
+                print (np.linalg.norm(pose_target-test_pt))
+                if check_if_grasped(pose_target,test_pt):
+                    print (f'Centroid found in area {test_pt}, obj_name: {res.names[i].data[4:]}')
+                    print ('Grasping May have failed')
+                    print (f'recalling grasp action on coordinates{test_pt} wrt map, converting to odom and action goal slot  ')
+                    pos, _ = tf_man.getTF(target_frame = target_object, ref_frame = 'odom')
+                    target_pose = Float32MultiArray()
+                    pos[2] += 0.03
+                    target_pose.data = pos
+                    userdata.target_pose = target_pose
+                    ###################
+                    head.set_named_target('neutral')
+                    rospy.sleep(0.5)
+                    clear_octo_client()
+                    return 'failed'
+        objs.drop(objs[objs['obj_name'] == target_object].index, inplace=True)
+        self.tries=0
+        return'succ'    
+                
+                
+                
+                
+
+        
+        
+
+##################################################################################################################################################################################################################
 
 # --------------------------------------------------
 def init(node_name):
@@ -552,8 +628,11 @@ if __name__ == '__main__':
                                                                                          'succ': 'GOTO_PLACE_SHELF',       
                                                                                          'tries': 'END'})
         smach.StateMachine.add("PICKUP",    Pickup(),       transitions={'failed': 'PICKUP',    
-                                                                                         'succ': 'GOTO_SHELF',       
+                                                                                         'succ': 'CHECK_GRASP',
                                                                                          'tries': 'GOTO_PICKUP'})
+        smach.StateMachine.add("CHECK_GRASP",    Check_grasp(),       transitions={'failed': 'PICKUP',    
+                                                                                       'succ': 'GOTO_SHELF',
+                                                                                        'tries': 'SCAN_TABLE'})
         
         ###################################################################################################################################################################
         

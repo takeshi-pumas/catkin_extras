@@ -32,7 +32,7 @@ class GraspingStateMachine:
         moveit_commander.roscpp_initialize(sys.argv)
         self.robot = moveit_commander.RobotCommander()
         self.scene = moveit_commander.PlanningSceneInterface()
-        self.whole_body = moveit_commander.MoveGroupCommander("whole_body_weighted")
+        self.whole_body = moveit_commander.MoveGroupCommander("whole_body")
         #self.whole_body_w = moveit_commander.MoveGroupCommander("whole_body_weighted")
         #self.arm = moveit_commander.MoveGroupCommander("arm")
         self.grasp_approach = "above" #above / frontal
@@ -60,7 +60,7 @@ class GraspingStateMachine:
         sis.start()
         with self.sm:
             smach.StateMachine.add('APPROACH', smach.CBState(self.approach, outcomes=['success', 'failed']),
-                                   transitions={'success':'GRASP', 'failed':'APPROACH'})
+                                   transitions={'success':'GRASP', 'failed':'APPROACH' })
             smach.StateMachine.add('GRASP', smach.CBState(self.grasp, outcomes=['success', 'failed']),
                                    transitions={'success':'RETREAT', 'failed': 'GRASP'})
             smach.StateMachine.add('RETREAT', smach.CBState(self.retreat, outcomes=['success', 'failed']),
@@ -165,7 +165,7 @@ class GraspingStateMachine:
     def publish_known_areas(self, position = [6.0,5.2,0.3], rotation = [0,0,0,1], dimensions = [1.0 ,1.0, 0.2]):
         
         object_pose = PoseStamped()
-        object_pose.header.frame_id = self.whole_body.get_planning_frame()
+        object_pose.header.frame_id = 'map'
         object_pose.pose.position.x = position[0]
         object_pose.pose.position.y = position[1]
         object_pose.pose.position.z = position[2]

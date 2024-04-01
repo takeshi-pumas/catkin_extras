@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 from smach_utils2 import *
 from smach_ros import SimpleActionState
+from action_server.msg import GraspAction
+from std_msgs.msg import Float32MultiArray
 
 
 def categorize_objs(name):
@@ -37,7 +39,7 @@ class Initial(smach.State):
         hand_rgb = HAND_RGB()
         rospack = rospkg.RosPack()
         file_path = rospack.get_path('config_files') 
-        objs = pd.read_csv (file_path+'/objects.csv')
+        objs = pd.read_csv (file_path+'/objects.csv')#EMPTY DATAFRAME
         objs=objs.drop(columns='Unnamed: 0')
 
         print (objs)
@@ -68,7 +70,7 @@ class Wait_push_hand(smach.State):
         talk('Gently... push my hand to begin')
         
         
-        succ = wait_for_push_hand(100) # NOT GAZEBABLE
+        succ = wait_for_push_hand(100) 
         if succ:
             return 'succ'
         else:
@@ -90,7 +92,7 @@ class Goto_pickup(smach.State):
             self.tries = 0
             return 'tries'
         
-        res = omni_base.move_base(known_location='pickup', time_out=200)
+        res = omni_base.move_base(known_location='pickup', time_out=20)
 ##################################################################First TIme Only go        
         if self.tries == 1: 
             talk('Navigating to, pickup')
@@ -152,6 +154,7 @@ class Scan_table(smach.State):
         else:
             print('Objects list empty')
             return 'failed'     
+        
         rospack = rospkg.RosPack()
         file_path = rospack.get_path('config_files')+'/regions'         
         regions={'shelves':np.load(file_path+'/shelves_region.npy'),'pickup':np.load(file_path+'/pickup_region.npy')}
@@ -169,7 +172,7 @@ class Scan_table(smach.State):
 #########################################################################################################
 class Pickup(smach.State):   
     def __init__(self):
-        smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
+        smach.State.__init__(self, output_keys=['target_pose'], outcomes=['succ', 'failed', 'tries'])
         self.tries = 0
 
     def execute(self, userdata):
@@ -581,7 +584,7 @@ if __name__ == '__main__':
                                                                                          'succ': 'GOTO_PLACE_SHELF',       
                                                                                          'tries': 'END'})
         smach.StateMachine.add("PICKUP",    Pickup(),       transitions={'failed': 'PICKUP',    
-                                                                                         'succ': 'GOTO_SHELF',       
+                                                                                          'succ': 'GRASP_GOAL',         
                                                                                          'tries': 'GOTO_PICKUP'})
         smach.StateMachine.add("CHECK_GRASP",    Check_grasp(),       transitions={'failed': 'GRASP_GOAL',    
                                                                                        'succ': 'GOTO_SHELF',

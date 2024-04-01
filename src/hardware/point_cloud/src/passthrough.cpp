@@ -20,7 +20,7 @@ tf2_ros::Buffer tf_buffer;
 bool transformPointCloud(const std::string& target_frame, const pcl::PointCloud<pcl::PointXYZ>::ConstPtr& cloud_in,
                          pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud_out) {
     //static tf2_ros::TransformListener tf_listener(tf_buffer);
-    ros::Time now = ros::Time::now();
+    ros::Time now = ros::Time(0); //::now();
     ros::Duration duration = ros::Duration(0.5);
     geometry_msgs::TransformStamped transformStamped;
     try {
