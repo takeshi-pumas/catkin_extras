@@ -15,10 +15,11 @@ import ros_numpy
 import os
 import matplotlib.pyplot as plt
 import cv2 
+from collections import Counter
 from sensor_msgs.msg import Image , LaserScan , PointCloud2
 from geometry_msgs.msg import TransformStamped, Pose
 from tf2_sensor_msgs.tf2_sensor_msgs import do_transform_cloud
-
+from utils.misc_utils import TF_MANAGER
 
 #-----------------------------------------------------------------
 global tf_listener, ptcld_lis, broadcaster , bridge , net , b_tf, b_st
@@ -196,7 +197,8 @@ def detect_pointing(points_msg):
     vd=[0,0,0]
     if 'right_wrist' in found_joints.keys() and 'right_elbow' in found_joints.keys():
         
-        pc_np_array = np.array([(found_joints['right_elbow'][0], found_joints['right_elbow'][1], found_joints['right_elbow'][2]),(found_joints['right_wrist'][0],found_joints['right_wrist'][1],found_joints['right_wrist'][2])]
+        pc_np_array = np.array([(found_joints['right_elbow'][0], found_joints['right_elbow'][1], found_joints['right_elbow'][2]),
+                                 (found_joints['right_wrist'][0],found_joints['right_wrist'][1],found_joints['right_wrist'][2])]
          , dtype=[('x', 'f4'), ('y', 'f4'), ('z', 'f4')])
         #pc_np_array = np.array([found_joints['right_elbow'], found_joints['right_wrist'], (0.0, 0.0, 0.0)], dtype=[('x', 'f4'), ('y', 'f4'), ('z', 'f4')])
         points_msg=ros_numpy.msgify(PointCloud2,pc_np_array,rospy.Time.now(),'head_rgbd_sensor_rgb_frame')
@@ -410,6 +412,8 @@ def detect_pointing(points_msg):
     return res    
 
 def detect_pointing2(points_msg):
+    tf_man = TF_MANAGER()
+    res=Point_detectorResponse()
     points_data = ros_numpy.numpify(points_msg)    
     image_data = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]   
     image=cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
@@ -426,11 +430,95 @@ def detect_pointing2(points_msg):
 
     poses = getconectionJoints(output,inHeight,inWidth)
     imageDraw = drawSkeletons(image,poses,plot=False)
-
+    print(os.path.expanduser( '~' )+"/Documents/tmpPOINTING.jpg")
+    cv2.imwrite(os.path.expanduser( '~' )+"/Documents/tmpPOINTING.jpg",imageDraw)
     res.debug_image.append(bridge.cv2_to_imgmsg(imageDraw))
 
     # FALTA COMPARAR CON LA TF HUMAN Y VER CUAL ES LA MAS CERCANA (TODO LO DE ROS)
+    dists=[]
+    for i,pose in enumerate(poses):
+        if pose[0,0] != 0:
+            print(pose[0,0],pose[0,1],pose[0])
+            pose_xyz =[points_data['x'][int(pose[0,1]), int(pose[0,0])],
+                       points_data['y'][int(pose[0,1]), int(pose[0,0])],
+                       points_data['z'][int(pose[0,1]), int(pose[0,0])]]
+            print("LINALG NORM",np.linalg.norm(pose_xyz))
+            dists.append(np.linalg.norm(pose_xyz)) 
+            print("pose ",i," : ",pose_xyz)
+            t=write_tf((pose_xyz[0],pose_xyz[1],pose_xyz[2]),(0,0,0,1),'person_'+str(i),parent_frame='head_rgbd_sensor_rgb_frame')
+            b_st.sendTransform(t)
+            rospy.sleep(0.3)
+        elif pose[0,0] == 0 and pose[1,0] != 0:
+            print(pose[1,0],pose[1,1])
+            pose_xyz =[points_data['x'][int(pose[1,1]), int(pose[1,0])],
+                       points_data['y'][int(pose[1,1]), int(pose[1,0])],
+                       points_data['z'][int(pose[1,1]), int(pose[1,0])]]
+            
+            print("pose ",i," : ",pose_xyz)
+            dists.append(np.linalg.norm(pose_xyz)) 
+            t=write_tf((pose_xyz[0],pose_xyz[1],pose_xyz[2]),(0,0,0,1),'person_'+str(i),parent_frame='head_rgbd_sensor_rgb_frame')
+            b_st.sendTransform(t)
+            rospy.sleep(0.3)
+        else:
+            print("NO HAY DATOS PARA PUBLICAR")   
 
+    print("dists",dists)
+
+    print(np.min(dists),np.argmin(dists))
+    k=0
+    if len(dists)>1:
+        print("MUCHAS PERSONAS")
+        # DE TODAS LAS DISTANCIAS OBTENGO EL INDICE DE LA MAS PEQUEÑA
+        k= np.argmin(dists)
+    # PUBLICO CODOS Y MANOS DE LA PERSONA k Y OBTENGO COORDENADAS RESPECTO A MAPA    
+    codoD =[points_data['x'][int(poses[k,3,1]), int(poses[k,3,0])],
+            points_data['y'][int(poses[k,3,1]), int(poses[k,3,0])],
+            points_data['z'][int(poses[k,3,1]), int(poses[k,3,0])]]
+    codoI =[points_data['x'][int(poses[k,6,1]), int(poses[k,6,0])],
+            points_data['y'][int(poses[k,6,1]), int(poses[k,6,0])],
+            points_data['z'][int(poses[k,6,1]), int(poses[k,6,0])]]
+    manoD =[points_data['x'][int(poses[k,4,1]), int(poses[k,4,0])],
+            points_data['y'][int(poses[k,4,1]), int(poses[k,4,0])],
+            points_data['z'][int(poses[k,4,1]), int(poses[k,4,0])]]
+    manoI =[points_data['x'][int(poses[k,7,1]), int(poses[k,7,0])],
+            points_data['y'][int(poses[k,7,1]), int(poses[k,7,0])],
+            points_data['z'][int(poses[k,7,1]), int(poses[k,7,0])]]
+            
+    
+    t=write_tf((codoD[0],codoD[1],codoD[2]),(0,0,0,1),'codoD',parent_frame='head_rgbd_sensor_rgb_frame')
+    b_st.sendTransform(t)
+    rospy.sleep(0.3)
+    t=write_tf((codoI[0],codoI[1],codoI[2]),(0,0,0,1),'codoI',parent_frame='head_rgbd_sensor_rgb_frame')
+    b_st.sendTransform(t)
+    rospy.sleep(0.3)
+    t=write_tf((manoD[0],manoD[1],manoD[2]),(0,0,0,1),'manoD',parent_frame='head_rgbd_sensor_rgb_frame')
+    b_st.sendTransform(t)
+    rospy.sleep(0.3)
+    t=write_tf((manoI[0],manoI[1],manoI[2]),(0,0,0,1),'manoI',parent_frame='head_rgbd_sensor_rgb_frame')
+    b_st.sendTransform(t)
+    rospy.sleep(0.7)
+
+    tf_man.change_ref_frame_tf(point_name='codoD')
+    tf_man.change_ref_frame_tf(point_name='codoI')
+    tf_man.change_ref_frame_tf(point_name='manoD')
+    tf_man.change_ref_frame_tf(point_name='manoI')
+    """v1=[-(manoD[0]-codoD[0]),-1-(manoD[1]-codoD[1]),-(manoD[2]-codoD[2])]
+    v2=[-(manoI[0]-codoI[0]),-1-(manoI[1]-codoI[1]),-(manoI[2]-codoI[2])]
+      
+    print("VD",v1," LINALG",np.linalg.norm(v1))
+    print("VI",v2," LINALG",np.linalg.norm(v2))
+
+    print("VD 2",[-(manoD[0]-codoD[0]),-(manoD[1]-codoD[1]),-1-(manoD[2]-codoD[2])],
+          " LINALG",np.linalg.norm([-(manoD[0]-codoD[0]),-(manoD[1]-codoD[1]),-1-(manoD[2]-codoD[2])]))
+    print("VI 2",[-(manoI[0]-codoI[0]),-(manoI[1]-codoI[1]),-1-(manoI[2]-codoI[2])],
+          " LINALG",np.linalg.norm([-(manoI[0]-codoI[0]),-(manoI[1]-codoI[1]),-1-(manoI[2]-codoI[2])]))
+    
+    print("VD 3",[-1-(manoD[0]-codoD[0]),-(manoD[1]-codoD[1]),-(manoD[2]-codoD[2])],
+          " LINALG",np.linalg.norm([-1-(manoD[0]-codoD[0]),-(manoD[1]-codoD[1]),-(manoD[2]-codoD[2])]))
+    print("VI 3",[-1-(manoI[0]-codoI[0]),-(manoI[1]-codoI[1]),-(manoI[2]-codoI[2])],
+          " LINALG",np.linalg.norm([-1-(manoI[0]-codoI[0]),-(manoI[1]-codoI[1]),-(manoI[2]-codoI[2])]))
+    """
+    return res
     # DESPUES OBTENER POINTING POR CADA BRAZO 
 
     # DESPUES EL QUE SI ESTA APUNTANDO SACAR TF
@@ -538,7 +626,7 @@ def detect_all(points_msg):
 # FUNCIONES PARA DETECTAR TODOS LOS KEYPOINTS
 
 #--------------------------------------
-def getKeypoints(output,numKeys=9,thresholdKey=110):
+def getKeypoints(output,inWidth, inHeight,numKeys=9,thresholdKey=110):
     # se obtiene primero los keypoints 
     keypoints=[]
     for i in range (numKeys):
@@ -636,7 +724,7 @@ def getconectionJoints(output,inHeight,inWidth,thresKeyP=110,numKeys=9 ):
     conections = [[57,0,1],[40,1,2],[43,2,3],[45,3,4],[48,1,5],[51,5,6],[53,6,7]] #primero puede ser NO necesario
     
     # se obtiene primero los keypoints 
-    keypoints = getKeypoints(output,numKeys,thresholdKey=thresKeyP)
+    keypoints = getKeypoints(output,inWidth, inHeight,numKeys,thresholdKey=thresKeyP)
 
     # cuento max personas encontradas
     conteo=Counter([i[-1] for i in keypoints])
