@@ -7,6 +7,7 @@ import cv2
 from cv_bridge import CvBridge, CvBridgeError
 from action_server.msg import GraspAction
 from std_msgs.msg import Float32MultiArray
+from std_srvs.srv import Empty
 import numpy as np 
 
 from utils import misc_utils, grasp_utils, nav_utils
@@ -20,6 +21,7 @@ brazo = grasp_utils.ARM()
 wrist = grasp_utils.WRIST_SENSOR()
 tf_man = misc_utils.TF_MANAGER()
 classify_client = rospy.ServiceProxy('/classify', Classify)
+clear_octo_client = rospy.ServiceProxy('/clear_octomap', Empty)
 
 bridge = CvBridge()
 
@@ -119,21 +121,18 @@ class Scan_container(smach.State):
     def execute(self, userdata):
         rospy.loginfo("SMACH: Scan breakfast container")
         self.tries += 1
-        head.set_joint_values([0.0,-0.9])
+        #head_values = [0.0,-0.9]
+        head_values = [0.0,-0.4]
+        head.set_joint_values(head_values)
         rospy.sleep(1.0)
-        image= cv2.cvtColor(rgbd.get_image(), cv2.COLOR_RGB2BGR)
-        img_msg  = bridge.cv2_to_imgmsg(image)
+        #image= cv2.cvtColor(rgbd.get_image(), cv2.COLOR_RGB2BGR)
+        img_msg  = bridge.cv2_to_imgmsg(rgbd.get_image())
         req      = classify_client.request_class()
         req.in_.image_msgs.append(img_msg)
         res      = classify_client(req)
 
         userdata.obj_detected = [res.names, res.poses]#, res.confidence
         
-        #print(userdata.obj_detected)
-        #print(res)
-
-        # for i  in range(len(res.names)):
-        #     pass
         return 'succ'
 
 class Decide_grasp(smach.State):
@@ -143,9 +142,11 @@ class Decide_grasp(smach.State):
                              output_keys=['target_pose'],
                              outcomes = ['succ', 'failed'])
         self.tries = 0
+        self.to_grasp = ["spoon", "bowl", "milk", "cereal"]
     def execute(self, userdata):
         rospy.loginfo("SMACH : Decide which object is better to grasp")
         self.tries += 1
+
         #print(userdata.obj_detected)
         #head.set_named_target('neutral')
         succ = False
@@ -153,16 +154,17 @@ class Decide_grasp(smach.State):
         for idx, obj_name in enumerate(userdata.obj_detected[0]):
             obj = obj_name.data.split('_', 1)
             print(obj)
-            target_object = 'spoon'
+            target_object = 'dice'
             if obj[1] == target_object:
                 succ = True
                 position.append(userdata.obj_detected[1][idx].position.x)
                 position.append(userdata.obj_detected[1][idx].position.y)
                 position.append(userdata.obj_detected[1][idx].position.z)
-                tf_man.pub_static_tf(pos = position, point_name = target_object, ref = 'head_rgbd_sensor_link')
+                tf_man.pub_static_tf(pos = position, point_name = target_object, ref = 'head_rgbd_sensor_rgb_frame')
                 rospy.sleep(0.8)
                 break
         if succ:
+            clear_octo_client()
             pos, _ = tf_man.getTF(target_frame = target_object, ref_frame = 'odom')
             target_pose = Float32MultiArray()
             pos[2] += 0.03

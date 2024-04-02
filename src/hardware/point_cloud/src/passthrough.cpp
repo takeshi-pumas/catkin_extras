@@ -95,7 +95,10 @@ int main(int argc, char** argv) {
     //tf_buffer.setUsingDedicatedThread(true);
 
     tf2_ros::TransformListener tf_listener(tf_buffer);
-    //tf_listener_ptr = &tf_listener;
+    ROS_INFO("Passthrough filter node active");
+    ROS_INFO("Point Cloud filtered topic: /filtered_point_cloud");
+    ROS_INFO("Point Cloud filtered Service: /filter_point_cloud");
+    ros::Duration(0.5).sleep();
     // Suscribe al tópico de la nube de puntos de la cámara
     ros::Subscriber sub = nh.subscribe("/hsrb/head_rgbd_sensor/depth_registered/rectified_points", 1, pointCloudCallback);
 

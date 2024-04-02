@@ -33,6 +33,7 @@ class GraspingStateMachine:
         self.robot = moveit_commander.RobotCommander()
         self.scene = moveit_commander.PlanningSceneInterface()
         self.whole_body = moveit_commander.MoveGroupCommander("whole_body")
+        self.base = moveit_commander.MoveGroupCommander("base")
         #self.whole_body_w = moveit_commander.MoveGroupCommander("whole_body_weighted")
         #self.arm = moveit_commander.MoveGroupCommander("arm")
         self.grasp_approach = "above" #above / frontal
@@ -112,7 +113,6 @@ class GraspingStateMachine:
         elif self.grasp_approach == "above":
             grasp_pose.position.z -= 0.05  # Descender hacia la pieza
         succ = self.move_to_pose(self.whole_body, grasp_pose)'''
-
         joint_values = self.brazo.get_joint_values()
         joint_values[0] -= 0.12
         self.brazo.set_joint_values(joint_values)
@@ -134,6 +134,7 @@ class GraspingStateMachine:
         joint_values = self.brazo.get_joint_values()
         joint_values[0] += 0.15
         self.brazo.set_joint_values(joint_values)
+        self.retreat_base(0.30)
         return 'success'
         # if succ:
         #     return 'success'
@@ -146,6 +147,23 @@ class GraspingStateMachine:
         return "success"
     
     # ----------------------------------------------------------
+    def retreat_base(self, distance):
+        current_pose = self.base.get_current_pose()
+        start_pose = current_pose.pose
+
+        # Calculating the target position
+        target_pose = Pose()
+        target_pose.position.x = start_pose.position.x - distance
+        target_pose.position.y = start_pose.position.y
+        target_pose.position.z = start_pose.position.z
+        target_pose.orientation = start_pose.orientation
+
+        # Planning to the target position
+        self.base.set_pose_target(target_pose)
+        plan = self.base.go(wait=True)
+        self.base.stop()
+        self.base.clear_pose_targets()
+
     def move_to_position(self, group, position_goal):
         group.set_start_state_to_current_state()
         group.set_position_target(position_goal)

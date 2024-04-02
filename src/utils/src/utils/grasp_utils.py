@@ -315,3 +315,49 @@ class ARM:
                 rospy.logwarn("Failed to get transform: {}".format(str(e)))
                 continue
         return succ
+
+
+from geometry_msgs.msg import Twist
+import math
+
+class BASE:
+    def __init__(self, cmd_vel_topic='/hsrb/command_velocity'):
+        self._base_vel_pub = rospy.Publisher(cmd_vel_topic, Twist, queue_size=10)
+        self.velX = 0
+        self.velY = 0
+        self.velT = 0
+        self.timeout = 0.5
+        self.MAX_VEL = 0.03
+        self.MAX_VEL_THETA = 0.5
+
+    def _move_base_vel(self):
+        twist = Twist()
+        twist.linear.x = self.velX
+        twist.linear.y = self.velY
+        twist.angular.z = self.velT
+        self._base_vel_pub.publish(twist)
+
+    def _move_base_time(self):
+        start_time = rospy.Time.now().to_sec()
+        end_time = start_time + self.timeout
+        while rospy.Time.now().to_sec() < end_time and not rospy.is_shutdown():
+            self._move_base_vel()
+
+    def tiny_move(self, velX=0, velY=0, velT=0, std_time=0.5, MAX_VEL=0.03, MAX_VEL_THETA=0.5):
+        self.MAX_VEL = MAX_VEL
+        self.MAX_VEL_THETA = MAX_VEL_THETA
+        self.timeout = std_time
+        
+        # Limit velocities
+        self.velX = self.limit_velocity(velX, MAX_VEL)
+        self.velY = self.limit_velocity(velY, MAX_VEL)
+        self.velT = self.limit_velocity(velT, MAX_VEL_THETA)
+        
+        self._move_base_time()
+    
+    def limit_velocity(self, velocity, max_velocity):
+        return max_velocity * math.copysign(1, velocity) if abs(velocity) > max_velocity else velocity
+    
+    def turn_radians(self, time, radians):
+        vel_theta = radians / time
+        self.tiny_move(velT= vel_theta, std_time= time, MAX_VEL_THETA= vel_theta)
