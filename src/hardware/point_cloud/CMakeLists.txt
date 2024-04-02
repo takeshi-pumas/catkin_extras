@@ -8,16 +8,16 @@ project(point_cloud)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  pcl_conversions
-  pcl_ros
   roscpp
   rospy
   sensor_msgs
   std_msgs
+  message_generation
+  pcl_conversions
+  pcl_ros
   tf2
   tf2_ros
   tf2_geometry_msgs
-  message_generation
 )
 
 add_service_files(
@@ -31,9 +31,19 @@ generate_messages(
   sensor_msgs
 )
 catkin_package(
+  CATKIN_DEPENDS 
+  roscpp 
+  rospy 
+  std_msgs 
+  sensor_msgs 
+  message_runtime
+  pcl_conversions 
+  pcl_ros 
+  tf2 
+  tf2_ros 
+  tf2_geometry_msgs 
 #  INCLUDE_DIRS include
 #  LIBRARIES point_cloud
-CATKIN_DEPENDS pcl_conversions pcl_ros roscpp rospy sensor_msgs std_msgs tf2 tf2_ros tf2_geometry_msgs message_runtime
 #  DEPENDS system_lib
 )
 
@@ -47,12 +57,23 @@ include_directories(
 # include
   ${catkin_INCLUDE_DIRS}
 )
+add_executable(passthrough_filter 
+src/passthrough.cpp)
 
+add_executable(plane_detector 
+  src/plane_detector.cpp)
 
-add_executable(plane_detector src/plane_detector.cpp)
-target_link_libraries(plane_detector ${catkin_LIBRARIES})
+add_dependencies(plane_detector 
+${${PROJECT_NAME}_EXPORTED_TARGETS}
+${catkin_EXPORTED_TARGETS})
 
-add_executable(passthrough_filter src/passthrough.cpp)
+add_dependencies(passthrough_filter
+${${PROJECT_NAME}_EXPORTED_TARGETS} 
+${catkin_EXPORTED_TARGETS})
+
+target_link_libraries(plane_detector 
+${catkin_LIBRARIES})
+
 target_link_libraries(passthrough_filter 
 ${catkin_LIBRARIES}
 ${tf2_LIBRARIES} 
