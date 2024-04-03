@@ -19,7 +19,7 @@ from collections import Counter
 from sensor_msgs.msg import Image , LaserScan , PointCloud2
 from geometry_msgs.msg import TransformStamped, Pose
 from tf2_sensor_msgs.tf2_sensor_msgs import do_transform_cloud
-from utils.misc_utils import TF_MANAGER
+#from utils.misc_utils import TF_MANAGER
 
 #-----------------------------------------------------------------
 global tf_listener, ptcld_lis, broadcaster , bridge , net , b_tf, b_st
@@ -30,7 +30,7 @@ tfBuffer = tf2_ros.Buffer()
 listener = tf2_ros.TransformListener(tfBuffer)
 b_tf=tf2_ros.TransformBroadcaster()
 b_st=tf2_ros.StaticTransformBroadcaster()
-
+_tfbuff = tf2_ros.Buffer()
 
 usr_url=os.path.expanduser( '~' )
 protoFile = usr_url+"/openpose/models/pose/body_25/pose_deploy.prototxt"
@@ -73,10 +73,44 @@ def read_tf(t):
         ))
     
     return pose, quat
-
 #-----------------------------------------------------------------
 
+def getTF(target_frame='', ref_frame='map'):
+        try:
+            tf = tfBuffer.lookup_transform(
+                ref_frame, target_frame, rospy.Time(0), rospy.Duration(1.5))
+            return tf2_obj_2_arr(tf)
+        except:
+            return [False, False]
+#-----------------------------------------------------------------
+def tf2_obj_2_arr(transf):
+        pos = []
+        pos.append(transf.transform.translation.x)
+        pos.append(transf.transform.translation.y)
+        pos.append(transf.transform.translation.z)
 
+        rot = []
+        rot.append(transf.transform.rotation.x)
+        rot.append(transf.transform.rotation.y)
+        rot.append(transf.transform.rotation.z)
+        rot.append(transf.transform.rotation.w)
+
+        return [pos, rot]
+#-----------------------------------------------------------------
+def change_ref_frame_tf(point_name='', rotational=[0, 0, 0, 1], new_frame='map'):
+        try:
+            traf = tfBuffer.lookup_transform(
+                new_frame, point_name, rospy.Time(0))
+            translation, _ = tf2_obj_2_arr(traf)
+            print("TRANSLATION",translation)
+            t=write_tf(pose=translation,q=rotational,child_frame=point_name,parent_frame=new_frame)
+            b_st.sendTransform(t)
+            return True
+        except:
+            return False
+#-----------------------------------------------------------------
+
+#-----------------------------------------------------------------
 def probmap_to_3d_mean(points_data,probMap, thres_prob=0.3):
     ##Prob map to 3d point
 
@@ -412,7 +446,7 @@ def detect_pointing(points_msg):
     return res    
 
 def detect_pointing2(points_msg):
-    tf_man = TF_MANAGER()
+    #tf_man = TF_MANAGER()
     res=Point_detectorResponse()
     points_data = ros_numpy.numpify(points_msg)    
     image_data = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]   
@@ -442,9 +476,7 @@ def detect_pointing2(points_msg):
             pose_xyz =[points_data['x'][int(pose[0,1]), int(pose[0,0])],
                        points_data['y'][int(pose[0,1]), int(pose[0,0])],
                        points_data['z'][int(pose[0,1]), int(pose[0,0])]]
-            print("LINALG NORM",np.linalg.norm(pose_xyz))
             dists.append(np.linalg.norm(pose_xyz)) 
-            print("pose ",i," : ",pose_xyz)
             t=write_tf((pose_xyz[0],pose_xyz[1],pose_xyz[2]),(0,0,0,1),'person_'+str(i),parent_frame='head_rgbd_sensor_rgb_frame')
             b_st.sendTransform(t)
             rospy.sleep(0.3)
@@ -454,7 +486,6 @@ def detect_pointing2(points_msg):
                        points_data['y'][int(pose[1,1]), int(pose[1,0])],
                        points_data['z'][int(pose[1,1]), int(pose[1,0])]]
             
-            print("pose ",i," : ",pose_xyz)
             dists.append(np.linalg.norm(pose_xyz)) 
             t=write_tf((pose_xyz[0],pose_xyz[1],pose_xyz[2]),(0,0,0,1),'person_'+str(i),parent_frame='head_rgbd_sensor_rgb_frame')
             b_st.sendTransform(t)
@@ -462,12 +493,10 @@ def detect_pointing2(points_msg):
         else:
             print("NO HAY DATOS PARA PUBLICAR")   
 
-    print("dists",dists)
 
     print(np.min(dists),np.argmin(dists))
     k=0
     if len(dists)>1:
-        print("MUCHAS PERSONAS")
         # DE TODAS LAS DISTANCIAS OBTENGO EL INDICE DE LA MAS PEQUEÑA
         k= np.argmin(dists)
     # PUBLICO CODOS Y MANOS DE LA PERSONA k Y OBTENGO COORDENADAS RESPECTO A MAPA    
@@ -498,30 +527,57 @@ def detect_pointing2(points_msg):
     b_st.sendTransform(t)
     rospy.sleep(0.7)
 
-    tf_man.change_ref_frame_tf(point_name='codoD')
-    tf_man.change_ref_frame_tf(point_name='codoI')
-    tf_man.change_ref_frame_tf(point_name='manoD')
-    tf_man.change_ref_frame_tf(point_name='manoI')
-    """v1=[-(manoD[0]-codoD[0]),-1-(manoD[1]-codoD[1]),-(manoD[2]-codoD[2])]
-    v2=[-(manoI[0]-codoI[0]),-1-(manoI[1]-codoI[1]),-(manoI[2]-codoI[2])]
-      
-    print("VD",v1," LINALG",np.linalg.norm(v1))
-    print("VI",v2," LINALG",np.linalg.norm(v2))
-
-    print("VD 2",[-(manoD[0]-codoD[0]),-(manoD[1]-codoD[1]),-1-(manoD[2]-codoD[2])],
-          " LINALG",np.linalg.norm([-(manoD[0]-codoD[0]),-(manoD[1]-codoD[1]),-1-(manoD[2]-codoD[2])]))
-    print("VI 2",[-(manoI[0]-codoI[0]),-(manoI[1]-codoI[1]),-1-(manoI[2]-codoI[2])],
-          " LINALG",np.linalg.norm([-(manoI[0]-codoI[0]),-(manoI[1]-codoI[1]),-1-(manoI[2]-codoI[2])]))
+    change_ref_frame_tf(point_name='codoD')
+    change_ref_frame_tf(point_name='codoI')
+    change_ref_frame_tf(point_name='manoD')
+    change_ref_frame_tf(point_name='manoI')
     
-    print("VD 3",[-1-(manoD[0]-codoD[0]),-(manoD[1]-codoD[1]),-(manoD[2]-codoD[2])],
-          " LINALG",np.linalg.norm([-1-(manoD[0]-codoD[0]),-(manoD[1]-codoD[1]),-(manoD[2]-codoD[2])]))
-    print("VI 3",[-1-(manoI[0]-codoI[0]),-(manoI[1]-codoI[1]),-(manoI[2]-codoI[2])],
-          " LINALG",np.linalg.norm([-1-(manoI[0]-codoI[0]),-(manoI[1]-codoI[1]),-(manoI[2]-codoI[2])]))
-    """
-    return res
-    # DESPUES OBTENER POINTING POR CADA BRAZO 
+    codoD, _ =getTF(target_frame='codoD')
+    codoI, _ =getTF(target_frame='codoI')
+    manoD, _ =getTF(target_frame='manoD')
+    manoI, _ =getTF(target_frame='manoI')
 
-    # DESPUES EL QUE SI ESTA APUNTANDO SACAR TF
+    ds=[manoD[2]-codoD[2],manoI[2]-codoI[2]]
+   
+    v1=[-(manoD[0]-codoD[0]),-(manoD[1]-codoD[1]),ds[np.argmin(ds)]-(manoD[2]-codoD[2])]
+    v2=[-(manoI[0]-codoI[0]),-(manoI[1]-codoI[1]),ds[np.argmin(ds)]-(manoI[2]-codoI[2])]
+    
+    vectD = [manoD[0]-codoD[0],manoD[1]-codoD[1],manoD[2]-codoD[2]]
+    alfa = -manoD[2]/vectD[2]
+    y=manoD[1]+alfa*vectD[1]
+    x=manoD[0]+alfa*vectD[0]
+    #print(x,y,'x,y DER')
+    t=write_tf((x,y,0),(0,0,0,1),'pointing_right')
+    b_st.sendTransform(t)
+    res.x_r=x
+    res.y_r=y
+    res.z_r=0
+
+    rospy.sleep(0.3)
+
+    vectD = [manoI[0]-codoI[0],manoI[1]-codoI[1],manoI[2]-codoI[2]]
+    alfa = -manoI[2]/vectD[2]
+    y=manoD[1]+alfa*vectD[1]
+    x=manoD[0]+alfa*vectD[0]
+    #print(x,y,'x,y IZQ')
+    t=write_tf((x,y,0),(0,0,0,1),'pointing_left')
+    b_st.sendTransform(t)
+    res.x_l=x
+    res.y_l=y
+    res.z_l=0
+    
+    if np.linalg.norm(v1) > np.linalg.norm(v1):
+        print("Mano DERECHA levantada")
+        res.x_l = -1.0
+        res.y_l = -1.0
+        res.z_l = -1.0
+        #
+    else:
+        print("Mano IZQUIERDA levantada")
+        res.x_r = -1.0
+        res.y_r = -1.0
+        res.z_r = -1.0
+    return res
     
 
 #><>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

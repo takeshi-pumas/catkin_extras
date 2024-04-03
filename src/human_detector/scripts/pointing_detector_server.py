@@ -8,7 +8,7 @@ from utils_pointing import *
 def trigger_response(request):    
     print ('Segmenting')
     points_msg=rospy.wait_for_message("/hsrb/head_rgbd_sensor/depth_registered/rectified_points",PointCloud2,timeout=5)
-    res= detect_pointing(points_msg)
+    res= detect_pointing2(points_msg)
     return res
 def callback(request):
 	print ('Segmenting')  

@@ -96,11 +96,12 @@ class Find_human(smach.State):
 
     def execute(self, userdata):
         rospy.loginfo('State : Find_human')
+        rospy.sleep(1.5)
         talk('Scanning the room for humans')
         self.tries += 1
         if self.tries >= 4:
             self.tries = 0
-            return'tries'
+            return 'tries'
         if self.tries==1:head.set_joint_values([ 0.0, 0.0])# Looking ahead
         if self.tries==2:head.set_joint_values([ 0.5, 0.1])#looking left
         if self.tries==3:head.set_joint_values([-0.5, 0.1])#looking right        
@@ -485,18 +486,6 @@ class Pickup_cereal(smach.State):
         #omni_base.tiny_move(velX=-0.2 *np.cos(np.deg2rad(pca_angle)) , velY= 0.1 * np.sin(np.deg2rad(pca_angle)) ,std_time=4.2, MAX_VEL=0.3) 
 
       
-
-
-
-
-
-
-
-
-
-
-
-
 
         clear_octo_client()
         print(pca_angle,max(min((pca_angle+90),-45),45),"####################AnGLE WITHIN LIMITS")
