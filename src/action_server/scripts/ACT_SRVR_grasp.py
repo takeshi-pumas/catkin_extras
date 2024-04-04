@@ -22,6 +22,7 @@ class GraspingStateMachine:
         # Import gripper controller
         self.gripper = grasp_utils.GRIPPER()
         self.brazo = grasp_utils.ARM()
+        self.base = grasp_utils.BASE()
 
         # Inicializar tf2_ros
         self.tf2_buffer = tf2_ros.Buffer()
@@ -84,9 +85,12 @@ class GraspingStateMachine:
     # SMACH states ------------------------------------------------------
     def approach(self, userdata):
         #Add primitive objets to planning scene
+
+        # TODO: Check planning 10 times, if failed exit or something...
+        # Maybe create a safe area to plan
         goal = self.sm.userdata.goal.target_pose.data
         pos = [goal[0], goal[1], goal[2]]
-        self.add_collision_object(position = pos,dimensions = [0.05, 0.05, 0.05])
+        self.add_collision_object(position = pos, dimensions = [0.05, 0.05, 0.05])
         self.publish_known_areas()# Add Table
 
         self.gripper.open()
@@ -106,18 +110,14 @@ class GraspingStateMachine:
 
     def grasp(self, userdata):
         #Plan to grasp object
-        #pose_goal = self.target_pose
-        #grasp_pose = pose_goal
-        '''if self.grasp_approach == "frontal":
-            grasp_pose.position.x += 0.05   # Adelantarse a la pieza
-        elif self.grasp_approach == "above":
-            grasp_pose.position.z -= 0.05  # Descender hacia la pieza
-        succ = self.move_to_pose(self.whole_body, grasp_pose)'''
+
+        # TODO: check grasp
+        # Maybe attach object to gripper (maybe not)
         joint_values = self.brazo.get_joint_values()
-        joint_values[0] -= 0.12
+        joint_values[0] -= 0.09
         self.brazo.set_joint_values(joint_values)
-        self.gripper.close(0.07)
         rospy.sleep(0.6)
+        self.gripper.close(0.07)
         #self.attach_object()
         return 'success'
         # if succ:
@@ -131,10 +131,12 @@ class GraspingStateMachine:
         # pose_goal.position.z += 0.13
         # position_goal = [pose_goal.position.x, pose_goal.position.y, pose_goal.position.z]
         # succ = self.move_to_position(self.whole_body, position_goal)  # Retirarse a una posición segura
+
+        # TODO: Retreat base safely
         joint_values = self.brazo.get_joint_values()
         joint_values[0] += 0.15
         self.brazo.set_joint_values(joint_values)
-        self.retreat_base(0.30)
+        self.base.tiny_move(velX=-0.05, std_time=0.7, MAX_VEL=0.05)
         return 'success'
         # if succ:
         #     return 'success'
@@ -142,27 +144,11 @@ class GraspingStateMachine:
         #     return 'failed'
     
     def neutral_pose(self, userdata):
-        self.brazo.set_named_target('neutral')
+        self.brazo.set_named_target('go')
         # self.whole_body.go()
         return "success"
     
     # ----------------------------------------------------------
-    def retreat_base(self, distance):
-        current_pose = self.base.get_current_pose()
-        start_pose = current_pose.pose
-
-        # Calculating the target position
-        target_pose = Pose()
-        target_pose.position.x = start_pose.position.x - distance
-        target_pose.position.y = start_pose.position.y
-        target_pose.position.z = start_pose.position.z
-        target_pose.orientation = start_pose.orientation
-
-        # Planning to the target position
-        self.base.set_pose_target(target_pose)
-        plan = self.base.go(wait=True)
-        self.base.stop()
-        self.base.clear_pose_targets()
 
     def move_to_position(self, group, position_goal):
         group.set_start_state_to_current_state()
@@ -181,7 +167,6 @@ class GraspingStateMachine:
         return succ
 
     def publish_known_areas(self, position = [6.0,5.2,0.3], rotation = [0,0,0,1], dimensions = [1.0 ,1.0, 0.2]):
-        
         object_pose = PoseStamped()
         object_pose.header.frame_id = 'map'
         object_pose.pose.position.x = position[0]
@@ -192,6 +177,7 @@ class GraspingStateMachine:
         object_pose.pose.orientation.z = rotation[2]
         object_pose.pose.orientation.w = rotation[3]
         self.scene.add_box('table_storing', object_pose, size = (dimensions[0], dimensions[1], dimensions[2]))
+
     def add_collision_object(self, position = [0, 0, 0], rotation = [0,0,0,1], dimensions = [0.1 ,0.1, 0.1]):
         object_pose = PoseStamped()
         object_pose.header.frame_id = self.whole_body.get_planning_frame()
@@ -267,7 +253,7 @@ class GraspingStateMachine:
         approach_pose = Pose()
         approach_pose.position.x = transformed_object_point.point.x
         approach_pose.position.y = transformed_object_point.point.y
-        approach_pose.position.z = transformed_object_point.point.z + 0.17
+        approach_pose.position.z = transformed_object_point.point.z + 0.14
 
         #print(transformed_base)
         quat_base = [transformed_base.transform.rotation.x,
