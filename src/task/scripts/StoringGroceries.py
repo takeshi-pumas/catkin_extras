@@ -4,10 +4,10 @@ from smach_ros import SimpleActionState
 
 
 def categorize_objs(name):
-    kitchen =['bowl','spatula','spoon', 'bowl','plate','f_cups','h_cups']
+    kitchen =['bowl','spatula','spoon', 'bowl','plate','h_cups']
     tools=['extra_large_clamp','large_clamp','small_clamp','medium_clamp','adjustable_wrench','flat_screwdriver','phillips_screwdriver','wood_block']
     balls= ['softball','tennis_ball','a_mini_soccer_ball', 'racquetball', 'golf_ball', 'baseball'  ]
-    fruits= ['apple','banana', 'lemon','pear','plum','orange']
+    fruits= ['apple','banana', 'lemon','pear','plum','orange' , 'f_cups']  #'f_cups' common mistake for apple
     food =['chips_can','mustard_bottle','potted_meat_can','tomato_soup_can','tuna_fish_can','master_chef_can','sugar_box','pudding_box','cracker_box']
     if name in kitchen: return 'kitchen'
     elif name in tools: return 'tools'
@@ -341,9 +341,10 @@ class Place_shelf(smach.State):
         print (f'###########intended_placing_area{intended_placing_area}#####################')
         base_grasp_D(tf_name=placing_place,d_x=0.76, d_y=0.0,timeout=30)
         succ=arm.go(placing_pose)
-        base_grasp_D(tf_name=placing_place,d_x=0.6, d_y=0.0,timeout=30)
+        base_grasp_D(tf_name=placing_place,d_x=0.5, d_y=0.0,timeout=30)
         gripper.open()
-        rospy.sleep(1.0)
+        #rospy.sleep(1.0)
+        base_grasp_D(tf_name=placing_place,d_x=0.76, d_y=0.0,timeout=30)
 
         if succ:return'succ'
         return'failed'
