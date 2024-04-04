@@ -122,7 +122,7 @@ class Scan_container(smach.State):
         rospy.loginfo("SMACH: Scan breakfast container")
         self.tries += 1
         #head_values = [0.0,-0.9]
-        head_values = [0.0,-0.4]
+        head_values = [0.0,-0.5]
         head.set_joint_values(head_values)
         rospy.sleep(1.0)
         #image= cv2.cvtColor(rgbd.get_image(), cv2.COLOR_RGB2BGR)
@@ -142,7 +142,7 @@ class Decide_grasp(smach.State):
                              output_keys=['target_pose'],
                              outcomes = ['succ', 'failed'])
         self.tries = 0
-        self.to_grasp = ["spoon", "bowl", "milk", "cereal"]
+        self.order_to_grasp = ["bowl", "cereal", "milk", "spoon"]
     def execute(self, userdata):
         rospy.loginfo("SMACH : Decide which object is better to grasp")
         self.tries += 1
@@ -167,7 +167,9 @@ class Decide_grasp(smach.State):
             clear_octo_client()
             pos, _ = tf_man.getTF(target_frame = target_object, ref_frame = 'odom')
             target_pose = Float32MultiArray()
-            pos[2] += 0.03
+            #pos[1] += 0.03 #only bowl grasp
+            pos[2] += 0.04 # 0.03
+
             target_pose.data = pos
             userdata.target_pose = target_pose
             return 'succ'
