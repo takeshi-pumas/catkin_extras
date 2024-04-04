@@ -6,10 +6,10 @@ from std_msgs.msg import Float32MultiArray
 
 
 def categorize_objs(name):
-    kitchen =['bowl','spatula','spoon', 'bowl','plate','f_cups','h_cups']
+    kitchen =['bowl','spatula','spoon', 'bowl','plate','h_cups']
     tools=['extra_large_clamp','large_clamp','small_clamp','medium_clamp','adjustable_wrench','flat_screwdriver','phillips_screwdriver','wood_block']
     balls= ['softball','tennis_ball','a_mini_soccer_ball', 'racquetball', 'golf_ball', 'baseball'  ]
-    fruits= ['apple','banana', 'lemon','pear','plum','orange']
+    fruits= ['apple','banana', 'lemon','pear','plum','orange','f_cups']
     food =['chips_can','mustard_bottle','potted_meat_can','tomato_soup_can','tuna_fish_can','master_chef_can','sugar_box','pudding_box','cracker_box']
     if name in kitchen: return 'kitchen'
     elif name in tools: return 'tools'
@@ -271,7 +271,7 @@ class Place_shelf(smach.State):
         self.tries += 1
 
         print(f'shelves_cats{shelves_cats}, object picked up cat {cat}')
-        high_shelf_place=[0.1505,-0.586,0.0850,-0.934,0.0220,0.0]
+        high_shelf_place=[0.505,-0.586,0.0850,-0.934,0.0220,0.0]
         mid_shelf_place=[ 0.2556,-1.6040,-0.0080,-0.0579,0.0019,0.0]
         low_shelf_place=[ 0.0457,-2.2625,0.0,0.7016,-0.0,0.0]
         placing_poses=np.asarray((high_shelf_place,mid_shelf_place,low_shelf_place))        
@@ -297,10 +297,18 @@ class Place_shelf(smach.State):
         print ('################################')
         print ('################################')
         print (f'###########intended_placing_area{intended_placing_area}#####################')
+        head.set_named_target('neutral')
+
         base_grasp_D(tf_name=placing_place,d_x=0.76, d_y=0.0,timeout=30)
         succ=arm.go(placing_pose)
-        base_grasp_D(tf_name=placing_place,d_x=0.6, d_y=0.0,timeout=30)
+        base_grasp_D(tf_name=placing_place,d_x=0.44, d_y=0.0,timeout=30)
         gripper.open()
+        rospy.sleep(0.5)
+        base_grasp_D(tf_name=placing_place,d_x=0.76, d_y=0.0,timeout=30)
+        rospy.sleep(0.5)
+        gripper.steady()
+        arm.set_named_target('go')
+        arm.go()
         rospy.sleep(1.0)
 
         if succ:return'succ'
@@ -394,7 +402,7 @@ class Scan_shelf(smach.State):
         print("talk('Scanning shelf')")
         request= segmentation_server.request_class() 
         area_number=0
-
+        clear_octo_client()
         self.tries += 1
         if self.tries >= 4:
             self.tries = 0
@@ -440,8 +448,11 @@ class Scan_shelf(smach.State):
                 shelves_cats.append(a.index[a.argmax()])
 
             shelves_cats=np.asarray(shelves_cats)
+
             objs.to_csv('/home/roboworks/Documents/objs.csv')
+            print(objs)
             print ('################################')
+            print (shelves_cats)
             print ('################################')
             print ('################################')
             print ('################################')
@@ -454,10 +465,10 @@ class Scan_shelf(smach.State):
         if self.tries==1:
             head.set_named_target('neutral')
             av=arm.get_current_joint_values()
-            av[0]=0.5
+            av[0]=0.65
             av[1]=-0.5
             arm.go(av)
-            head.set_joint_values([-np.pi/2 , -0.5])
+            head.set_joint_values([-np.pi/2 , -0.7])
             request.height.data=0.87  #TOP SHELF FOR PLACING 
             area_name_numbered= 'high_shelf'
             rospy.sleep(1.3)            
@@ -465,7 +476,7 @@ class Scan_shelf(smach.State):
             av=arm.get_current_joint_values()
             av[0]=0.05
             arm.go(av)            
-            request.height.data=0.41  #MiD SHELF FOR PLACING 
+            request.height.data=0.43  #MiD SHELF FOR PLACING 
             area_name_numbered= 'mid_shelf'
             rospy.sleep(1.3)
         if self.tries==3:

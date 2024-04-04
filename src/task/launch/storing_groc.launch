@@ -13,7 +13,9 @@
   <node pkg="object_classification"  name="objs_reco" type="classification_server.py"  />  
   <node pkg="segmentation"  name="segmentation" type="segment_node.py"  />  
   <node pkg="segmentation"  name="placing_finder" type="placing_finder_node.py"  />  
-  <node pkg="smach_viewer"  name="smach_viewer" type="smach_viewer.py"  />  
+  <node pkg="smach_viewer"  name="smach_viewer" type="smach_viewer.py"  />    
+  <node pkg="point_cloud"  name="point_cloud_filter_node" type="passthrough_filter"/>  
+  <node pkg="action_server"  name="action_server" type="ACT_SRVR_grasp.py"/>   
   <!--node pkg="human_detector"  name="human_detector" type="pointing_detector_server.py"/>  
   <node pkg="leg_finder"  name="leg_finder_node" type="leg_finder_node"/>  
   <node pkg="human_follower"  name="human_follower_node" type="human_follower_node"/>  
