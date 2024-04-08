@@ -11,6 +11,7 @@ from geometry_msgs.msg import Pose, Point, Quaternion, PointStamped, PoseStamped
 from shape_msgs.msg import SolidPrimitive
 from moveit_msgs.msg import CollisionObject, AttachedCollisionObject
 from action_server.msg import GraspAction
+from std_srvs.srv import Empty
 
 from tf.transformations import euler_from_quaternion, quaternion_from_euler
 
@@ -34,7 +35,7 @@ class GraspingStateMachine:
         self.robot = moveit_commander.RobotCommander()
         self.scene = moveit_commander.PlanningSceneInterface()
         self.whole_body = moveit_commander.MoveGroupCommander("whole_body")
-        self.base = moveit_commander.MoveGroupCommander("base")
+        #self.base = moveit_commander.MoveGroupCommander("base")
         #self.whole_body_w = moveit_commander.MoveGroupCommander("whole_body_weighted")
         #self.arm = moveit_commander.MoveGroupCommander("arm")
         self.grasp_approach = "above" #above / frontal
@@ -42,6 +43,7 @@ class GraspingStateMachine:
 
         # Moveit setup
         #self.scene.remove_attached_object(self.eef_link, name="objeto")
+        self.clear_octomap = rospy.ServiceProxy('/clear_octomap', Empty)
         self.whole_body.allow_replanning(True)
         self.whole_body.set_num_planning_attempts(10)
         self.whole_body.set_planning_time(10.0)
@@ -136,7 +138,7 @@ class GraspingStateMachine:
         joint_values = self.brazo.get_joint_values()
         joint_values[0] += 0.15
         self.brazo.set_joint_values(joint_values)
-        self.base.tiny_move(velX=-0.05, std_time=0.7, MAX_VEL=0.05)
+        self.base.tiny_move(velX=-0.07, std_time=1.5, MAX_VEL=0.7)
         return 'success'
         # if succ:
         #     return 'success'
@@ -144,7 +146,7 @@ class GraspingStateMachine:
         #     return 'failed'
     
     def neutral_pose(self, userdata):
-        self.brazo.set_named_target('go')
+        self.brazo.set_named_target('neutral')
         # self.whole_body.go()
         return "success"
     
@@ -200,6 +202,7 @@ class GraspingStateMachine:
     def execute_cb(self, goal):
         rospy.loginfo('Received action goal: %s', goal)
         self.sm.userdata.goal = goal
+        self.clear_octomap()
         if len(goal) == 3:
             self.wrapper.server.set_succeeded()
             outcome = self.sm.execute()

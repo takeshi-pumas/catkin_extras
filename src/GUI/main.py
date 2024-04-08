@@ -6,6 +6,7 @@ import roslaunch
 import os
 import rospy
 import ROSnode
+import file_editor
 
 # Initial setup 
 global uuid, base
@@ -126,6 +127,23 @@ while True:
 
         elif event == '-TO_KNOWLEDGE-':
             ROSnode.call_knowledge_place_add()
+    
+    elif active_tab == "-STATS_TAB-":
+        if event == "-TASK_RUN_BTN-":
+            obj_name = values["-PICK_OBJ-"]
+            if obj_name:
+                file_editor.add_object_run(obj_name)
+            
+        elif event == "-TASK_RECOG_BTN-":
+            obj_name = values["-PICK_OBJ-"]
+            if obj_name:
+                file_editor.add_object_recog(obj_name)
+        elif event == "-TASK_GRASP_BTN-":
+            obj_name = values["-PICK_OBJ-"]
+            if obj_name:
+                file_editor.add_object_grasp(obj_name)
+        elif event == "-TASK_STATS_BTN-":
+            file_editor.view_stats()
 
 
 window.close()

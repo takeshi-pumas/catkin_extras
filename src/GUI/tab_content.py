@@ -89,12 +89,30 @@ robot_controller_tab_layout = [
     ]
 ]
 
+stats_tab_layout = [
+    [sg.Text("Statistics for Pickup table task", font=font, justification='center')],
+    [sg.Text("When pickup action is running, fill the input text with the object name.", font=font2, justification='center')],
+    [sg.Text("Then press \"new task run\" button.",font=font2)],
+    [sg.Text("When the action finishes, evaluate if the robot recognize the object clicking \"Recognized\" button.", font=font2)],
+    [sg.Text("Evaluate if the robot could pick the object from table clicking \"Grasped\" button.", font=font2)],
+    [sg.Text("Chech the stats of this test on \"View stats\" button.")],
+    [sg.HorizontalSeparator()],
+    [sg.Button("New task run", key='-TASK_RUN_BTN-', font=font2, button_color=('white', 'green'))], 
+    [sg.Text("Object to be picked:", font=font2), 
+     sg.InputText(key='-PICK_OBJ-', size = (15, 1)), 
+     sg.Button("Recognized", key="-TASK_RECOG_BTN-", font=font2),
+     sg.Button("Grasped", key='-TASK_GRASP_BTN-', font=font2)],
+     [sg.Button("View stats", key='-TASK_STATS_BTN-', font=font2, size=(15,1))], 
+     [sg.HorizontalSeparator()]
+]
 
 main_layout = [robot_connection_tab_layout,
     [sg.TabGroup(
         [[sg.Tab("Robot controllers tab", robot_controller_tab_layout, key='-CONTROL_TAB-', font=font, element_justification='center'),
             sg.Tab("ROS node launch tab", launch_tab_layout, key='-LAUNCH_TAB-', font=font, element_justification='center'),
-            sg.Tab("HRI tab", hri_tab_layout, key='-SERVICES_TAB-')]], size=size_window, key='-TAB_GROUP-', enable_events=True)]
+            sg.Tab("HRI tab", hri_tab_layout, key='-SERVICES_TAB-'),
+            sg.Tab("Stats tab", stats_tab_layout, key='-STATS_TAB-')
+            ]], size=size_window, key='-TAB_GROUP-', enable_events=True)]
 ]
 
 # initial_layout = [robot_connection_tab_layout,
