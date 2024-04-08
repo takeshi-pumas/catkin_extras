@@ -801,7 +801,7 @@ def getconectionJoints(output,inHeight,inWidth,thresKeyP=110,numKeys=9 ):
         print("CONECTION",con)      
         probMap = output[0, con[0], :, :]
         probMap = cv2.resize(probMap, (inWidth, inHeight))
-        cv2.imwrite(os.path.expanduser( '~' )+"/Documents/heatmap_"+str(con[0])+".jpg",probMap)
+        #cv2.imwrite(os.path.expanduser( '~' )+"/Documents/heatmap_"+str(con[0])+".jpg",probMap)
         mapSmooth = cv2.GaussianBlur(probMap,(3,3),0,0)
         thresh =-256 if mapSmooth.max() < 0.1 else 256
         minthresh = mapSmooth.max()*thresh/2 if thresh == 256 else mapSmooth.min()*thresh/2
@@ -861,7 +861,7 @@ def getconectionJoints(output,inHeight,inWidth,thresKeyP=110,numKeys=9 ):
                 for item in matchesInMaskA:
                     sk[item[0][2],item[0][1],0] = item[0][0][0]
                     sk[item[0][2],item[0][1],1] = item[0][0][1]
-            else:
+            elif max([len(i) for i in matchesInMaskA]) != 1 and (matchesInMaskA[0][0][1]==0 or matchesInMaskA[0][0][1]==1):
                 # CASO NO IDEAL DEL PRIMER GRUPO, AL MENOS UN KEYPOINT FUERA DE UNA REGION
                 listaCorrespA = asignaEspacios(matchesInMaskA,maxPeople)
                 modifA = True
