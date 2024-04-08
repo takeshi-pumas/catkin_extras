@@ -76,8 +76,8 @@ void pointCloudCallback(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr& msg) {
         return;
     }
 
-    float z_min = 0.03;
-    float z_max = 2.0;
+    float z_min = 0.05;
+    float z_max = 1.5;
 
     // Filtra la nube de puntos en la coordenada Z de base_link
     pcl::PointCloud<pcl::PointXYZ>::Ptr filtered_cloud(new pcl::PointCloud<pcl::PointXYZ>);
@@ -100,10 +100,10 @@ int main(int argc, char** argv) {
     ROS_INFO("Point Cloud filtered Service: /filter_point_cloud");
     ros::Duration(0.5).sleep();
     // Suscribe al tópico de la nube de puntos de la cámara
-    ros::Subscriber sub = nh.subscribe("/hsrb/head_rgbd_sensor/depth_registered/rectified_points", 1, pointCloudCallback);
+    ros::Subscriber sub = nh.subscribe("/hsrb/head_rgbd_sensor/depth_registered/rectified_points", 10, pointCloudCallback);
 
     // Publica la nube de puntos filtrada
-    pub = nh.advertise<pcl::PointCloud<pcl::PointXYZ>>("/filtered_point_cloud", 1);
+    pub = nh.advertise<pcl::PointCloud<pcl::PointXYZ>>("/filtered_point_cloud", 10);
     ros::ServiceServer service = nh.advertiseService("filter_point_cloud", filterPointCloudService);
 
 
