@@ -1,4 +1,5 @@
 <launch>
     <!-- Inicializar el nodo ROS -->
-    <node name="pickup_action_server" pkg="action_server" type="ACT_SRVR_Pickup_table.py" output="screen"/>
+    <node name="grasp_server" pkg="action_server" type="ACT_SRVR_grasp.py" output="screen"/>
+    <node name="pickup_action_server" pkg="action_server" type="ACT_SRVR_pickup.py" output="screen"/>
 </launch>
