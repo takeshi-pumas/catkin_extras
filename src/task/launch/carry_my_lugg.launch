@@ -18,5 +18,6 @@
   <node pkg="human_follower"  name="human_follower_node" type="human_follower_node"/>  
   <node pkg="action_server"  name="action_server" type="ACT_SRVR_Follow.py"/>   
   <include file="$(find speech_recog)/launch/ros_vosk.launch"/>
+  <node pkg="head" name="mic_enable" type="mic_node"/>
 
 </launch>  
