@@ -628,7 +628,7 @@ def get_points(frame,inHeight,inWidth,output,threshold=0.1):
 
 # IN PROGRESS
 def detect_all(points_msg):
-    direct=os.getcwd()
+    direct=os.path.expanduser( '~' )
     im=cv2.imread(direct+"/Documents/Tests/persons2.jpg")
     print(im.shape)
     points_data = ros_numpy.numpify(points_msg)    
@@ -797,9 +797,11 @@ def getconectionJoints(output,inHeight,inWidth,thresKeyP=110,numKeys=9 ):
         gP=[]
         for i in range(maxPeople):
             gP.append([])
-        #      
+        #
+        print("CONECTION",con)      
         probMap = output[0, con[0], :, :]
         probMap = cv2.resize(probMap, (inWidth, inHeight))
+        cv2.imwrite(os.path.expanduser( '~' )+"/Documents/heatmap_"+str(con[0])+".jpg",probMap)
         mapSmooth = cv2.GaussianBlur(probMap,(3,3),0,0)
         thresh =-256 if mapSmooth.max() < 0.1 else 256
         minthresh = mapSmooth.max()*thresh/2 if thresh == 256 else mapSmooth.min()*thresh/2
