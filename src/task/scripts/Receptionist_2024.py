@@ -247,7 +247,8 @@ class Get_drink(smach.State):
         rospy.loginfo('STATE : GET DRINK')
 
         if self.tries == 1:
-            analyze_face_background(userdata.face_img, userdata.name)#userdata.name)
+            analyze_face_background(userdata.face_img, party.get_active_guest_name())#userdata.name)
+            print(userdata.face_img.shape)
 
         elif self.tries == 3:
             voice.talk ('I am having trouble understanding you, lets keep going')
@@ -336,7 +337,7 @@ class Find_sitting_place(smach.State):
 
             print("Place is: ",place)
             guest = party.get_active_guest_name()
-            head.turn_base_gaze(tf = place, to_gaze = 'arm_flex_link')
+            head.turn_base_gaze2(tf = place, to_gaze = 'base_link')
             head.set_named_target('neutral')
             rospy.sleep(0.8)
 
@@ -378,14 +379,15 @@ class Find_host_alternative(smach.State):
             if host_loc == 'None':
                 return 'failed'
         else:
-            seats = party.get_guests_seat_assignments()
-            print("seats: ", seats)
+            places = party.get_places()
+            _, seat = party.get_active_seat()
 
-            for place, guest in seats.items():
-                if guest != party.get_active_guest():
-                    host_loc = place
-                    dont_compare = True
-                    break
+            place_chosen = random.choice(places)
+            if place_chosen != seat:
+                host_loc = seat
+                dont_compare = True
+            else:
+                return 'failed'
         
         #print("host location is: ", host_loc)
         #print("host name is: ", host_name)

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import std_msgs.msg
 from utils.misc_utils import *
 from utils.nav_utils import OMNIBASE
 
@@ -90,6 +91,8 @@ class GAZE:
         self._tf_man = TF_MANAGER()
         self._pub = rospy.Publisher( head_controller_topic,
             trajectory_msgs.msg.JointTrajectory, queue_size=10)
+        self.base_turn_pub = rospy.Publisher("simple_move/goal_dist_angle", 
+                                             std_msgs.msg.Float32MultiArray, queue_size=10)
     def _gaze_point(self):
     ###Moves head to make center point of rgbd image to coordinates w.r.t.map
         trans,_ = self._tf_man.getTF(ref_frame=self._reference,target_frame=self._cam)
@@ -206,15 +209,39 @@ class GAZE:
             rospy.sleep(0.1)
         while (not succ) and (tries <=10):
             tries += 1
-            rospy.sleep(0.2)
+            rospy.sleep(0.4)
             xyz,_=self._tf_man.getTF(target_frame=target_frame, ref_frame=to_gaze)
             eT = 0
             if type(xyz) is not bool:
                 eT = np.arctan2(xyz[1],xyz[0])
+                print(eT)
                 succ = abs(eT) < THRESHOLD 
             if succ:
                 eT = 0
             base.tiny_move(velT = eT, MAX_VEL_THETA=1.1)
+        return True
+    
+    def turn_base_gaze2(self,tf='None', to_gaze = 'base_link'):
+        base = OMNIBASE()
+        succ = False
+        THRESHOLD = 0.05
+        tries = 0
+        if tf != 'None':
+            target_frame = tf
+        else:
+            target_frame = 'gaze'
+            self._tf_man.pub_static_tf(pos=[self._x,self._y,self._z], point_name='gaze')
+            rospy.sleep(0.1)
+
+        xyz,_=self._tf_man.getTF(target_frame=target_frame, ref_frame=to_gaze)
+        rospy.sleep(0.6)
+        if type(xyz) is not bool:
+            eT = np.arctan2(xyz[1],xyz[0])
+            #publish
+            turn_dist = std_msgs.msg.Float32MultiArray()
+            turn_dist.data.append(0.0)
+            turn_dist.data.append(eT)
+            self.base_turn_pub.publish(turn_dist)
         return True
 
 def set_pose_goal(pos=[0,0,0], rot=[0,0,0,1]):

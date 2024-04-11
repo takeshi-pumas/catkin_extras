@@ -4,10 +4,17 @@ People:
     location: Place_1
     name: charlie
   Guest_1:
-    description: None
-    drink: yeah
+    description: john has arrived... he is a Man... I believe he is  around 29 years
+      old... I would say he is a bit happy. I might guess he is of indian descent.
+    drink: water
+    location: Place_2
+    name: john
+  Guest_2:
+    description: morgan has arrived... he is a Man... I believe he is  around 30 years
+      old... I would say he is a bit neutral. I might guess he is of asian descent.
+    drink: robot
     location: Place_3
-    name: charlie
+    name: morgan
 Places:
   Place_0:
     location:
@@ -17,19 +24,19 @@ Places:
     occupied: Not_available
   Place_1:
     location:
-      theta: -1.0
-      x: 9.33
-      y: -3.69
+      theta: 1.51
+      x: 10.53
+      y: -2.09
     occupied: charlie
   Place_2:
     location:
-      theta: -0.03
-      x: 9.66
-      y: -3.29
-    occupied: None
+      theta: -1.54
+      x: 10.37
+      y: -2.97
+    occupied: Guest_1
   Place_3:
     location:
-      theta: 0.02
-      x: 9.79
-      y: -2.42
-    occupied: Guest_1
+      theta: -3.1
+      x: 9.35
+      y: -2.23
+    occupied: Guest_2

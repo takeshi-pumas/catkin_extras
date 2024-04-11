@@ -255,7 +255,7 @@ class Pre_pickup(smach.State):
 
         gripper.open()
         if res:return 'succ'
-        return 0
+        #return 0
         
         
         

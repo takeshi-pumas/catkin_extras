@@ -30,6 +30,7 @@ from hri_msgs.msg import RecognizedSpeech
 from rospy.exceptions import ROSException
 from vision_msgs.srv import *
 from std_msgs.msg import String, Bool
+import random
 
 from ros_whisper_vosk.srv import SetGrammarVosk
 
