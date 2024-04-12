@@ -20,7 +20,7 @@ from geometry_msgs.msg import PoseStamped, Point  , Quaternion , TransformStampe
 from tf2_geometry_msgs import PointStamped
 
 from std_srvs.srv import Trigger, TriggerResponse 
-from sensor_msgs.msg import Image , LaserScan , PointCloud2
+from sensor_msgs.msg import Image , LaserScan  , PointCloud2
 from tf2_sensor_msgs.tf2_sensor_msgs import do_transform_cloud
 from object_classification.srv import *
 from segmentation.srv import *
@@ -223,6 +223,43 @@ def seg_res_tf_pointing(res):
     return succ
 
 #------------------------------------------------------
+def find_placing_area (plane_height=-1):
+    #head.set_joint_values([-1.5,-0.65])
+    #rospy.sleep(0.5)
+    request= segmentation_server.request_class() 
+    #plane_height=0.40
+    #request.height.data=-1
+    
+    request.height.data=plane_height  #MID SHELF FOR PLACING 
+    print ('#############Finding placing in plane####################',request.height.data)
+    res=placing_finder_server.call(request)
+    #succ=seg_res_tf(res)
+
+    print (f'Placing Area at {res.poses.data}')
+    if len(res.poses.data)!=0:
+        tf_man.pub_static_tf(pos=[res.poses.data[0], res.poses.data[1],res.poses.data[2]], rot =[0,0,0,1], point_name='placing_area')
+        return True
+    else:
+        request.height.data=plane_height+0.01  #MID SHELF FOR PLACING 
+        print ('#############Finding placing in plane####################',request.height.data)
+        res=placing_finder_server.call(request)
+        print (f'Placing Area at {res.poses.data}')
+        if len(res.poses.data)!=0:
+            tf_man.pub_static_tf(pos=[res.poses.data[0], res.poses.data[1],res.poses.data[2]], rot =[0,0,0,1], point_name='placing_area')
+            return True
+        else:
+            request.height.data=plane_height+0.02  #MID SHELF FOR PLACING 
+            print ('#############Finding placing in plane####################',request.height.data)
+            area_name_numbered= 'mid_shelf'
+            if len(res.poses.data)!=0:
+                print ('gotit')
+                tf_man.pub_static_tf(pos=[res.poses.data[0], res.poses.data[1],res.poses.data[2]], rot =[0,0,0,1], point_name='placing_area')
+                return True
+            else:print('failed')
+    return False    
+
+
+#------------------------------------------------------
 def get_robot_px():
     trans, rot=tf_man.getTF('base_link')
     robot=np.asarray(trans[:2])
@@ -362,6 +399,39 @@ def wait_for_face(timeout=10 , name=''):
 #        
 #        else:return res , img
 ##------------------------------------------------------
+def hand_grasp_D(tf_name='placing_area', THRESHOLD=0.03,timeout=30.0):
+    
+    timeout = rospy.Time.now().to_sec() + timeout
+    succ=False
+    THRESHOLD = 0.03
+    _,rot = tf_man.getTF(target_frame='placing_area', ref_frame='hand_palm_link')
+    original_rot=tf.transformations.euler_from_quaternion(rot)[2]
+    while (timeout >= rospy.Time.now().to_sec()) and not succ and not rospy.is_shutdown():
+        trans,rot = tf_man.getTF(target_frame='placing_area', ref_frame='hand_palm_link')
+        if type(trans) is not bool:
+            _, eY, eX = trans
+
+            if abs(eY) < THRESHOLD:
+                eY = 0
+            if abs(eX) < 0.03:
+                eX = 0
+            eT= tf.transformations.euler_from_quaternion(rot)[2] - original_rot #Original 
+            print("Distance to goal: {:.2f}, {:.2f}, {:.2f}".format(eX, eY,eT))
+
+            if eT > np.pi: eT=-2*np.pi+eT
+            if eT < -np.pi: eT= 2*np.pi+eT
+            if abs(eT) < 0.12:
+                eT=0
+            
+            print("error: {:.2f}, {:.2f}, angle {:.2f}, target obj frame placing area".format(eX, eY , eT))
+            succ =  eX == 0 and eY == 0 and eT==0            
+            
+                # grasp_base.tiny_move(velY=-0.4*trans[1], std_time=0.2, MAX_VEL=0.3)
+            omni_base.tiny_move(velX=0.13*eX, velY=-0.4*eY, std_time=0.2, MAX_VEL=0.3) #Pending test
+    return succ
+            
+##------------------------------------------------------
+
 def wait_for_push_hand(time=10):
 
     start_time = rospy.get_time()

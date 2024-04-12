@@ -39,6 +39,17 @@ class Initial(smach.State):
         objs = pd.read_csv (file_path+'/objects.csv') #EMPTY DATAFRAME
         objs=objs.drop(columns='Unnamed: 0')
         print (objs)
+        file_path = rospack.get_path('config_files')+'/regions'         
+        regions={'shelves':np.load(file_path+'/shelf_sim.npy'),'pickup':np.load(file_path+'/pickup_sim.npy')}   ## KNOWN REGIONS
+                                                                                                                #MUST BE SET
+
+        print (f'Regions for Storing Groceries(sim) {regions}')
+        ##TO AVOID SMACH DYING IN CASE NO PLACING AREA IS FOUND, THere is a default that at least allows the test to continue
+        x,y=np.mean(regions['shelves'], axis=0)
+        z=0.4#self.mid_shelf_height=0.4 shelves heights must also be set on SCAN SHELF  state init sectoin.
+
+        tf_man.pub_static_tf(pos=[x,y,z],point_name='placing_area') ### IF a real placing area is found this tf will be updated
+                                                                    ##  even if no placing area is found for whatever reason autonoma can keep going
         ############################
         arm = moveit_commander.MoveGroupCommander('arm')
         head.set_named_target('neutral')
@@ -302,7 +313,7 @@ class Place_shelf(smach.State):
         hand_grasp_D()  
         gripper.open()
 
-        omni_base.tiny_move( velX=-0.2,std_time=4.2) 
+        omni_base.tiny_move( velX=-0.3,std_time=4.2) 
  
 
         #base_grasp_D(tf_name='placing_area',d_x=0.6, d_y=0.0,timeout=30)

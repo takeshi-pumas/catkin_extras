@@ -269,27 +269,91 @@ class Place_shelf(smach.State):
 
         print(f'Try {self.tries} of 3 attempts')
         self.tries += 1
-
+        request= segmentation_server.request_class() 
         print(f'shelves_cats{shelves_cats}, object picked up cat {cat}')
         high_shelf_place=[0.505,-0.586,0.0850,-0.934,0.0220,0.0]
         mid_shelf_place=[ 0.2556,-1.6040,-0.0080,-0.0579,0.0019,0.0]
         low_shelf_place=[ 0.0457,-2.2625,0.0,0.7016,-0.0,0.0]
         placing_poses=np.asarray((high_shelf_place,mid_shelf_place,low_shelf_place))        
-        placing_places=np.asarray(('placing_area_high_shelf1','placing_area_mid_shelf1','placing_area_low_shelf1'))
+        placing_places=np.asarray(( 0.87,0.41,0.0))
 
         if cat in shelves_cats:
-                    ind=np.argmax(shelves_cats == cat)
-                    placing_pose=placing_poses[ind]
-                    placing_place=placing_places[ind]
+            ind=np.argmax(shelves_cats == cat)
+            placing_pose=placing_poses[ind]
+            placing_place_height=placing_places[ind]
         else:  
             print ( 'No category found, placing at random')
             ind=np.random.randint(0,len(placing_poses))
             placing_pose=placing_poses[ind]
-            placing_place=placing_places[ind]
+            placing_place_height=placing_places[ind]
         clear_octo_client()
+        plane_height=placing_place_height
+        
+        if ind ==0:    #high_shelf_pose
+            omni_base.move_base(known_location='shelf', time_out=200)
+            head.set_named_target('neutral')
+            av=arm.get_current_joint_values()
+            av[0]=0.65
+            av[1]=-0.5
+            arm.go(av)
+            head.set_joint_values([-np.pi/2 , -0.7])
+        if ind ==1:    #mid_shelf_pose
+            omni_base.move_base(known_location='shelf', time_out=200)
+            head.set_named_target('neutral')
+            av=arm.get_current_joint_values()
+            av[0]=0.05
+            av[1]=-0.5
+            arm.go(av)         
+            head.set_joint_values([-np.pi/2 , -0.7])
+        if ind ==2:    #low_shelf_pose
+            #omni_base.move_base(known_location='shelf', time_out=200)
+            head.set_named_target('neutral')        
+            head.set_joint_values([0.0,-0.7])
+
+
+
+        rospy.sleep(0.5)
+        request.height.data=plane_height  
+        print ('#############Finding placing in plane####################',request.height.data)
+        area_name_numbered= 'mid_shelf'
+
+
+        res=placing_finder_server.call(request)
+        #succ=seg_res_tf(res)
+
+        print (f'Placing Area at {res.poses.data}')
+        if len(res.poses.data)!=0:
+            tf_man.pub_static_tf(pos=[res.poses.data[0], res.poses.data[1],res.poses.data[2]], rot =[0,0,0,1], point_name='placing_area')
+            img=bridge.imgmsg_to_cv2(res.im_out.image_msgs[0])
+        else:
+            request.height.data=plane_height+0.02  #MID SHELF FOR PLACING 
+            print ('#############Finding placing in plane####################',request.height.data)
+            res=placing_finder_server.call(request)
+            print (f'Placing Area at {res.poses.data}')
+            if len(res.poses.data)!=0:
+                tf_man.pub_static_tf(pos=[res.poses.data[0], res.poses.data[1],res.poses.data[2]], rot =[0,0,0,1], point_name='placing_area')
+                img=bridge.imgmsg_to_cv2(res.im_out.image_msgs[0])
+            else:
+                request.height.data=plane_height+0.04  #MID SHELF FOR PLACING 
+                print ('#############Finding placing in plane####################',request.height.data)
+                area_name_numbered= 'mid_shelf'
+                if len(res.poses.data)!=0:
+                    print ('gotit')
+                    tf_man.pub_static_tf(pos=[res.poses.data[0], res.poses.data[1],res.poses.data[2]], rot =[0,0,0,1], point_name='placing_area')
+                    img=bridge.imgmsg_to_cv2(res.im_out.image_msgs[0])
+                else:print('failed no placing area found')
+
+
+
+        
+
+        omni_base.move_base(known_location='place_shelf', time_out=200)
+
         succ=arm.go(placing_pose)
-        intended_placing_area= tf_man.getTF(placing_place)
-        print (f'#placing_poses {placing_poses}, index{ind} , placing_places{placing_places} , placing_place {placing_place}' )
+
+
+        intended_placing_area= tf_man.getTF('placing_area')
+        
         print ('################################')
         print ('################################')
         print ('################################')
@@ -298,6 +362,8 @@ class Place_shelf(smach.State):
         print ('################################')
         print (f'###########intended_placing_area{intended_placing_area}#####################')
         head.set_named_target('neutral')
+        
+
 
         base_grasp_D(tf_name=placing_place,d_x=0.76, d_y=0.0,timeout=30)
         succ=arm.go(placing_pose)
@@ -460,6 +526,8 @@ class Scan_shelf(smach.State):
             print ('################################')
             print ('################################')
             print ('################################')
+            
+
             ################################
             return 'succ'
         if self.tries==1:
@@ -476,7 +544,7 @@ class Scan_shelf(smach.State):
             av=arm.get_current_joint_values()
             av[0]=0.05
             arm.go(av)            
-            request.height.data=0.43  #MiD SHELF FOR PLACING 
+            request.height.data=0.41  #MiD SHELF FOR PLACING 
             area_name_numbered= 'mid_shelf'
             rospy.sleep(1.3)
         if self.tries==3:
@@ -491,12 +559,12 @@ class Scan_shelf(smach.State):
         rospy.sleep(1.3)                
         ###############################################3
         
-        res=placing_finder_server.call(request)
-        #succ=seg_res_tf(res)
-        print (f'Placing Area at {res.poses.data}')
-        area_number+=1
-        area_name_numbered+=str(area_number)
-        tf_man.pub_static_tf(pos=[res.poses.data[0], res.poses.data[1],res.poses.data[2]], rot =[0,0,0,1], point_name=f'placing_area_{area_name_numbered}')
+        #res=placing_finder_server.call(request)
+        ##succ=seg_res_tf(res)
+        #print (f'Placing Area at{area_name_numbered}_{res.poses.data}')
+        #area_number+=1
+        #area_name_numbered+=str(area_number)
+        #tf_man.pub_static_tf(pos=[res.poses.data[0], res.poses.data[1],res.poses.data[2]], rot =[0,0,0,1], point_name=f'placing_area_{area_name_numbered}')
         ###############OBJECTS YOLO#######################                  
         img_msg  = bridge.cv2_to_imgmsg(rgbd.get_image())
         req      = classify_client.request_class()
