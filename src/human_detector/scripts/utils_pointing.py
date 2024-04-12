@@ -461,14 +461,17 @@ def detect_pointing2(points_msg):
     # Set the prepared object as the input blob of the network
     net.setInput(inpBlob)
     output = net.forward()
+    try:
+        poses = getconectionJoints(output,inHeight,inWidth)
+        imageDraw = drawSkeletons(image,poses,plot=False)
+    except:
+        print("Ocurrio un error al construir el esqueleto")
+        raise OpenPException("Ocurrio un error al construir el esqueleto ")
 
-    poses = getconectionJoints(output,inHeight,inWidth)
-    imageDraw = drawSkeletons(image,poses,plot=False)
-    print(os.path.expanduser( '~' )+"/Documents/tmpPOINTING.jpg")
-    cv2.imwrite(os.path.expanduser( '~' )+"/Documents/tmpPOINTING.jpg",imageDraw)
+    #print(os.path.expanduser( '~' )+"/Documents/tmpPOINTING.jpg")
+    #cv2.imwrite(os.path.expanduser( '~' )+"/Documents/tmpPOINTING.jpg",imageDraw)
     res.debug_image.append(bridge.cv2_to_imgmsg(imageDraw))
 
-    # FALTA COMPARAR CON LA TF HUMAN Y VER CUAL ES LA MAS CERCANA (TODO LO DE ROS)
     dists=[]
     for i,pose in enumerate(poses):
         if pose[0,0] != 0:
@@ -476,6 +479,8 @@ def detect_pointing2(points_msg):
             pose_xyz =[points_data['x'][int(pose[0,1]), int(pose[0,0])],
                        points_data['y'][int(pose[0,1]), int(pose[0,0])],
                        points_data['z'][int(pose[0,1]), int(pose[0,0])]]
+            #if (pose_xyz == None).any():               # PENDIENTE DE TERMINAR Y PROBAR
+            #    raise TFException("Error al obtener datos de PointCloud")
             dists.append(np.linalg.norm(pose_xyz)) 
             t=write_tf((pose_xyz[0],pose_xyz[1],pose_xyz[2]),(0,0,0,1),'person_'+str(i),parent_frame='head_rgbd_sensor_rgb_frame')
             b_st.sendTransform(t)
@@ -485,13 +490,16 @@ def detect_pointing2(points_msg):
             pose_xyz =[points_data['x'][int(pose[1,1]), int(pose[1,0])],
                        points_data['y'][int(pose[1,1]), int(pose[1,0])],
                        points_data['z'][int(pose[1,1]), int(pose[1,0])]]
-            
-            dists.append(np.linalg.norm(pose_xyz)) 
+            #if (pose_xyz == None).any():               # PENDIENTE DE TERMINAR Y PROBAR
+            #    raise TFException("Error al obtener datos de PointCloud")
+            dists.append(np.linalg.norm(pose_xyz))  
             t=write_tf((pose_xyz[0],pose_xyz[1],pose_xyz[2]),(0,0,0,1),'person_'+str(i),parent_frame='head_rgbd_sensor_rgb_frame')
             b_st.sendTransform(t)
             rospy.sleep(0.3)
         else:
             print("NO HAY DATOS PARA PUBLICAR")   
+                    # PENDIENTE DE TERMINAR Y PROBAR
+            #raise ZeroSKException("Error, datos en zero para TF")
 
 
     print(np.min(dists),np.argmin(dists))
@@ -513,14 +521,17 @@ def detect_pointing2(points_msg):
             points_data['y'][int(poses[k,7,1]), int(poses[k,7,0])],
             points_data['z'][int(poses[k,7,1]), int(poses[k,7,0])]]
             
-    
+    #if (codoD == None).any() or (manoD == None).any():               # PENDIENTE DE TERMINAR Y PROBAR
+    #    raise WriteTFException("Error al publicar TF (empty)")
     t=write_tf((codoD[0],codoD[1],codoD[2]),(0,0,0,1),'codoD',parent_frame='head_rgbd_sensor_rgb_frame')
     b_st.sendTransform(t)
     rospy.sleep(0.3)
-    t=write_tf((codoI[0],codoI[1],codoI[2]),(0,0,0,1),'codoI',parent_frame='head_rgbd_sensor_rgb_frame')
+    t=write_tf((manoD[0],manoD[1],manoD[2]),(0,0,0,1),'manoD',parent_frame='head_rgbd_sensor_rgb_frame')
     b_st.sendTransform(t)
     rospy.sleep(0.3)
-    t=write_tf((manoD[0],manoD[1],manoD[2]),(0,0,0,1),'manoD',parent_frame='head_rgbd_sensor_rgb_frame')
+    #if (codoI == None).any() or (manoI == None).any():               # PENDIENTE DE TERMINAR Y PROBAR
+    #    raise WriteTFException("Error al publicar TF (empty)")
+    t=write_tf((codoI[0],codoI[1],codoI[2]),(0,0,0,1),'codoI',parent_frame='head_rgbd_sensor_rgb_frame')
     b_st.sendTransform(t)
     rospy.sleep(0.3)
     t=write_tf((manoI[0],manoI[1],manoI[2]),(0,0,0,1),'manoI',parent_frame='head_rgbd_sensor_rgb_frame')
@@ -536,7 +547,7 @@ def detect_pointing2(points_msg):
     codoI, _ =getTF(target_frame='codoI')
     manoD, _ =getTF(target_frame='manoD')
     manoI, _ =getTF(target_frame='manoI')
-
+    #if codoD[0] and codoI[0] and manoI[0] and codoI[0]:
     ds=[manoD[2]-codoD[2],manoI[2]-codoI[2]]
    
     v1=[-(manoD[0]-codoD[0]),-(manoD[1]-codoD[1]),ds[np.argmin(ds)]-(manoD[2]-codoD[2])]
@@ -681,231 +692,58 @@ def detect_all(points_msg):
 
 # FUNCIONES PARA DETECTAR TODOS LOS KEYPOINTS
 
-#--------------------------------------
-def getKeypoints(output,inWidth, inHeight,numKeys=9,thresholdKey=110):
-    # se obtiene primero los keypoints 
-    keypoints=[]
-    for i in range (numKeys):
-        probMap = output[0, i, :, :]
+#----------------------
+def getGroups(output,conections):
+    
+    fullMAP=np.zeros((inHeight,inWidth),np.float32)
+    for con in conections:
+        probMap = output[0, con, :, :]
         probMap = cv2.resize(probMap, (inWidth, inHeight))
         mapSmooth = cv2.GaussianBlur(probMap,(3,3),0,0)
-        _,mapMask = cv2.threshold(mapSmooth*256,thresholdKey,255,cv2.THRESH_BINARY)
-        contours,_ = cv2.findContours(np.uint8(mapMask), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-        for cnt in contours:
-            blobMask = np.zeros(mapMask.shape)
-            blobMask = cv2.fillConvexPoly(blobMask, cnt, 1)
-            maskedProbMap = mapSmooth * blobMask
-            _, maxVal, _, maxLoc = cv2.minMaxLoc(maskedProbMap)
-            keypoints.append(maxLoc + (probMap[maxLoc[1], maxLoc[0]],) +(i,))
-    return keypoints
+        thresh =-256 if mapSmooth.max() < 0.1 else 256
+        minthresh = mapSmooth.max()*thresh/2 if thresh == 256 else mapSmooth.min()*thresh/2
+        if minthresh >15:
+            _,mapMask = cv2.threshold(mapSmooth*thresh,minthresh-12,255,cv2.THRESH_BINARY)
+        else:
+            _,mapMask = cv2.threshold(mapSmooth*thresh,minthresh-1,255,cv2.THRESH_BINARY)
 
-
-#--------------------------------------
-def getDistances(keysPart,gP):
-    matchesInMask=[]
-    for key in keysPart :
-
-        tmp=[]
-        for j in range(len(gP)):
-
-            if gP[j] and [key[0],key[1]] in gP[j]:
-                tmp=[]
-                tmp.append([[key[0],key[1]],key[-1],j,-1,-1])
-                break
-
-            elif gP[j] and not [key[0],key[1]] in gP[j]:
-                restas=np.subtract(gP[j],[key[0],key[1]])
-                distMIN = np.linalg.norm(restas,axis=1)
-                tmp.append([[key[0],key[1]],key[-1],j,np.argmin(distMIN),np.min(distMIN)])
-        matchesInMask.append(tmp)
-    return matchesInMask
-
-#--------------------------------------
-def ordenaKeypoints(keypoints,numKeys):
-    # ORDENO DE IZQUIERDA A DERECHA (LA PRIMER COORDENADA)
-    l=0
-    for i in range(numKeys):
-        tmp = [item[0] for item in [item for item in keypoints if item[-1] == i]]
-        order = np.argsort(tmp) if i==0 else np.concatenate((order,np.argsort(tmp)+l),axis=None)
-        l+=len(tmp)
+        fullMAP += mapMask
+    contours,_ = cv2.findContours(np.uint8(fullMAP), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     
-    return [keypoints[i] for i in order]
-
-
-#--------------------------------------
-def asignaEspacios(lista,maxPeople):
-    espacios = list(range(maxPeople))
-
-    defaul=[]
-    for keyT in lista:
-        if len(keyT)==1:
-            defaul.append(keyT[0][2])
-    #descarto espacios ya ocupados
-    for d in defaul:
-        espacios.remove(d)
-    #lista con valores ya asignados
-    subLista=[x[0] for x in lista if len(x)==1]
-
-    while espacios:
-        #lista con valores por asignar, guardo indice para despues modificar con asignacion
-        sublista2=[x for x in lista if len(x)>1]
-        indexes=[i for i,x in enumerate(lista) if len(x)>1]
-        tmp=[]
-        if len(sublista2) == 1:
-            lista[indexes[0]] = [[sublista2[0][0][0],sublista2[0][0][1],espacios[0],-1,-1]]
-            break
-        for x in sublista2:
-            for key in x:
-                if key[2] == espacios[0]:
-                    tmp.append(key)
-        # esta lista es la nueva de acuerdo a la asignacion de la distancia mas corta
-        keyTmp=[tmp[np.argmin([x[-1] for x in tmp])][0],
-                tmp[np.argmin([x[-1] for x in tmp])][1],
-               tmp[np.argmin([x[-1] for x in tmp])][2],
-                -1,
-                -1]
-        subLista.append(keyTmp)
-        lista[indexes[np.argmin([x[-1] for x in tmp])]] = [keyTmp]
-        espacios.pop(0)
-
-    #quito [] sobrantes
-    lista = [x[0] for x in lista]
-    return lista
-
+    listOfGroups=[]
+    for i in range(len(contours)):
+        tmpo=np.zeros((inHeight,inWidth),np.float32)
+        cv2.drawContours(tmpo, [contours[i]], -1, (255,255,0), thickness=cv2.FILLED)
+        listOfGroups.append(np.transpose(np.nonzero(tmpo == 255)))
+    return listOfGroups
 
 #----------------------
 # FUNCION PRINCIPAL
-def getconectionJoints(output,inHeight,inWidth,thresKeyP=110,numKeys=9 ):
-    # relacion entre indice de heatmaps y joints -> [hm,jointA,jointB]
-    conections = [[57,0,1],[40,1,2],[43,2,3],[45,3,4],[48,1,5],[51,5,6],[53,6,7]] #primero puede ser NO necesario
-    
+# version 2
+def getconectionJoints(output,inHeight,inWidth,numKeyPoints = 8 ):
+    conections = [57,40,43,45,48,51,53] #,27,32,34,37]   # SOLO se utilzan 7 conexiones por simplicidad
     # se obtiene primero los keypoints 
-    keypoints = getKeypoints(output,inWidth, inHeight,numKeys,thresholdKey=thresKeyP)
-
+    
+    keypoints = getKeypoints(output,inWidth, inHeight,numKeys = numKeyPoints)
     # cuento max personas encontradas
     conteo=Counter([i[-1] for i in keypoints])
     maxPeople = max(list(conteo.values()))
     avgPeople = round(sum(list(conteo.values()))/len(list(conteo.values())))
     if maxPeople > avgPeople :
         maxPeople = avgPeople
-    sk = np.zeros([maxPeople,8,2])
+    
+    groups = getGroups(output,conections)
+    sk = np.zeros([len(groups),numKeyPoints,2])
 
-
-    # por cada conexion se compara los keypoints # AQUI EMPEZARIA EL LOOP POR CADA CONEXION
-    for con in conections:
-        #con = conections[0]    # OPCION PARA 1 CASO, DESCOMENTAR Y COMENTAR LINEA ANTERIOR (QUITAR IDENTACION)
-        gP=[]
-        for i in range(maxPeople):
-            gP.append([])
-        #
-        print("CONECTION",con)      
-        probMap = output[0, con[0], :, :]
-        probMap = cv2.resize(probMap, (inWidth, inHeight))
-        #cv2.imwrite(os.path.expanduser( '~' )+"/Documents/heatmap_"+str(con[0])+".jpg",probMap)
-        mapSmooth = cv2.GaussianBlur(probMap,(3,3),0,0)
-        thresh =-256 if mapSmooth.max() < 0.1 else 256
-        minthresh = mapSmooth.max()*thresh/2 if thresh == 256 else mapSmooth.min()*thresh/2
-        if minthresh >15:
-            _,mapMask = cv2.threshold(mapSmooth*thresh,minthresh-10,255,cv2.THRESH_BINARY)
-        else:
-            _,mapMask = cv2.threshold(mapSmooth*thresh,minthresh-1,255,cv2.THRESH_BINARY)
-        contours,_ = cv2.findContours(np.uint8(mapMask), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-
-        # OBTENGO CENTROIDES PARA PODER SEPARAR LAS MASCARAS EN SUBCONJUNTOS DE COORDENADAS
-        cents=[]
-        gruposDist=False
-        for cont in contours:
-            cents.append(np.mean(cont, axis=0)[0])
-        #ordeno de izquierda a derecha (en eje x)
-        cents = [cents[i] for i in np.argsort([item[0] for item in cents])]
-
-
-        gruposDist=len(cents)< maxPeople
-        #obtengo coordenadas de todos los puntos que no tengan valor en cero
-        maskV = np.transpose(np.nonzero(mapMask == 255))
-
-        # SEPARO POR CONJUNTOS DE ACUERDO A LOS CENTROIDES MAS CERCANOS
-        for v in maskV:
-            distMin=np.linalg.norm(np.subtract(cents,[v[1],v[0]]),axis=1)
-            # agrego a la lista en el grupo de la menor distancia
-            gP[np.argmin(distMin)].append([v[1],v[0]]) # primero [1,0] para 'acomodar'
-
-        keyspartA = [k for k in keypoints if k[-1]==con[1] ]
-        keyspartB = [k for k in keypoints if k[-1]==con[2] ]
-
-        if keyspartA[0][-1] == 1 and gruposDist and sk[0,0,0]==0:
-            # CASO NO IDEAL QUE NO PUEDE CREAR 'BIEN' DESDE UN INICIO
-            return []
-
-        # CASO INICIAL, SI NO HUBO MISMO NUMERO DE PERSONAS y CABEZAS/CUELLOS DETECTADAS CON REGIONES
-        if keyspartA[0][-1] == 0 and gruposDist and len(keyspartA) == maxPeople:
-            # CASO EN QUE SE PUEDE AGREGAR CABEZAS AUNQUE HAYA MENOS REGIONES, SOLO SI HAY MISMO
-            # NUMERO DE CABEZAS QUE PERSONAS
-            for i in range(len(keyspartA)):
-                sk[i,0,0] = keyspartA[i][0]
-                sk[i,0,1] = keyspartA[i][1] 
-        if keyspartA[0][-1] == 0 and gruposDist and len(keyspartA) != maxPeople:
-            print("CASO PENDIENTE de TRATAR o quitar")
-
-        # ELSE HACER LO DE ABAJO CON A y despues con B
-        else:
-
-            # AQUI OBTENGO DISTANCIAS MINIMAS O PERTENENCIAS DE LOS PUNTOS (JOINTS) A UN GRUPO 
-            # matchesInMask_ = [ (key_x,key_y), num_joint, grupo_encontrado, index_distMin, distMin ]
-            matchesInMaskA=getDistances(keyspartA,gP)
-            matchesInMaskB=getDistances(keyspartB,gP)
-
-            modifA = False
-            # CASOS INICIALES E IDEALES
-            if max([len(i) for i in matchesInMaskA]) == 1 and (matchesInMaskA[0][0][1]==0 or matchesInMaskA[0][0][1]==1):
-                for item in matchesInMaskA:
-                    sk[item[0][2],item[0][1],0] = item[0][0][0]
-                    sk[item[0][2],item[0][1],1] = item[0][0][1]
-            elif max([len(i) for i in matchesInMaskA]) != 1 and (matchesInMaskA[0][0][1]==0 or matchesInMaskA[0][0][1]==1):
-                # CASO NO IDEAL DEL PRIMER GRUPO, AL MENOS UN KEYPOINT FUERA DE UNA REGION
-                listaCorrespA = asignaEspacios(matchesInMaskA,maxPeople)
-                modifA = True
-            # CASO IDEAL PARA EL SEGUNDO GRUPO DE KEYPOINTS (B), TODOS DENTRO DE UNA REGION DE CORRESPONDENCIA
-            if max([len(i) for i in matchesInMaskB]) == 1:
-                for item in matchesInMaskB:
-                    sk[item[0][2],item[0][1],0] = item[0][0][0]
-                    sk[item[0][2],item[0][1],1] = item[0][0][1]
-            
-            #  CASO EN QUE HUBO KEYPOINTS FUERA DE REGIONES DE CORRESPONDENCIA
-            else:
-                # SE ASIGNA REGIONES DE ACUERDO A LAS DISTANCIAS MINIMAS DE CADA KEYPOINT A LA(s) REGION(es)
-                listaCorrespB = asignaEspacios(matchesInMaskB,maxPeople)
-                # CASO EN QUE NO HUBO MENOR NUMERO DE REGIONES 
-                if not gruposDist:
-                    for item in listaCorrespB:
-                        sk[item[2],item[1],0] = item[0][0]
-                        sk[item[2],item[1],1] = item[0][1]
-                        
-                # CASO EN QUE SI HUBO MENOR NUMERO DE REGIONES 
-                # SE COMPARA CON DATOS ANTERIORES QUE ESTARAN 'CORRECTAS'
-                else:
-                    # EN CASO QUE HUBO MODIFICACION AL PRIMER GRUPO (A)
-                    if modifA:
-                        for itemB in listaCorrespB:
-                            # BUSCO CORRESPONDENCIA PARA CADA PUNTO B CON EL A
-                            tmp = [x for x in listaCorrespA if x[2]==itemB[2]][0]
-                            # COMO A DEL PASO ANTERIOR ES CORRECTO, BUSCO EN QUE GRUPO(REGION) SE ASIGNO 
-                            indexCorrecto = [i for i,item in enumerate(sk) if tmp[0] in item]
-                            # REASIGNO B AL GRUPO DE A DEL PASO ANTERIOR
-                            sk[indexCorrecto[0],itemB[1],0] = itemB[0][0]
-                            sk[indexCorrecto[0],itemB[1],1] = itemB[0][1]
-                    
-                    # EN CASO QUE NO HUBO MODIFICACIONES AL PRIMER GRUPO (A)
-                    else:
-                        for itemB in listaCorrespB:
-                            # BUSCO CORRESPONDENCIA PARA CADA PUNTO B CON EL A
-                            tmp = [x for x in matchesInMaskA if x[0][2]==itemB[2]]
-                            # COMO A DEL PASO ANTERIOR ES CORRECTO, BUSCO EN QUE GRUPO SE ASIGNO 
-                            indexCorrecto = [i for i,item in enumerate(sk) if tmp[0] in item]
-                            # REASIGNO B AL GRUPO DE A DEL PASO ANTERIOR
-                            sk[indexCorrecto[0],itemB[1],0] = itemB[0][0]
-                            sk[indexCorrecto[0],itemB[1],1] = itemB[0][1]
-
+    #print(maxPeople,len(groups))
+    if maxPeople != len(groups):
+        raise Exception("Distinto numero de KP que esqueletos detectados ")
+    
+    for k in keypoints:
+        for i, group in enumerate(groups):
+            if [True for item in group if (item == [k[1],k[0]]).all()]:     
+                sk[i,k[3],0] = k[0]
+                sk[i,k[3],1] = k[1]
     return sk
 
 #----------------------
@@ -913,25 +751,25 @@ def drawSkeletons(frame,sk,plot=False):
     colors=[(41,23,255),(99,1,249),(251,10,255),(10,75,255),(41,243,186),(10,10,255),
                     (25,136,253),(40,203,253),(0,218,143),(0,218,116),(78,218,0),(253,183,31),
                     (148,241,4),(239,255,1),(253,145,31),(253,80,31),(248,8,207),(248,8,76)]
-    conections = [[57,0,1],[40,1,2],[43,2,3],[45,3,4],[48,1,5],[51,5,6],[53,6,7]] #primero puede ser NO necesario
+    conections = [[0,1],[1,2],[2,3],[3,4],[1,5],[5,6],[6,7]] #primero puede ser NO necesario
     
     rgbbkg = np.copy(frame)
     for s in sk:
         rgbbkg = cv2.circle(rgbbkg,(int(s[0][0]),int(s[0][1])),6,(255,255,0),-1)
         rgbbkg = cv2.circle(rgbbkg,(int(s[1][0]),int(s[1][1])),6,(255,255,0),-1)
         rgbbkg = cv2.line(rgbbkg,
+                              (int(s[conections[0][0],0]),int(s[conections[0][0],1])),
                               (int(s[conections[0][1],0]),int(s[conections[0][1],1])),
-                              (int(s[conections[0][2],0]),int(s[conections[0][2],1])),
                               colors[0],
                               2)
     for i in range(1,len(conections)):
         for s in sk:
-            if int(s[conections[i][2],0]) != 0:
-                rgbbkg = cv2.circle(rgbbkg,(int(s[conections[i][2],0]),int(s[conections[i][2],1])),6,(255,255,0),-1)
-            if int(s[conections[i][1],0]) != 0 and int(s[conections[i][2],0]) != 0:
+            if int(s[conections[i][1],0]) != 0:
+                rgbbkg = cv2.circle(rgbbkg,(int(s[conections[i][1],0]),int(s[conections[i][1],1])),6,(255,255,0),-1)
+            if int(s[conections[i][0],0]) != 0 and int(s[conections[i][1],0]) != 0:
                 rgbbkg = cv2.line(rgbbkg,
+                              (int(s[conections[i][0],0]),int(s[conections[i][0],1])),
                               (int(s[conections[i][1],0]),int(s[conections[i][1],1])),
-                              (int(s[conections[i][2],0]),int(s[conections[i][2],1])),
                               colors[i],
                               2)
     
