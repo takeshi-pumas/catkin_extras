@@ -6,6 +6,22 @@ bedroom:
 - qy: 0.0
 - qz: 0.695
 - qw: 0.718
+bottom_place_area:
+- x: 9.494
+- y: -3.64
+- theta: -1.525
+- qx: 0.0
+- qy: 0.0
+- qz: 0.69
+- qw: -0.723
+breakfast:
+- x: 9.986
+- y: -1.63
+- theta: 1.473
+- qx: 0.0
+- qy: 0.0
+- qz: 0.672
+- qw: 0.74
 dining_room:
 - x: 9.614
 - y: -3.614
@@ -39,13 +55,13 @@ living_room:
 - qz: -0.757
 - qw: 0.652
 pickup:
-- x: 9.354
-- y: -2.139
-- theta: 3.047
+- x: 9.575
+- y: -2.405
+- theta: -3.098
 - qx: 0.0
 - qy: 0.0
-- qz: 0.998
-- qw: 0.047
+- qz: 0.999
+- qw: -0.021
 place_shelf:
 - x: 9.571
 - y: -3.638
@@ -55,12 +71,12 @@ place_shelf:
 - qz: 0.698
 - qw: -0.715
 shelf:
-- x: 9.637
-- y: -3.601
-- theta: 0.001
+- x: 9.764
+- y: -3.479
+- theta: 0.077
 - qx: 0.0
 - qy: 0.0
-- qz: 0.0
+- qz: 0.038
 - qw: 0.999
 zero:
 - x: 9.28
