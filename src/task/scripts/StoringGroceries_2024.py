@@ -45,7 +45,7 @@ class Initial(smach.State):
 
         print (f'Regions for Storing Groceries(Real Robot) {regions}')
         ##TO AVOID SMACH DYING IN CASE NO PLACING AREA IS FOUND, THere is a default that at least allows the test to continue
-        x,y= 9.3 , -4.7  #np.mean(regions['shelves'], axis=0)
+        x,y= 9.5 , -4.7  #np.mean(regions['shelves'], axis=0)
         z=0.4#self.mid_shelf_height=0.4 shelves heights must also be set on SCAN SHELF  state init sectoin.
 
         tf_man.pub_static_tf(pos=[x,y,z],point_name='placing_area') ### IF a real placing area is found this tf will be updated
@@ -132,11 +132,12 @@ class Scan_table(smach.State):
             print ( "I could not find more objects ")
             return 'tries'
         if self.tries==1:
-            head.set_joint_values([ 0.0, -0.5])
+            
             talk('Scanning Table')
         
         global objs 
-        print ('scanNING TABLE')
+        
+        head.set_joint_values([ 0.0, -0.5])
         rospy.sleep(5.0)                        
         img_msg  = bridge.cv2_to_imgmsg( cv2.cvtColor(rgbd.get_image(), cv2.COLOR_RGB2BGR))### GAZEBO BGR!?!??!
         req      = classify_client.request_class()
@@ -276,6 +277,9 @@ class Goto_place_shelf(smach.State):
         arm.go()
         if self.tries == 1: talk('Navigating to, shelf')
         res = omni_base.move_base(known_location='place_shelf', time_out=10)
+        res = omni_base.move_base(known_location='place_shelf', time_out=10)
+        res = omni_base.move_base(known_location='place_shelf', time_out=10)
+
         print(res)
 
         if res:
@@ -313,15 +317,18 @@ class Place_shelf(smach.State):
         succ=arm.go(placing_pose)
         
         hand_grasp_D()  
+        if placing_pose==low_shelf_place:omni_base.tiny_move( velX=0.1,std_time=3.0) 
 
         
         rospy.sleep(1.0)
         gripper.open()
         rospy.sleep(1.0)
 
+        head.set_joint_values([0,0])
+        omni_base.tiny_move( velX=-0.3,std_time=6.0) 
+        arm.set_named_target('go')
+        arm.go()
 
-
-        omni_base.tiny_move( velX=-0.3,std_time=4.2) 
 
  
 
@@ -395,7 +402,12 @@ class Check_grasp(smach.State):
                     rospy.sleep(0.5)
                     clear_octo_client()
                     return 'failed'
-        objs.drop(objs[objs['obj_name'] == target_object].index, inplace=True)
+        #objs.drop(objs[objs['obj_name'] == target_object].index, inplace=True)
+        obj_rows = objs[objs['obj_name'] == target_object]
+        approx_coords =  objs[(objs['x'].round(2) == obj_rows.iloc[0]['x'].round(2)) &
+                              (objs['y'].round(2) == obj_rows.iloc[0]['y'].round(2)) &
+                              (objs['z'].round(2) == obj_rows.iloc[0]['z'].round(2))]
+        objs.drop(approx_coords.index,inplace=True) 
         self.tries=0
         return'succ'    
                 
@@ -412,48 +424,92 @@ class Scan_top_shelf(smach.State):
         smach.State.__init__(
             self, outcomes=['succ', 'failed', 'tries'])
         self.tries = 0
-        self.top_shelf_height=0.88
-        self.mid_shelf_height=0.4
-        self.low_shelf_height=0.00
-        
-
-
-
+        self.top_shelf_height=0.85
+        self.mid_shelf_height=0.38
+        self.low_shelf_height=0.01      
        
     def execute(self, userdata):
         global shelves_cats , objs_shelves
         self.tries+=1
         
-        if "shelves_cats" in globals(): talk ( "I already scanned the shelf. Maybe dont scan it every time?")
+        if "shelves_cats" in globals() and len(shelves_cats)==3:
+            talk ( "I already scanned the shelf. Maybe dont scan it every time?")
+            print (shelves_cats , cat)
+            corresponding_key='low'
+            for key, value in shelves_cats.items():
+                if value == cat:corresponding_key = key
+            if corresponding_key=='top':
+
+                talk(f'Category {cat} found in top shelf... Placing')
+                print ('GOTO PLACE SHELF TOP')
+                head.set_joint_values([0.0 , 0.0])
+                rospy.sleep(2.5)
+                
+                omni_base.move_base(known_location='high_place_area', time_out=10)
+                omni_base.move_base(known_location='high_place_area', time_out=10)
+                head.set_joint_values([0.0 , 0.0])
+                av=arm.get_current_joint_values()
+                av[0]=0.67
+                av[1]=-0.74
+                arm.go(av)
+                head.set_joint_values([-np.pi/2 , -0.7])        
+                rospy.sleep(2.6)
+                rospy.sleep(2.5)                
+                
+                if find_placing_area(self.top_shelf_height) != True:find_placing_area(self.top_shelf_height + 0.03)
+
+                head.set_joint_values([0.0 , 0.0])
+                rospy.sleep(2.6)
+                rospy.sleep(2.5)                
+
+
+                return 'succ'
+
+            elif corresponding_key=='mid':
+                talk(f'Category {cat} found in mid shelf... Placing')
+
+
+                head.set_joint_values([0.0 , 0.0])
+                arm.set_named_target('go')
+                arm.go()
+                rospy.sleep(1.0)
+                omni_base.move_base(known_location='bottom_place_area', time_out=10)
+                omni_base.move_base(known_location='bottom_place_area', time_out=10)
+                rospy.sleep(2.5)
+                rospy.sleep(2.5)            
+                head.set_joint_values([0.0 , -0.7])        
+                rospy.sleep(2.6)
+                find_placing_area(self.mid_shelf_height)
+                head.set_joint_values([0.0 , 0.0])
+                rospy.sleep(2.6)
+                arm.set_named_target('go')
+                arm.go()
+
+            else:
+                talk(f'Category {cat} found in low shelf... Placing')
+                print ('GOTO PLACE SHELF LOW')
+                head.set_joint_values([0.0 , 0.0])
+                arm.set_named_target('go')
+                arm.go()
+                rospy.sleep(1.0)
+                omni_base.move_base(known_location='bottom_place_area', time_out=10)
+                omni_base.move_base(known_location='bottom_place_area', time_out=10)
+                rospy.sleep(2.5)
+                rospy.sleep(2.5)
+                head.set_joint_values([0.0, -1.05])        
+                rospy.sleep(2.5)
+                find_placing_area(self.low_shelf_height)
+                return 'succ'
+
         rospy.loginfo('State : Scanning_shelf')
         talk('Scanning shelf')
-        print("talk('Scanning top shelf')")
-        print (self.tries)
         ##################
-        rospack = rospkg.RosPack()        
-        
-        
-            
+        rospack = rospkg.RosPack()                    
         file_path = rospack.get_path('config_files')+'/regions'         
         #regions={'shelves':np.load(file_path+'/shelf_sim.npy'),'pickup':np.load(file_path+'/pickup_sim.npy')}
         regions={'shelves':np.load(file_path+'/shelves_region.npy'),'pickup':np.load(file_path+'/pickup_region.npy')}
         print('area box',regions['shelves'],'###################################')
-        if self.tries==3:
-            print ('No category found placing at mid.... ')
-            print ('GOTO PLACE SHELF MID')
-            head.set_joint_values([0.0 , 0.0])
-            av=arm.get_current_joint_values()
-            av[0]=0.0            
-            arm.go(av)
-            rospy.sleep(1.0)
-            omni_base.move_base(known_location='place_shelf', time_out=10)
-            rospy.sleep(2.5)
-            head.set_joint_values([0.0, -0.57])        
-            rospy.sleep(2.5)
-            find_placing_area(self.mid_shelf_height)
-
-            self.tries=0
-            return 'succ' # IMPLEMENT outcome->place top shelf
+        ####################################
         
         if self.tries==1:
             file_path = rospack.get_path('config_files') 
@@ -475,6 +531,22 @@ class Scan_top_shelf(smach.State):
             arm.go(av)
             head.set_joint_values([-np.pi/2 , -0.7])        
             rospy.sleep(5)
+        if self.tries==3:
+            print ('No category found placing at mid.... ')
+            print ('GOTO PLACE SHELF MID')
+            head.set_joint_values([0.0 , 0.0])
+            av=arm.get_current_joint_values()
+            av[0]=0.0            
+            arm.go(av)
+            rospy.sleep(1.0)
+            omni_base.move_base(known_location='place_shelf', time_out=10)
+            rospy.sleep(2.5)
+            head.set_joint_values([0.0, -0.57])        
+            rospy.sleep(2.5)
+            find_placing_area(self.mid_shelf_height)
+
+            self.tries=0
+            return 'succ' # IMPLEMENT outcome->place top shelf
 
         rospy.sleep(3.0)
         image= cv2.cvtColor(rgbd.get_image(), cv2.COLOR_RGB2BGR)
@@ -538,71 +610,90 @@ class Scan_top_shelf(smach.State):
         shelves_cats={}
         a=objs_shelves[objs_shelves['low_shelf']]['category'].value_counts()
         if 'other' in objs_shelves[objs_shelves['low_shelf']]['category'].values:a.drop('other',inplace=True)
-        if len(a.values)!=0:
-            talk('Category found in bottom shelf... Placing')
+        if len(a.values)!=0:            
             print(f'LOW  shelf category {a.index[a.argmax()]}')
             shelves_cats['low'] =a.index[a.argmax()]
-            if a.index[a.argmax()] == cat:
-                print ('GOTO PLACE SHELF LOW')
-                head.set_joint_values([0.0 , 0.0])
-                av=arm.get_current_joint_values()
-                av[0]=0.0            
-                arm.go(av)
-                rospy.sleep(1.0)
-                omni_base.move_base(known_location='place_shelf', time_out=10)
-                rospy.sleep(2.5)
-                rospy.sleep(2.5)
-                head.set_joint_values([0.0, -0.7])        
-                rospy.sleep(2.5)
-                find_placing_area(self.low_shelf_height)
-                return 'succ' # IMPLEMENT outcome->place top shelf
-            else : print (a.index[a.argmax()],cat, 'top_cat ,cat')
-        
-
         a=objs_shelves[objs_shelves['mid_shelf']]['category'].value_counts()
         if 'other' in objs_shelves[objs_shelves['mid_shelf']]['category'].values:a.drop('other',inplace=True)
         if len(a.values)!=0:
             print(f'MID  shelf category {a.index[a.argmax()]}')
             shelves_cats['mid'] =a.index[a.argmax()]
-            if a.index[a.argmax()] == cat:
-                talk('Category found in middle shelf... Placing')
-                print ('GOTO PLACE SHELF MID')
-                head.set_joint_values([0.0 , 0.0])
-                av=arm.get_current_joint_values()
-                av[0]=0.0            
-                arm.go(av)
-                rospy.sleep(1.0)
-
-                omni_base.move_base(known_location='place_shelf', time_out=10)
-                rospy.sleep(2.5)
-                head.set_joint_values([0.0, -0.57])        
-                rospy.sleep(2.5)
-                find_placing_area(self.mid_shelf_height)
-                return 'succ' # IMPLEMENT outcome->place top shelf
-            else : print (a.index[a.argmax()],cat, 'top_cat ,cat')
         a=objs_shelves[objs_shelves['top_shelf']]['category'].value_counts()
         if 'other' in objs_shelves[objs_shelves['top_shelf']]['category'].values:a.drop('other',inplace=True)
         if len(a.values)!=0:
             print(f'TOP  shelf category {a.index[a.argmax()]}')
             shelves_cats['top'] =a.index[a.argmax()]
-            if a.index[a.argmax()] == cat:
-                talk('Category found in top shelf... Placing')
-                print ('GOTO PLACE SHELF TOP')
-                find_placing_area(self.top_shelf_height)
-                return 'succ' # IMPLEMENT outcome->place top shelf
-            else : print (a.index[a.argmax()],cat, 'top_cat ,cat')
+        print (shelves_cats , cat)
+        corresponding_key='low'
+        for key, value in shelves_cats.items():
+            if value == cat:corresponding_key = key
+        
+        print ('corresponding_key',corresponding_key)
+        if corresponding_key=='top':
+
+            talk(f'Category {cat} found in top shelf... Placing')
+            print ('GOTO PLACE SHELF TOP')
+            head.set_joint_values([0.0 , 0.0])
+            arm.set_named_target('go')
+            arm.go()
+            rospy.sleep(4.0)
+            omni_base.move_base(known_location='high_place_area', time_out=10)
+            omni_base.move_base(known_location='high_place_area', time_out=10)
+            head.set_joint_values([0.0 , 0.0])
+            av=arm.get_current_joint_values()
+            av[0]=0.67
+            av[1]=-0.74
+            arm.go(av)
+            head.set_joint_values([-np.pi/2 , -0.7])        
+            rospy.sleep(2.6)
+            rospy.sleep(2.5)                
+
+            if find_placing_area(self.top_shelf_height):
+                head.set_joint_values([0.0 , 0.0])
+                rospy.sleep(2.6)
+                return 'succ'
+            else :
+                find_placing_area(self.top_shelf_height+0.03)
+                head.set_joint_values([0.0 , 0.0])
+                rospy.sleep(2.6)
+                return 'succ'
+        elif corresponding_key=='mid':
+            talk(f'Category {cat} found in  middle shelf... Placing')
+            head.set_joint_values([0.0 , 0.0])
+            arm.set_named_target('go')
+            arm.go()
+            rospy.sleep(1.0)
+            omni_base.move_base(known_location='bottom_place_area', time_out=10)
+            omni_base.move_base(known_location='bottom_place_area', time_out=10)
+            rospy.sleep(2.5)
+            rospy.sleep(2.5)            
+            head.set_joint_values([0.0 , -0.7])        
+            rospy.sleep(2.6)
+            find_placing_area(self.mid_shelf_height)
+            head.set_joint_values([0.0 , 0.0])
+            rospy.sleep(2.6)
+            arm.set_named_target('go')
+            arm.go()
+
+            return 'succ'
+
+        else:
+            talk(f'Category {cat} found in low shelf... Placing')
+            print ('GOTO PLACE SHELF LOW')
+            head.set_joint_values([0.0 , 0.0])
+            arm.set_named_target('go')
+            arm.go()
+            rospy.sleep(1.0)
+            omni_base.move_base(known_location='bottom_place_area', time_out=10)
+            omni_base.move_base(known_location='bottom_place_area', time_out=10)
+            rospy.sleep(2.5)
+            rospy.sleep(2.5)
+            head.set_joint_values([0.0, -1.05])        
+            rospy.sleep(2.5)
+            find_placing_area(self.low_shelf_height)
+            return 'succ'
        
-        objs_shelves.to_csv('/home/roboworks/Documents/objs_shelves.csv') # Debug DF --- REmove
-        print (f'#SHELVES CATS {shelves_cats}#')
-        print ('################################')
-        print ('################################')
-        print ('################################')
-        print ('################################')
-        print ('################################')
-        print ('################################')
-        print ('################################')
-        ################################
-        return 'failed'
+        
         
 
 # --------------------------------------------------

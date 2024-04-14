@@ -226,36 +226,16 @@ def seg_res_tf_pointing(res):
 def find_placing_area (plane_height=-1):
     #head.set_joint_values([-1.5,-0.65])
     #rospy.sleep(0.5)
-    request= segmentation_server.request_class() 
-    #plane_height=0.40
-    #request.height.data=-1
-    
-    request.height.data=plane_height  #MID SHELF FOR PLACING 
-    print ('#############Finding placing in plane####################',request.height.data)
-    res=placing_finder_server.call(request)
-    #succ=seg_res_tf(res)
-
-    print (f'Placing Area at {res.poses.data}')
-    if len(res.poses.data)!=0:
-        tf_man.pub_static_tf(pos=[res.poses.data[0], res.poses.data[1],res.poses.data[2]], rot =[0,0,0,1], point_name='placing_area')
-        return True
-    else:
-        request.height.data=plane_height+0.01  #MID SHELF FOR PLACING 
+    for i in range (10):
+        request= segmentation_server.request_class()    
+        request.height.data=plane_height+0.01*i  #MID SHELF FOR PLACING 
         print ('#############Finding placing in plane####################',request.height.data)
         res=placing_finder_server.call(request)
-        print (f'Placing Area at {res.poses.data}')
+        #succ=seg_res_tf(res)
+        print (f'Placing Area at {res.poses.data}')    
         if len(res.poses.data)!=0:
             tf_man.pub_static_tf(pos=[res.poses.data[0], res.poses.data[1],res.poses.data[2]], rot =[0,0,0,1], point_name='placing_area')
-            return True
-        else:
-            request.height.data=plane_height+0.02  #MID SHELF FOR PLACING 
-            print ('#############Finding placing in plane####################',request.height.data)
-            area_name_numbered= 'mid_shelf'
-            if len(res.poses.data)!=0:
-                print ('gotit')
-                tf_man.pub_static_tf(pos=[res.poses.data[0], res.poses.data[1],res.poses.data[2]], rot =[0,0,0,1], point_name='placing_area')
-                return True
-            else:print('failed')
+            return True    
     return False    
 
 
