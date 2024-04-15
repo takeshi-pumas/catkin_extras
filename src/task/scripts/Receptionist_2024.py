@@ -374,24 +374,31 @@ class Find_host_alternative(smach.State):
 
         # First try: looks for the real host
         # Next tries: looks for anyone
+
         if self.tries == 1:
             host_name, host_loc = party.get_host_info()
             if host_loc == 'None':
                 return 'failed'
         else:
             places = party.get_places()
-            _, seat = party.get_active_seat()
+            isActive, seat = party.get_active_seat()
+            places.remove('Place_0')
+            if isActive:
+                places.remove(seat)
 
-            place_chosen = random.choice(places)
-            if place_chosen != seat:
-                host_loc = seat
-                dont_compare = True
-            else:
-                return 'failed'
+            print('#####', places)
+
+            host_loc = places[self.tries - 2] #places[0]
+
+            
+            if self.tries - 1 >= len(places):
+                self.tries = 1 
+            #host_loc = seat
+            dont_compare = True
         
         #print("host location is: ", host_loc)
         #print("host name is: ", host_name)
-        voice.talk(f'looking for host on: {host_loc}')
+        voice.talk(f'Looking for host on: {host_loc}, look at me')
         tf_host = host_loc.replace('_', '_face')
         head.to_tf(tf_host)
         res, _ = wait_for_face()

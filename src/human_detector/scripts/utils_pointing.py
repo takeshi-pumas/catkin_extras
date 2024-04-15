@@ -547,7 +547,7 @@ def detect_pointing2(points_msg):
     codoI, _ =getTF(target_frame='codoI')
     manoD, _ =getTF(target_frame='manoD')
     manoI, _ =getTF(target_frame='manoI')
-    #if codoD[0] and codoI[0] and manoI[0] and codoI[0]:
+    #if codoD[0] and manoD[0] and manoI[0] and codoI[0]:
     ds=[manoD[2]-codoD[2],manoI[2]-codoI[2]]
    
     v1=[-(manoD[0]-codoD[0]),-(manoD[1]-codoD[1]),ds[np.argmin(ds)]-(manoD[2]-codoD[2])]
