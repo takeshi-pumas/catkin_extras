@@ -593,7 +593,7 @@ def detect_pointing2(points_msg):
 
 #><>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-
+"""
     i = 0 #Face
     #i = 1# Neck
     probMap = output[0, i, :, :]
@@ -609,7 +609,7 @@ def detect_pointing2(points_msg):
     res.z= cent[2]
     
     return res    
-
+"""
 
 def get_points(frame,inHeight,inWidth,output,threshold=0.1):
     
@@ -691,6 +691,28 @@ def detect_all(points_msg):
 
 
 # FUNCIONES PARA DETECTAR TODOS LOS KEYPOINTS
+#--------------------------------------
+def getKeypoints(output,inWidth, inHeight,numKeys=8):
+    # se obtiene primero los keypoints 
+    keypoints=[]
+    for i in range (numKeys):
+        probMap = output[0, i, :, :]
+        probMap = cv2.resize(probMap, (inWidth, inHeight))
+        mapSmooth = cv2.GaussianBlur(probMap,(3,3),0,0)
+        thresh =-256 if mapSmooth.max() < 0.1 else 256
+        minthresh = mapSmooth.max()*thresh/2 if thresh == 256 else mapSmooth.min()*thresh/2
+        if minthresh >15:
+            _,mapMask = cv2.threshold(mapSmooth*thresh,minthresh-12,255,cv2.THRESH_BINARY)
+        else:
+            _,mapMask = cv2.threshold(mapSmooth*thresh,minthresh-1,255,cv2.THRESH_BINARY)
+        contours,_ = cv2.findContours(np.uint8(mapMask), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        for cnt in contours:
+            blobMask = np.zeros(mapMask.shape)
+            blobMask = cv2.fillConvexPoly(blobMask, cnt, 1)
+            maskedProbMap = mapSmooth * blobMask
+            _, maxVal, _, maxLoc = cv2.minMaxLoc(maskedProbMap)
+            keypoints.append(maxLoc + (probMap[maxLoc[1], maxLoc[0]],) +(i,))
+    return keypoints
 
 #----------------------
 def getGroups(output,conections):
