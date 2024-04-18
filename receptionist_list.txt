@@ -1,0 +1,8 @@
+names:
+
+male: John, Jack, Paris, Charlie, Simone, Robin
+
+female: Jane, Jules, Paris, Charlie, Simone, Robin
+
+Beverages: Water, soda, coke, juice, iced tea
+
