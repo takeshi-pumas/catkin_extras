@@ -214,7 +214,9 @@ class Pickup(smach.State):
         pickup_objs=objs[objs['pickup']==True]
         pickup_objs=pickup_objs[pickup_objs['z']>0.69]#PICKUP AREA HEIGHT
         
-        print ('pickup_objs',pickup_objs)  
+        print ('pickup_objs',len(pickup_objs['obj_name'].values))
+        if  len(pickup_objs['obj_name'].values)==0:
+            talk ('No more objects found')
 
         ix=np.argmin(np.linalg.norm(rob_pos-pickup_objs[['x','y','z']]  .values  , axis=1))
         name, cat=pickup_objs[['obj_name','category']].iloc[ix]
@@ -799,7 +801,7 @@ if __name__ == '__main__':
                                                                                          'pickup':'PICKUP'})
         smach.StateMachine.add("SCAN_TABLE",    Scan_table(),       transitions={'failed': 'SCAN_TABLE',    
                                                                                          'succ': 'GOTO_PICKUP',       
-                                                                                         'tries': 'END'})        
+                                                                                         'tries': 'GOTO_PICKUP'})        
         smach.StateMachine.add("GOTO_SHELF",    Goto_shelf(),       transitions={'failed': 'GOTO_SHELF',    
                                                                                          'succ': 'SCAN_TOP_SHELF',       
                                                                                          'tries': 'GOTO_SHELF'})
