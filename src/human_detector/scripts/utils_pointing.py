@@ -137,42 +137,7 @@ def probmap_to_3d_mean(points_data,probMap, thres_prob=0.3):
     return cent
 
 
-def detect_human(points_msg):
-    points_data = ros_numpy.numpify(points_msg)    
-    image_data = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]   
-    image=cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
-    #image = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]
-    #rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    print (image.shape)
-    frame=image
-    inHeight = frame.shape[0]
-    inWidth = frame.shape[1]
-
-
-    # Prepare the frame to be fed to the network
-    inpBlob = cv2.dnn.blobFromImage(frame, 1.0 / 255, (inWidth, inHeight), (0, 0, 0), swapRB=False, crop=False)
-
-    # Set the prepared object as the input blob of the network
-    net.setInput(inpBlob)
-
-    output = net.forward()
-    i = 0 #Face
-    #i = 1# Neck
-    probMap = output[0, i, :, :]
-    probMap = cv2.resize(probMap, (inWidth, inHeight))
-    cent= probmap_to_3d_mean(points_data,probMap)
-    print (cent)
-    if np.isnan(cent.any()):return Human_detectorResponse()
-    print (cent)
-    if np.isnan(cent.any()):cent=np.zeros(3)
-    res=Human_detectorResponse()
-    res.x= cent[0]
-    res.y= cent[1]
-    res.z= cent[2]
-    
-    return res    
-
-
+#-----------------------------------------------------------------
 def detect_pointing(points_msg):
     points_data = ros_numpy.numpify(points_msg)    
     image_data = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]   
@@ -444,20 +409,27 @@ def detect_pointing(points_msg):
     #tf_man.pub_static_tf(pos=[x,y,0],point_name='point_left')
 
     return res    
-
+#-----------------------------------------------------------------
 def detect_pointing2(points_msg):
     #tf_man = TF_MANAGER()
     res=Point_detectorResponse()
-    points_data = ros_numpy.numpify(points_msg)    
-    image_data = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]   
-    image=cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
-    pts= points_data
+    human, _ =getTF(target_frame='human',ref_frame='head_rgbd_sensor_rgb_frame') 
+    
+    distToTF = np.linalg.norm(human) if human[0] else 2
+
+    print("DISTANCIA AL HUMANO ",distToTF)
+    image, masked_image = removeBackground(points_msg,distance = distToTF + 0.25)
+    cv2.imwrite(os.path.expanduser( '~' )+"/Documents/maskedImage.jpg",masked_image)
+       
+    #image_data = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]   
+    #image=cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
+    #pts= points_data
     print (image.shape)
     frame=image
     inHeight = frame.shape[0]
     inWidth = frame.shape[1]
     # Prepare the frame to be fed to the network
-    inpBlob = cv2.dnn.blobFromImage(image, 1.0 / 255, (inWidth, inHeight), (0, 0, 0), swapRB=False, crop=False)
+    inpBlob = cv2.dnn.blobFromImage(masked_image, 1.0 / 255, (inWidth, inHeight), (0, 0, 0), swapRB=False, crop=False)
     # Set the prepared object as the input blob of the network
     net.setInput(inpBlob)
     output = net.forward()
@@ -591,103 +563,6 @@ def detect_pointing2(points_msg):
     return res
     
 
-#><>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-"""
-    i = 0 #Face
-    #i = 1# Neck
-    probMap = output[0, i, :, :]
-    probMap = cv2.resize(probMap, (inWidth, inHeight))
-    cent= probmap_to_3d_mean(points_data,probMap)
-    print (cent)
-    if np.isnan(cent.any()):return Human_detectorResponse()
-    print (cent)
-    if np.isnan(cent.any()):cent=np.zeros(3)
-    res=Human_detectorResponse()
-    res.x= cent[0]
-    res.y= cent[1]
-    res.z= cent[2]
-    
-    return res    
-"""
-
-def get_points(frame,inHeight,inWidth,output,threshold=0.1):
-    
-    h=output.shape[2]
-    w=output.shape[3]
-    points=[]
-
-    for i in range(25):
-        probMap = output[0,i,:,:]
-        minVal,prob,minLoc,point = cv2.minMaxLoc(probMap)
-        print("P: ",point)
-        x = (inWidth * point[0]) / w
-        y = (inHeight * point[1]) / h
-
-        if prob > threshold : 
-            cv2.circle(frame,(int(x),int(y)),5,(0,255,255),-1)
-            cv2.putText(frame,str(i),(int(x),int(y)),
-                        cv2.FONT_HERSHEY_SIMPLEX,0.6,(255,165,5),1,
-                        lineType=cv2.LINE_AA)
-
-            points.append((x,y))
-        else:
-            points.append(None)
-
-    return points
-
-
-# IN PROGRESS
-def detect_all(points_msg):
-    direct=os.path.expanduser( '~' )
-    im=cv2.imread(direct+"/Documents/Tests/persons2.jpg")
-    print(im.shape)
-    points_data = ros_numpy.numpify(points_msg)    
-    image_data = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]   
-    image=cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
-    #image = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]
-    #rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    print (image.shape)
-    frame=im
-    inHeight = frame.shape[0]
-    inWidth = frame.shape[1]
-
-    keypoints=[]
-    # Prepare the frame to be fed to the network
-    inpBlob = cv2.dnn.blobFromImage(frame, 1.0 / 255, (inWidth, inHeight), (0, 0, 0), swapRB=False, crop=False)
-
-    # Set the prepared object as the input blob of the network
-    net.setInput(inpBlob)
-
-    output = net.forward()
-
-    points = get_points(frame,inHeight,inWidth,output)
-    print("POINTSSSS",len(points),points)
-    cv2.imshow("DRAW",frame)
-    cv2.waitKey(0)
-
-    """
-    i = 0 #Face
-    #i = 1# Neck
-    print("SHAPEs",output.shape)
-    probMap = output[0, i, :, :]
-    print(probMap.shape)
-    probMap = cv2.resize(probMap, (inWidth, inHeight))
-    minVal, prob, minLoc, point = cv2.minMaxLoc(probMap)
- 
-        #imr=cv2.bitwise_or(im, probMap)
-    cv2.imshow("A",cv2.cvtColor(im, cv2.COLOR_BGR2RGB))
-    for i in range(output.shape[1]):
-        probM=output[0,i,:,:]
-        probM=cv2.resize(probM, (inWidth, inHeight))
-
-        cv2.imshow("B",probM)
-        cv2.waitKey(0)
-
-    """
-    cv2.destroyAllWindows()
-
-    return Point_detectorResponse() 
 
 
 # FUNCIONES PARA DETECTAR TODOS LOS KEYPOINTS
@@ -798,3 +673,24 @@ def drawSkeletons(frame,sk,plot=False):
     if plot:
         plt.imshow(rgbbkg)
     return rgbbkg
+#--------------------------
+# para quitar fondo, es necesario rgbd de la camara del robot
+def removeBackground(points_msg,distance = 2):
+    # Obtengo rgb
+    points_data = ros_numpy.numpify(points_msg)
+    image_data = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]   
+    image=cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
+    image = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]
+    rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)    
+
+    # Quito todos los pixeles que esten a una distancia mayor y/o a una distancia menor
+    # Para poder obtener una mascara con ceros y unos
+    zs_no_nans=np.where(~np.isnan(points_data['z']),points_data['z'],10)
+    img_corrected = np.where((zs_no_nans < distance + 0.3),zs_no_nans,0)
+    #img_corrected = np.where((img_corrected >1.5),img_corrected,0)
+    img_corrected = np.where((img_corrected == 0),img_corrected,1)
+
+    # operacion AND entre la imagen original y la mascara para quitar fondo (background)
+    #img_corrected = img_corrected.astype(np.uint8)
+    masked_image = cv2.bitwise_and(rgb_image, rgb_image, mask=img_corrected.astype(np.uint8))
+    return rgb_image, masked_image
