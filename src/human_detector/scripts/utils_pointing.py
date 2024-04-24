@@ -136,19 +136,73 @@ def probmap_to_3d_mean(points_data,probMap, thres_prob=0.3):
         cent=np.zeros(3)
     return cent
 
-
-#-----------------------------------------------------------------
-def detect_pointing(points_msg):
+def detect_human(points_msg):
     points_data = ros_numpy.numpify(points_msg)    
     image_data = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]   
     image=cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
-    pts= points_data
+    #image = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]
+    #rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     print (image.shape)
     frame=image
     inHeight = frame.shape[0]
     inWidth = frame.shape[1]
+
+
     # Prepare the frame to be fed to the network
-    inpBlob = cv2.dnn.blobFromImage(image, 1.0 / 255, (inWidth, inHeight), (0, 0, 0), swapRB=False, crop=False)
+    inpBlob = cv2.dnn.blobFromImage(frame, 1.0 / 255, (inWidth, inHeight), (0, 0, 0), swapRB=False, crop=False)
+
+    # Set the prepared object as the input blob of the network
+    net.setInput(inpBlob)
+
+    output = net.forward()
+    i = 0 #Face
+    #i = 1# Neck
+    probMap = output[0, i, :, :]
+    probMap = cv2.resize(probMap, (inWidth, inHeight))
+    cent= probmap_to_3d_mean(points_data,probMap)
+    print (cent)
+    if np.isnan(cent.any()):return Human_detectorResponse()
+    print (cent)
+    if np.isnan(cent.any()):cent=np.zeros(3)
+    res=Human_detectorResponse()
+    res.x= cent[0]
+    res.y= cent[1]
+    res.z= cent[2]
+
+    return res    
+
+
+#-----------------------------------------------------------------
+def detect_pointing(points_msg):
+    """points_data = ros_numpy.numpify(points_msg)    
+    image_data = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]   
+    image=cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
+    
+    print (image.shape)
+    """
+    pts= ros_numpy.numpify(points_msg)  
+    #---
+    human, _ =getTF(target_frame='human',ref_frame='head_rgbd_sensor_rgb_frame') 
+    
+    distToTF = np.linalg.norm(human) if human[0] else 2
+
+    print("DISTANCIA AL HUMANO ",distToTF)
+
+    # <<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
+    # HARDCODEADA LA DISTANCIA A 2 METROS (+ 0.3 m) 
+    # NECESARIO MODIFICAR PARA PRUEBAS EN ROBOCUP DE ACUERDO A ESPACIOS Y 
+    # DISTANCIAS DE LA PRUEBA 
+    # SE IBA A UTILIZAR -> distToTF DE ACUERDO A LA TF DE LA PERSONA DETECTADA
+    # PERO NO ES MUY EXACTO
+    # <<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
+    image, masked_image = removeBackground(points_msg )
+    cv2.imwrite(os.path.expanduser( '~' )+"/Documents/maskedImage.jpg",masked_image)
+    #---
+    frame=image
+    inHeight = frame.shape[0]
+    inWidth = frame.shape[1]
+    # Prepare the frame to be fed to the network
+    inpBlob = cv2.dnn.blobFromImage(masked_image, 1.0 / 255, (inWidth, inHeight), (0, 0, 0), swapRB=False, crop=False)
     # Set the prepared object as the input blob of the network
     net.setInput(inpBlob)
     output = net.forward()
@@ -418,7 +472,7 @@ def detect_pointing2(points_msg):
     distToTF = np.linalg.norm(human) if human[0] else 2
 
     print("DISTANCIA AL HUMANO ",distToTF)
-    image, masked_image = removeBackground(points_msg,distance = distToTF + 0.25)
+    image, masked_image = removeBackground(points_msg,distance = distToTF)
     cv2.imwrite(os.path.expanduser( '~' )+"/Documents/maskedImage.jpg",masked_image)
        
     #image_data = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]   
@@ -436,6 +490,8 @@ def detect_pointing2(points_msg):
     try:
         poses = getconectionJoints(output,inHeight,inWidth)
         imageDraw = drawSkeletons(image,poses,plot=False)
+        cv2.imwrite(os.path.expanduser( '~' )+"/Documents/maskedImageWithOP.jpg",imageDraw)
+    
     except:
         print("Ocurrio un error al construir el esqueleto")
         raise OpenPException("Ocurrio un error al construir el esqueleto ")
