@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import rospy
 import smach
+import smach.state
 from smach_ros import SimpleActionState
 from object_classification.srv import *
 import cv2
@@ -9,6 +10,7 @@ from action_server.msg import GraspAction
 from std_msgs.msg import Float32MultiArray
 from std_srvs.srv import Empty
 import numpy as np 
+import random
 
 from utils import misc_utils, grasp_utils, nav_utils
 
@@ -122,7 +124,7 @@ class Scan_container(smach.State):
         rospy.loginfo("SMACH: Scan breakfast container")
         self.tries += 1
         #head_values = [0.0,-0.9]
-        head_values = [0.0,-0.5]
+        head_values = [random.uniform(-0.1, 0.1), random.uniform(-0.7, -0.3) ]
         head.set_joint_values(head_values)
         rospy.sleep(1.0)
         #image= cv2.cvtColor(rgbd.get_image(), cv2.COLOR_RGB2BGR)
@@ -139,7 +141,7 @@ class Decide_grasp(smach.State):
     def __init__(self):
         smach.State.__init__(self, 
                              input_keys=['obj_detected'],
-                             output_keys=['target_pose'],
+                             output_keys=['target_pose', 'obj_oncarry'],
                              outcomes = ['succ', 'failed'])
         self.tries = 0
         self.order_to_grasp = ["bowl", "cereal", "milk", "spoon"]
@@ -154,20 +156,21 @@ class Decide_grasp(smach.State):
         for idx, obj_name in enumerate(userdata.obj_detected[0]):
             obj = obj_name.data.split('_', 1)
             print(obj)
-            target_object = 'dice'
-            if obj[1] == target_object:
+            target_object = 'bowl'
+            if obj[0] == target_object or obj[0] == 'plate':
                 succ = True
                 position.append(userdata.obj_detected[1][idx].position.x)
                 position.append(userdata.obj_detected[1][idx].position.y)
                 position.append(userdata.obj_detected[1][idx].position.z)
                 tf_man.pub_static_tf(pos = position, point_name = target_object, ref = 'head_rgbd_sensor_rgb_frame')
                 rospy.sleep(0.8)
+                userdata.obj_oncarry = target_object
                 break
         if succ:
             clear_octo_client()
             pos, _ = tf_man.getTF(target_frame = target_object, ref_frame = 'odom')
             target_pose = Float32MultiArray()
-            #pos[1] += 0.03 #only bowl grasp
+            #pos[1] += 0.03 #only for bowl grasp
             pos[2] += 0.04 # 0.03
 
             target_pose.data = pos
@@ -175,6 +178,44 @@ class Decide_grasp(smach.State):
             return 'succ'
         else:
             return 'failed'
+class Goto_table(smach.State):
+    def __init__(self):
+        smach.State.__init__(self,
+                             input_keys=['obj_oncarry'],
+                             outcomes=['succ', 'failed'])
+        self.tries = 0
+    def execute(self, userdata):
+        rospy.loginfo("SMACH : Go to kitchen table")
+        self.tries += 1
+        res = omni_base.move_base(known_location = 'table_kitchen')
+        print(res)
+        if res:
+            self.tries = 0
+            return 'succ'
+        else:
+            voice.talk('Navigation Failed, retrying')
+            return 'failed'
+        
+class Place_on_table(smach.State):
+    def __init__(self):
+        smach.State.__init__(self,
+                             input_keys=['obj_oncarry'],
+                             outcomes=['succ', 'failed'])
+        self.tries = 0
+    def execute(self, userdata):
+        rospy.loginfo("SMACH : Place on kitchen table the carry on")
+        self.tries += 1
+
+        tf_man.pub_static_tf(pos= [0.15, 0.0, 0.07], point_name = "bowl_place", ref= "ar_marker/4")
+        res = True
+        if res:
+            self.tries = 0
+            return 'succ'
+        else:
+            voice.talk('Navigation Failed, retrying')
+            return 'failed'
+
+        
 
 
 
@@ -188,6 +229,8 @@ if __name__ == '__main__':
                         transitions={'failed': 'WAIT_PUSH_HAND', 'succ': 'GOTO_KITCHEN'})
         smach.StateMachine.add("GOTO_KITCHEN", Goto_kitchen(),              
                         transitions={'failed': 'GOTO_KITCHEN', 'succ': 'GOTO_KITCHEN_CONTAINER'})
+        
+        # Grasp process
         smach.StateMachine.add("GOTO_KITCHEN_CONTAINER", Goto_kitchen_container(),              
                         transitions={'failed': 'GOTO_KITCHEN_CONTAINER', 'succ': 'SCAN_CONTAINER'})
         smach.StateMachine.add("SCAN_CONTAINER", Scan_container(),              
@@ -196,7 +239,13 @@ if __name__ == '__main__':
         smach.StateMachine.add("DECIDE_GRASP", Decide_grasp(),              
                         transitions={'failed': 'SCAN_CONTAINER', 'succ': 'GRASP_GOAL'})
         smach.StateMachine.add("GRASP_GOAL", SimpleActionState('grasp_server', GraspAction, goal_slots=['target_pose']),              
-                        transitions={'preempted': 'END', 'succeeded': 'END', 'aborted': 'END'})
+                        transitions={'preempted': 'END', 'succeeded': 'END', 'aborted': 'GOTO_TABLE'})
+        
+        # Place process
+        smach.StateMachine.add("GOTO_TABLE", Goto_table(),              
+                        transitions={'failed': 'GOTO_TABLE', 'succ': 'PLACE_ON_TABLE'})
+        
+        smach.StateMachine.add("PLACE_ON_TABLE", Place_on_table(),              
+                        transitions={'failed': 'PLACE_ON_TABLE', 'succ': 'END'})
     
     outcome = sm.execute()
-

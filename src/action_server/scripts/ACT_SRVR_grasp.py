@@ -16,6 +16,10 @@ from std_srvs.srv import Empty
 from tf.transformations import euler_from_quaternion, quaternion_from_euler
 
 from utils import grasp_utils
+
+global clear_octo_client
+
+clear_octo_client = rospy.ServiceProxy('/clear_octomap', Empty)
 #from utils.grasp_utils import *
 
 class GraspingStateMachine:
@@ -24,6 +28,7 @@ class GraspingStateMachine:
         self.gripper = grasp_utils.GRIPPER()
         self.brazo = grasp_utils.ARM()
         self.base = grasp_utils.BASE()
+        self.head = grasp_utils.GAZE()
 
         # Inicializar tf2_ros
         self.tf2_buffer = tf2_ros.Buffer()
@@ -40,10 +45,12 @@ class GraspingStateMachine:
         #self.arm = moveit_commander.MoveGroupCommander("arm")
         self.grasp_approach = "above" #above / frontal
         self.eef_link = self.whole_body.get_end_effector_link()
+        self.approach_limit = 5
+        self.approach_count = 0
 
         # Moveit setup
         #self.scene.remove_attached_object(self.eef_link, name="objeto")
-        self.clear_octomap = rospy.ServiceProxy('/clear_octomap', Empty)
+        
         self.whole_body.allow_replanning(True)
         self.whole_body.set_num_planning_attempts(10)
         self.whole_body.set_planning_time(10.0)
@@ -58,19 +65,21 @@ class GraspingStateMachine:
 
 
         # Crear la máquina de estados SMACH
-        self.sm = smach.StateMachine(outcomes=['success', 'failure'],
+        self.sm = smach.StateMachine(outcomes=['succeeded', 'failure'],
                                      input_keys=["goal"])
         sis = IntrospectionServer('SMACH_VIEW_SERVER', self.sm, '/GRASP ACTION')
         sis.start()
         with self.sm:
-            smach.StateMachine.add('APPROACH', smach.CBState(self.approach, outcomes=['success', 'failed']),
-                                   transitions={'success':'GRASP', 'failed':'APPROACH' })
+            smach.StateMachine.add('CREATE_BOUND', smach.CBState(self.create_bound, outcomes=['success', 'failed']),
+                                   transitions={'success':'APPROACH', 'failed':'CREATE_BOUND'})
+            smach.StateMachine.add('APPROACH', smach.CBState(self.approach, outcomes=['success', 'failed', 'cancel']),
+                                   transitions={'success':'GRASP', 'failed':'APPROACH', 'cancel':'NEUTRAL_POSE' })
             smach.StateMachine.add('GRASP', smach.CBState(self.grasp, outcomes=['success', 'failed']),
                                    transitions={'success':'RETREAT', 'failed': 'GRASP'})
             smach.StateMachine.add('RETREAT', smach.CBState(self.retreat, outcomes=['success', 'failed']),
                                    transitions={'success':'NEUTRAL_POSE', 'failed': 'RETREAT'})
             smach.StateMachine.add('NEUTRAL_POSE', smach.CBState(self.neutral_pose, outcomes=['success', 'failed']),
-                        transitions={'success':'success', 'failed': 'NEUTRAL_POSE'})
+                        transitions={'success':'succeeded', 'failed': 'NEUTRAL_POSE'})
 
         self.wrapper = ActionServerWrapper("grasp_server", GraspAction,
                                            wrapped_container = self.sm,
@@ -85,14 +94,29 @@ class GraspingStateMachine:
 
 
     # SMACH states ------------------------------------------------------
+    def create_bound(self, userdata):
+        self.add_collision_object('bound_left', position=[0.0, 1.0, 0.3], dimensions=[1.8, 0.05, 0.05])
+        self.add_collision_object('bound_right', position=[0.0, - 1.0, 0.3], dimensions=[1.8, 0.05, 0.05])
+        self.add_collision_object('bound_behind', position=[-1.0, 0.0, 0.3], dimensions=[0.05, 2.0, 0.05])
+        clear_octo_client()
+        return 'success'
+
+
     def approach(self, userdata):
         #Add primitive objets to planning scene
 
         # TODO: Check planning 10 times, if failed exit or something...
         # Maybe create a safe area to plan
+        rospy.loginfo(self.whole_body.get_current_joint_values())
+
+        self.approach_count += 1
+        if self.approach_limit == self.approach_count:
+            return 'cancel'
         goal = self.sm.userdata.goal.target_pose.data
+        self.head.relative(*goal)
         pos = [goal[0], goal[1], goal[2]]
-        self.add_collision_object(position = pos, dimensions = [0.05, 0.05, 0.05])
+        self.add_collision_object(position = pos, dimensions = [0.05, 0.05, 0.05], 
+                                  frame=self.whole_body.get_planning_frame())
         self.publish_known_areas()# Add Table
 
         self.gripper.open()
@@ -148,6 +172,10 @@ class GraspingStateMachine:
     def neutral_pose(self, userdata):
         self.brazo.set_named_target('neutral')
         # self.whole_body.go()
+        self.scene.remove_world_object('bound_left')
+        self.scene.remove_world_object('bound_right')
+        self.scene.remove_world_object('bound_behind')
+        self.scene.remove_world_object('objeto')
         return "success"
     
     # ----------------------------------------------------------
@@ -180,9 +208,9 @@ class GraspingStateMachine:
         object_pose.pose.orientation.w = rotation[3]
         self.scene.add_box('table_storing', object_pose, size = (dimensions[0], dimensions[1], dimensions[2]))
 
-    def add_collision_object(self, position = [0, 0, 0], rotation = [0,0,0,1], dimensions = [0.1 ,0.1, 0.1]):
+    def add_collision_object(self, name = 'objeto', position = [0, 0, 0], rotation = [0,0,0,1], dimensions = [0.1 ,0.1, 0.1], frame = 'base_link'):
         object_pose = PoseStamped()
-        object_pose.header.frame_id = self.whole_body.get_planning_frame()
+        object_pose.header.frame_id = frame
         object_pose.pose.position.x = position[0]
         object_pose.pose.position.y = position[1]
         object_pose.pose.position.z = position[2]
@@ -190,7 +218,7 @@ class GraspingStateMachine:
         object_pose.pose.orientation.y = rotation[1]
         object_pose.pose.orientation.z = rotation[2]
         object_pose.pose.orientation.w = rotation[3]
-        self.scene.add_box("objeto", object_pose, size = (dimensions[0], dimensions[1], dimensions[2]))
+        self.scene.add_box(name, object_pose, size = (dimensions[0], dimensions[1], dimensions[2]))
 
     def attach_object(self):
 
@@ -202,8 +230,9 @@ class GraspingStateMachine:
     def execute_cb(self, goal):
         rospy.loginfo('Received action goal: %s', goal)
         self.sm.userdata.goal = goal
-        self.clear_octomap()
-        if len(goal) == 3:
+        
+        distance = np.linalg.norm(goal)
+        if len(goal) == 3 and distance < 1.5:
             self.wrapper.server.set_succeeded()
             outcome = self.sm.execute()
         else:

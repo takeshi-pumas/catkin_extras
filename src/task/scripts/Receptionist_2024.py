@@ -14,7 +14,7 @@ class Initial(smach.State):
         rospy.loginfo('STATE : INITIAL')
         rospy.loginfo(f'Try {self.tries} of 5 attempts')
 
-        party.clean_knowledge(host_name = "charlie", host_location = "Place_1")
+        party.clean_knowledge(host_name = "john", host_location = "Place_3")
         #party.clean_knowledge()
         #places_2_tf()
         #party.publish_tf_seats()
@@ -24,11 +24,13 @@ class Initial(smach.State):
         ###-----Use with get_keywords_speech()
         ###-----------SPEECH REC
         #drinks=['coke','juice','beer', 'water', 'soda', 'wine', 'i want a', 'i would like a']
-        drinks = ['coke','juice','milk', 'water', 'soda', 'wine', 
-                  'i want a', 'i would like a', 'tea', 'icedtea', 'cola', 'redwine', 'orangejuice', 'tropicaljuice']
+        #drinks = ['coke','juice','milk', 'water', 'soda', 'wine', 
+        #          'i want a', 'i would like a', 'tea', 'icedtea', 'cola', 'redwine', 'orangejuice', 'tropicaljuice']
+        drinks = ['water', 'soda', 'coke', 'juice', 'icedtea', 'i want a', 'i would like a']
         #names=['rebeca','ana','jack', 'michael', ' my name is' , 'i am','george','mary','ruben','oscar','yolo','mitzi']
-        names = [' my name is' , 'i am','adel', 'angel', 'axel', 
-                 'charlie', 'jane', 'john', 'jules', 'morgan', 'paris', 'robin', 'simone', 'jack']
+        #names = [' my name is' , 'i am','adel', 'angel', 'axel', 
+        #         'charlie', 'jane', 'john', 'jules', 'morgan', 'paris', 'robin', 'simone', 'jack']
+        names = ['my name is', 'i am','john', 'jack', 'paris', 'charlie', 'simone', 'robin', 'jane', 'jules']
         confirmation = ['yes','no', 'robot yes', 'robot no','not','now','nope','yeah']                     
         gram = drinks + names + confirmation                                                                                
         
@@ -129,7 +131,7 @@ class Scan_face(smach.State):
     def execute(self, userdata):
         rospy.loginfo('State : Scan face')
         head.set_joint_values([0.0, 0.3])
-        voice.talk('Scanning for faces, look at me, please')
+        voice.talk('Waiting for guest, look at me, please')
         res, userdata.face_img = wait_for_face()  # default 10 secs
         #rospy.sleep(0.7)
         if res != None:
@@ -398,9 +400,11 @@ class Find_host_alternative(smach.State):
         
         #print("host location is: ", host_loc)
         #print("host name is: ", host_name)
-        voice.talk(f'Looking for host on: {host_loc}, look at me')
+        voice.talk(f'Looking for host on: {host_loc}')
         tf_host = host_loc.replace('_', '_face')
         head.to_tf(tf_host)
+        voice.talk("look at me, please")
+        rospy.sleep(0.7)
         res, _ = wait_for_face()
         if res is not None:
             person_name = res.Ids.ids

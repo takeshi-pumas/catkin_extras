@@ -80,7 +80,8 @@ class Goto_living_room(smach.State):
         if self.tries == 3:
             return 'tries'
         if self.tries == 1: talk('Navigating to, living room')
-        res = omni_base.move_base(known_location='living_room', time_out=200)
+        #res = omni_base.move_base(known_location='living_room', time_out=200)
+        res = True
         print(res)
         if res:
             return 'succ'
