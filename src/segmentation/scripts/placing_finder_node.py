@@ -34,10 +34,6 @@ def trigger_response(request):
     zs_no_nans=corrected['z'][~np.isnan(corrected['z'])]
     
 
-###########################################
-    high_x = (corrected['x'] > 7.8)
-    low_x = (corrected['x'] < 8.25)###X COORDS
-###############################################
     #AUTO DETECT PLANE?
     if request.height.data==-1:
         counts, bins =(np.histogram(zs_no_nans, bins=100))
@@ -52,7 +48,7 @@ def trigger_response(request):
         orig_image= rgb_image.copy()
         mask= np.zeros(corrected['z'].shape)#mask
         z_lims=np.logical_and(low_plane, high_plane)
-        x_lims=np.logical_and(low_x, high_x)
+        
         result_indices = np.where(z_lims)#np.logical_and(z_lims, x_lims))
         mask[result_indices]=200
         _, binary_image = cv2.threshold(mask, 20, 255, cv2.THRESH_BINARY)

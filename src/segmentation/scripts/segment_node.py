@@ -44,6 +44,8 @@ def trigger_response(request):
     heights_res, widths_res=Floats(),Floats()
     pose_c= Floats()
     heights, widths =Floats(),Floats()
+    planes=[]
+
     res= SegmentationResponse()
     #############################################
     if request.height.data==-1:
@@ -52,7 +54,7 @@ def trigger_response(request):
         inds=np.where(counts>5000)
         low_planes_height=bins[np.add(inds, 1)].flatten()
         print (f'Number of planes found {len(inds[0])} at z=[{bins[ np.add(inds, 1)]}]#############3')
-
+        for plane in low_planes_height:planes.append(plane)
         if (low_planes_height[0] > -0.05) and (low_planes_height[0] < 0.05): low_planes_height=low_planes_height[1:]
     else:
         low_plane = (corrected['z'] > request.height.data)      # HEIGHT REQUESTED OR OBTAINED FROM HISTOGRAM
@@ -124,6 +126,9 @@ def trigger_response(request):
     res.widths=widths_res
     heights_res=np.asarray(heights).ravel()
     res.heights=heights_res
+    planes_res=np.sort(np.asarray(planes).ravel())
+    res.planes= planes_res[::-1]
+
     return res        
 
 rospy.loginfo("segmentation service available")                    # initialize a ROS node

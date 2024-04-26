@@ -28,8 +28,7 @@ from sklearn.decomposition import PCA
 global tf_listener, ptcld_lis, broadcaster , bridge , rospack , Pca
 
 rospack = rospkg.RosPack()
-#rospy.init_node('plane_segmentation') 
-rospy.init_node('placing_finder') 
+rospy.init_node('plane_segmentation') 
 tfBuffer = tf2_ros.Buffer()
 tfBuffer = tf2_ros.Buffer()
 listener2 = tf2_ros.TransformListener(tfBuffer)

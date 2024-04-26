@@ -169,7 +169,7 @@ class GraspingStateMachine:
         group.stop()
         return succ
 
-    def publish_known_areas(self, position = [8.1, -2.4,0.6], rotation = [0,0,0,1], dimensions = [1.0 ,3.0, 0.2]): #position = [5.9, 5.0,0.3] ##SIM
+    def publish_known_areas(self, position = [4.5, 3.0, 0.4], rotation = [0,0,0,1], dimensions = [3.0 ,1.0, 0.2]): #position = [5.9, 5.0,0.3] ##SIM
                                                                                                                    #position = [8.1, -2.4,0.3]###REAL
         object_pose = PoseStamped()
         object_pose.header.frame_id = 'map'
@@ -193,35 +193,51 @@ class GraspingStateMachine:
         object_pose.pose.orientation.w = rotation[3]
         self.scene.add_box("objeto", object_pose, size = (dimensions[0], dimensions[1], dimensions[2]))
     def add_cage(self, position = [0, 0, 0], rotation = [0,0,0,1], dimensions = [0.1 ,0.1, 0.1]):
-        object_pose = PoseStamped()
+
+        self.add_bound("back_cage", position=[-1,0,0.3], dimensions=(0.1,2.0,0.1))
+        self.add_bound("left_cage", position=[0,1,0.3], dimensions=(2,0.2,0.1))
+        self.add_bound("right_cage", position=[0,-1,0.3], dimensions=(2,0.2,0.1))
+        '''object_pose = PoseStamped()
         object_pose.header.frame_id = 'base_link'
         object_pose.pose.position.x = -1
         object_pose.pose.position.y = 0
         object_pose.pose.position.z = 0
-        object_pose.pose.orientation.x = 0
-        object_pose.pose.orientation.y = 0
-        object_pose.pose.orientation.z = 0
+        #object_pose.pose.orientation.x = 0
+        #object_pose.pose.orientation.y = 0
+        #object_pose.pose.orientation.z = 0
         object_pose.pose.orientation.w = 1
         self.scene.add_box("back_cage", object_pose, size = (0.2,2.0,0.1))
+
+        object_pose = PoseStamped()
         object_pose.header.frame_id = 'base_link'
         object_pose.pose.position.x = 0.0
         object_pose.pose.position.y = 1
         object_pose.pose.position.z = 0
-        object_pose.pose.orientation.x = 0
-        object_pose.pose.orientation.y = 0
-        object_pose.pose.orientation.z = 0
+        #object_pose.pose.orientation.x = 0
+        #object_pose.pose.orientation.y = 0
+        #object_pose.pose.orientation.z = 0
         object_pose.pose.orientation.w = 1     
         self.scene.add_box("left_cage", object_pose, size = (5.0,0.2,0.1))
+
+        object_pose = PoseStamped()
         object_pose.header.frame_id = 'base_link'
         object_pose.pose.position.x = 0.0
         object_pose.pose.position.y = -1
         object_pose.pose.position.z = 0
-        object_pose.pose.orientation.x = 0
-        object_pose.pose.orientation.y = 0
-        object_pose.pose.orientation.z = 0
+        #object_pose.pose.orientation.x = 0
+        #object_pose.pose.orientation.y = 0
+        #object_pose.pose.orientation.z = 0
         object_pose.pose.orientation.w = 1
-        
-        self.scene.add_box("right_cage", object_pose, size = (5.0,0.2,0.1))
+        self.scene.add_box("right_cage", object_pose, size = (5.0,0.2,0.1))'''
+
+    def add_bound(self, name, position, dimensions):
+        object_pose = PoseStamped()
+        object_pose.header.frame_id = 'base_link'
+        object_pose.pose.position.x = position[0]
+        object_pose.pose.position.y = position[1]
+        object_pose.pose.position.z = position[2]
+        object_pose.pose.orientation.w = 1
+        self.scene.add_box(name, object_pose, size = dimensions)
 
     def remove_cage(self):
         self.scene.remove_world_object("back_cage")

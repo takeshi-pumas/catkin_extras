@@ -46,7 +46,7 @@ class Initial(smach.State):
 
         print (f'Regions for Storing Groceries(sim) {regions}')
         ##TO AVOID SMACH DYING IN CASE NO PLACING AREA IS FOUND, THere is a default that at least allows the test to continue
-        x,y,z= 9.9 , -0.8, 0.7
+        x,y,z= 5.8 , 0.18, 0.7
 
         tf_man.pub_static_tf(pos=[x,y,z],point_name='placing_area') ### IF a real placing area is found this tf will be updated
                                                                     ##  even if no placing area is found for whatever reason autonoma can keep going
@@ -99,7 +99,7 @@ class Goto_pickup(smach.State):
         if self.tries == 3:
             self.tries = 0
             return 'tries'        
-        res = omni_base.move_base(known_location='pickup', time_out=200)
+        res = omni_base.move_base(known_location='pickup', time_out=40)
         print(res)
 ##################################################################First TIme Only go        
         if self.tries == 1: 
@@ -175,7 +175,7 @@ class Scan_table(smach.State):
         
         rospack = rospkg.RosPack()
         file_path = rospack.get_path('config_files')+'/regions'         
-        regions={'shelves':np.load(file_path+'/shelf_sim.npy'),'pickup':np.load(file_path+'/pickup_sim.npy')}
+        regions={'shelves':np.load(file_path+'/shelves_region.npy'),'pickup':np.load(file_path+'/pickup_region.npy')}   ## KNOWN REGIONS
         #regions={'shelves':np.load('/home/roboworks/Documents/shelf_sim.npy'),'pickup':np.load('/home/roboworks/Documents/pickup_sim.npy')}
         def is_inside(x,y):return ((area_box[:,1].max() > y) and (area_box[:,1].min() < y)) and ((area_box[:,0].max() > x) and (area_box[0,0].min() < x)) 
         for name in regions:
@@ -250,9 +250,9 @@ class Goto_shelf(smach.State):
         self.tries += 1
         if self.tries == 3:
             return 'tries'
-        omni_base.tiny_move( velX=-0.2,std_time=4.2) 
+        #omni_base.tiny_move( velX=-0.2,std_time=4.2) 
         if self.tries == 1: talk('Navigating to, breakfast')
-        res = omni_base.move_base(known_location='breakfast', time_out=200)
+        res = omni_base.move_base(known_location='breakfast', time_out=20)
         
 
 
@@ -290,6 +290,34 @@ class Goto_place_shelf(smach.State):
             talk('Navigation Failed, retrying')
             return 'failed'
 
+
+class Wait_door_opened(smach.State):
+    def __init__(self):
+        smach.State.__init__(self, outcomes=['succ', 'failed'])
+        self.tries = 0
+
+    def execute(self, userdata):
+
+        rospy.loginfo('STATE : Wait for door to be opened')
+        print('Waiting for door to be opened')
+
+        self.tries += 1
+        print(f'Try {self.tries} of 4 attempts')
+
+        # if self.tries == 100:
+        #     return 'tries'
+        if self.tries == 1 : talk('I am ready for Storing Groceries task.')
+        rospy.sleep(0.8)
+        talk('I am waiting for the door to be opened')
+        isDoor = line_detector.line_found()
+        #succ = wait_for_push_hand(100)
+        rospy.sleep(1.0)
+        if not isDoor:
+            self.tries = 0
+            return 'succ'
+        else:
+            return 'failed'
+
 #########################################################################################################
 class Place_shelf(smach.State):  
     def __init__(self):
@@ -298,20 +326,26 @@ class Place_shelf(smach.State):
     def execute(self, userdata):
         rospy.loginfo('STATE : Placing ')
         #place_pose= [0.390130913590598, -1.4407346556484901, 0.06971320811099346, -1.574294947826301, 0.0003442697253825955]  #SIM
-        place_pose= [0.6808629824410867, -1.4529845280188853,-0.006794345343694275, -1.2937506302849657, 0.01196710822381597]
+        place_pose= [0.6808629824410867,-1.5688005280188855, 0.04852065465630595, -1.3035706302849657, 0.07179310822381613]
         brazo.set_joint_values(place_pose)
         rospy.sleep(5.0)
         #placing_places=np.asarray(('placing_area_top_shelf1','placing_area_mid_shelf1','placing_area_low_shelf1'))
         ###########################################
         
 
-        base_grasp_D(tf_name='placing_area',d_x=0.45, d_y=0.0,timeout=30)
+        base_grasp_D(tf_name='placing_area',d_x=0.60, d_y=0.0,timeout=30)
         
-        place_pose= [0.6308629824410867, -1.4529845280188853,-0.006794345343694275, -1.2937506302849657, 0.01196710822381597]
+        place_pose= [0.6200031129804957,
+ -1.0618195280188854,
+ -9.345343694011632e-06,
+ -1.7499976302849658,
+ -0.0003068917761841483]
         brazo.set_joint_values(place_pose)
-        gripper.open()
 
-        omni_base.tiny_move( velX=-0.3,std_time=5.2) 
+        gripper.open()
+        rospy.sleep(2.0)
+
+        omni_base.tiny_move( velX=-0.3,std_time=7.2) 
  
 
         #base_grasp_D(tf_name='placing_area',d_x=0.6, d_y=0.0,timeout=30)
@@ -576,9 +610,11 @@ if __name__ == '__main__':
         smach.StateMachine.add("INITIAL",           Initial(),              transitions={'failed': 'INITIAL',           
                                                                                          'succ': 'WAIT_PUSH_HAND',   
                                                                                          'tries': 'END'})
-        smach.StateMachine.add("WAIT_PUSH_HAND",    Wait_push_hand(),       transitions={'failed': 'WAIT_PUSH_HAND',    
+        smach.StateMachine.add("WAIT_PUSH_HAND",    Wait_push_hand(),       transitions={'failed': 'WAIT_DOOR',    
                                                                                          'succ': 'GOTO_PICKUP',       
                                                                                          'tries': 'END'})
+        smach.StateMachine.add("WAIT_DOOR",    Wait_door_opened(),       transitions={'failed': 'WAIT_DOOR',    
+                                                                                         'succ': 'GOTO_PICKUP'})
         
         smach.StateMachine.add("GOTO_PICKUP",    Goto_pickup(),       transitions={'failed': 'GOTO_PICKUP',    
                                                                                          'succ': 'SCAN_TABLE',       

@@ -410,7 +410,7 @@ class Scan_top_shelf(smach.State):
         self.tries = 0
         self.top_shelf_height=0.63
         self.mid_shelf_height=0.4
-        self.low_shelf_height=0.04
+        self.low_shelf_height=0.01
         
 
 
@@ -650,7 +650,7 @@ if __name__ == '__main__':
     with sm:
         # State machine STICKLER
         smach.StateMachine.add("INITIAL",           Initial(),              transitions={'failed': 'INITIAL',           
-                                                                                         'succ': 'GOTO_PICKUP',   
+                                                                                         'succ': 'SCAN_TABLE',   
                                                                                          'tries': 'END'})
         smach.StateMachine.add("WAIT_PUSH_HAND",    Wait_push_hand(),       transitions={'failed': 'WAIT_PUSH_HAND',    
                                                                                          'succ': 'GOTO_PICKUP',       
