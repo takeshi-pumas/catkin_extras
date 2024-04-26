@@ -181,9 +181,10 @@ class GraspingStateMachine:
         object_pose.pose.orientation.z = rotation[2]
         object_pose.pose.orientation.w = rotation[3]
         self.scene.add_box('table_storing', object_pose, size = (dimensions[0], dimensions[1], dimensions[2]))
-    def add_collision_object(self, position = [0, 0, 0], rotation = [0,0,0,1], dimensions = [0.1 ,0.1, 0.1]):
+
+    def add_collision_object(self, name = 'objeto', position = [0, 0, 0], rotation = [0,0,0,1], dimensions = [0.1 ,0.1, 0.1], frame = 'base_link'):
         object_pose = PoseStamped()
-        object_pose.header.frame_id = self.whole_body.get_planning_frame()
+        object_pose.header.frame_id = frame
         object_pose.pose.position.x = position[0]
         object_pose.pose.position.y = position[1]
         object_pose.pose.position.z = position[2]
@@ -191,7 +192,8 @@ class GraspingStateMachine:
         object_pose.pose.orientation.y = rotation[1]
         object_pose.pose.orientation.z = rotation[2]
         object_pose.pose.orientation.w = rotation[3]
-        self.scene.add_box("objeto", object_pose, size = (dimensions[0], dimensions[1], dimensions[2]))
+        self.scene.add_box(name, object_pose, size = (dimensions[0], dimensions[1], dimensions[2]))
+        
     def add_cage(self, position = [0, 0, 0], rotation = [0,0,0,1], dimensions = [0.1 ,0.1, 0.1]):
 
         self.add_bound("back_cage", position=[-1,0,0.3], dimensions=(0.1,2.0,0.1))

@@ -162,8 +162,15 @@ def callback(points_msg):
             img=bridge.imgmsg_to_cv2(res.im_out.image_msgs[0])
             cv2.imshow('our of res'  , img)
       
+        #elif key == 'g':
+            #rospack.get_path("config_files")
+            #cv2.imwrite("breakfast", rgbd.get_image())
+
         elif key=='q':
             rospy.signal_shutdown("User hit q key to quit.")
+
+
+
 
 
 

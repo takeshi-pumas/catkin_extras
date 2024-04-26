@@ -164,7 +164,7 @@ class Follow_human(smach.State):
         x,y=punto.point.x,    punto.point.y        
         self.last_legs.append((x,y))
         print(np.linalg.norm(np.asarray(self.last_legs).mean(axis=0)))
-        if len (self.last_legs)>=6:
+        if len (self.last_legs)>=26:
             #if (np.var(self.last_legs,axis=0).mean() < 0.001):
             if (np.linalg.norm(np.asarray(self.last_legs).mean(axis=0)) < 1.0):
                 print ('legs stopped... Are we there yet?')#,   np.var(self.last_legs,axis=0).mean()   )    
