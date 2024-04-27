@@ -32,14 +32,18 @@ def trigger_response(request):
     np_corrected=ros_numpy.numpify(cloud_out)
     corrected=np_corrected.reshape(points_data.shape)
     zs_no_nans=corrected['z'][~np.isnan(corrected['z'])]
-    
+    planes =[]
 
     #AUTO DETECT PLANE?
     if request.height.data==-1:
         counts, bins =(np.histogram(zs_no_nans, bins=100))
         inds=np.where(counts>10000)
         planes_heights=bins[np.add(inds, 1)].flatten()
-        print (f'Number of planes found {len(inds[0])} at z=[{bins[ np.add(inds, 1)]}]#############3')
+        for plane in planes_heights:planes.append(plane)
+
+        sorted_planes=np.sort(np.asarray(planes).ravel())
+
+        print (f' planes found {len(inds[0])}, sorted at z=[{sorted_planes[::-1]}]#############3')
         print (f'Plane heights detected {planes_heights} maximum  z=[{planes_heights.max()}]#############3')    
     else:planes_heights=[request.height.data]
     for plane_height in planes_heights:

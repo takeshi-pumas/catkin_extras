@@ -592,8 +592,14 @@ def base_grasp_D(tf_name,d_x=0.66,d_y=-0.1,timeout=1.0):
             eY = 0
         if abs(eT   ) < 0.1:
             eT = 0
-        succ =  eX == 0 and eY == 0 and eT==0            
-        omni_base.tiny_move( velX=0.2*+eX,velY=0.3*eY, velT=-eT,std_time=0.2, MAX_VEL=0.3) 
+        succ =  eX == 0 and eY == 0 and eT==0         
+        velX=0.2*eX
+        velY=0.3*eY
+        if   velX < 0: corr_velX= min (-0.05,velX)
+        elif velX > 0: corr_velX= max (0.05,velX)
+        if   velY < 0: corr_velY= min (-0.05,velY)
+        elif velY > 0: corr_velY= max ( 0.05,velY)
+        omni_base.tiny_move( velX=corr_velX,velY=corr_velY, velT=-eT,std_time=0.2, MAX_VEL=0.3) 
 
     
     

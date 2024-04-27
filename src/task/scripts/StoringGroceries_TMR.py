@@ -167,7 +167,7 @@ class Scan_table(smach.State):
             
             talk('Scanning Table')
         
-        global objs 
+        global objs ,pickup_plane_z
         
         head.set_joint_values([ 0.0, -0.5])
         rospy.sleep(5.0)                        
@@ -180,6 +180,8 @@ class Scan_table(smach.State):
         request.height.data=-1.0   # autodetect planes
         res_seg=segmentation_server.call(request)
         print (f'Planes candidates{res_seg.planes.data}')
+        pickup_plane_z= res_seg.planes.data[0]
+        print (f'Height if max area plane{pickup_plane_z}')
         
 
 
@@ -222,7 +224,7 @@ class Scan_table(smach.State):
         #regions={'shelves':np.load(file_path+'/shelf_sim.npy'),'pickup':np.load(file_path+'/pickup_sim.npy')}
         regions={'shelves':np.load(file_path+'/shelves_region.npy'),'pickup':np.load(file_path+'/pickup_region.npy')}
         print (regions)
-        def is_inside(x,y,z):return ((area_box[:,1].max() > y) and (area_box[:,1].min() < y)) and ((area_box[:,0].max() > x) and (area_box[0,0].min() < x)) and (res_seg.planes.data[0]<z)  
+        def is_inside(x,y,z):return ((area_box[:,1].max() > y) and (area_box[:,1].min() < y)) and ((area_box[:,0].max() > x) and (area_box[0,0].min() < x)) and (pickup_plane_z<z)  
         for name in regions:
             in_region=[]
             area_box=regions[name]
@@ -235,7 +237,6 @@ class Scan_table(smach.State):
         #objs.to_csv('/home/roboworks/Documents/objs.csv') # Debug DF --- REmove        
         print (objs)
         pickup_objs=objs[objs['pickup']==True]
-        return 0
         if len (pickup_objs)== 0:
             talk('no more objects found')
             return 'failed'
@@ -254,7 +255,7 @@ class Pickup(smach.State):
         rospy.loginfo('STATE : PICKUP')
         rob_pos,_=tf_man.getTF('base_link')
         pickup_objs=objs[objs['pickup']==True]
-        pickup_objs=pickup_objs[pickup_objs['z']>0.48]#PICKUP AREA HEIGHT
+        pickup_objs=pickup_objs[pickup_objs['z']>pickup_plane_z]#PICKUP AREA HEIGHT
         
         print ('pickup_objs',len(pickup_objs['obj_name'].values))
         if  len(pickup_objs['obj_name'].values)==0:
@@ -507,9 +508,9 @@ class Scan_top_shelf(smach.State):
         smach.State.__init__(
             self, outcomes=['succ', 'failed', 'tries'])
         self.tries = 0
-        self.top_shelf_height=0.89
-        self.mid_shelf_height=0.46
-        self.low_shelf_height=0.01    
+        self.top_shelf_height=0.81
+        self.mid_shelf_height=0.43
+        self.low_shelf_height=0.05    
        
     def execute(self, userdata):
         global shelves_cats , objs_shelves

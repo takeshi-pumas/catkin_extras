@@ -50,8 +50,8 @@ def trigger_response(request):
     #############################################
     if request.height.data==-1:
         zs_no_nans=corrected['z'][~np.isnan(corrected['z'])]
-        counts, bins =(np.histogram(zs_no_nans, bins=100))
-        inds=np.where(counts>5000)
+        counts, bins =(np.histogram(zs_no_nans, bins=500))
+        inds=np.where(counts>10000)
         low_planes_height=bins[np.add(inds, 1)].flatten()
         print (f'Number of planes found {len(inds[0])} at z=[{bins[ np.add(inds, 1)]}]#############3')
         for plane in low_planes_height:planes.append(plane)
