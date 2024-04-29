@@ -34,7 +34,7 @@ class Initial(smach.State):
         xys.append(df[df['child_id_frame']=='living_room'][['x','y']].values.ravel())
         xys.append(df[df['child_id_frame']=='dining_room'][['x','y']].values.ravel())
         xys.append(df[df['child_id_frame']=='kitchen'][['x','y']].values.ravel())
-        room_names=['bedroom','living_room','dining_room','kitchen']4
+        room_names=['bedroom','living_room','dining_room','kitchen']
         xys, room_names
         #####
         ####FORBIDEN ROOM 
@@ -118,8 +118,8 @@ class Find_human(smach.State):
             return'tries'
 
         if self.tries==1:head.set_joint_values([ 0.0, 0.0])
-        if self.tries==2:head.set_joint_values([ 0.6, 0.1])
-        if self.tries==3:head.set_joint_values([-0.6, 0.1])
+        if self.tries==2:head.set_joint_values([ 0.9, 0.15])
+        if self.tries==3:head.set_joint_values([-0.9, 0.15])
         origin_map_img=[round(img_map.shape[0]*0.5) ,round(img_map.shape[1]*0.5)]
         humanpose=detect_human_to_tf(self.distGaze[self.tries])  #make sure service is running
         if humanpose== False:
@@ -175,7 +175,7 @@ class Find_human(smach.State):
                 #rospy.sleep(1.0)
                 return 'failed'
             
-            if room_human==forbiden_room:
+            if room_human == forbiden_room:
                 head.to_tf('human')
                 talk (f'human found in forbidden room {room_human} ')
                 rospy.sleep(0.6)

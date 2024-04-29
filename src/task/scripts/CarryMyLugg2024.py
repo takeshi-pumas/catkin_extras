@@ -125,8 +125,9 @@ class Find_human(smach.State):
         rospy.sleep(1.0)
         self.point_img_pub.publish(String())
         rospy.sleep(0.1)
+
         req = Point_detectorRequest()
-        req.dist = 2.2
+        req.dist = 2.0
         res=pointing_detect_server(req)
         if (res.x_r+res.y_r)==0 and  (res.x_l+res.y_l)==0  :
             talk('I did not find a pointing arm, I will try again')

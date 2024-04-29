@@ -13,6 +13,7 @@ from segmentation.msg import *
 import numpy as np
 import ros_numpy
 import os
+from glob import glob
 import matplotlib.pyplot as plt
 import cv2 
 from collections import Counter
@@ -58,6 +59,7 @@ def write_tf(pose, q, child_frame , parent_frame='map'):
     t.transform.rotation.z = q[2]
     t.transform.rotation.w = q[3]
     return t
+
 #-----------------------------------------------------------------
 def read_tf(t):
     pose=np.asarray((
@@ -73,8 +75,8 @@ def read_tf(t):
         ))
     
     return pose, quat
-#-----------------------------------------------------------------
 
+#-----------------------------------------------------------------
 def getTF(target_frame='', ref_frame='map'):
         try:
             tf = tfBuffer.lookup_transform(
@@ -82,6 +84,7 @@ def getTF(target_frame='', ref_frame='map'):
             return tf2_obj_2_arr(tf)
         except:
             return [False, False]
+
 #-----------------------------------------------------------------
 def tf2_obj_2_arr(transf):
         pos = []
@@ -96,6 +99,7 @@ def tf2_obj_2_arr(transf):
         rot.append(transf.transform.rotation.w)
 
         return [pos, rot]
+
 #-----------------------------------------------------------------
 def change_ref_frame_tf(point_name='', rotational=[0, 0, 0, 1], new_frame='map'):
         try:
@@ -108,7 +112,6 @@ def change_ref_frame_tf(point_name='', rotational=[0, 0, 0, 1], new_frame='map')
             return True
         except:
             return False
-#-----------------------------------------------------------------
 
 #-----------------------------------------------------------------
 def probmap_to_3d_mean(points_data,probMap, thres_prob=0.3):
@@ -136,7 +139,8 @@ def probmap_to_3d_mean(points_data,probMap, thres_prob=0.3):
         cent=np.zeros(3)
     return cent
 
-def detect_human(points_msg):
+#-----------------------------------------------------------------
+def detect_human(points_msg,dist = 6):
     points_data = ros_numpy.numpify(points_msg)    
     image_data = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]   
     image=cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
@@ -171,9 +175,8 @@ def detect_human(points_msg):
 
     return res    
 
-
 #-----------------------------------------------------------------
-def detect_pointing(points_msg):
+def detect_pointing(points_msg,dist = 6):
     """points_data = ros_numpy.numpify(points_msg)    
     image_data = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]   
     image=cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
@@ -195,8 +198,10 @@ def detect_pointing(points_msg):
     # SE IBA A UTILIZAR -> distToTF DE ACUERDO A LA TF DE LA PERSONA DETECTADA
     # PERO NO ES MUY EXACTO
     # <<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
-    image, masked_image = removeBackground(points_msg )
-    cv2.imwrite(os.path.expanduser( '~' )+"/Documents/maskedImage.jpg",masked_image)
+    image, masked_image = removeBackground(points_msg, dist)
+    data = len(glob(os.path.join(os.path.expanduser( '~' )+"/Documentos","*"))) # cambiar a Documents si esta en ingles 
+    cv2.imwrite(os.path.expanduser( '~' )+"/Documentos/maskedImage_"+str(data + 1)+".jpg",masked_image)
+    
     #---
     frame=image
     inHeight = frame.shape[0]
@@ -463,18 +468,20 @@ def detect_pointing(points_msg):
     #tf_man.pub_static_tf(pos=[x,y,0],point_name='point_left')
 
     return res    
+
 #-----------------------------------------------------------------
-def detect_pointing2(points_msg):
+def detect_pointing2(points_msg,dist = 6):
     #tf_man = TF_MANAGER()
     res=Point_detectorResponse()
-    human, _ =getTF(target_frame='human',ref_frame='head_rgbd_sensor_rgb_frame') 
-    
-    distToTF = np.linalg.norm(human) if human[0] else 2
 
-    print("DISTANCIA AL HUMANO ",distToTF)
-    image, masked_image = removeBackground(points_msg,distance = distToTF)
-    cv2.imwrite(os.path.expanduser( '~' )+"/Documents/maskedImage.jpg",masked_image)
-       
+    #human, _ =getTF(target_frame='human',ref_frame='head_rgbd_sensor_rgb_frame') 
+    #distToTF = np.linalg.norm(human) if human[0] else 2
+    #print("DISTANCIA AL HUMANO ",distToTF)
+
+    image, masked_image = removeBackground(points_msg,distance = dist)
+    data = len(glob(os.path.join(os.path.expanduser( '~' )+"/Documentos","*"))) # cambiar a Documents si esta en ingles 
+    cv2.imwrite(os.path.expanduser( '~' )+"/Documentos/maskedImage_"+str(data + 1)+".jpg",masked_image)
+    
     #image_data = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]   
     #image=cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
     #pts= points_data
@@ -729,13 +736,12 @@ def drawSkeletons(frame,sk,plot=False):
     if plot:
         plt.imshow(rgbbkg)
     return rgbbkg
+
 #--------------------------
 # para quitar fondo, es necesario rgbd de la camara del robot
 def removeBackground(points_msg,distance = 2):
     # Obtengo rgb
     points_data = ros_numpy.numpify(points_msg)
-    image_data = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]   
-    image=cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
     image = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]
     rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)    
 
