@@ -109,7 +109,7 @@ class Find_human(smach.State):
         if self.tries==2:head.set_joint_values([ 0.5, 0.1])#looking left
         if self.tries==3:head.set_joint_values([-0.5, 0.1])#looking right        
         
-        humanpose=detect_human_to_tf()  #make sure service is running (pointing detector server now hosts this service)
+        humanpose=detect_human_to_tf(dist = 3)  #make sure service is running (pointing detector server now hosts this service)
         if humanpose== False:
             print ('no human ')
             return 'failed'
@@ -125,7 +125,9 @@ class Find_human(smach.State):
         rospy.sleep(1.0)
         self.point_img_pub.publish(String())
         rospy.sleep(0.1)
-        res=pointing_detect_server.call()
+        req = Point_detectorRequest()
+        req.dist = 2.2
+        res=pointing_detect_server(req)
         if (res.x_r+res.y_r)==0 and  (res.x_l+res.y_l)==0  :
             talk('I did not find a pointing arm, I will try again')
             print ('no pointing ')

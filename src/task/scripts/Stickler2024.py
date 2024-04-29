@@ -105,7 +105,7 @@ class Find_human(smach.State):
         smach.State.__init__(
             self, outcomes=['succ', 'failed', 'tries','forbidden'])
         self.tries = 0
-
+        self.distGaze=[6,6,3,2]
     def execute(self, userdata):
         
 
@@ -121,7 +121,7 @@ class Find_human(smach.State):
         if self.tries==2:head.set_joint_values([ 0.6, 0.1])
         if self.tries==3:head.set_joint_values([-0.6, 0.1])
         origin_map_img=[round(img_map.shape[0]*0.5) ,round(img_map.shape[1]*0.5)]
-        humanpose=detect_human_to_tf()  #make sure service is running
+        humanpose=detect_human_to_tf(self.distGaze[self.tries])  #make sure service is running
         if humanpose== False:
             print ('no human ')
             return 'failed'
@@ -152,7 +152,7 @@ class Find_human(smach.State):
             pose=get_robot_px()
             px_pose_robot=np.asarray((origin_map_img[1]+pose[1],origin_map_img[0]+pose[0]))
         
-            room_robot = check_room_px(np.flicheck_room_pxp(px_pose_robot),living_room_px_region,kitchen_px_region,bedroom_px_region,dining_room_px_region)
+            room_robot = check_room_px(np.flip(px_pose_robot),living_room_px_region,kitchen_px_region,bedroom_px_region,dining_room_px_region)
             
 
             

@@ -21,8 +21,8 @@ from sensor_msgs.msg import Image , LaserScan , PointCloud2
 from tf2_sensor_msgs.tf2_sensor_msgs import do_transform_cloud
 from object_classification.srv import *
 from segmentation.srv import *
-from human_detector.srv import Human_detector ,Human_detectorResponse 
-from human_detector.srv import Point_detector ,Point_detectorResponse 
+from human_detector.srv import Human_detector ,Human_detectorResponse,Human_detectorRequest 
+from human_detector.srv import Point_detector ,Point_detectorResponse, Point_detectorRequest 
 from ros_whisper_vosk.srv import GetSpeech
 from object_classification.srv import *
 from face_recog.msg import *
@@ -36,7 +36,7 @@ from nav_msgs.msg import OccupancyGrid
 from hri_msgs.msg import RecognizedSpeech
 from rospy.exceptions import ROSException
 from vision_msgs.srv import *
-from act_recog.srv import Recognize,RecognizeResponse,RecognizeRequest
+#from act_recog.srv import Recognize,RecognizeResponse,RecognizeRequest
 from ros_whisper_vosk.srv import SetGrammarVosk
 
 from action_server.msg import FollowActionGoal ,  FollowAction
@@ -472,8 +472,10 @@ def read_tf(t):
 
 
 #------------------------------------------------------
-def detect_human_to_tf():
-    humanpose=human_detect_server.call()
+def detect_human_to_tf(dist = 6):
+    req = Human_detectorRequest()
+    req.dist = dist
+    humanpose=human_detect_server(req)
     print (humanpose)
     if (np.asarray((humanpose.x,humanpose.y,humanpose.z)).all()== np.zeros(3).all()):
         print (np.asarray((humanpose.x,humanpose.y,humanpose.z)))
@@ -559,4 +561,23 @@ def save_image(img, dir = ""):
 
 ###################################################
 
+# para quitar fondo, es necesario rgbd de la camara del robot
+def removeBackground(points_msg,distance = 2):
+    # Obtengo rgb
+    points_data = ros_numpy.numpify(points_msg)
+    image_data = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]   
+    image=cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
+    image = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]
+    rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)    
 
+    # Quito todos los pixeles que esten a una distancia mayor y/o a una distancia menor
+    # Para poder obtener una mascara con ceros y unos
+    zs_no_nans=np.where(~np.isnan(points_data['z']),points_data['z'],10)
+    img_corrected = np.where((zs_no_nans < distance + 0.3),zs_no_nans,0)
+    #img_corrected = np.where((img_corrected >1.5),img_corrected,0)
+    img_corrected = np.where((img_corrected == 0),img_corrected,1)
+
+    # operacion AND entre la imagen original y la mascara para quitar fondo (background)
+    #img_corrected = img_corrected.astype(np.uint8)
+    masked_image = cv2.bitwise_and(rgb_image, rgb_image, mask=img_corrected.astype(np.uint8))
+    return rgb_image, masked_image

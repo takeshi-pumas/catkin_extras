@@ -37,7 +37,7 @@ class Initial(smach.State):
         xys.append(df[df['child_id_frame']=='living_room'][['x','y']].values.ravel())
         xys.append(df[df['child_id_frame']=='dining_room'][['x','y']].values.ravel())
         xys.append(df[df['child_id_frame']=='kitchen'][['x','y']].values.ravel())
-        room_names=['bedroom','kitchen','living_room','dining_room','living_room','kitchen']
+        room_names=['none','bedroom','kitchen','living_room','dining_room','living_room','kitchen']
         xys, room_names
         #####
         ####FORBIDEN ROOM 
@@ -108,7 +108,7 @@ class Find_human(smach.State):
         smach.State.__init__(
             self, outcomes=['succ', 'failed', 'tries','forbidden'])
         self.tries = 0
-
+        self.distGaze=[6,6,3,2]
     def execute(self, userdata):
         
 
@@ -123,20 +123,20 @@ class Find_human(smach.State):
             return'tries'
 
         if self.tries==1:
-            head.set_joint_values([ 0.0, 0.0])
+            head.set_joint_values([ 0.0, 0.15])
             rospy.sleep(2)
         if self.tries==2:
-            head.set_joint_values([ 0.9, 0.1])
+            head.set_joint_values([ 0.95, 0.15])
             rospy.sleep(2)
         if self.tries==3:
-            head.set_joint_values([-0.9, 0.1])
+            head.set_joint_values([-0.95, 0.15])
             rospy.sleep(2)
-        rospy.sleep(2)
+        rospy.sleep(1)
         origin_map_img=[round(img_map.shape[0]*0.5) ,round(img_map.shape[1]*0.5)]
-        humanpose2=detect_human_to_tf()  #make sure service is running
+        humanpose=detect_human_to_tf(self.distGaze[self.tries])  #make sure service is running
         
-        print("human? :",humanpose2)
-        humanpose = False
+        print("human? :",humanpose)
+        #humanpose = False
         if not(humanpose):
             print ('no human ')
             return 'failed'
@@ -167,7 +167,7 @@ class Find_human(smach.State):
             pose=get_robot_px()
             px_pose_robot=np.asarray((origin_map_img[1]+pose[1],origin_map_img[0]+pose[0]))
         
-            room_robot = check_room_px(np.flicheck_room_pxp(px_pose_robot),living_room_px_region,kitchen_px_region,bedroom_px_region,dining_room_px_region)
+            room_robot = check_room_px(np.flip(px_pose_robot),living_room_px_region,kitchen_px_region,bedroom_px_region,dining_room_px_region)
             
 
             
@@ -198,7 +198,7 @@ class Find_human(smach.State):
                 self.tries=0
                 return 'forbidden'
                 
-            talk('Human Found')
+            print('Human Found')
             self.tries=0
             return 'succ'    
 
@@ -218,8 +218,9 @@ class Goto_next_room(smach.State):  # ADD KNONW LOCATION DOOR
         self.epochs += 1
         self.tries += 1
         if self.tries==len(room_names):
-            self.tries = 0
+            self.tries = 1
         
+        print(f'TRIES:{self.tries} y EPOCHS:{self.epochs}')
         if self.epochs == 7:
             return 'tries'
 
