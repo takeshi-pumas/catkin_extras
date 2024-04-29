@@ -105,7 +105,7 @@ class Find_human(smach.State):
         smach.State.__init__(
             self, outcomes=['succ', 'failed', 'tries','forbidden'])
         self.tries = 0
-        self.distGaze=[6,6,3,2]
+        self.distGaze=[6,6,3,3,3,3]
     def execute(self, userdata):
         
 
@@ -113,13 +113,26 @@ class Find_human(smach.State):
         talk('Scanning the room for humans')
         self.tries += 1
 
-        if self.tries >= 4:
+        if self.tries >= 6:
             self.tries = 0
             return'tries'
 
-        if self.tries==1:head.set_joint_values([ 0.0, 0.0])
-        if self.tries==2:head.set_joint_values([ 0.9, 0.15])
-        if self.tries==3:head.set_joint_values([-0.9, 0.15])
+        if self.tries==1:
+            head.set_joint_values([ 0.0, 0.15])
+            rospy.sleep(2)
+        if self.tries==2:
+            head.set_joint_values([1.1, 0.15])
+            rospy.sleep(2)
+        if self.tries==3:
+            head.set_joint_values([1.25, 0.4])
+            rospy.sleep(2)
+        if self.tries==4:
+            head.set_joint_values([-1.1, 0.15])
+            rospy.sleep(2)
+        if self.tries==5:
+            head.set_joint_values([-1.25, 0.4])
+            rospy.sleep(2)
+            
         origin_map_img=[round(img_map.shape[0]*0.5) ,round(img_map.shape[1]*0.5)]
         humanpose=detect_human_to_tf(self.distGaze[self.tries])  #make sure service is running
         if humanpose== False:

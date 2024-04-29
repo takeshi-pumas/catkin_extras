@@ -524,13 +524,16 @@ def detect_human_to_tf(dist = 6):
     req = Human_detectorRequest()
     req.dist = dist
     humanpose=human_detect_server(req)
-    print (humanpose)
+    #print ("humanpose",humanpose)
     if (np.asarray((humanpose.x,humanpose.y,humanpose.z)).all()== np.zeros(3).all()):
-        print (np.asarray((humanpose.x,humanpose.y,humanpose.z)))
+        #print ("ASARRAY",np.asarray((humanpose.x,humanpose.y,humanpose.z)))
         return False
     else:
         tf_man.pub_static_tf(np.asarray((humanpose.x,humanpose.x,humanpose.z)),point_name='human', ref='head_rgbd_sensor_link')
+        rospy.sleep(0.5)
         succ=tf_man.change_ref_frame_tf('human')
+        rospy.sleep(0.5)
+        #print("SUCC?", succ)
         return succ
 
 #------------------------------------------------------
