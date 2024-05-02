@@ -16,6 +16,7 @@ import moveit_msgs.msg
 import tf2_ros
 import logging 
 from os import path
+import ros_numpy
 from geometry_msgs.msg import PoseStamped, Point  , Quaternion , TransformStamped , Twist
 from tf2_geometry_msgs import PointStamped
 
@@ -44,9 +45,6 @@ from ros_whisper_vosk.srv import SetGrammarVosk
 
 from action_server.msg import FollowActionGoal ,  FollowAction
 
-
-    
-
 from utils.grasp_utils import *
 from utils.misc_utils import *
 from utils.nav_utils import *
@@ -54,7 +52,7 @@ from utils.nav_utils import *
 
 global listener, broadcaster, tfBuffer, tf_static_broadcaster, scene, rgbd, head,train_new_face, wrist, human_detect_server, line_detector, clothes_color , head_mvit
 global clear_octo_client, goal,navclient,segmentation_server  , tf_man , omni_base, brazo, speech_recog_server, bridge, map_msg, pix_per_m, analyze_face , arm , set_grammar
-global recognize_action , classify_client,pointing_detect_server ,placing_finder_server,tfBuffer
+global recognize_action , classify_client,pointing_detect_server ,placing_finder_server
 rospy.init_node('smach')
 logger = logging.getLogger('rosout')
 logger.setLevel(logging.ERROR)
@@ -84,6 +82,7 @@ train_new_face = rospy.ServiceProxy('new_face', RecognizeFace)                  
 analyze_face = rospy.ServiceProxy('analyze_face', RecognizeFace)    ###DEEP FACE ONLY
 recognize_action = rospy.ServiceProxy('recognize_act', Recognize) 
 classify_client = rospy.ServiceProxy('/classify', Classify)
+classify_clnt_stickler = rospy.ServiceProxy('/classifystick', Classify)
 
 
 
