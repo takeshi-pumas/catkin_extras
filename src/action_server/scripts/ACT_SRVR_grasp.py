@@ -277,11 +277,14 @@ class GraspingStateMachine:
         #transformar la posicion del objeto al marco de referencia de la base del robot
         try:
             transformed_object_point = self.tf2_buffer.transform(object_point, "odom", timeout=rospy.Duration(1))
+            transformed_object_base = self.tf2_buffer.transform(object_point, "base_link", timeout=rospy.Duration(1))
             transformed_base = self.tf2_buffer.lookup_transform("odom", "base_link", rospy.Time(0), timeout=rospy.Duration(1))
+            transformed_object_base.point.x += 0.02
+
+            transformed_object_point = self.tf2_buffer.transform(transformed_object_base, "odom", timeout=rospy.Duration(1))
         except :
             rospy.WARN("Error al transformar la posicion del objeto al marco de referencia")
             return None
-        
         approach_pose = Pose()
         approach_pose.position.x = transformed_object_point.point.x
         approach_pose.position.y = transformed_object_point.point.y
