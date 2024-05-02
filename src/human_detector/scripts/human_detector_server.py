@@ -8,6 +8,8 @@ from utils import *
 def trigger_response(request):
     
     print ('Segmenting')
+    print("\n\nDISTANCIA",request.dist,"\n\n")
+
     points_msg=rospy.wait_for_message("/hsrb/head_rgbd_sensor/depth_registered/rectified_points",PointCloud2,timeout=5)
     # <<<<<<<<<<<<<<<<<<<<<<ANTERIOR SEGMENTADOR>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     # points_data = ros_numpy.numpify(points_msg)    
@@ -16,8 +18,8 @@ def trigger_response(request):
     # print (image.shape)
     # cents,xyz, images, img = plane_seg( points_msg,lower=10    , hi
 
-
-    res= detect_human(points_msg)
+    dist = 6 if request.dist ==0 else request.dist 
+    res= detect_human(points_msg, dist)
     # IN PROGRESS
     #res = detect_all(points_msg)
     print (res)

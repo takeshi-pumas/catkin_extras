@@ -8,22 +8,20 @@ from utils_pointing import *
 def trigger_response(request):    
     print ('Segmenting')
     points_msg=rospy.wait_for_message("/hsrb/head_rgbd_sensor/depth_registered/rectified_points",PointCloud2,timeout=5)
-    res= detect_pointing(points_msg)
-
-    """
-	try:
-		res= detect_pointing2(points_msg)
-	except OpenPException:
-		raise Exception("Error al obtener esqueleto")
-	except:
-		raise Exception("Otro error, probablemente con TFs")
-    """
+    
+    dist = 6 if request.dist == 0 else request.dist
+    #print("\n\nDISTANCIA",dist,"\n\n")
+    res= detect_pointing(points_msg,dist)
+    
     return res
     
 def callback(request):
 	print ('Segmenting')  
+	print("\n\nDISTANCIA",request.dist,"\n\n")
 	points_msg=rospy.wait_for_message("/hsrb/head_rgbd_sensor/depth_registered/rectified_points",PointCloud2,timeout=5)
-	res= detect_human(points_msg)	
+	dist = 6 if request.dist == 0 else request.dist
+	#print("\n\nDISTANCIA",dist,"\n\n")
+	res= detect_human(points_msg, dist)	
 	print (res)
 	return res    
 
