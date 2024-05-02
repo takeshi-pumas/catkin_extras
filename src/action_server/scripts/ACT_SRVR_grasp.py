@@ -108,7 +108,7 @@ class GraspingStateMachine:
 
         # TODO: Check planning 10 times, if failed exit or something...
         # Maybe create a safe area to plan
-        rospy.loginfo()
+        #rospy.loginfo()
 
         self.approach_count += 1
         if self.approach_limit == self.approach_count:
