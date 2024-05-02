@@ -21,7 +21,7 @@ class Initial(smach.State):
 
         global forbiden_room,closest_room , xys , room_names 
         rospy.loginfo('STATE : INITIAL')
-        print('Robot neutral pose')
+        print('[INITIAL]Robot neutral pose')
         self.tries += 1
         print(f'Try {self.tries} of 5 attempts')
         if self.tries == 3:
@@ -34,12 +34,12 @@ class Initial(smach.State):
         xys.append(df[df['child_id_frame']=='living_room'][['x','y']].values.ravel())
         xys.append(df[df['child_id_frame']=='dining_room'][['x','y']].values.ravel())
         xys.append(df[df['child_id_frame']=='kitchen'][['x','y']].values.ravel())
-        room_names=['bedroom','living_room','dining_room','kitchen']
+        room_names=['none','bedroom','kitchen','living_room','dining_room','living_room_2','kitchen_2','bedroom_2']
         xys, room_names
         #####
         ####FORBIDEN ROOM 
         forbiden_room='bedroom'
-        closest_room='kitchen'
+        closest_room='kitchen_drinks'       # a specific TF 
 
         head.set_named_target('neutral')
         #print('head listo')
@@ -62,7 +62,7 @@ class Wait_push_hand(smach.State):
         print('Waiting for hand to be pushed')
 
         self.tries += 1
-        print(f'Try {self.tries} of 4 attempts')
+        print(f'[WAITPUSHHAND] Try {self.tries} of 4 attempts')
         if self.tries == 4:
             return 'tries'
         talk('Gently... push my hand to begin')
@@ -75,7 +75,7 @@ class Wait_push_hand(smach.State):
 
 
 #########################################################################################################
-class Goto_door(smach.State):  # ADD KNONW LOCATION DOOR
+"""class Goto_door(smach.State):  # ADD KNONW LOCATION DOOR
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
         self.tries = 0
@@ -97,7 +97,7 @@ class Goto_door(smach.State):  # ADD KNONW LOCATION DOOR
         else:
             talk('Navigation Failed, retrying')
             return 'failed'
-
+"""
 
 #########################################################################################################
 class Find_human(smach.State):
@@ -142,6 +142,8 @@ class Find_human(smach.State):
 
         else : 
             human_pose,_=tf_man.getTF('human')
+            tmp,_=tf_man.getTF('human',ref_frame='base_link')
+            print("[FINDHUMAN] DISTANCIA A HUMANO:",np.linalg.norm(tmp))
             #pose=human_pose[:2]
             #dists=(pose-np.asarray(xys))
             #human_room=room_names[np.linalg.norm(dists, axis=1).argmin()]
@@ -169,9 +171,9 @@ class Find_human(smach.State):
             
 
             
-            print('room_robot,room_human',room_robot,room_human)
-            print ('px human',px_pose_human)
-            print('room_human',room_human)
+            print('[FINDHUMAN] room_robot,room_human',room_robot,room_human)
+            print ('[FINDHUMAN] px human',px_pose_human)
+            print('[FINDHUMAN] room_human',room_human)
 
             #########################
 
@@ -197,6 +199,12 @@ class Find_human(smach.State):
                 return 'forbidden'
                 
             talk('Human Found')
+            if np.linalg.norm(tmp) >= 1 and np.linalg.norm(tmp) < 1.5:
+                res = omni_base.move_d_to(np.linalg.norm(tmp),'human')
+                rospy.sleep(0.9)
+            else:
+                res = omni_base.move_d_to(1.3,'human')
+                rospy.sleep(0.9)
             self.tries=0
             return 'succ'    
 
@@ -222,7 +230,7 @@ class Goto_next_room(smach.State):  # ADD KNONW LOCATION DOOR
        
 
         res = omni_base.move_base(known_location=next_room)
-        print(res)
+        print("[GOTONEXTROOM] ",res)
 
         if res :
             return 'succ'
@@ -243,7 +251,7 @@ class Goto_human(smach.State):
 
         rospy.loginfo('STATE : navigate to known location')
 
-        print('Try', self.tries, 'of 3 attempts')
+        print('[GOTOHUMAN] Try', self.tries, 'of 3 attempts')
         self.tries += 1
         if self.tries == 3:
             return 'tries'
@@ -270,7 +278,7 @@ class Goto_human(smach.State):
             
             return 'forbidden'
 
-        print('getting close to human')
+        print('[GOTOHUMAN] getting close to human')
         head.to_tf('human')
 
         res = omni_base.move_d_to(0.7,'human')
@@ -294,7 +302,7 @@ class Lead_to_living_room(smach.State):
 
         rospy.loginfo('STATE : navigate to known location')
 
-        print('Try', self.tries, 'of 3 attempts')
+        print('[LEADTOLIVINGROOM] Try', self.tries, 'of 3 attempts')
         self.tries += 1
         if self.tries == 3:
             return 'tries'
@@ -335,7 +343,7 @@ class Analyze_shoes(smach.State):           # Talvez una accion por separado?
 
         head.set_joint_values([0,1.3])
         rospy.sleep(1.0)
-            
+        print("[ANALYZESHOES] Checking for shoes... ")    
         
         human_pos,_=tf_man.getTF('human')
         #head.absolute(human_pos[0],human_pos[1],0.1)
@@ -348,7 +356,7 @@ class Analyze_shoes(smach.State):           # Talvez una accion por separado?
         for i in range (5):
             img=rgbd.get_image()
             cv2.imwrite(path.expanduser( '~' )+"/Documents/feet.jpg",img)
-            print ('got image for feet analysis')
+            print ('[ANALYZESHOES] got image for feet analysis')
             keys=[ "feet", "shoes",'socks','sandals','sock']
             image = preprocess(Image.fromarray(img)).unsqueeze(0).to(device) #img array from grbd get image
             text = clip.tokenize(keys).to(device)
@@ -360,7 +368,7 @@ class Analyze_shoes(smach.State):           # Talvez una accion por separado?
                 logits_per_image, logits_per_text = model(image, text)
                 probs = logits_per_image.softmax(dim=-1).cpu().numpy()
 
-            print("Label probs:", probs,keys[np.argmax(probs)] ,keys, probs[0][1] ) # prints: [[0.9927937  0.00421068 0.00299572]]
+            print("[ANALYZESHOES] Label probs:", probs,keys[np.argmax(probs)] ,keys, probs[0][1] ) # prints: [[0.9927937  0.00421068 0.00299572]]
         
 
 
@@ -371,7 +379,7 @@ class Analyze_shoes(smach.State):           # Talvez una accion por separado?
         if (keys[np.argmax(probs)] in ['sandals','feet','socks', 'sock' ]   ) or ( probs[0][1]  < 0.4  ) :  
 
             talk ('Thanks for not wearing shoes.... Rule 1 is followed')
-            print ('Not wearing shoes')
+            print('[ANALYZESHOES] Not wearing shoes')
         else: 
             talk('Rule number 1 Broken... no shoes please... Would you mind taking them off?.... thank you ')
             ##
@@ -398,8 +406,8 @@ class Analyze_trash(smach.State):           # Talvez una accion por separado?
 
         
         
-        if self.tries==1: head.set_joint_values([0.9,-1])
-        elif self.tries==2: head.set_joint_values([-0.9,-1])
+        if self.tries==1: head.set_joint_values([0.5,-0.7])
+        elif self.tries==2: head.set_joint_values([-0.5,-0.7])
         elif self.tries==3:
             self.tries=0
             return 'tries'
@@ -407,7 +415,7 @@ class Analyze_trash(smach.State):           # Talvez una accion por separado?
         ##### Segment and analyze
         img=rgbd.get_image()
         cv2.imwrite(path.expanduser( '~' )+"/Documents/rubb.jpg",img)
-        print ('got image for segmentation')
+        print ('[ANALYZETRASH] got image for segmentation')
         res=segmentation_server.call()
         origin_map_img=[round(img_map.shape[0]*0.5) ,round(img_map.shape[1]*0.5)]
 
@@ -416,12 +424,12 @@ class Analyze_trash(smach.State):           # Talvez una accion por separado?
             return 'failed'
 
         else:
-            print('object found checking for inflated map')
+            print('[ANALYZETRASH] object found checking for inflated map')
             
             poses=np.asarray(res.poses.data)
             poses=poses.reshape((int(len(poses)/3) ,3     )      )  
             num_objs=len(poses)
-            print (num_objs)
+            print ("[ANALYZETRASH] ",num_objs)
             for i,pose in enumerate(poses):
                 #print (f'Occupancy map at point object {i}-> pixels ',origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m), img_map[origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m)])
                 point_name=f'object_{i}'
@@ -430,12 +438,12 @@ class Analyze_trash(smach.State):           # Talvez una accion por separado?
                 tf_man.change_ref_frame_tf(point_name=point_name, new_frame='map')
                 rospy.sleep(0.3)
                 pose,_= tf_man.getTF(point_name)
-                print (f'Occupancy map at point object {i}-> pixels ',origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m), img_map[origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m)])
+                print (f'[ANALYZETRASH] Occupancy map at point object {i}-> pixels ',origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m), img_map[origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m)])
                 if img_map[origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m)]!=0:#### Yes axes seem to be "flipped" !=0:
-                    print ('reject point, most likely part of arena, occupied inflated map')
+                    print ('[ANALYZETRASH] reject point, most likely part of arena, occupied inflated map')
                     tf_man.pub_static_tf(pos=[0,0,0], point_name=point_name, ref='head_rgbd_sensor_rgb_frame')
                     num_objs-=1
-                print (f"object found at robot coords.{pose} ")
+                print (f'[ANALYZETRASH] object found at robot coords.{pose} ')
 
         if num_objs!=0: 
             head.to_tf('human')
@@ -459,7 +467,7 @@ class Detect_drink(smach.State):
         
     def execute(self,userdata):
         rospy.loginfo('STATE: Detect_drinking')
-        print('Try', self.tries, 'of 3 attempts')
+        print('[ANALYZEDRINK] Try', self.tries, 'of 3 attempts')
         self.tries += 1
         if self.tries ==2:
             hv= head.get_joint_values()
@@ -479,7 +487,7 @@ class Detect_drink(smach.State):
             return 'failed'
         # Guardo posicion para retornar
         trans, quat=tf_man.getTF('base_link')
-        print("TRIES:",self.tries)
+        print("[ANALYZEDRINK] TRIES:",self.tries)
         rospy.sleep(0.4)
         if self.tries<2:
             head.set_named_target('neutral')        
@@ -495,7 +503,7 @@ class Detect_drink(smach.State):
 
         # PRIMERO SE ACERCA AL HUMANO
         human_pose,_=tf_man.getTF('human')
-        print('getting close to human')
+        print('[ANALYZEDRINK] getting close to human')
         head.to_tf('human')
         res = omni_base.move_d_to(0.8,'human')
 
@@ -514,12 +522,12 @@ class Detect_drink(smach.State):
         rospy.sleep(0.1)
         img=rgbd.get_image()
         cv2.imwrite(path.expanduser( '~' )+"/Documents/drink.jpg",img)
-        print ('got image for drink analysis')
-
-        return 'succ'
+        print ('[ANALYZEDRINK] got image for drink analysis')
         # parte de la NN para detectar objeto
 
         #
+        return 'succ'
+        
 
         """talk('Detecting drinking')
                                 rospy.sleep(0.8)
@@ -595,7 +603,7 @@ def init(node_name):
 # --------------------------------------------------
 # Entry point
 if __name__ == '__main__':
-    print("Takeshi STATE MACHINE...")
+    print("[MAIN] Takeshi STATE MACHINE...")
     init("takeshi_smach")
     # State machine, final state "END"
     sm = smach.StateMachine(outcomes=['END'])

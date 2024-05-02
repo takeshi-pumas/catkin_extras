@@ -77,7 +77,7 @@ class Wait_push_hand(smach.State):
 
 
 #########################################################################################################
-class Goto_door(smach.State):  # ADD KNONW LOCATION DOOR
+"""class Goto_door(smach.State):  # ADD KNONW LOCATION DOOR
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
         self.tries = 0
@@ -100,7 +100,7 @@ class Goto_door(smach.State):  # ADD KNONW LOCATION DOOR
             print('[GOTODOOR] Navigation Failed, retrying')
             return 'failed'
 
-
+"""
 #########################################################################################################
 class Find_human(smach.State):
     def __init__(self):
@@ -431,7 +431,11 @@ class Analyze_trash(smach.State):           # Talvez una accion por separado?
         img=rgbd.get_image()
         #cv2.imwrite(path.expanduser( '~' )+"/Documentos/rubb.jpg",img)
         print ('[ANALYZETRASH] got image for segmentation')
-        res=segmentation_server.call()
+        request= segmentation_server.request_class() 
+        request.height.data=0.00
+        res=segmentation_server.call(request)
+        img_seg=bridge.imgmsg_to_cv2(res.im_out.image_msgs[0])
+        cv2.imwrite(path.expanduser( '~' )+"/Documentos/rubb.jpg",img_seg)
         origin_map_img=[round(img_map.shape[0]*0.5) ,round(img_map.shape[1]*0.5)]
 
         if len(res.poses.data)==0:

@@ -114,6 +114,7 @@ def trigger_response(request):
         
      
     img_msg=bridge.cv2_to_imgmsg(image_with_contours)
+    cv2.imwrite(os.path.expanduser( '~' )+"/Documents/imageContours.jpg",image_with_contours)
     #plt.imshow(img)
     #plt.imshow (image_with_contours)
     res.im_out.image_msgs.append(img_msg)
