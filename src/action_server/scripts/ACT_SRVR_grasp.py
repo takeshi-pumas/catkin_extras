@@ -99,6 +99,7 @@ class GraspingStateMachine:
         self.add_collision_object('bound_right', position=[0.0, - 1.0, 0.3], dimensions=[1.8, 0.05, 0.05])
         self.add_collision_object('bound_behind', position=[-1.0, 0.0, 0.3], dimensions=[0.05, 2.0, 0.05])
         clear_octo_client()
+        self.safe_pose = self.whole_body.get_current_joint_values()
         return 'success'
 
 
@@ -107,7 +108,7 @@ class GraspingStateMachine:
 
         # TODO: Check planning 10 times, if failed exit or something...
         # Maybe create a safe area to plan
-        rospy.loginfo(self.whole_body.get_current_joint_values())
+        rospy.loginfo()
 
         self.approach_count += 1
         if self.approach_limit == self.approach_count:
@@ -163,7 +164,10 @@ class GraspingStateMachine:
         joint_values = self.brazo.get_joint_values()
         joint_values[0] += 0.15
         self.brazo.set_joint_values(joint_values)
-        self.base.tiny_move(velX=-0.07, std_time=1.5, MAX_VEL=0.7)
+        #self.base.tiny_move(velX=-0.07, std_time=1.5, MAX_VEL=0.7)
+        self.whole_body.set_joint_value_target(self.safe_pose)
+        self.whole_body.go()
+
         return 'success'
         # if succ:
         #     return 'success'
