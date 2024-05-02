@@ -113,11 +113,11 @@ class GraspingStateMachine:
         if self.approach_limit == self.approach_count:
             return 'cancel'
         goal = self.sm.userdata.goal.target_pose.data
-        self.head.relative(*goal)
+
         pos = [goal[0], goal[1], goal[2]]
         self.add_collision_object(position = pos, dimensions = [0.05, 0.05, 0.05], 
                                   frame=self.whole_body.get_planning_frame())
-        self.publish_known_areas()# Add Table
+        #self.publish_known_areas()# Add Table
 
         self.gripper.open()
         pose_goal = [goal[0], goal[1], goal[2]]
@@ -125,8 +125,9 @@ class GraspingStateMachine:
             self.target_pose = self.calculate_frontal_approach(target_position=pose_goal)
             print(self.target_pose)
         elif self.grasp_approach == "above":
-            self.target_pose = self.calculate_above_approach(target_position=pose_goal)
+            self.target_pose, gaze_dir = self.calculate_above_approach(target_position=pose_goal)
             print(self.target_pose)
+        self.head.relative(gaze_dir.point.x, gaze_dir.point.y, gaze_dir.point.z)
         rospy.sleep(0.5)
         succ = self.move_to_pose(self.whole_body, self.target_pose)
         if succ:
@@ -299,7 +300,7 @@ class GraspingStateMachine:
         quat = quaternion_from_euler(-theta, 0.0, np.pi, 'szyx')
         approach_pose.orientation = Quaternion(*quat)
 
-        return approach_pose
+        return approach_pose, transformed_object_base
 if __name__ == '__main__':
     rospy.init_node('grasping_demo')
     grasping_sm = GraspingStateMachine()
