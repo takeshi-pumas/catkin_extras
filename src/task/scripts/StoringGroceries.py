@@ -213,7 +213,7 @@ class Scan_table(smach.State):
         regions={'shelves':np.load(file_path+'/shelves_region.npy'),'pickup':np.load(file_path+'/pickup_region.npy')}
 
         print (regions)
-        def is_inside(x,y,z):return ((area_box[:,1].max()+0.1 > y) and (area_box[:,1].min()-0.1 < y)) and ((area_box[:,0].max() +0.1> x) and (area_box[0,0].min() -0.1 < x)) and (self.pickup_plane_z<z)  
+        def is_inside(x,y,z):return ((area_box[:,1].max()+0.2 > y) and (area_box[:,1].min()-0.2 < y)) and ((area_box[:,0].max() +0.2> x) and (area_box[0,0].min() -0.2 < x)) and (0.9*self.pickup_plane_z<z)  
         for name in regions:
             in_region=[]
             area_box=regions[name]
@@ -558,8 +558,7 @@ class Scan_shelf(smach.State):
                 print ('GOTO PLACE SHELF LOW')
                 head.set_joint_values([0.0 , 0.0])
                 arm.set_named_target('go')
-                arm.go()
-                
+                arm.go()                
                 #omni_base.move_base(known_location='place_shelf', time_out=10)
                 #omni_base.move_base(known_location='place_shelf', time_out=10)
                 
@@ -568,14 +567,15 @@ class Scan_shelf(smach.State):
                 head.to_tf('low_shelf')
                 rospy.sleep(2.5)
                 if find_placing_area(self.low_shelf_height) != True:
-                    omni_base.tiny_move( velX=0.2,std_time=5.5)
+                    omni_base.tiny_move( velX=0.2,std_time=8.5)
                     head.to_tf('top_shelf')
-                    find_placing_area(self.low_shelf_height+0.05) 
+                    find_placing_area(self.low_shelf_height) 
                 clear_octo_client()
                 rospy.sleep(2.6)
                 arm.set_named_target('go')
                 arm.go()
-                omni_base.tiny_move( velX=-0.2,std_time=5.5)
+                omni_base.tiny_move( velX=-0.2,std_time=8.5)
+                find_placing_area(self.low_shelf_height) 
                 return 'succ'
 
             else:
@@ -641,9 +641,9 @@ class Scan_shelf(smach.State):
         ####################################
         area_box=regions['shelves']
         print (area_box)
-        def is_inside_top(x,y,z):return ((area_box[:,1].max() > y) and (area_box[:,1].min() < y)) and ((area_box[:,0].max() > x) and (area_box[0,0].min() < x))    and (self.top_shelf_height < z )  
-        def is_inside_mid(x,y,z):return ((area_box[:,1].max() > y) and (area_box[:,1].min() < y)) and ((area_box[:,0].max() > x) and (area_box[0,0].min() < x))    and ((0.9*self.top_shelf_height > z) and (self.mid_shelf_height < z  )  )  
-        def is_inside_low(x,y,z):return ((area_box[:,1].max() > y) and (area_box[:,1].min() < y)) and ((area_box[:,0].max() > x) and (area_box[0,0].min() < x))    and ((0.9*self.mid_shelf_height > z  )  )
+        def is_inside_top(x,y,z):return ((area_box[:,1].max()+0.15 > y) and (area_box[:,1].min()-0.15 < y)) and ((area_box[:,0].max()+0.15 > x) and (area_box[0,0].min()-0.15 < x))    and (0.9*self.top_shelf_height < z )  
+        def is_inside_mid(x,y,z):return ((area_box[:,1].max()+0.15 > y) and (area_box[:,1].min()-0.15 < y)) and ((area_box[:,0].max()+0.15 > x) and (area_box[0,0].min()-0.15 < x))    and ((0.9*self.top_shelf_height > z) and (self.mid_shelf_height < z  )  )  
+        def is_inside_low(x,y,z):return ((area_box[:,1].max()+0.15 > y) and (area_box[:,1].min()-0.15 < y)) and ((area_box[:,0].max()+0.15 > x) and (area_box[0,0].min()-0.15 < x))    and ((0.9*self.mid_shelf_height > z  )  )
         #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
         if len (objects)!=0 :
             for i in range(len(res.poses)):                
@@ -720,7 +720,7 @@ class Scan_shelf(smach.State):
         if corresponding_key=='top':
             talk(f'Category {cat} found in top shelf... Placing')
             print ('GOTO PLACE SHELF TOP')
-            omni_base.tiny_move( velY=-0.3,std_time=10.0)
+            omni_base.tiny_move( velY=-0.3,std_time=15.0)
             #omni_base.move_base(known_location='high_place_area', time_out=10)
             #omni_base.move_base(known_location='high_place_area', time_out=10)
             #omni_base.move_base(known_location='shelf', time_out=10)
@@ -757,11 +757,30 @@ class Scan_shelf(smach.State):
             rospy.sleep(2.5)            
             head.set_joint_values([0.0 , -0.7])        
             rospy.sleep(2.6)
-            find_placing_area(self.mid_shelf_height)
-            head.set_joint_values([0.0 , 0.0])
-            rospy.sleep(2.6)
-            arm.set_named_target('go')
-            arm.go()
+            omni_base.tiny_move( velX=0.2,std_time=5.0) 
+            if find_placing_area(self.mid_shelf_height):
+                head.set_joint_values([0.0 , 0.0])
+                rospy.sleep(2.6)
+                arm.set_named_target('go')
+                arm.go()
+                return 'succ'
+            omni_base.tiny_move( velX=0.2,std_time=5.0) 
+            if find_placing_area(self.mid_shelf_height):
+                head.set_joint_values([0.0 , 0.0])
+                rospy.sleep(2.6)
+                arm.set_named_target('go')
+                arm.go()
+                return 'succ'                
+                
+            omni_base.tiny_move( velX=0.2,std_time=5.0) 
+            if find_placing_area(self.mid_shelf_height):
+                head.set_joint_values([0.0 , 0.0])
+                rospy.sleep(2.6)
+                arm.set_named_target('go')
+                arm.go()
+                return 'succ'                
+            return 'failed'
+            
 
             return 'succ'
 
@@ -780,10 +799,15 @@ class Scan_shelf(smach.State):
             rospy.sleep(2.5)
             head.set_joint_values([0.0, -1.05])        
             rospy.sleep(2.5)
-            if find_placing_area(self.low_shelf_height): return 'succ'
-       
-        
-        
+            if find_placing_area(self.low_shelf_height):
+                return 'succ'
+            omni_base.tiny_move( velX=0.1,std_time=5.0) 
+            if find_placing_area(self.low_shelf_height):                
+                return 'succ'
+            omni_base.tiny_move( velX=0.1,std_time=5.0) 
+            if find_placing_area(self.low_shelf_height):
+                return 'succ'
+            return 'failed'
 
 # --------------------------------------------------
 def init(node_name):

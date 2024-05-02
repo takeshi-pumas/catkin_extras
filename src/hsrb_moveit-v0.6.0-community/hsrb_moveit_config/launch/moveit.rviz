@@ -569,6 +569,8 @@ Visualization Manager:
       Filter (whitelist): ""
       Frame Timeout: 15
       Frames:
+        001_chips_can:
+          Value: true
         004_sugar_box:
           Value: true
         005_tomato_soup_can:
@@ -577,17 +579,13 @@ Visualization Manager:
           Value: true
         008_pudding_box:
           Value: true
-        009_gelatin_box:
-          Value: true
-        010_potted_meat_can:
-          Value: true
         011_banana:
           Value: true
-        012_strawberry:
+        013_apple:
+          Value: true
+        015_peach:
           Value: true
         016_pear:
-          Value: true
-        017_orange:
           Value: true
         018_plum:
           Value: true
@@ -595,13 +593,11 @@ Visualization Manager:
           Value: true
         020_pitcher_lid:
           Value: true
-        025_mug:
+        029_plate:
           Value: true
-        031_spoon:
+        033_spatula:
           Value: true
         052_extra_large_clamp:
-          Value: true
-        054_softball:
           Value: true
         055_baseball:
           Value: true
@@ -613,14 +609,16 @@ Visualization Manager:
           Value: true
         063-b_marbles:
           Value: true
-        070-a_colored_wood_blocks:
+        065-f_cups:
           Value: true
         071_nine_hole_peg_test:
           Value: true
-        All Enabled: false
-        a_colored_wood_blocks:
+        077_rubiks_cube:
           Value: true
+        All Enabled: false
         a_marbles:
+          Value: true
+        apple:
           Value: true
         ar_marker/1799:
           Value: true
@@ -630,9 +628,9 @@ Visualization Manager:
           Value: false
         arm_roll_link:
           Value: false
-        b_marbles:
-          Value: true
         b_pitcher_base_v2:
+          Value: true
+        banana:
           Value: true
         base_b_bumper_link:
           Value: false
@@ -668,9 +666,9 @@ Visualization Manager:
           Value: false
         baseball:
           Value: true
-        bedroom:
-          Value: true
         breakfast:
+          Value: true
+        chips_can:
           Value: true
         dining_room:
           Value: true
@@ -678,9 +676,7 @@ Visualization Manager:
           Value: true
         extra_large_clamp:
           Value: true
-        gaze:
-          Value: true
-        gelatin_box:
+        f_cups:
           Value: true
         hand_camera_frame:
           Value: false
@@ -746,36 +742,38 @@ Visualization Manager:
           Value: false
         mid_shelf:
           Value: true
-        mug:
-          Value: true
         nine_hole_peg_test:
           Value: true
         odom:
           Value: false
+        peach:
+          Value: true
         pickup:
           Value: false
+        pitcher_lid:
+          Value: true
         place_shelf:
           Value: true
         placing_area:
           Value: true
-        potted_meat_can:
-          Value: true
         pudding_box:
+          Value: true
+        rubiks_cube:
           Value: true
         shelf:
           Value: true
-        spoon:
-          Value: true
-        strawberry:
+        spatula:
           Value: true
         sugar_box:
+          Value: true
+        tennis_ball:
+          Value: true
+        tomato_soup_can:
           Value: true
         top_shelf:
           Value: true
         torso_lift_link:
           Value: false
-        tuna_fish_can:
-          Value: true
         wrist_flex_link:
           Value: false
         wrist_ft_sensor_frame:
@@ -792,19 +790,19 @@ Visualization Manager:
       Show Names: true
       Tree:
         map:
-          a_colored_wood_blocks:
-            {}
           a_marbles:
             {}
-          b_marbles:
+          apple:
             {}
           b_pitcher_base_v2:
             {}
+          banana:
+            {}
           baseball:
             {}
-          bedroom:
-            {}
           breakfast:
+            {}
+          chips_can:
             {}
           dining_room:
             {}
@@ -812,9 +810,7 @@ Visualization Manager:
             {}
           extra_large_clamp:
             {}
-          gaze:
-            {}
-          gelatin_box:
+          f_cups:
             {}
           kitchen:
             {}
@@ -823,8 +819,6 @@ Visualization Manager:
           low_shelf:
             {}
           mid_shelf:
-            {}
-          mug:
             {}
           nine_hole_peg_test:
             {}
@@ -890,6 +884,8 @@ Visualization Manager:
                           ar_marker/1799:
                             {}
                           head_rgbd_sensor_rgb_frame:
+                            001_chips_can:
+                              {}
                             004_sugar_box:
                               {}
                             005_tomato_soup_can:
@@ -898,17 +894,13 @@ Visualization Manager:
                               {}
                             008_pudding_box:
                               {}
-                            009_gelatin_box:
-                              {}
-                            010_potted_meat_can:
-                              {}
                             011_banana:
                               {}
-                            012_strawberry:
+                            013_apple:
+                              {}
+                            015_peach:
                               {}
                             016_pear:
-                              {}
-                            017_orange:
                               {}
                             018_plum:
                               {}
@@ -916,13 +908,11 @@ Visualization Manager:
                               {}
                             020_pitcher_lid:
                               {}
-                            025_mug:
+                            029_plate:
                               {}
-                            031_spoon:
+                            033_spatula:
                               {}
                             052_extra_large_clamp:
-                              {}
-                            054_softball:
                               {}
                             055_baseball:
                               {}
@@ -934,9 +924,11 @@ Visualization Manager:
                               {}
                             063-b_marbles:
                               {}
-                            070-a_colored_wood_blocks:
+                            065-f_cups:
                               {}
                             071_nine_hole_peg_test:
+                              {}
+                            077_rubiks_cube:
                               {}
                         head_l_stereo_camera_gazebo_frame:
                           {}
@@ -948,27 +940,31 @@ Visualization Manager:
                           {}
             base_footprint_wheel:
               {}
+          peach:
+            {}
           pickup:
+            {}
+          pitcher_lid:
             {}
           place_shelf:
             {}
           placing_area:
             {}
-          potted_meat_can:
-            {}
           pudding_box:
+            {}
+          rubiks_cube:
             {}
           shelf:
             {}
-          spoon:
-            {}
-          strawberry:
+          spatula:
             {}
           sugar_box:
             {}
-          top_shelf:
+          tennis_ball:
             {}
-          tuna_fish_can:
+          tomato_soup_can:
+            {}
+          top_shelf:
             {}
       Update Interval: 0
       Value: true
@@ -1101,7 +1097,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 3.9437508583068848
+      Distance: 6.205568313598633
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -1117,9 +1113,9 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.5847969651222229
+      Pitch: 0.9997967481613159
       Target Frame: base_footprint
-      Yaw: 2.605881929397583
+      Yaw: 3.4908840656280518
     Saved: ~
 Window Geometry:
   Displays:

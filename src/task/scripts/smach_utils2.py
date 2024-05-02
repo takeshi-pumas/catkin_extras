@@ -226,7 +226,7 @@ def seg_res_tf_pointing(res):
 def find_placing_area (plane_height=-1):
     #head.set_joint_values([-1.5,-0.65])
     #rospy.sleep(0.5)
-    for i in range (10):
+    for i in range (4):
         request= segmentation_server.request_class()    
         request.height.data=plane_height+0.01*i  #MID SHELF FOR PLACING 
         print ('#############Finding placing in plane####################',request.height.data)
@@ -402,7 +402,7 @@ def hand_grasp_D(tf_name='placing_area', THRESHOLD=0.03,timeout=10.0):
 
             if eT > np.pi: eT=-2*np.pi+eT
             if eT < -np.pi: eT= 2*np.pi+eT
-            if abs(eT) < 0.12:
+            if abs(eT) < 0.05:
                 eT=0
             
             if eX >0: velX = max( 0.005,eX)
@@ -413,7 +413,7 @@ def hand_grasp_D(tf_name='placing_area', THRESHOLD=0.03,timeout=10.0):
             succ =  eX == 0 and eY == 0 and eT==0            
             
                 # grasp_base.tiny_move(velY=-0.4*trans[1], std_time=0.2, MAX_VEL=0.3)
-            omni_base.tiny_move(velX=0.13*velX, velY=-0.4*velY, velT=-eT  , std_time=0.2, MAX_VEL=0.3) #Pending test
+            omni_base.tiny_move(velX=0.13*velX, velY=-0.4*velY, velT=0.1*eT  , std_time=0.2, MAX_VEL=0.3) #Pending test
     return succ
             
 ##------------------------------------------------------
