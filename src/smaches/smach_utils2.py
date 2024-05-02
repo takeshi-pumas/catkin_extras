@@ -112,7 +112,6 @@ brazo = ARM()
 line_detector = LineDetector()
 # arm =  moveit_commander.MoveGroupCommander('arm')
 #------------------------------------------------------
-
 def call_yolo_service(height = -1):
     request = segmentation_server.request_class() 
     request.height.data = height
@@ -125,6 +124,7 @@ def call_yolo_service(height = -1):
     #cv2.imshow('our of res'  , img)
     return response
 
+#------------------------------------------------------
 def detect_object_yolo(object_name,res):
     # find object_name in the response message from object_classification service (Yolo)
     objs=[]
@@ -133,7 +133,8 @@ def detect_object_yolo(object_name,res):
         if name.data[4:]==object_name:return res.poses[i]
     if object_name=='all': return objs
     return []
-#############################################################################################
+
+#------------------------------------------------------
 def seg_res_tf(res):
     # Extract pose information from segmentation response an publish a tf... 
     # No rot is tf with pose relating to map  zero angles (robot facing)
@@ -268,6 +269,7 @@ def point_to_px(x,y):
     safe_xy=np.asarray((x,y))
     return np.round(safe_xy/pix_per_m).astype('int')
 
+#------------------------------------------------------
 def px_to_point(px,py):
     return np.asarray((px,py))*pix_per_m
 
@@ -470,7 +472,6 @@ def read_tf(t):
     
     return pose, quat
 
-
 #------------------------------------------------------
 def detect_human_to_tf(dist = 6):
     req = Human_detectorRequest()
@@ -549,18 +550,7 @@ def base_grasp_D(tf_name,d_x=0.66,d_y=-0.1,timeout=1.0):
         succ =  eX == 0 and eY == 0 and eT==0            
         omni_base.tiny_move( velX=0.2*+eX,velY=0.3*eY, velT=-eT,std_time=0.2, MAX_VEL=0.3) 
 
-    
-    
 #------------------------------------------------------
-def save_image(img, dir = ""):
-    if dir == "":
-        dir = path.expanduser('~')+"/Pictures/"
-    elif dir != "" and dir[-1]!="/":
-        dir+="/"
-    cv2.imwrite(dir+"imageTmp.jpg",img)
-
-###################################################
-
 # para quitar fondo, es necesario rgbd de la camara del robot
 def removeBackground(points_msg,distance = 2):
     # Obtengo rgb

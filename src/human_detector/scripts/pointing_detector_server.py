@@ -11,7 +11,7 @@ def trigger_response(request):
     
     dist = 6 if request.dist == 0 else request.dist
     #print("\n\nDISTANCIA",dist,"\n\n")
-	res= detect_pointing(points_msg,dist)
+    res= detect_pointing(points_msg,dist)
     
     return res
     

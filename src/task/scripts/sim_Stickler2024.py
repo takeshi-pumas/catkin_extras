@@ -151,6 +151,8 @@ class Find_human(smach.State):
 
         else : 
             human_pose,_=tf_man.getTF('human')
+            tmp,_=tf_man.getTF('human',ref_frame='base_link')
+            print("DISTANCIA A HUMANO:",np.linalg.norm(tmp))
             #pose=human_pose[:2]
             #dists=(pose-np.asarray(xys))
             #human_room=room_names[np.linalg.norm(dists, axis=1).argmin()]
@@ -206,9 +208,14 @@ class Find_human(smach.State):
                 return 'forbidden'
             
 
-            print('[FINDHUMAN] Human Found')
-            #res = omni_base.move_d_to(0.9,'human')
-            rospy.sleep(0.9)
+            print('[FINDHUMAN] Human Found, getting close')
+            
+            if np.linalg.norm(tmp) >= 1 and np.linalg.norm(tmp) < 1.5:
+                res = omni_base.move_d_to(np.linalg.norm(tmp),'human')
+                rospy.sleep(0.9)
+            else:
+                res = omni_base.move_d_to(1.3,'human')
+                rospy.sleep(0.9)
             self.tries=0
             return 'succ'    
 
@@ -327,7 +334,7 @@ class Lead_to_allowed_room(smach.State):
         res = omni_base.move_d_to(1.0,'human')
 
 
-        print(f'[LEADTOALLOWEDROOM] I will lead you to the {closest_room}, please follow me')
+        print(f'[LEADTOALLOWEDROOM] I will lead you to the {closest_room}(valid location), please follow me')
         # talk('Navigating to ,living room')
         res = omni_base.move_base(known_location=closest_room)
         if res:
@@ -404,7 +411,7 @@ class Analyze_trash(smach.State):           # Talvez una accion por separado?
     def execute(self, userdata):
 
         rospy.loginfo('STATE : TRASH')
-
+        print("[ANALYZETRASH] Analysing for trash")
         
         self.tries+=1
         #NO MOVEIT
@@ -414,15 +421,15 @@ class Analyze_trash(smach.State):           # Talvez una accion por separado?
 
         
         
-        if self.tries==1: head.set_joint_values([0.9,-1])
-        elif self.tries==2: head.set_joint_values([-0.9,-1])
+        if self.tries==1: head.set_joint_values([0.5,-0.7])
+        elif self.tries==2: head.set_joint_values([-0.5,-0.7])
         elif self.tries==3:
             self.tries=0
             return 'tries'
         rospy.sleep(2.9)
         ##### Segment and analyze
         img=rgbd.get_image()
-        cv2.imwrite(path.expanduser( '~' )+"/Documents/rubb.jpg",img)
+        #cv2.imwrite(path.expanduser( '~' )+"/Documentos/rubb.jpg",img)
         print ('[ANALYZETRASH] got image for segmentation')
         res=segmentation_server.call()
         origin_map_img=[round(img_map.shape[0]*0.5) ,round(img_map.shape[1]*0.5)]
@@ -638,7 +645,7 @@ if __name__ == '__main__':
         smach.StateMachine.add("FIND_HUMAN",
                             Find_human(),
                             transitions={'failed': 'FIND_HUMAN',        
-                                              'succ': 'GOTO_NEXT_ROOM',   
+                                              'succ': 'ANALYZE_TRASH',   
                                               'tries': 'GOTO_NEXT_ROOM', 
                                               'forbidden':'GOTO_HUMAN'})
 
@@ -654,15 +661,16 @@ if __name__ == '__main__':
                               transitions={'failed': 'LEAD_TO_ALLOWED_ROOM',
                                               'succ': 'GOTO_NEXT_ROOM',  
                                               'tries': 'END'})
-        """smach.StateMachine.add("ANALYZE_SHOES",      
-                              Analyze_shoes(),       
-                              transitions={'failed': 'FIND_HUMAN',        
-                                              'succ': 'ANALYZE_TRASH'})
         smach.StateMachine.add("ANALYZE_TRASH",      
                               Analyze_trash(),         
                               transitions={'failed': 'ANALYZE_TRASH' ,     
                                               'succ': 'GOTO_NEXT_ROOM' ,    
-                                              'tries': 'GOTO_NEXT_ROOM'}) """  
+                                              'tries': 'GOTO_NEXT_ROOM'}) 
+        """smach.StateMachine.add("ANALYZE_SHOES",      
+                              Analyze_shoes(),       
+                              transitions={'failed': 'FIND_HUMAN',        
+                                              'succ': 'ANALYZE_TRASH'})
+        """  
         smach.StateMachine.add("GOTO_NEXT_ROOM",     
                                 Goto_next_room(),      
                                 transitions={'failed': 'GOTO_NEXT_ROOM',    

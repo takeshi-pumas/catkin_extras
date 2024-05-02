@@ -499,9 +499,9 @@ def detect_pointing2(points_msg,dist = 6):
         imageDraw = drawSkeletons(image,poses,plot=False)
         cv2.imwrite(os.path.expanduser( '~' )+"/Documents/maskedImageWithOP.jpg",imageDraw)
     
-    except:
-        print("Ocurrio un error al construir el esqueleto")
-        raise OpenPException("Ocurrio un error al construir el esqueleto ")
+    except Exception as e:
+        print("Ocurrio un error al construir el esqueleto",e,type(e).__name__)
+        raise Exception("Ocurrio un error al construir el esqueleto ")
 
     #print(os.path.expanduser( '~' )+"/Documents/tmpPOINTING.jpg")
     #cv2.imwrite(os.path.expanduser( '~' )+"/Documents/tmpPOINTING.jpg",imageDraw)
@@ -515,7 +515,7 @@ def detect_pointing2(points_msg,dist = 6):
                        points_data['y'][int(pose[0,1]), int(pose[0,0])],
                        points_data['z'][int(pose[0,1]), int(pose[0,0])]]
             #if (pose_xyz == None).any():               # PENDIENTE DE TERMINAR Y PROBAR
-            #    raise TFException("Error al obtener datos de PointCloud")
+            #    raise Exception("Error al obtener datos de PointCloud")
             dists.append(np.linalg.norm(pose_xyz)) 
             t=write_tf((pose_xyz[0],pose_xyz[1],pose_xyz[2]),(0,0,0,1),'person_'+str(i),parent_frame='head_rgbd_sensor_rgb_frame')
             b_st.sendTransform(t)
@@ -526,7 +526,7 @@ def detect_pointing2(points_msg,dist = 6):
                        points_data['y'][int(pose[1,1]), int(pose[1,0])],
                        points_data['z'][int(pose[1,1]), int(pose[1,0])]]
             #if (pose_xyz == None).any():               # PENDIENTE DE TERMINAR Y PROBAR
-            #    raise TFException("Error al obtener datos de PointCloud")
+            #    raise Exception("Error al obtener datos de PointCloud")
             dists.append(np.linalg.norm(pose_xyz))  
             t=write_tf((pose_xyz[0],pose_xyz[1],pose_xyz[2]),(0,0,0,1),'person_'+str(i),parent_frame='head_rgbd_sensor_rgb_frame')
             b_st.sendTransform(t)
@@ -534,7 +534,7 @@ def detect_pointing2(points_msg,dist = 6):
         else:
             print("NO HAY DATOS PARA PUBLICAR")   
                     # PENDIENTE DE TERMINAR Y PROBAR
-            #raise ZeroSKException("Error, datos en zero para TF")
+            #raise Exception("Error, datos en zero para TF")
 
 
     print(np.min(dists),np.argmin(dists))
@@ -557,7 +557,7 @@ def detect_pointing2(points_msg,dist = 6):
             points_data['z'][int(poses[k,7,1]), int(poses[k,7,0])]]
             
     #if (codoD == None).any() or (manoD == None).any():               # PENDIENTE DE TERMINAR Y PROBAR
-    #    raise WriteTFException("Error al publicar TF (empty)")
+    #    raise Exception("Error al publicar TF (empty)")
     t=write_tf((codoD[0],codoD[1],codoD[2]),(0,0,0,1),'codoD',parent_frame='head_rgbd_sensor_rgb_frame')
     b_st.sendTransform(t)
     rospy.sleep(0.3)
@@ -565,7 +565,7 @@ def detect_pointing2(points_msg,dist = 6):
     b_st.sendTransform(t)
     rospy.sleep(0.3)
     #if (codoI == None).any() or (manoI == None).any():               # PENDIENTE DE TERMINAR Y PROBAR
-    #    raise WriteTFException("Error al publicar TF (empty)")
+    #    raise Exception("Error al publicar TF (empty)")
     t=write_tf((codoI[0],codoI[1],codoI[2]),(0,0,0,1),'codoI',parent_frame='head_rgbd_sensor_rgb_frame')
     b_st.sendTransform(t)
     rospy.sleep(0.3)
