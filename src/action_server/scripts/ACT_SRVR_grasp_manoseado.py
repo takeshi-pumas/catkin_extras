@@ -169,8 +169,9 @@ class GraspingStateMachine:
         group.stop()
         return succ
 
-    def publish_known_areas(self, position = [4.5, 3.0, 0.4], rotation = [0,0,0,1], dimensions = [3.0 ,1.0, 0.2]): #position = [5.9, 5.0,0.3] ##SIM
-                                                                                                                   #position = [8.1, -2.4,0.3]###REAL
+    def publish_known_areas(self, position = [0.0, -1.2,0.6], rotation = [0,0,0,1], dimensions = [3.0 ,1.0, 0.2]): #position = [5.9, 5.0,0.3] ##SIM
+                                                                                                                   #position = [1.2, -0.6,0.3]###REAL
+                                                                                                                   #position =[4.5, 3.0, 0.4] ### TMR
         object_pose = PoseStamped()
         object_pose.header.frame_id = 'map'
         object_pose.pose.position.x = position[0]
@@ -307,7 +308,7 @@ class GraspingStateMachine:
             return None
         
         approach_pose = Pose()
-        approach_pose.position.x = transformed_object_point.point.x
+        approach_pose.position.x = transformed_object_point.point.x 
         approach_pose.position.y = transformed_object_point.point.y
         approach_pose.position.z = transformed_object_point.point.z + 0.17
 

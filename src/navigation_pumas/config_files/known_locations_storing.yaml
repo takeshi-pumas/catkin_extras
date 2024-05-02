@@ -6,22 +6,6 @@ bedroom:
 - qy: 0.0
 - qz: 0.695
 - qw: 0.718
-bottom_place_area:
-- x: 1.377
-- y: 0.419
-- theta: 0.028
-- qx: 0.0
-- qy: 0.0
-- qz: 0.014
-- qw: 0.999
-bottom_place_shelf:
-- x: 6.967
-- y: 1.661
-- theta: -2.991
-- qx: 0.0
-- qy: 0.0
-- qz: -0.997
-- qw: 0.075
 breakfast:
 - x: 0.257
 - y: 0.644
@@ -46,14 +30,6 @@ door_lab:
 - qy: 0.0
 - qz: -0.705
 - qw: -0.709
-high_place_area:
-- x: 1.652
-- y: 0.498
-- theta: -0.066
-- qx: 0.0
-- qy: 0.0
-- qz: -0.033
-- qw: 0.999
 kitchen:
 - x: 1.525
 - y: 0.533
@@ -79,26 +55,18 @@ pickup:
 - qz: -0.694
 - qw: 0.719
 place_shelf:
-- x: 1.551
-- y: 0.417
-- theta: 1.624
+- x: 1.794
+- y: 0.669
+- theta: 0.076
 - qx: 0.0
 - qy: 0.0
-- qz: 0.725
-- qw: 0.687
+- qz: 0.038
+- qw: 0.999
 shelf:
-- x: 1.582
-- y: 0.513
+- x: 1.525
+- y: 0.514
 - theta: 1.548
 - qx: 0.0
 - qy: 0.0
 - qz: 0.699
 - qw: 0.715
-zero:
-- x: 1.084
-- y: 1.21
-- theta: -1.581
-- qx: 0.0
-- qy: 0.0
-- qz: -0.711
-- qw: 0.703

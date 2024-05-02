@@ -379,7 +379,7 @@ def wait_for_face(timeout=10 , name=''):
 #        
 #        else:return res , img
 ##------------------------------------------------------
-def hand_grasp_D(tf_name='placing_area', THRESHOLD=0.03,timeout=30.0):
+def hand_grasp_D(tf_name='placing_area', THRESHOLD=0.03,timeout=10.0):
     
     timeout = rospy.Time.now().to_sec() + timeout
     succ=False
@@ -393,21 +393,27 @@ def hand_grasp_D(tf_name='placing_area', THRESHOLD=0.03,timeout=30.0):
 
             if abs(eY) < THRESHOLD:
                 eY = 0
-            if abs(eX) < 0.03:
+            if abs(eX) < THRESHOLD:
                 eX = 0
             eT= tf.transformations.euler_from_quaternion(rot)[2] - original_rot #Original 
-            print("Distance to goal: {:.2f}, {:.2f}, {:.2f}".format(eX, eY,eT))
+            
+            eT = (eT + np.pi) % (2 * np.pi) - np.pi
+            
 
             if eT > np.pi: eT=-2*np.pi+eT
             if eT < -np.pi: eT= 2*np.pi+eT
             if abs(eT) < 0.12:
                 eT=0
             
+            if eX >0: velX = max( 0.005,eX)
+            if eX <=0: velX = min(-0.005,eX)
+            if eY >0: velY = max( 0.005,eY)
+            if eY <=0: velY = min(-0.005,eY)
             print("error: {:.2f}, {:.2f}, angle {:.2f}, target obj frame placing area".format(eX, eY , eT))
             succ =  eX == 0 and eY == 0 and eT==0            
             
                 # grasp_base.tiny_move(velY=-0.4*trans[1], std_time=0.2, MAX_VEL=0.3)
-            omni_base.tiny_move(velX=0.13*eX, velY=-0.4*eY, std_time=0.2, MAX_VEL=0.3) #Pending test
+            omni_base.tiny_move(velX=0.13*velX, velY=-0.4*velY, velT=-eT  , std_time=0.2, MAX_VEL=0.3) #Pending test
     return succ
             
 ##------------------------------------------------------
@@ -571,7 +577,9 @@ def base_grasp_D(tf_name,d_x=0.66,d_y=-0.1,timeout=1.0):
     original_rot=tf.transformations.euler_from_quaternion(rot)[2]
     succ = False 
     target_object= tf_name        
+    i=0
     while (timeout >= rospy.Time.now().to_sec()) and not succ and not rospy.is_shutdown():
+        i+=1
         _,rot= tf_man.getTF("base_link",ref_frame='map')
         trans,_=tf_man.getTF(target_object,ref_frame="base_link")
         #trans
@@ -579,10 +587,12 @@ def base_grasp_D(tf_name,d_x=0.66,d_y=-0.1,timeout=1.0):
         eX+= -d_x  #x offest
         eY+= -d_y #y Offset
         eT= tf.transformations.euler_from_quaternion(rot)[2] - original_rot #Original 
-        print (eT)
-        if eT > np.pi: eT=-2*np.pi+eT
-        if eT < -np.pi: eT= 2*np.pi+eT
+        
         rospy.loginfo("error: {:.2f}, {:.2f}, angle {:.2f}, target obj frame {}".format(eX, eY , eT,target_object))
+        #if eT > np.pi: eT=-2*np.pi+eT    #  angle error constricted to values between pi and -pi  
+        #if eT < -np.pi: eT= 2*np.pi+eT   
+        eT = (eT + np.pi) % (2 * np.pi) - np.pi
+
         X, Y, Z = trans
         rospy.loginfo("Pose: {:.2f}, {:.2f}, angle {:.2f}, target obj frame {}".format(X, Y , eT,target_object))
         if abs(eX) <=0.05 :
@@ -590,15 +600,20 @@ def base_grasp_D(tf_name,d_x=0.66,d_y=-0.1,timeout=1.0):
             eX = 0
         if abs(eY) <=0.05  :
             eY = 0
-        if abs(eT   ) < 0.1:
+        if abs(eT   ) < 0.03:
             eT = 0
         succ =  eX == 0 and eY == 0 and eT==0         
         velX=0.2*eX
         velY=0.3*eY
-        if   velX < 0: corr_velX= min (-0.05,velX)
-        elif velX > 0: corr_velX= max (0.05,velX)
-        if   velY < 0: corr_velY= min (-0.05,velY)
-        elif velY > 0: corr_velY= max ( 0.05,velY)
+        ############################################
+        if   velX <= 0: corr_velX= min (-0.0051,velX)
+        elif velX >  0: corr_velX= max ( 0.0051,velX)
+        if   velY <= 0: corr_velY= min (-0.0051,velY)
+        elif velY >  0: corr_velY= max ( 0.005,velY)
+        #############################################
+        if i %10 ==0 :
+            print("Pose: {:.2f}, {:.2f}, angle {:.2f}, target obj frame {}".format(X, Y , eT,target_object))
+            i=0
         omni_base.tiny_move( velX=corr_velX,velY=corr_velY, velT=-eT,std_time=0.2, MAX_VEL=0.3) 
 
     
