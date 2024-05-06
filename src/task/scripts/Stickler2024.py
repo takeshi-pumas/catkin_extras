@@ -520,76 +520,32 @@ class Detect_drink(smach.State):
         rospy.sleep(1.0)
         self.point_img_pub.publish(String())
         rospy.sleep(0.1)
-        img=rgbd.get_image()
-        cv2.imwrite(path.expanduser( '~' )+"/Documents/drink.jpg",img)
+        points_msg=rospy.wait_for_message("/hsrb/head_rgbd_sensor/depth_registered/rectified_points",PointCloud2,timeout=5)
+        img,masked_image = removeBackground(points_msg,distance = 1.5)
+        cv2.imwrite(path.expanduser( '~' )+"/Documents/drink.jpg",masked_image)
         print ('[ANALYZEDRINK] got image for drink analysis')
+        talk('Ok, analysing...')
+        rospy.sleep(0.1)
         # parte de la NN para detectar objeto
+        keys=[ "beverage", "food",'toy']
+        image = preprocess(Image.fromarray(masked_image)).unsqueeze(0).to(device) #img array from grbd get image
+        text = clip.tokenize(keys).to(device)
+
+        with torch.no_grad():
+            image_features = model.encode_image(image)
+            text_features = model.encode_text(text)
+            
+            logits_per_image, logits_per_text = model(image, text)
+            probs = logits_per_image.softmax(dim=-1).cpu().numpy()
+        talk('Done')
+        print("[ANALYZEDRINK] Label probs:", probs,keys[np.argmax(probs)] ,keys, probs[0][1] ) # prints: [[0.9927937  0.00421068 0.00299572]]
+
+        
+        rospy.sleep(0.1)
 
         #
         return 'succ'
         
-
-        """talk('Detecting drinking')
-                                rospy.sleep(0.8)
-                                reqAct.visual=0
-                                # reqAct.in_ --> 4  para detectar Drinking
-                                reqAct.in_=4
-                                resAct=recognize_action(reqAct)
-                        
-                                # 1 -> detecta una persona con drink y pasa a acercarce a la tf correspondiente para ofrecer bebida(?)
-                                if resAct.i_out==1:
-                                    print(resAct.d_xyz)
-                                    talk('Rule broken, I detect a person without a drink.')
-                                    rospy.sleep(0.8)
-                                    print("Aproaching")
-                                    res = omni_base.move_d_to(1.0,'head_xyz')
-                                    rospy.sleep(1.0)
-                                    head.to_tf('head_xyz')
-                                    rospy.sleep(1.0)
-                        
-                                    talk('I detect that you may not have a drink. I will guide you for a drink, please follow me') 
-                                    rospy.sleep(0.8)
-                                    talk(f'Navigating...')
-                                    rospy.sleep(0.8)
-                                    res = omni_base.move_base(known_location=place_drinks,timeout=115)
-                                    #print(res)
-                                    if res :
-                                        rospy.sleep(0.5)
-                                        brazo.set_named_target('neutral')        
-                                        rospy.sleep(1.0)
-                                        talk('Arrived, you can grab a drink here and then come back to the other room, please.')# AGREGAR POINTING A LA TF DONDE ESTAN LAS BEBIDAS (?)
-                                        rospy.sleep(0.8)
-                                        #_ = omni_base.move_base(trans[0],trans[1],tf.transformations.euler_from_quaternion(quat)[2])
-                                        #rospy.sleep(0.8)
-                                        #self.tries=0
-                                        #return 'tries'
-                                    #else:
-                                    #    res = omni_base.move_base(known_location=place_drinks)
-                                    #    rospy.sleep(0.5)
-                                    #    brazo.set_named_target('neutral')        
-                                    #    rospy.sleep(1.0)
-                                    #    talk('Arrived, you can grab a drink here. I will come back to the room.')# AGREGAR POINTING A LA TF DONDE ESTAN LAS BEBIDAS (?)
-                                    #    rospy.sleep(0.8)
-                                    
-                                    _ = omni_base.move_base(trans[0],trans[1],tf.transformations.euler_from_quaternion(quat)[2])
-                                    rospy.sleep(0.8)
-                                    self.tries=0
-                                    return 'tries'
-                                # 2 -> todos tienen bebida
-                                elif resAct.i_out==2:
-                                    talk('Ok, someone with a drink.')
-                                    rospy.sleep(0.8)
-                                    #cv2.destroyAllWindows()
-                                    self.tries = 0
-                                    return 'succ'
-                                # 1 -> La tf salió con NaN, vuelve a calcular y obtener tf de la persona sin drink
-                                elif resAct.i_out==3:
-                                    talk('No person detected')
-                                    rospy.sleep(0.8)
-                                    return 'tries'
-                                else:
-                                    talk('Scanning...')
-                                    return 'tries'"""
     
         
 ###########################################################################################################
