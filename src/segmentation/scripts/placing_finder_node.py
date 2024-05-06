@@ -44,7 +44,7 @@ def trigger_response(request):
         sorted_planes=np.sort(np.asarray(planes).ravel())
 
         print (f' planes found {len(inds[0])}, sorted at z=[{sorted_planes[::-1]}]#############3')
-        print (f'Plane heights detected {planes_heights} maximum  z=[{planes_heights.max()}]#############3')    
+        print (f'Plane heights detected {planes_heights} maximum  z=[{bins[ np.add(np.argmax(counts) , 1)]}]#############3')    
     else:planes_heights=[request.height.data]
     for plane_height in planes_heights:
         low_plane = (corrected['z'] > (plane_height-0.02)) #plane height

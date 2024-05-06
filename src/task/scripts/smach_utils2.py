@@ -384,26 +384,23 @@ def hand_grasp_D(tf_name='placing_area', THRESHOLD=0.03,timeout=10.0):
     timeout = rospy.Time.now().to_sec() + timeout
     succ=False
     THRESHOLD = 0.03
-    _,rot = tf_man.getTF(target_frame='placing_area', ref_frame='hand_palm_link')
+    _, rot  = tf_man.getTF("base_link",ref_frame='map')#ORIGINAL ROTATION TO KEEP DURING APPROACH
     original_rot=tf.transformations.euler_from_quaternion(rot)[2]
     while (timeout >= rospy.Time.now().to_sec()) and not succ and not rospy.is_shutdown():
-        trans,rot = tf_man.getTF(target_frame='placing_area', ref_frame='hand_palm_link')
+        trans,_ = tf_man.getTF(target_frame='placing_area', ref_frame='hand_palm_link')
+        _, rot  = tf_man.getTF("base_link",ref_frame='map')
         if type(trans) is not bool:
             _, eY, eX = trans
-
             if abs(eY) < THRESHOLD:
                 eY = 0
             if abs(eX) < THRESHOLD:
                 eX = 0
-            eT= tf.transformations.euler_from_quaternion(rot)[2] - original_rot #Original 
-            
-            eT = (eT + np.pi) % (2 * np.pi) - np.pi
-            
-
+            eT= tf.transformations.euler_from_quaternion(rot)[2] - original_rot #Original             
+            eT = (eT + np.pi) % (2 * np.pi) - np.pi            
+            print("error: {:.2f}, {:.2f}, angle {:.2f}, target obj frame placing area".format(eX, eY , eT))
             if eT > np.pi: eT=-2*np.pi+eT
             if eT < -np.pi: eT= 2*np.pi+eT
-            if abs(eT) < 0.05:
-                eT=0
+            if abs(eT) < 0.05:eT=0
             
             if eX >0: velX = max( 0.005,eX)
             if eX <=0: velX = min(-0.005,eX)
@@ -413,7 +410,7 @@ def hand_grasp_D(tf_name='placing_area', THRESHOLD=0.03,timeout=10.0):
             succ =  eX == 0 and eY == 0 and eT==0            
             
                 # grasp_base.tiny_move(velY=-0.4*trans[1], std_time=0.2, MAX_VEL=0.3)
-            omni_base.tiny_move(velX=0.13*velX, velY=-0.4*velY, velT=0.1*eT  , std_time=0.2, MAX_VEL=0.3) #Pending test
+            omni_base.tiny_move(velX=0.13*velX, velY=-0.4*velY , std_time=0.2, MAX_VEL=0.4) #Pending test
     return succ
             
 ##------------------------------------------------------
@@ -619,7 +616,7 @@ def base_grasp_D(tf_name,d_x=0.66,d_y=-0.1,timeout=1.0):
         if i %10 ==0 :
             print("Pose: {:.2f}, {:.2f}, angle {:.2f}, target obj frame {}".format(X, Y , eT,target_object))
             i=0
-        omni_base.tiny_move( velX=corr_velX,velY=corr_velY, velT=-eT,std_time=0.2, MAX_VEL=0.3) 
+        omni_base.tiny_move( velX=corr_velX,velY=corr_velY, velT=-eT,std_time=0.2, MAX_VEL=0.4) 
 
     
     

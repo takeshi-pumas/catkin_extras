@@ -115,37 +115,23 @@ class Wait_door_opened(smach.State):
 class Goto_pickup(smach.State):  
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed', 'tries','pickup'])
-        self.tries = 0
-        self.First=True
+        
 
     def execute(self, userdata):
 
         rospy.loginfo('STATE : Navigate to known location')
-
-        print(f'Try {self.tries} of 3 attempts')
-        self.tries += 1
-        if self.tries == 3:
-            self.tries = 0
-            return 'tries'
+        
         #talk('Navigating to, pickup')        
         res = omni_base.move_base(known_location='pickup', time_out=40)
-        print(res)
-##################################################################First TIme Only go        
-        if self.tries == 1: 
-            if res:
-                return 'succ'
-            else:
-                talk('Navigation Failed, retrying')
-                return 'failed'
-#########################################################################################################
-        if self.tries > 1: 
-            #talk('Navigating to, pickup')
-            if res:
-                return 'pickup'
-            else:
-                talk('Navigation Failed, retrying')
-                return 'failed'
-#########################################################################################################
+        print(res)    
+        talk('Navigating to, pickup ')
+
+        if res:
+            return 'succ'
+        else:
+            talk('Navigation Failed, retrying')
+            return 'failed'
+
 class Scan_table(smach.State):
     def __init__(self):
         smach.State.__init__(
@@ -154,15 +140,20 @@ class Scan_table(smach.State):
         self.pickup_plane_z  =0.61
     def execute(self, userdata):
         rospy.loginfo('State : Scanning_table')
+        clear_octo_client()
         self.tries += 1
         if self.tries >= 3:
             self.tries = 0            
             print ( "I could not find more objects ")
             return 'tries'
         if self.tries==1:
-            
+            head.set_joint_values([ 0.0, -0.5])
+
             talk('Scanning Table')
-        
+        if self.tries==2:
+            head.set_joint_values([ -0.3, -0.5])
+
+            talk('Scanning Table')
         global objs , pickup_plane_z
         pickup_plane_z=self.pickup_plane_z 
         head.set_joint_values([ 0.0, -0.5])
@@ -342,8 +333,8 @@ class Goto_place_shelf(smach.State):
         arm.go()
         #if self.tries == 1: talk('Navigating to, shelf')
         res = omni_base.move_base(known_location='place_shelf', time_out=30)
-        res = omni_base.move_base(known_location='place_shelf', time_out=10)
-        res = omni_base.move_base(known_location='place_shelf', time_out=10)
+        #res = omni_base.move_base(known_location='place_shelf', time_out=10)
+        #res = omni_base.move_base(known_location='place_shelf', time_out=10)
 
         
 
@@ -364,27 +355,39 @@ class Place_shelf(smach.State):
         rospy.loginfo('STATE : Placing in shelf')
         print(f'Try {self.tries} of 3 attempts')
         self.tries += 1
+        if self.tries==2:
+            clear_octo_client()
+
         print(f'shelves_cats{shelves_cats}, object picked up cat {cat}')
         ###########################################
         high_shelf_place=[0.669, -1.44, 0.292,  -0.01729,-0.338, 0.0]
         mid_shelf_place= [0.276, -1.581, 0.15, 0.0621, -0.1234, 0.0]
         low_shelf_place= [0.01, -2.09, 0.0, 0.455, -0.004, 0.0]
-        
         ###########################################
         #placing_places=np.asarray(('placing_area_top_shelf1','placing_area_mid_shelf1','placing_area_low_shelf1'))
         po,_=tf_man.getTF('placing_area' )
-        if po[2]> 0.6:placing_pose=high_shelf_place
-        elif po[2]< 0.2:placing_pose=low_shelf_place
-        else:placing_pose=mid_shelf_place
+        if po[2]> 0.6:
+            placing_pose=high_shelf_place
+            placing_shelf='high'
+        elif po[2]< 0.2:
+            placing_shelf='bottom'
+            placing_pose=low_shelf_place
+        else:
+            placing_pose=mid_shelf_place
+            placing_shelf='middle'
         
         ###########################################
+        talk ( f'placing object on  {placing_shelf} shelf') 
         
+       
 
-        base_grasp_D(tf_name='placing_area',d_x=0.8, d_y=0.0,timeout=10)
+        base_grasp_D(tf_name='placing_area',d_x=0.8+0.05*self.tries , d_y=0.0,timeout=10)
         succ=arm.go(placing_pose)
         if succ == False :
-            omni_base.tiny_move( velX=-0.1,std_time=1.0) 
-            return 'failed'
+            omni_base.tiny_move( velX=-0.1,std_time=1.0)
+            succ=arm.go(placing_pose) 
+            if not succ:
+                return 'failed'
         hand_grasp_D()  
         if placing_pose==low_shelf_place:omni_base.tiny_move( velX=0.21,std_time=2.0) 
 
@@ -398,12 +401,6 @@ class Place_shelf(smach.State):
         gripper.steady()
         arm.set_named_target('go')
         arm.go()
-
-
- 
-
-        #base_grasp_D(tf_name='placing_area',d_x=0.6, d_y=0.0,timeout=30)
-        #rospy.sleep(1.0)
         #gripper.steady()
         if succ:
             self.tries=0
@@ -423,12 +420,12 @@ class Check_grasp(smach.State):
             self.tries=0
             return 'tries'
         rospy.loginfo('STATE : Check Grasp')
-        succ=brazo.check_grasp()
-        print ( f'brazo check grap result{succ}')
-        omni_base.tiny_move( velX=-0.2,std_time=4.2) 
+        if brazo.check_grasp(): print ( f'brazo check grap result True')        
+        else: 
+            talk ('grasping might have failed')
+            return 'failed'
 
         arm.set_named_target('go')
-
         arm.go()
         head.to_tf(target_object)
         rospy.sleep(1.0)
@@ -437,8 +434,7 @@ class Check_grasp(smach.State):
         req.in_.image_msgs.append(img_msg)
         res      = classify_client(req)
         objects=detect_object_yolo('all',res)   
-
-        def check_if_grasped(pose_target,test_pt,tolerance=0.05):return np.linalg.norm(pose_target-test_pt)<tolerance
+        def check_if_grasped(pose_target,test_pt,tolerance=0.1):return np.linalg.norm(pose_target-test_pt)<tolerance
         ##############################
         pose_target,_=tf_man.getTF(target_object)
         #########################
@@ -535,7 +531,7 @@ class Scan_shelf(smach.State):
                 head.to_tf('top_shelf')
                 rospy.sleep(2.6)
                 rospy.sleep(2.5) 
-                omni_base.tiny_move( velY=-0.3,std_time=10.0)              
+                omni_base.tiny_move( velY=-0.3,std_time=20.0)              
                 
                 if find_placing_area(self.top_shelf_height) != True:
                     omni_base.tiny_move( velY=-0.2,std_time=6.66)
@@ -562,20 +558,19 @@ class Scan_shelf(smach.State):
                 #omni_base.move_base(known_location='place_shelf', time_out=10)
                 #omni_base.move_base(known_location='place_shelf', time_out=10)
                 
-                rospy.sleep(5.0)
+                
                 
                 head.to_tf('low_shelf')
                 rospy.sleep(2.5)
                 if find_placing_area(self.low_shelf_height) != True:
                     omni_base.tiny_move( velX=0.2,std_time=8.5)
-                    head.to_tf('top_shelf')
+                    head.to_tf('low_shelf')
                     find_placing_area(self.low_shelf_height) 
                 clear_octo_client()
                 rospy.sleep(2.6)
                 arm.set_named_target('go')
-                arm.go()
-                omni_base.tiny_move( velX=-0.2,std_time=8.5)
-                find_placing_area(self.low_shelf_height) 
+                arm.go()                
+                 
                 return 'succ'
 
             else:
@@ -585,20 +580,24 @@ class Scan_shelf(smach.State):
                 arm.set_named_target('go')
                 arm.go()
                 rospy.sleep(1.0)
-                omni_base.tiny_move( velX=0.2,std_time=5.5)
-                #omni_base.move_base(known_location='place_shelf', time_out=10)
-                #omni_base.move_base(known_location='place_shelf', time_out=10)
+                
                 rospy.sleep(2.5)
                 rospy.sleep(2.5)            
-                head.set_joint_values([0.0 , -0.7])        
+                omni_base.tiny_move( velX=0.2,std_time=5.5)
+                head.to_tf('mid_shelf')     
                 rospy.sleep(2.6)
-                if find_placing_area(self.mid_shelf_height) != True:find_placing_area(self.mid_shelf_height+0.05)
-                head.set_joint_values([0.0 , 0.0])
-                clear_octo_client()
+                if find_placing_area(self.mid_shelf_height) != True:
+                    omni_base.tiny_move( velX=0.4,std_time=4)
+                    head.to_tf('mid_shelf')
+                    find_placing_area(self.mid_shelf_height) 
+
+
+                    
+                head.set_joint_values([0.0 , 0.0])                
                 rospy.sleep(2.6)
                 arm.set_named_target('go')
                 arm.go()
-                omni_base.tiny_move( velX=-0.2,std_time=5.5)
+                omni_base.tiny_move( velX=-0.3,std_time=4.0)
                 return 'succ'
                 
 
@@ -740,7 +739,7 @@ class Scan_shelf(smach.State):
                 omni_base.tiny_move( velY=-0.3,std_time=10.0)
                 find_placing_area(self.top_shelf_height)
                 head.set_joint_values([0.0 , 0.0])
-                rospy.sleep(2.6)
+                rospy.sleep(5.0)
                 return 'succ'
         
         elif corresponding_key=='mid':
@@ -794,10 +793,10 @@ class Scan_shelf(smach.State):
             #omni_base.move_base(known_location='bottom_place_area', time_out=10)
             #omni_base.move_base(known_location='bottom_place_area', time_out=10)
             omni_base.move_base(known_location='place_shelf', time_out=10)
-            omni_base.move_base(known_location='place_shelf', time_out=10)
             rospy.sleep(2.5)
             rospy.sleep(2.5)
-            head.set_joint_values([0.0, -1.05])        
+            omni_base.tiny_move( velX=0.1,std_time=5.0) 
+            head.to_tf('low_shelf')
             rospy.sleep(2.5)
             if find_placing_area(self.low_shelf_height):
                 return 'succ'
@@ -839,7 +838,7 @@ if __name__ == '__main__':
                                                                                          'tries':'GOTO_PICKUP',                                                                                               
                                                                                          'pickup':'PICKUP'})
         smach.StateMachine.add("SCAN_TABLE",    Scan_table(),       transitions={'failed': 'SCAN_TABLE',    
-                                                                                         'succ': 'GOTO_PICKUP',       
+                                                                                         'succ': 'PICKUP',       
                                                                                          'tries': 'GOTO_PICKUP'})        
         smach.StateMachine.add("GOTO_SHELF",    Goto_shelf(),       transitions={'failed': 'GOTO_SHELF',    
                                                                                          'succ': 'SCAN_SHELF',       

@@ -93,7 +93,8 @@
   <node pkg="leg_finder"  name="leg_finder_node" type="leg_finder_node"/>  
   <node pkg="human_follower"  name="human_follower_node" type="human_follower_node"/>  
   <node pkg="point_cloud"  name="point_cloud_filter_node" type="passthrough_filter"/>  
-  <node pkg="action_server"  name="action_server" type="ACT_SRVR_grasp_manoseado.py"/>   
+  <node pkg="action_server"  name="action_server_pick" type="ACT_SRVR_grasp_manoseado.py"/>
+  <node pkg="action_server"  name="action_server_place" type="ACT_SRVR_place.py"/>   
   <node pkg="smach_viewer"  name="smach_viewer" type="smach_viewer.py"  />  
   
 
