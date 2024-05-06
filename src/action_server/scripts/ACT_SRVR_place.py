@@ -67,7 +67,7 @@ class PlacingStateMachine:
         # Crear la máquina de estados SMACH
         self.sm = smach.StateMachine(outcomes=['succeeded', 'failure'],
                                      input_keys=["goal"])
-        sis = IntrospectionServer('SMACH_VIEW_SERVER', self.sm, '/GRASP ACTION')
+        sis = IntrospectionServer('SMACH_VIEW_SERVER', self.sm, '/PLACE ACTION')
         sis.start()
         with self.sm:
             smach.StateMachine.add('CREATE_BOUND', smach.CBState(self.create_bound, outcomes=['success', 'failed']),
@@ -81,7 +81,7 @@ class PlacingStateMachine:
             smach.StateMachine.add('NEUTRAL_POSE', smach.CBState(self.neutral_pose, outcomes=['success', 'failed']),
                         transitions={'success':'succeeded', 'failed': 'NEUTRAL_POSE'})
 
-        self.wrapper = ActionServerWrapper("place_server", GraspAction,
+        self.wrapper = ActionServerWrapper("place_server", GraspAction, #from grasp.act
                                            wrapped_container = self.sm,
                                            succeeded_outcomes=["succeeded"],
                                            aborted_outcomes=["failed"],
@@ -145,8 +145,8 @@ class PlacingStateMachine:
         joint_values = self.brazo.get_joint_values()
         joint_values[0] -= 0.09
         self.brazo.set_joint_values(joint_values)
-        rospy.sleep(0.6)
         self.gripper.open()
+        rospy.sleep(0.6)
         #self.attach_object()
         return 'success'
         # if succ:

@@ -459,14 +459,14 @@ class Place_shelf(smach.State):
 #########################################################################################################
 class Check_grasp(smach.State):   
     def __init__(self):
-        smach.State.__init__(self, output_keys=['target_pose'],outcomes=['succ', 'failed', 'tries'])
+        smach.State.__init__(self, output_keys=['target_pose'],outcomes=['succ', 'failed'])
         self.tries=0
 
     def execute(self, userdata):
         self.tries+=1
         if self.tries>=4:
             self.tries=0
-            return 'tries'
+            
         rospy.loginfo('STATE : Check Grasp')
         succ=brazo.check_grasp()
         print ( f'brazo check grap result{succ}')
@@ -489,10 +489,8 @@ class Check_grasp(smach.State):
         #########################
 
         if len (objects)!=0 :
-            for i in range(len(res.poses)):
-                
-                position = [res.poses[i].position.x ,res.poses[i].position.y,res.poses[i].position.z]
-                
+            for i in range(len(res.poses)):                
+                position = [res.poses[i].position.x ,res.poses[i].position.y,res.poses[i].position.z]                
                 object_point = PointStamped()
                 object_point.header.frame_id = "head_rgbd_sensor_rgb_frame"
                 object_point.point.x = position[0]
@@ -518,12 +516,12 @@ class Check_grasp(smach.State):
                     rospy.sleep(0.5)
                     clear_octo_client()
                     return 'failed'
-            #objs.drop(objs[objs['obj_name'] == target_object].index, inplace=True)
-            obj_rows = objs[objs['obj_name'] == target_object]
-            approx_coords =  objs[(objs['x'].round(1) == obj_rows.iloc[0]['x'].round(1)) &
-                                (objs['y'].round(1) == obj_rows.iloc[0]['y'].round(1)) &
-                                (objs['z'].round(1) == obj_rows.iloc[0]['z'].round(1))]
-            objs.drop(approx_coords.index,inplace=True) 
+        #objs.drop(objs[objs['obj_name'] == target_object].index, inplace=True)
+        obj_rows = objs[objs['obj_name'] == target_object]
+        approx_coords =  objs[(objs['x'].round(1) == obj_rows.iloc[0]['x'].round(1)) &
+                            (objs['y'].round(1) == obj_rows.iloc[0]['y'].round(1)) &
+                            (objs['z'].round(1) == obj_rows.iloc[0]['z'].round(1))]
+        objs.drop(approx_coords.index,inplace=True) 
         self.tries=0
         return'succ'    
                 
@@ -735,14 +733,11 @@ class Scan_shelf(smach.State):
         y_range = np.arange(area[0,1], area[1,1], .15)
         x_range = np.arange(area[0,0], area[1,0], .15)
         grid = np.meshgrid(x_range, y_range)
-        grid_points = np.vstack([grid[0].ravel(), grid[1].ravel()]).T
-        free_grid=grid_points.tolist()
-        for i_free , free_pt in enumerate(free_grid):
-            for obj_pt in objs_shelves[objs_shelves[corresponding_key+'_shelf']==True][['x','y']].values:
-            #print ( free_pt,np.linalg.norm(obj_pt- free_pt))
-                if np.linalg.norm(obj_pt- free_pt)<0.153:
-                    print(f"<<<<<<<<<<<<<<<<{free_pt},{obj_pt}####" )
-                    free_grid.pop(i_free)
+        grid_points = np.vstack([grid[0].ravel(), grid[1].ravel()]).T        
+        free_grid = grid_points.tolist()
+        # Create a new list without the unwanted elements
+        free_grid = [free_pt for free_pt in free_grid if all(
+            np.linalg.norm(obj_pt - free_pt) >= 0.153 for obj_pt in objs_shelves[objs_shelves[corresponding_key + '_shelf'] == True][['x', 'y']].values)]
         free_grid=np.asarray((free_grid))
         print (free_grid)
         summed_ds_to_objs=[]
@@ -878,7 +873,7 @@ if __name__ == '__main__':
                                                                                          'tries': 'GOTO_PICKUP'})
         smach.StateMachine.add("CHECK_GRASP",    Check_grasp(),       transitions={'failed': 'GRASP_GOAL',    
                                                                                          'succ': 'GOTO_SHELF',
-                                                                                         'tries': 'GOTO_PICKUP'})
+                                                                                         })
         smach.StateMachine.add("PLACE",    Place(),       transitions={'failed': 'PLACE',    
                                                                                          'succ': 'PLACE_GOAL',
                                                                                          'tries': 'GOTO_PLACE_SHELF'})
