@@ -14,8 +14,26 @@ from sensor_msgs.msg import LaserScan
 import tf2_ros
 from tf.transformations import euler_from_quaternion
 
-xcl,ycl = 0,0
-Fx_rep, Fy_rep = 0,0
+
+LIN_ACC = 0.0015
+LIN_DES = - 0.0005
+
+MAX_LIN_SPEED_HIGH = 0.5
+MAX_LIN_SPEED_MID = 0.04
+
+ANG_ACC_LOW = 0.001
+ANG_ACC_MID = 0.003
+ANG_ACC_HIGH = 0.006
+
+MAX_ANG_SPEED_LOW = 0.2
+MAX_ANG_SPEED_MID = 0.4
+MAX_ANG_SPEED_HIGH = 0.6
+
+FORCE_THRESHOLD_LOW = np.pi/10
+FORCE_THRESHOLD_MID = np.pi/2
+FORCE_THRESHOLD_HIGH = np.pi * (4/5)
+xcl, ycl = 0, 0
+Fx_rep, Fy_rep = 0, 0
 
 # Transform tf message to np arrays
 def tf_2_np_array(t):
@@ -69,36 +87,31 @@ def calculate_force():
     return Fx_tot, Fy_tot, Fth_tot, euclD
 
 def speed_behavior(current_speed, Fx, Fy, Fth, distance):
-    LIN_ACC = 0.0015
-    LIN_DES = - 0.0003
-    ANG_ACC_1 = 0.0005
-    ANG_ACC_2 = 0.003
-
-    MAX_LIN_SPEED_1 = 0.5
-    MAX_LIN_SPEED_2 = 0.05
-    MAX_ANG_SPEED_1 = 0.2
-    MAX_ANG_SPEED_2 = 0.5
-
-    FORCE_THRESHOLD = 0.27
-
     speed = Twist()
     
     # Speed behaviors 
-    if abs(Fth) < FORCE_THRESHOLD:
-        speed.linear.x =  min(current_speed.linear.x + LIN_ACC, MAX_LIN_SPEED_1)
+    if abs(Fth) < FORCE_THRESHOLD_LOW:
+        speed.linear.x =  min(current_speed.linear.x + LIN_ACC, MAX_LIN_SPEED_HIGH)
         speed.angular.z = 0
         print('linear movement')
 
-    elif abs(Fth) < np.pi/2 and abs(Fth) > FORCE_THRESHOLD:
-        print('Angular movement (slight)')
-        speed.linear.x  = max(current_speed.linear.x + LIN_DES, MAX_LIN_SPEED_2)
-        speed.angular.z = max(current_speed.angular.z + ANG_ACC_1 * np.sign(Fth), 
-                                MAX_ANG_SPEED_1 * np.sign(Fth))
-    elif abs(Fth) > np.pi/2:
-        print('Angular movement (fast)')
-        speed.linear.x  = max(current_speed.linear.x + LIN_DES, MAX_LIN_SPEED_2)
-        speed.angular.z = max(current_speed.angular.z + ANG_ACC_2 * np.sign(Fth), 
-                                MAX_ANG_SPEED_2 * np.sign(Fth))
+    elif abs(Fth) < FORCE_THRESHOLD_MID and abs(Fth) > FORCE_THRESHOLD_LOW:
+        print('Angular movement (low)')
+        speed.linear.x  = max(current_speed.linear.x + LIN_DES, MAX_LIN_SPEED_MID)
+        speed.angular.z = max(current_speed.angular.z + ANG_ACC_LOW * np.sign(Fth), 
+                                MAX_ANG_SPEED_LOW * np.sign(Fth))
+    
+    elif abs(Fth) < FORCE_THRESHOLD_HIGH and abs(Fth) > FORCE_THRESHOLD_MID:
+        print('Angular movement (mid)')
+        speed.linear.x  = 0#max(current_speed.linear.x + LIN_DES * 3.5, MAX_LIN_SPEED_MID)
+        speed.angular.z = max(current_speed.angular.z + ANG_ACC_MID * np.sign(Fth), 
+                                MAX_ANG_SPEED_MID * np.sign(Fth))
+    
+    elif abs(Fth) > FORCE_THRESHOLD_HIGH:
+        print('Angular movement (high)')
+        speed.linear.x  = 0 #current_speed.linear.x + LIN_DES * 5#max(current_speed.linear.x + LIN_DES * 4, MAX_LIN_SPEED_MID)
+        speed.angular.z = max(current_speed.angular.z + ANG_ACC_HIGH * np.sign(Fth), 
+                                MAX_ANG_SPEED_HIGH * np.sign(Fth))
         
     return speed
 
@@ -119,7 +132,7 @@ def read_sensor_cb(msg):
     # No entiendo por que Fy_rep no inicia en 0 como los otros !!!
     Fx_rep = 0.0
     Fy_rep = 0.001
-    
+
     # Calculate repulsive force
     for idx, deg in enumerate(laser_degs):            
         Fx_rep = Fx_rep + (1/lectures[idx])**2 * np.cos(deg)
@@ -168,6 +181,7 @@ def main():
                 current_speed.linear.y = 0
                 current_speed.angular.z = 0
                 xcl, ycl = 0.0, 0.0
+                print("Arrived!")
             
             else:
                 current_speed = speed_behavior(current_speed, Fx, Fy, Fth, euclD)
