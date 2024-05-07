@@ -13,15 +13,9 @@ from geometry_msgs.msg import Twist, PointStamped
 from sensor_msgs.msg import LaserScan
 import tf2_ros
 from tf.transformations import euler_from_quaternion
-# from std_msgs.msg import String
-# from nav_msgs.msg import Odometry
-# import tf as tf
 
 xcl,ycl = 0,0
 Fx_rep, Fy_rep = 0,0
-cont = 0
-speed = Twist()
-speed.angular.z = 0
 
 # Transform tf message to np arrays
 def tf_2_np_array(t):
@@ -36,37 +30,8 @@ def tf_2_np_array(t):
         t.transform.rotation.w))
     return pose, quat
 
-def calculate_force(current_position, goal):
-    pass
-
-# Suscribers callbacks
-
-def read_point_cb(msg):
-    global xcl,ycl
-    xcl = msg.point.x
-    ycl = msg.point.y
-           
-def read_sensor_cb(msg):
-    # This callback is about to be shorten
-    global cont, xcl,ycl, Fx_rep, Fy_rep
-    lectures = np.asarray(msg.ranges)
-    lectures[np.isinf(lectures)] = 13.5
-
-    # No entiendo por que Fy_rep no inicia en 0 como los otros !!!
-    Fx_rep = 0.0
-    Fy_rep = 0.001
-    Fth_rep = 0.0
-
-    # Calculate repulsive force
-    for idx, deg in enumerate(laser_degs):            
-        Fx_rep = Fx_rep + (1/lectures[idx])**2 * np.cos(deg)
-        Fy_rep = Fy_rep + (1/lectures[idx])**2 * np.sin(deg)
-    
-    # No entiendo por que hay que sumar una cantidad muy pequeña !!!
-    Fth_rep = np.arctan2(Fy_rep, (Fx_rep + 0.000000000001)) + np.pi
-    Fmag_rep = np.linalg.norm((Fx_rep, Fy_rep))
-
-    # Get current robot position
+def get_robot_current_pose():
+        # Get current robot position
     try:
         trans = tfBuffer.lookup_transform('map','base_footprint', rospy.Time(), rospy.Duration(5.0))
         pose, quat = tf_2_np_array(trans)
@@ -78,7 +43,14 @@ def read_sensor_cb(msg):
         rospy.WARN('Waiting for TF')
         x, y = 0,0
         th = 0
+    return x, y, th
 
+def calculate_force():
+    
+    # No entiendo por que hay que sumar una cantidad muy pequeña !!!
+    Fth_rep = np.arctan2(Fy_rep, (Fx_rep + 0.000000000001)) + np.pi
+    Fmag_rep = np.linalg.norm((Fx_rep, Fy_rep))
+    x, y, th = get_robot_current_pose()
 
     # Calculate atractive force
     xy, xycl = np.array((x,y)), np.array((xcl,ycl))
@@ -89,74 +61,73 @@ def read_sensor_cb(msg):
     Fth_atr = np.arctan2(Fy_atr, Fx_atr) 
     Fth_atr = Fth_atr - th
     Fmag_atr = np.linalg.norm((Fx_atr, Fy_atr))
+
     Fx_tot = Fmag_rep * np.cos(Fth_rep) * 0.0025 + Fmag_atr * np.cos(Fth_atr)
     Fy_tot = Fmag_rep * np.sin(Fth_rep) * 0.0025 + Fmag_atr * np.sin(Fth_atr)
     Fth_tot = np.arctan2(Fy_tot, Fx_tot)
-     
+
+    return Fx_tot, Fy_tot, Fth_tot, euclD
+
+def speed_behavior(current_speed, Fx, Fy, Fth, distance):
+    LIN_ACC = 0.0015
+    LIN_DES = - 0.0003
+    ANG_ACC_1 = 0.0005
+    ANG_ACC_2 = 0.003
+
+    MAX_LIN_SPEED_1 = 0.5
+    MAX_LIN_SPEED_2 = 0.05
+    MAX_ANG_SPEED_1 = 0.2
+    MAX_ANG_SPEED_2 = 0.5
+
+    FORCE_THRESHOLD = 0.27
+
+    speed = Twist()
     
-    ## Esos 2 if se pueden cambiar ....
-    '''if ( Fth_tot > np.pi ):
-        Fth_tot = -np.pi - (Fth_tot-np.pi) ## <-- creo que la operacion correcta es Fth_tot - 2*np.pi
+    # Speed behaviors 
+    if abs(Fth) < FORCE_THRESHOLD:
+        speed.linear.x =  min(current_speed.linear.x + LIN_ACC, MAX_LIN_SPEED_1)
+        speed.angular.z = 0
+        print('linear movement')
 
-    if (Fth_tot < -np.pi):
-        Fth_tot = (Fth_tot + 2 * np.pi)'''
+    elif abs(Fth) < np.pi/2 and abs(Fth) > FORCE_THRESHOLD:
+        print('Angular movement (slight)')
+        speed.linear.x  = max(current_speed.linear.x + LIN_DES, MAX_LIN_SPEED_2)
+        speed.angular.z = max(current_speed.angular.z + ANG_ACC_1 * np.sign(Fth), 
+                                MAX_ANG_SPEED_1 * np.sign(Fth))
+    elif abs(Fth) > np.pi/2:
+        print('Angular movement (fast)')
+        speed.linear.x  = max(current_speed.linear.x + LIN_DES, MAX_LIN_SPEED_2)
+        speed.angular.z = max(current_speed.angular.z + ANG_ACC_2 * np.sign(Fth), 
+                                MAX_ANG_SPEED_2 * np.sign(Fth))
+        
+    return speed
 
-    # .... Por solo un if, se necesita probar
-    # Tal vez no se necesita porque np.arctan2 regresa valores acotados entre -pi y pi 
-    '''if abs(Fth_tot) > np.pi:
-        Fth_tot -= 2 * np.pi * np.sign(Fth_tot)'''
 
-    if (xcl!=0 and ycl!=0):
-        print("xrob, yrob, throbot: {:.2f}, {:.2f}, {:.2f}".format(x, y, np.rad2deg(th)))
-        print("xclick, yclick: {:.2f}, {:.2f}, euclD: {:.2f}".format(xcl, ycl, euclD))
-        print("Repulsive Force: Fx, Fy, Fth: {:.2f}, {:.2f}, {:.2f}".format(Fx_rep, Fy_rep, np.rad2deg(Fth_rep)))
-        print("Atractive Force: Fx, Fy, Fth: {:.2f}, {:.2f}, {:.2f}".format(Fx_atr, Fy_atr,  np.rad2deg(Fth_atr)))
-        print("Total force Fx, Fy, Tth: {:.2f}, {:.2f}".format(Fx_tot, Fy_tot, np.rad2deg(Fth_tot)))
+# Suscribers callbacks
 
-        # Stop condition
-        proximity_threshold = 0.15
-        if(euclD < proximity_threshold):
-            speed.linear.x = 0
-            speed.linear.y = 0
-            speed.angular.z = 0
-            xcl, ycl = 0.0, 0.0
+def read_point_cb(msg):
+    global xcl,ycl
+    xcl = msg.point.x
+    ycl = msg.point.y
+           
+def read_sensor_cb(msg):
+    # This callback is about to be shorten
+    global xcl,ycl, Fx_rep, Fy_rep
+    lectures = np.asarray(msg.ranges)
+    lectures[np.isinf(lectures)] = 13.5
 
-        else:
-            # Speed behaviors 
-            if( abs(Fth_tot) < 0.27) :#or (np.linalg.norm((Fx,Fy)) < 100):
-                speed.linear.x =  min(current_speed.linear.x + 0.0015, 0.5)
-                speed.angular.z = 0
-                print('lin')
-            else:
-                if Fth_tot > -np.pi/2  and Fth_tot < 0:
-                    print('Vang-')
-                    speed.linear.x  = max(current_speed.linear.x - 0.0003, 0.05)
-                    speed.angular.z = max(current_speed.angular.z - 0.0005, -0.2)
-                
-                elif Fth_tot < np.pi/2  and Fth_tot > 0:
-                    print('Vang+')
-                    speed.linear.x  = max(current_speed.linear.x - 0.0003, 0.05)
-                    speed.angular.z = min(current_speed.angular.z + 0.0005, 0.2)
-                
-                elif Fth_tot < -np.pi/2:
-                    print('Vang---')
-                    speed.linear.x  = max(current_speed.linear.x - 0.0035, 0.002)
-                    speed.angular.z = max(current_speed.angular.z - 0.003, -0.5)
-
-                elif Fth_tot > np.pi/2:
-                    print('Vang+++')
-                    speed.linear.x  = max(current_speed.linear.x - 0.0035, 0.002)
-                    speed.angular.z = min(current_speed.angular.z + 0.003, 0.5)
-    else:      
-        cont += 1
-        if cont == 200:
-            print('Waiting for goal clicked point')
-            cont = 0
-
+    # No entiendo por que Fy_rep no inicia en 0 como los otros !!!
+    Fx_rep = 0.0
+    Fy_rep = 0.001
+    
+    # Calculate repulsive force
+    for idx, deg in enumerate(laser_degs):            
+        Fx_rep = Fx_rep + (1/lectures[idx])**2 * np.cos(deg)
+        Fy_rep = Fy_rep + (1/lectures[idx])**2 * np.sin(deg)
 
 # Cambio de nombre de inoutinout a main
 def main():
-    global listener, tfBuffer, xcl, ycl, current_speed, cont, laser_degs
+    global listener, tfBuffer, xcl, ycl, laser_degs
 
     rospy.init_node('pot_fields_nav', anonymous = True)
 
@@ -176,14 +147,33 @@ def main():
     
     rospy.loginfo('Pot Fields Navigation AMCL active')
 
+    current_speed = Twist()
+
     while not rospy.is_shutdown():
         if (xcl != 0 and ycl != 0):
             
-            cmd_vel_pub.publish(speed)
-            current_speed = speed
+            # Debug prints
+            # print("xrob, yrob, throbot: {:.2f}, {:.2f}, {:.2f}".format(x, y, np.rad2deg(th)))
+            # print("xclick, yclick: {:.2f}, {:.2f}, euclD: {:.2f}".format(xcl, ycl, euclD))
+            # print("Repulsive Force: Fx, Fy, Fth: {:.2f}, {:.2f}, {:.2f}".format(Fx_rep, Fy_rep, np.rad2deg(Fth_rep)))
+            # print("Atractive Force: Fx, Fy, Fth: {:.2f}, {:.2f}, {:.2f}".format(Fx_atr, Fy_atr,  np.rad2deg(Fth_atr)))
+            # print("Total force Fx, Fy, Tth: {:.2f}, {:.2f}".format(Fx_tot, Fy_tot, np.rad2deg(Fth_tot)))
+
+            # Stop condition
+            Fx, Fy, Fth, euclD = calculate_force()
+            
+            proximity_threshold = 0.15
+            if(euclD < proximity_threshold):
+                current_speed.linear.x = 0
+                current_speed.linear.y = 0
+                current_speed.angular.z = 0
+                xcl, ycl = 0.0, 0.0
+            
+            else:
+                current_speed = speed_behavior(current_speed, Fx, Fy, Fth, euclD)
+            
+            cmd_vel_pub.publish(current_speed)
             rate.sleep()
-        else:
-            current_speed = Twist()
 
 if __name__ == '__main__':
     try:
