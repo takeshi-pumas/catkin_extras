@@ -473,14 +473,14 @@ def detect_pointing(points_msg,dist = 6):
 def detect_pointing2(points_msg,dist = 6):
     #tf_man = TF_MANAGER()
     res=Point_detectorResponse()
-
+    points_data = ros_numpy.numpify(points_msg)
     #human, _ =getTF(target_frame='human',ref_frame='head_rgbd_sensor_rgb_frame') 
     #distToTF = np.linalg.norm(human) if human[0] else 2
     #print("DISTANCIA AL HUMANO ",distToTF)
 
     image, masked_image = removeBackground(points_msg,distance = dist)
-    data = len(glob(os.path.join(os.path.expanduser( '~' )+"/Documentos","*"))) # cambiar a Documents si esta en ingles 
-    cv2.imwrite(os.path.expanduser( '~' )+"/Documentos/maskedImage_"+str(data + 1)+".jpg",masked_image)
+    data = len(glob(os.path.join(os.path.expanduser( '~' )+"/Documents","*"))) # cambiar a Documents si esta en ingles 
+    cv2.imwrite(os.path.expanduser( '~' )+"/Documents/maskedImage_"+str(data + 1)+".jpg",masked_image)
     
     #image_data = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]   
     #image=cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)

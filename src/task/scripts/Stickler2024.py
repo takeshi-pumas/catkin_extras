@@ -7,6 +7,7 @@ from PIL import Image
 ################################################(TO UTILS?)
 global model , preprocess
 device = "cuda" if torch.cuda.is_available() else "cpu"
+print(device)
 model, preprocess = clip.load("ViT-B/32", device=device)
     
 ##### Define state INITIAL #####
@@ -469,7 +470,7 @@ class Detect_drink(smach.State):
         rospy.loginfo('STATE: Detect_drinking')
         print('[ANALYZEDRINK] Try', self.tries, 'of 3 attempts')
         self.tries += 1
-        if self.tries ==2:
+        """if self.tries ==2:
             hv= head.get_joint_values()
             hv[0]= hv[0]+0.6
             head.set_joint_values(hv)
@@ -479,7 +480,7 @@ class Detect_drink(smach.State):
             hv[0]= hv[0]-1.2
             head.set_joint_values(hv)
             rospy.sleep(1.0)
-            
+            """
         if self.tries == 4:
             talk('Number of tries reached, moving to the next area')
             self.tries=0
@@ -489,26 +490,27 @@ class Detect_drink(smach.State):
         trans, quat=tf_man.getTF('base_link')
         print("[ANALYZEDRINK] TRIES:",self.tries)
         rospy.sleep(0.4)
-        if self.tries<2:
+        """if self.tries<2:
             head.set_named_target('neutral')        
             rospy.sleep(1.0)
             hv= head.get_joint_values()
             hv[1]= hv[1]+0.25
             head.set_joint_values(hv)
-            rospy.sleep(1.0)
+            rospy.sleep(1.0)"""
         # ----------------ATENTO EN DONDE ESTARIAN LAS BEBIDAS------------
         place_drinks='drinks_p'
         #-----------------------------------------------------------------
         # PENDIENTE DE CAMBIAR LA LOGISTICA DE DETECCION DE BEBIDAS
 
         # PRIMERO SE ACERCA AL HUMANO
-        human_pose,_=tf_man.getTF('human')
-        print('[ANALYZEDRINK] getting close to human')
-        head.to_tf('human')
-        res = omni_base.move_d_to(0.8,'human')
+        #human_pose,_=tf_man.getTF('human')
+        #print('[ANALYZEDRINK] getting close to human')
+        #head.to_tf('human')
+        #res = omni_base.move_d_to(0.8,'human')
 
         # SEGUNDO TOMA IMAGEN Y LA ANALIZA (PENDIENTE SI VA A SER CON UNA NN) PARA VER SI TIENE BEBIDA
-        talk('If it is posible, please try to stay like any of this options so I can analyze if you have an object')
+        #talk('If it is posible, please try to stay like any of this options so I can analyze if you have an object')
+        rospy.sleep(0.5)
         point_msg = String("DrinkingPose.jpg")
         self.point_img_pub.publish(point_msg)
         rospy.sleep(1.2)
@@ -521,13 +523,13 @@ class Detect_drink(smach.State):
         self.point_img_pub.publish(String())
         rospy.sleep(0.1)
         points_msg=rospy.wait_for_message("/hsrb/head_rgbd_sensor/depth_registered/rectified_points",PointCloud2,timeout=5)
-        img,masked_image = removeBackground(points_msg,distance = 1.5)
+        img,masked_image = removeBackground(points_msg,distance = 2)
         cv2.imwrite(path.expanduser( '~' )+"/Documents/drink.jpg",masked_image)
         print ('[ANALYZEDRINK] got image for drink analysis')
         talk('Ok, analysing...')
         rospy.sleep(0.1)
         # parte de la NN para detectar objeto
-        keys=[ "beverage", "food",'toy']
+        keys=[ "beverage", "food"]
         image = preprocess(Image.fromarray(masked_image)).unsqueeze(0).to(device) #img array from grbd get image
         text = clip.tokenize(keys).to(device)
 
@@ -554,7 +556,7 @@ class Detect_drink(smach.State):
 def init(node_name):
     global reqAct,recognize_action
     print('smach ready')
-    reqAct = RecognizeRequest()
+    #reqAct = RecognizeRequest()
 
 # --------------------------------------------------
 # Entry point
@@ -571,7 +573,11 @@ if __name__ == '__main__':
     with sm:
         # State machine STICKLER
 
-
+        smach.StateMachine.add("DETECT_DRINK",         
+                                Detect_drink(),      
+                                transitions={'failed': 'END',    
+                                                'succ': 'DETECT_DRINK', 
+                                                'tries': 'DETECT_DRINK'})
 
         smach.StateMachine.add("INITIAL",           
                                 Initial(),
@@ -614,11 +620,11 @@ if __name__ == '__main__':
                                 transitions={'failed': 'GOTO_NEXT_ROOM',    
                                                 'succ': 'FIND_HUMAN',   
                                                 'tries': 'FIND_HUMAN'})
-        smach.StateMachine.add("DETECT_DRINK",         
+        """smach.StateMachine.add("DETECT_DRINK",         
                                 Detect_drink(),      
                                 transitions={'failed': 'GOTO_NEXT_ROOM',    
                                                 'succ': 'GOTO_HUMAN', 
-                                                'tries': 'FIND_HUMAN'})
+                                                'tries': 'FIND_HUMAN'})"""
         ###########################################################################################################
         
         

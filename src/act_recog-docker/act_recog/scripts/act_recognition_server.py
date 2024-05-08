@@ -28,9 +28,9 @@ def callback(req):
 	cnt_acciones=0
 	last_act=-1
 	response=RecognizeResponse()
-	n_people_max=1
-	if req.in_!=4:
-		opWrapper,datum=init_openPose(n_people=1)
+	n_people_max=-1
+	if req.in_ <= 3:
+		opWrapper,datum=init_openPose(n_people = 1)
 	else:
 		opWrapper,datum=init_openPose(n_people=n_people_max)
 
@@ -46,20 +46,20 @@ def callback(req):
 		datum.cvInputData = image
 		opWrapper.emplaceAndPop(op.VectorDatum([datum]))
 		if datum.poseKeypoints is not None:
-		    dataout=np.copy(datum.poseKeypoints[0,:,:2])
-		    response.i_out=1
-		    image=draw_skeleton(dataout,h,w,image,cnt_person=0,bkground=True)
+			dataout=np.copy(datum.poseKeypoints[0,:,:2])
+			response.i_out=1
+			image=draw_skeleton(dataout,h,w,image,cnt_person=0,bkground=True)
 		else:
 			print("NO SK DETECTADO")
 		img_msg=bridge.cv2_to_imgmsg(image)
 		if len(response.im_out.image_msgs)==0:
-		    response.im_out.image_msgs.append(img_msg)
+			response.im_out.image_msgs.append(img_msg)
 		else:
-		    response.im_out.image_msgs[0]=img_msg
+			response.im_out.image_msgs[0]=img_msg
 
 		if req.visual==1:
-		   	cv2.imshow("RES",image)
-		   	cv2.waitKey(0)
+			cv2.imshow("RES",image)
+			cv2.waitKey(0)
 
 	# Para give object 
 	elif req.in_==2:
@@ -79,32 +79,30 @@ def callback(req):
 			datum.cvInputData = im
 			opWrapper.emplaceAndPop(op.VectorDatum([datum]))
 			if datum.poseKeypoints is not None:
-			    cnt+=1
-			    dataout=np.copy(datum.poseKeypoints[0,:,:2])
-			    im=draw_skeleton(dataout,h,w,im,cnt_person=0,bkground=True)
-			    cv2.putText(img=im, text="Contador: "+str(cnt),org=(5, 20),fontFace=cv2.FONT_HERSHEY_SIMPLEX, 
+				cnt+=1
+				dataout=np.copy(datum.poseKeypoints[0,:,:2])
+				im=draw_skeleton(dataout,h,w,im,cnt_person=0,bkground=True)
+				cv2.putText(img=im, text="Contador: "+str(cnt),org=(5, 20),fontFace=cv2.FONT_HERSHEY_SIMPLEX, 
 			                fontScale=0.6, color=(35, 255, 148),thickness=2)
-
-			    if req.visual!=0:
-			        cv2.imshow("Imagen RGB",im)
-			        cv2.waitKey(10)
-			    if cnt==50:
-			        
-			        print("Obteniendo rgbd...")
-			        frameC,dataPC=get_coordinates()
-			        print("esqueleto encontrado")
-
-			        mano,codo=detect_pointing_arm(dataout,dataPC)
-			        tf_man.pub_static_tf(pos=codo,point_name='CODO',ref='head_rgbd_sensor_link')
-			        tf_man.pub_static_tf(pos=mano,point_name='MANO',ref='head_rgbd_sensor_link')
-			        #print("cambiando referencia")
-			        tf_man.change_ref_frame_tf(point_name='CODO',new_frame='map')
-			        tf_man.change_ref_frame_tf(point_name='MANO',new_frame='map')
-
-			        print("tf publicada")
-
-			        response.i_out=1
-			        break
+				if req.visual!=0:
+					cv2.imshow("Imagen RGB",im)
+					cv2.waitKey(10)
+				if cnt==50:
+					print("Obteniendo rgbd...")
+					frameC,dataPC=get_coordinates()
+					print("esqueleto encontrado")
+					
+					mano,codo=detect_pointing_arm(dataout,dataPC)
+					tf_man.pub_static_tf(pos=codo,point_name='CODO',ref='head_rgbd_sensor_link')
+					tf_man.pub_static_tf(pos=mano,point_name='MANO',ref='head_rgbd_sensor_link')
+					tf_man.change_ref_frame_tf(point_name='CODO',new_frame='map')
+					tf_man.change_ref_frame_tf(point_name='MANO',new_frame='map')
+					
+					print("tf publicada")
+					
+					response.i_out=1
+					
+					break
 		print("Cerrando CV2")
 		if req.visual!=0:
 			print("SI")    
@@ -113,12 +111,12 @@ def callback(req):
 
 		img_msg=bridge.cv2_to_imgmsg(im)
 		if len(response.im_out.image_msgs)==0:
-		    response.im_out.image_msgs.append(img_msg)
+			response.im_out.image_msgs.append(img_msg)
 		else:
-		    response.im_out.image_msgs[0]=img_msg
-
-
-	# Para pointing sin HMM
+			response.im_out.image_msgs[0]=img_msg
+		
+		#return response
+	
 	elif req.in_==3:
 		max_inf_it=30
 		print("Opcion {}, estimar brazo que esta apuntando".format(req.in_))
@@ -134,58 +132,49 @@ def callback(req):
 			datum.cvInputData = im
 			opWrapper.emplaceAndPop(op.VectorDatum([datum]))
 			if datum.poseKeypoints is not None:
-			    cnt+=1
-			    dataout=np.copy(datum.poseKeypoints[0,:,:2])
-			    
-			    if req.visual!=0:
-			    	im=draw_skeleton(dataout,h,w,im,cnt_person=0,bkground=True)
-			    	cv2.putText(img=im, text="Contador: "+str(cnt),org=(5, 20),fontFace=cv2.FONT_HERSHEY_SIMPLEX, 
+				cnt+=1
+				dataout=np.copy(datum.poseKeypoints[0,:,:2])
+				
+				if req.visual!=0:
+					im=draw_skeleton(dataout,h,w,im,cnt_person=0,bkground=True)
+					cv2.putText(img=im, text="Contador: "+str(cnt),org=(5, 20),fontFace=cv2.FONT_HERSHEY_SIMPLEX, 
 			                fontScale=0.6, color=(35, 255, 148),thickness=2)
-			    	cv2.imshow("Imagen RGB",im)
-			    	cv2.waitKey(10)
-			    #print(cnt)
-			    if cnt==max_inf_it:
-			        flg=0
-			        print("Obteniendo rgbd...")
-
-			        # Para evitar lecturas nan y no retorne coordenadas nan
-
-			        while flg!=1:
-				        frameC,dataPC=get_coordinates()
-				        im=cv2.cvtColor(frameC, cv2.COLOR_BGR2RGB)
-				        print("esqueleto encontrado")
-				        # Calculo una ultima vez con openpose y la imagen que se obtiene de pointcloud
-				        datum.cvInputData = im
-				        opWrapper.emplaceAndPop(op.VectorDatum([datum]))
-				        if datum.poseKeypoints is not None:
-				        	dataout=np.copy(datum.poseKeypoints[0,:,:2])
-				    	# Y lo guardo
-
-				        im_t=draw_skeleton(dataout,h,w,im,cnt_person=0,bkground=True)
-
-				        #cv2.imshow("Imagen y sk para extrapola y TF ",im_t)
-				        #cv2.waitKey(0)
-
-				        mano,codo,f=detect_pointing_arm(dataout,dataPC)
-				        print("MANO CODO",mano,codo)
-				        if f!=-1:
-					        tf_man.pub_static_tf(pos=codo,point_name='CODO',ref='head_rgbd_sensor_link')
-					        tf_man.pub_static_tf(pos=mano,point_name='MANO',ref='head_rgbd_sensor_link')
-					        #print("cambiando referencia")
-					        tf_man.change_ref_frame_tf(point_name='CODO',new_frame='map')
-					        tf_man.change_ref_frame_tf(point_name='MANO',new_frame='map')
-					        rospy.sleep(0.8)
-
-					        manoM,_ = tf_man.getTF(target_frame='MANO',ref_frame='map')
-        					codoM,_ = tf_man.getTF(target_frame='CODO',ref_frame='map')
-				        	ob_xyz = get_extrapolation(manoM,codoM)
-				        	flg=1
-				        else:
-				        	print("HAY UNA NAN. Recalcula PC...")
-			        rospy.sleep(0.8)
-
-			        response.i_out=f
-			        break
+					cv2.imshow("Imagen RGB",im)
+					cv2.waitKey(10)
+					
+				if cnt==max_inf_it:
+					flg=0
+					print("Obteniendo rgbd...")
+					# Para evitar lecturas nan y no retorne coordenadas nan
+					while flg!=1:
+						frameC,dataPC=get_coordinates()
+						im=cv2.cvtColor(frameC, cv2.COLOR_BGR2RGB)
+						print("esqueleto encontrado")
+						# Calculo una ultima vez con openpose y la imagen que se obtiene de pointcloud
+						datum.cvInputData = im
+						opWrapper.emplaceAndPop(op.VectorDatum([datum]))
+						if datum.poseKeypoints is not None:
+							dataout=np.copy(datum.poseKeypoints[0,:,:2])# Y lo guardo
+						
+						im_t=draw_skeleton(dataout,h,w,im,cnt_person=0,bkground=True)
+						
+						mano,codo,f=detect_pointing_arm(dataout,dataPC)
+						print("MANO CODO",mano,codo)
+						if f!=-1:
+							tf_man.pub_static_tf(pos=codo,point_name='CODO',ref='head_rgbd_sensor_link')
+							tf_man.pub_static_tf(pos=mano,point_name='MANO',ref='head_rgbd_sensor_link')#print("cambiando referencia")
+							tf_man.change_ref_frame_tf(point_name='CODO',new_frame='map')
+							tf_man.change_ref_frame_tf(point_name='MANO',new_frame='map')
+							rospy.sleep(0.8)
+							manoM,_ = tf_man.getTF(target_frame='MANO',ref_frame='map')
+							codoM,_ = tf_man.getTF(target_frame='CODO',ref_frame='map')
+							ob_xyz = get_extrapolation(manoM,codoM)
+							flg=1
+						else:
+							print("HAY UNA NAN. Recalcula PC...")
+					rospy.sleep(0.8)
+					response.i_out=f
+					break
 
 		#if req.visual!=0:
 		#	cv2.destroyAllWindows()
@@ -199,14 +188,13 @@ def callback(req):
 		response.d_xyz=flo
 		img_msg2=bridge.cv2_to_imgmsg(dataout)
 		if len(response.im_out.image_msgs)==0:
-		    response.im_out.image_msgs.append(img_msg2)
+			response.im_out.image_msgs.append(img_msg2)
 		else:
-		    response.im_out.image_msgs[0]=img_msg
-
-
-
-	#----------------
-	# para drinking, no drinking
+			response.im_out.image_msgs[0]=img_msg
+			
+		#return response	
+	
+	# para bebida (mal)
 	elif req.in_==4:
 		conteo_sin_bebida=np.zeros(n_people_max)
 		max_drink_cnt=10
@@ -216,87 +204,143 @@ def callback(req):
 		no_person=0
 		flg_out=False
 		while True:
-		    
-		    image,dataPC=get_coordinates()
-		    #print(image.shape)
-		    h,w,_=image.shape
-		    datum.cvInputData = image
-		    opWrapper.emplaceAndPop(op.VectorDatum([datum]))
-		    #print("Body keypoints: \n" + str(datum.poseKeypoints))
-
-		    if datum.poseKeypoints is not None:
-
-		        no_person=0
-		        dataout=np.copy(datum.poseKeypoints[:,:,:2])
-		        order=np.argsort(np.argsort(dataout[:,0,0]))
-		        for i in range(dataout.shape[0]):
-		            image=draw_skeleton(dataout[i],h,w,image,bkground=True)
-		            draw_text_bkgn(image,text="Person:"+str(i),pos=(int(dataout[i,0,0]), int(dataout[i,0,1])-40),
+			image,dataPC=get_coordinates()#print(image.shape)
+			h,w,_=image.shape
+			datum.cvInputData = image
+			opWrapper.emplaceAndPop(op.VectorDatum([datum]))#print("Body keypoints: \n" + str(datum.poseKeypoints))
+			if datum.poseKeypoints is not None:
+				no_person=0
+				dataout=np.copy(datum.poseKeypoints[:,:,:2])
+				order=np.argsort(np.argsort(dataout[:,0,0]))
+				for i in range(dataout.shape[0]):
+					image=draw_skeleton(dataout[i],h,w,image,bkground=True)
+					draw_text_bkgn(image,text="Person:"+str(i),pos=(int(dataout[i,0,0]), int(dataout[i,0,1])-40),
 		                   font_scale=1.3,text_color=(255, 255, 32))
-		            draw_rect_sk(dataout[i],image)
-
-		            if detect_drinking(dataout[i]):
-		                conteo_sin_bebida[i]=0
-		                cnt_normal+=1
-		                draw_text_bkgn(image,text="Person "+str(i)+": ",pos=(int(dataout[i,0,0]), int(dataout[i,0,1])-40),
+					draw_rect_sk(dataout[i],image)
+					if detect_drinking(dataout[i]):
+						conteo_sin_bebida[i]=0
+						cnt_normal+=1
+						draw_text_bkgn(image,text="Person "+str(i)+": ",pos=(int(dataout[i,0,0]), int(dataout[i,0,1])-40),
 		                           font_scale=1.3,text_color=(32, 255, 255))
-		                draw_text_bkgn(image,text="Con bebida",pos=(int(dataout[i,0,0]), int(dataout[i,0,1])-20),
+						draw_text_bkgn(image,text="Con bebida",pos=(int(dataout[i,0,0]), int(dataout[i,0,1])-20),
 		                           font_scale=1.3,text_color=(32, 255, 255))
-
-		            else:
-		            	cnt_normal=0
-		            	draw_text_bkgn(image,text="Person "+str(i)+":",pos=(int(dataout[i,0,0]), int(dataout[i,0,1])-40),
+					else:
+						cnt_normal=0
+						draw_text_bkgn(image,text="Person "+str(i)+":",pos=(int(dataout[i,0,0]), int(dataout[i,0,1])-40),
 		                           font_scale=1.3,text_color=(32, 255, 255))
-		            	draw_text_bkgn(image,text="Sin bebida",pos=(int(dataout[i,0,0]), int(dataout[i,0,1])-20),
+						draw_text_bkgn(image,text="Sin bebida",pos=(int(dataout[i,0,0]), int(dataout[i,0,1])-20),
 		                           font_scale=1.3,text_color=(32, 255, 255))
-		            	conteo_sin_bebida[i]+=1
-		    else:
-		    	no_person+=1
-
-		    print(conteo_sin_bebida)
-		    # -----------------------
-		    if req.visual!=0:
-		    	cv2.imshow("RES",image)
-		    	cv2.waitKey(10)
-		    # --------------------------
-		    if no_person==m_no_p:
-		    	response.i_out=3
-		    	break
-		    if cnt_normal==c_nor:
-		    	print("TODOS CON BEBIDA DURANTE UN TIEMPO RAZONABLE")
-		    	response.i_out=2
-		    	break
-		    else:
-			    for c in range(n_people_max):
-			        if conteo_sin_bebida[c]==max_drink_cnt:
-			            print("\n\nNO TIENE BEBIDA LA PERSONA :{}, PROCEDO A OFRECER UNA\n".format(c))
-			            flg_out=True
-			            head,f=return_xyz_sk(dataout,c,dataPC)
-			            if f!=-1:
-			            	print(head)
-			            	response.i_out=1
-			            	tf_man.pub_static_tf(pos=head,point_name='head_xyz',ref='head_rgbd_sensor_link')
-			            	
-			            	tf_man.change_ref_frame_tf(point_name='head_xyz',new_frame='map')
-
-			            	rospy.sleep(0.8)
-			            	ob_xyz,_ = tf_man.getTF(target_frame='head_xyz',ref_frame='map')
-			            	print(ob_xyz)
-			            	#flo.data=ob_xyz
-			            	#response.d_xyz=flo
-			            	break
-			            else: 
-			            	response.i_out=0
-			            	print("DATOS NAN, no se retorna datos")
-
-			    if flg_out:
-			        break
+						conteo_sin_bebida[i]+=1
+			else:
+				no_person+=1
+			
+			print(conteo_sin_bebida)# -----------------------
+			if req.visual!=0:
+				cv2.imshow("RES",image)
+				cv2.waitKey(10)# --------------------------
+			if no_person==m_no_p:
+				response.i_out=3
+				break
+			if cnt_normal==c_nor:
+				print("TODOS CON BEBIDA DURANTE UN TIEMPO RAZONABLE")
+				response.i_out=2
+				break
+			else:
+				for c in range(n_people_max):
+					if conteo_sin_bebida[c]==max_drink_cnt:
+						print("\n\nNO TIENE BEBIDA LA PERSONA :{}, PROCEDO A OFRECER UNA\n".format(c))
+						flg_out=True
+						head,f=return_xyz_sk(dataout,c,dataPC)
+						if f!=-1:
+							print(head)
+							response.i_out=1
+							tf_man.pub_static_tf(pos=head,point_name='head_xyz',ref='head_rgbd_sensor_link')
+							
+							tf_man.change_ref_frame_tf(point_name='head_xyz',new_frame='map')
+							rospy.sleep(0.8)
+							ob_xyz,_ = tf_man.getTF(target_frame='head_xyz',ref_frame='map')
+							print(ob_xyz)#flo.data=ob_xyz#response.d_xyz=flo
+							break
+						else: 
+							response.i_out=0
+							print("DATOS NAN, no se retorna datos")
+				if flg_out:
+					break
 		#---------------------------------
 		if req.visual!=0:
 			cv2.destroyAllWindows()
 		#--------------------------------
 
 		#---------------
+
+	#RESTAURANTE
+	elif req.in_ ==5 :
+		#print("OPCION 5 PARA RESTAURANT")
+		points_msg=rospy.wait_for_message("/hsrb/head_rgbd_sensor/depth_registered/rectified_points",PointCloud2,timeout=5)
+		points_data = ros_numpy.numpify(points_msg)
+		image,maskedImage = removeBackground(points_msg,distance = 10)
+		h,w,_=image.shape
+		#dataout=np.zeros((25,2))
+		datum.cvInputData = maskedImage
+		opWrapper.emplaceAndPop(op.VectorDatum([datum]))
+		if datum.poseKeypoints is None:
+			
+			print("No se encontro esqueleto/persona")
+			response.i_out=-1
+			img_msg=bridge.cv2_to_imgmsg(maskedImage)
+			if len(response.im_out.image_msgs)==0:
+				response.im_out.image_msgs.append(img_msg)
+			else:
+				response.im_out.image_msgs[0]=img_msg
+		
+		else:
+			#print("datum shape",datum.poseKeypoints.shape)
+			dataout=np.copy(datum.poseKeypoints[:,:,:2])
+			for i in range(dataout.shape[0]):
+				maskedImage=draw_skeleton(dataout[i],h,w,maskedImage,bkground=True)
+				draw_text_bkgn(maskedImage,text="Person "+str(i)+": ",pos=(int(dataout[i,0,0]), int(dataout[i,0,1])-40),
+		                           font_scale=1.3,text_color=(32, 255, 255))
+				print(path.expanduser( '~' )+"/Documents/wavingPersonOP.jpg")
+				print(dataout.shape)
+				
+				cv2.imwrite(path.expanduser( '~' )+"/Documents/wavingPersonOP.jpg",maskedImage)
+			img_msg=bridge.cv2_to_imgmsg(maskedImage)
+			if len(response.im_out.image_msgs)==0:
+				response.im_out.image_msgs.append(img_msg)
+			else:
+				response.im_out.image_msgs[0]=img_msg
+			sk_idx = detectWaving(dataout,maskedImage,points_msg)
+			if sk_idx == -1:
+				print("NO PERSON WAVING")
+				response.i_out=-1
+			else:
+				
+				head_mean = np.concatenate((dataout[sk_idx,0:1,:],dataout[sk_idx,15:19,:]),axis=0)
+				head_mean = np.sum(head_mean,axis=0)/np. count_nonzero(head_mean,axis=0)[0] 
+				
+
+				head_xyz =[points_data['x'][int(head_mean[1]), int(head_mean[0])],
+							points_data['y'][int(head_mean[1]), int(head_mean[0])],
+							points_data['z'][int(head_mean[1]), int(head_mean[0])]]
+				print("HEAD XYZ of waving person", head_xyz)
+				if head_xyz[0] is not None:
+					print("PUBLICANDO....")
+					tf_man.pub_static_tf(pos=head_xyz,point_name='person_waving',ref='head_rgbd_sensor_link')
+					rospy.sleep(0.3)
+					print("CAMBIANDO REF")
+					tf_man.change_ref_frame_tf(point_name='person_waving',new_frame='map')
+					rospy.sleep(0.8)
+					response.i_out = 1
+				else:
+					response.i_out = 1
+			
+			img_msg2=bridge.cv2_to_imgmsg(dataout)
+			response.im_out.image_msgs.append(img_msg2)
+
+		
+
+		return response
+
 
 	# Para obtener la imagen y esqueleto 1 vez y trabajar con ella fuera del servicio
 	else:
@@ -308,27 +352,26 @@ def callback(req):
 		datum.cvInputData = im
 		opWrapper.emplaceAndPop(op.VectorDatum([datum]))
 		if datum.poseKeypoints is not None:
-		    dataout=np.copy(datum.poseKeypoints[0,:,:2])
-		    print("Obteniendo rgbd...")
-		    frameC,dataPC=get_coordinates()
-		    print("esqueleto encontrado")
-		    #pub_points(dataPC,dataout,skPub=1)
-		    print("tf publicada")
-		    if dataout[0,0]!=0 and dataout[0,1]!=0:
-		        response.i_out=1
-		    else:
-		        print("Se detecto esqueleto pero no la cara de la persona")
-		        response.i_out=-1
+			dataout=np.copy(datum.poseKeypoints[0,:,:2])
+			print("Obteniendo rgbd...")
+			frameC,dataPC=get_coordinates()
+			print("esqueleto encontrado")#pub_points(dataPC,dataout,skPub=1)
+			print("tf publicada")
+			if dataout[0,0]!=0 and dataout[0,1]!=0:
+				response.i_out=1
+			else:
+				print("Se detecto esqueleto pero no la cara de la persona")
+				response.i_out=-1
 		else:
-		    print("No se encontro esqueleto/persona")
-		    response.i_out=-1
+			print("No se encontro esqueleto/persona")
+			response.i_out=-1
 
 		img_msg=bridge.cv2_to_imgmsg(im)
 		img_msg2=bridge.cv2_to_imgmsg(dataout)
 		if len(response.im_out.image_msgs)==0:
-		    response.im_out.image_msgs.append(img_msg)
+			response.im_out.image_msgs.append(img_msg)
 		else:
-		    response.im_out.image_msgs[0]=img_msg
+			response.im_out.image_msgs[0]=img_msg
 	if req.visual!=0:
 		cv2.destroyAllWindows()
 	return response    

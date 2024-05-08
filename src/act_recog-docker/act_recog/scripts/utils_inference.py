@@ -167,6 +167,7 @@ class TF_MANAGER():
 
 
  #---------------------------------------------------
+#---------------------------------------------------
 def init_openPose(n_people=-1,net_res="-1x208",model="BODY_25",heatmap=False):
     try:
         usr_url=path.expanduser( '~/' )
@@ -340,7 +341,39 @@ def distance_to_people(data,cld_points):
     else:
         return 0,dist_to_p
 
+# para quitar fondo, es necesario rgbd de la camara del robot
+def removeBackground(points_msg,distance = 2):
+    # Obtengo rgb
+    points_data = ros_numpy.numpify(points_msg)
+    image_data = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]   
+    image=cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
+    image = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]
+    rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)    
+
+    # Quito todos los pixeles que esten a una distancia mayor y/o a una distancia menor
+    # Para poder obtener una mascara con ceros y unos
+    zs_no_nans=np.where(~np.isnan(points_data['z']),points_data['z'],10)
+    img_corrected = np.where((zs_no_nans < distance + 0.3),zs_no_nans,0)
+    #img_corrected = np.where((img_corrected >1.5),img_corrected,0)
+    img_corrected = np.where((img_corrected == 0),img_corrected,1)
+
+    # operacion AND entre la imagen original y la mascara para quitar fondo (background)
+    #img_corrected = img_corrected.astype(np.uint8)
+    masked_image = cv2.bitwise_and(rgb_image, rgb_image, mask=img_corrected.astype(np.uint8))
+    return rgb_image, masked_image
 
 #------------------------------------------
+
+def detectWaving(dataout,im,points_msg):
+    #print(dataout)
+    # El primero que detecte lo retorna
+    for i,sk in enumerate(dataout):
+        if (sk[4,1] <= sk[0,1] and sk[4,1]!= 0)  or (sk[7,1] <= sk[0,1] and sk[7,1]!= 0):
+            return i
+
+    return -1
+
+
+
 
 tf_man = TF_MANAGER()
