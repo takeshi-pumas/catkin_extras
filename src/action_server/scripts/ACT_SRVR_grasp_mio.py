@@ -129,7 +129,7 @@ class PlacingStateMachine:
         elif self.grasp_approach == "above":
             self.target_pose, gaze_dir = self.calculate_above_approach(target_position=pose_goal)
             print(self.target_pose)
-        self.head.relative(gaze_dir.point.x, gaze_dir.point.y, gaze_dir.point.z)
+        #self.head.relative(gaze_dir.point.x, gaze_dir.point.y, gaze_dir.point.z)
         rospy.sleep(0.5)
         succ = self.move_to_pose(self.whole_body, self.target_pose)
         if succ:
@@ -289,7 +289,7 @@ class PlacingStateMachine:
             transformed_object_point = self.tf2_buffer.transform(object_point, "odom", timeout=rospy.Duration(1))
             transformed_object_base = self.tf2_buffer.transform(object_point, "base_link", timeout=rospy.Duration(1))
             transformed_base = self.tf2_buffer.lookup_transform("odom", "base_link", rospy.Time(0), timeout=rospy.Duration(1))
-            transformed_object_base.point.x += 0.02
+            #transformed_object_base.point.x += 0.02
 
             transformed_object_point = self.tf2_buffer.transform(transformed_object_base, "odom", timeout=rospy.Duration(1))
         except :
