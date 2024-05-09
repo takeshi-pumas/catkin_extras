@@ -93,6 +93,7 @@ img_map=inflated_map.reshape((map_msg.info.width,map_msg.info.height))
 pix_per_m=map_msg.info.resolution
 contours, hierarchy = cv2.findContours(img_map.astype('uint8'),cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
 contoured=cv2.drawContours(img_map.astype('uint8'), contours, 1, (255,255,255), 1)
+
 ####################################################################3
 
 
@@ -651,3 +652,10 @@ def removeBackground(points_msg,distance = 2):
     #img_corrected = img_corrected.astype(np.uint8)
     masked_image = cv2.bitwise_and(rgb_image, rgb_image, mask=img_corrected.astype(np.uint8))
     return rgb_image, masked_image
+
+
+def load_rooms_areas_stickler():
+    rospack = rospkg.RosPack()
+    file_path = rospack.get_path('config_files')
+    room_regions=np.load(file_path+'/room_regions_stickler.npy')
+    return np.asarray(room_regions[0]),np.asarray(room_regions[1]),np.asarray(room_regions[2]),np.asarray(room_regions[3])

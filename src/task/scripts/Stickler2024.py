@@ -157,10 +157,7 @@ class Find_human(smach.State):
 
             ###################
 
-            living_room_px_region=np.asarray(((1012, 1045), (1125, 1151)))
-            kitchen_px_region=np.asarray(((1123, 1040), (1217, 1149)))
-            bedroom_px_region=np.asarray(((1123, 971), (1212, 1038)))
-            dining_room_px_region=np.asarray(((1027, 968), (1122, 1043)))
+            living_room_px_region,kitchen_px_region,bedroom_px_region,dining_room_px_region = load_rooms_areas_stickler()
 
             pose=human_pose[:2]
             px_pose_human=np.asarray(([origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m)]))
@@ -263,10 +260,7 @@ class Goto_human(smach.State):
         human_pose,_=tf_man.getTF('human')
         
         
-        living_room_px_region=np.asarray(((1012, 1045), (1125, 1151)))
-        kitchen_px_region=np.asarray(((1123, 1040), (1217, 1149)))
-        bedroom_px_region=np.asarray(((1123, 971), (1212, 1038)))
-        dining_room_px_region=np.asarray(((1027, 968), (1122, 1043)))
+        living_room_px_region,kitchen_px_region,bedroom_px_region,dining_room_px_region = load_rooms_areas_stickler()
 
         pose=human_pose[:2]
         px_pose_human=np.asarray(([origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m)]))
