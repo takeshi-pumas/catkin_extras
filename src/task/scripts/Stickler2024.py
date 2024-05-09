@@ -509,8 +509,7 @@ class Detect_drink(smach.State):
         #res = omni_base.move_d_to(0.8,'human')
 
         # SEGUNDO TOMA IMAGEN Y LA ANALIZA (PENDIENTE SI VA A SER CON UNA NN) PARA VER SI TIENE BEBIDA
-        #talk('If it is posible, please try to stay like any of this options so I can analyze if you have an object')
-        rospy.sleep(0.5)
+        talk('Analysing for drink')
         point_msg = String("DrinkingPose.jpg")
         self.point_img_pub.publish(point_msg)
         rospy.sleep(1.2)
@@ -573,11 +572,7 @@ if __name__ == '__main__':
     with sm:
         # State machine STICKLER
 
-        smach.StateMachine.add("DETECT_DRINK",         
-                                Detect_drink(),      
-                                transitions={'failed': 'END',    
-                                                'succ': 'DETECT_DRINK', 
-                                                'tries': 'DETECT_DRINK'})
+        
 
         smach.StateMachine.add("INITIAL",           
                                 Initial(),
@@ -620,11 +615,11 @@ if __name__ == '__main__':
                                 transitions={'failed': 'GOTO_NEXT_ROOM',    
                                                 'succ': 'FIND_HUMAN',   
                                                 'tries': 'FIND_HUMAN'})
-        """smach.StateMachine.add("DETECT_DRINK",         
+        smach.StateMachine.add("DETECT_DRINK",         
                                 Detect_drink(),      
                                 transitions={'failed': 'GOTO_NEXT_ROOM',    
                                                 'succ': 'GOTO_HUMAN', 
-                                                'tries': 'FIND_HUMAN'})"""
+                                                'tries': 'FIND_HUMAN'})
         ###########################################################################################################
         
         
