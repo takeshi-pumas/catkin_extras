@@ -48,7 +48,7 @@ int main(int argc, char **argv)
     
     path_files = ros::package::getPath("create_dataset") + "/Dataset/";
     ROS_INFO("the path: %s", path_files.c_str());
-    DirectoryUtils::replaceDir("../images", true);
+    //DirectoryUtils::replaceDir("../images", true);
     if (replace){
         DirectoryUtils::replaceDir(path_files, true);
     }
