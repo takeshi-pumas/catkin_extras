@@ -19,7 +19,7 @@ from os import path
 import ros_numpy
 from geometry_msgs.msg import PoseStamped, Point  , Quaternion , TransformStamped , Twist
 from tf2_geometry_msgs import PointStamped
-
+from std_msgs.msg import String
 from std_srvs.srv import Trigger, TriggerResponse 
 from sensor_msgs.msg import Image , LaserScan  , PointCloud2
 from tf2_sensor_msgs.tf2_sensor_msgs import do_transform_cloud
@@ -40,7 +40,7 @@ from nav_msgs.msg import OccupancyGrid
 from hri_msgs.msg import RecognizedSpeech
 from rospy.exceptions import ROSException
 from vision_msgs.srv import *
-from act_recog.srv import Recognize,RecognizeResponse,RecognizeRequest
+#from act_recog.srv import Recognize,RecognizeResponse,RecognizeRequest
 from ros_whisper_vosk.srv import SetGrammarVosk
 
 from action_server.msg import FollowActionGoal ,  FollowAction
@@ -80,7 +80,7 @@ set_grammar = rospy.ServiceProxy('set_grammar_vosk', SetGrammarVosk)            
 recognize_face = rospy.ServiceProxy('recognize_face', RecognizeFace)                    #FACE RECOG
 train_new_face = rospy.ServiceProxy('new_face', RecognizeFace)                          #FACE RECOG
 analyze_face = rospy.ServiceProxy('analyze_face', RecognizeFace)    ###DEEP FACE ONLY
-recognize_action = rospy.ServiceProxy('recognize_act', Recognize) 
+#recognize_action = rospy.ServiceProxy('recognize_act', Recognize) 
 classify_client = rospy.ServiceProxy('/classify', Classify)
 classify_clnt_stickler = rospy.ServiceProxy('/classifystick', Classify)
 
