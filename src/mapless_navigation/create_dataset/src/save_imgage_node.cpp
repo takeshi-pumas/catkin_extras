@@ -52,7 +52,7 @@ int main(int argc, char **argv)
     if (replace){
         DirectoryUtils::replaceDir(path_files, true);
     }
-    ros::Rate loop_rate(1.0/4);
+    ros::Rate loop_rate(1.0/6);
 
     //int counter = 0;
     while (ros::ok())
