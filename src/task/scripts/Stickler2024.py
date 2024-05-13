@@ -7,9 +7,10 @@ from PIL import Image
 ################################################(TO UTILS?)
 global model , preprocess
 device = "cuda" if torch.cuda.is_available() else "cpu"
-print(device)
+#print(device)
 model, preprocess = clip.load("ViT-B/32", device=device)
-    
+classify_drink_client = rospy.ServiceProxy('/classifydrink', Classify)
+
 ##### Define state INITIAL #####
 
 #########################################################################################################
@@ -157,7 +158,7 @@ class Find_human(smach.State):
 
             ###################
 
-            living_room_px_region,kitchen_px_region,bedroom_px_region,dining_room_px_region = load_rooms_areas_stickler()
+            living_room_px_region,kitchen_px_region,bedroom_px_region,dining_room_px_region = load_rooms_areas_stickler(fileName='room_regions_stickler_lab.npy') #SI poner .npy
 
             pose=human_pose[:2]
             px_pose_human=np.asarray(([origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m)]))
@@ -484,13 +485,14 @@ class Detect_drink(smach.State):
         trans, quat=tf_man.getTF('base_link')
         print("[ANALYZEDRINK] TRIES:",self.tries)
         rospy.sleep(0.4)
-        """if self.tries<2:
+
+        if self.tries<2:
             head.set_named_target('neutral')        
             rospy.sleep(1.0)
             hv= head.get_joint_values()
             hv[1]= hv[1]+0.25
             head.set_joint_values(hv)
-            rospy.sleep(1.0)"""
+            rospy.sleep(1.0)
         # ----------------ATENTO EN DONDE ESTARIAN LAS BEBIDAS------------
         place_drinks='drinks_p'
         #-----------------------------------------------------------------
@@ -503,7 +505,7 @@ class Detect_drink(smach.State):
         #res = omni_base.move_d_to(0.8,'human')
 
         # SEGUNDO TOMA IMAGEN Y LA ANALIZA (PENDIENTE SI VA A SER CON UNA NN) PARA VER SI TIENE BEBIDA
-        talk('Analysing for drink')
+        talk('Analysing for drink, in...')
         point_msg = String("DrinkingPose.jpg")
         self.point_img_pub.publish(point_msg)
         rospy.sleep(1.2)
@@ -515,15 +517,27 @@ class Detect_drink(smach.State):
         rospy.sleep(1.0)
         self.point_img_pub.publish(String())
         rospy.sleep(0.1)
-        points_msg=rospy.wait_for_message("/hsrb/head_rgbd_sensor/depth_registered/rectified_points",PointCloud2,timeout=5)
-        img,masked_image = removeBackground(points_msg,distance = 2)
-        cv2.imwrite(path.expanduser( '~' )+"/Documents/drink.jpg",masked_image)
-        print ('[ANALYZEDRINK] got image for drink analysis')
-        talk('Ok, analysing...')
-        rospy.sleep(0.1)
+        img = rgbd.get_image()
+        cv2.imwrite(path.expanduser( '~' )+"/Documents/drink.jpg",img)
+        img_msg  = bridge.cv2_to_imgmsg(img)
+        
+        talk('Ok, thank you. Analysing...')
+        rospy.sleep(0.3)
+        
         # parte de la NN para detectar objeto
+        req      = classify_drink_client.request_class()
+        req.in_.image_msgs.append(img_msg)
+        res      = classify_drink_client(req)
+
+        """points_msg=rospy.wait_for_message("/hsrb/head_rgbd_sensor/depth_registered/rectified_points",PointCloud2,timeout=5)
+        original_img,image = removeBackground(points_msg,distance = 2)
+        cv2.imwrite(path.expanduser( '~' )+"/Documents/drink.jpg",image)
+        print ('[ANALYZEDRINK] got image for drink analysis')
+        
+        rospy.sleep(0.1)
+        
         keys=[ "beverage", "food"]
-        image = preprocess(Image.fromarray(masked_image)).unsqueeze(0).to(device) #img array from grbd get image
+        image = preprocess(Image.fromarray(image)).unsqueeze(0).to(device) #img array from grbd get image
         text = clip.tokenize(keys).to(device)
 
         with torch.no_grad():
@@ -532,12 +546,13 @@ class Detect_drink(smach.State):
             
             logits_per_image, logits_per_text = model(image, text)
             probs = logits_per_image.softmax(dim=-1).cpu().numpy()
-        talk('Done')
-        print("[ANALYZEDRINK] Label probs:", probs,keys[np.argmax(probs)] ,keys, probs[0][1] ) # prints: [[0.9927937  0.00421068 0.00299572]]
-
         
+        print("[ANALYZEDRINK] Label probs:", probs,keys[np.argmax(probs)] ,keys, probs[0][1] ) # prints: [[0.9927937  0.00421068 0.00299572]]
+        """
+        talk('Done')
         rospy.sleep(0.1)
-
+        print(f'[ANALYZEDRINK] [{res.names}, {res.poses}]')#, res.confidence
+        
         #
         return 'succ'
         
@@ -566,7 +581,11 @@ if __name__ == '__main__':
     with sm:
         # State machine STICKLER
 
-        
+        smach.StateMachine.add("DETECT_DRINK",         
+                                Detect_drink(),      
+                                transitions={'failed': 'END',    
+                                                'succ': 'DETECT_DRINK', 
+                                                'tries': 'END'})
 
         smach.StateMachine.add("INITIAL",           
                                 Initial(),
@@ -609,11 +628,11 @@ if __name__ == '__main__':
                                 transitions={'failed': 'GOTO_NEXT_ROOM',    
                                                 'succ': 'FIND_HUMAN',   
                                                 'tries': 'FIND_HUMAN'})
-        smach.StateMachine.add("DETECT_DRINK",         
+        """smach.StateMachine.add("DETECT_DRINK",         
                                 Detect_drink(),      
                                 transitions={'failed': 'GOTO_NEXT_ROOM',    
                                                 'succ': 'GOTO_HUMAN', 
-                                                'tries': 'FIND_HUMAN'})
+                                                'tries': 'FIND_HUMAN'})"""
         ###########################################################################################################
         
         

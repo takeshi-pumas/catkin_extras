@@ -655,8 +655,12 @@ def removeBackground(points_msg,distance = 2):
     return rgb_image, masked_image
 
 
-def load_rooms_areas_stickler():
+#------------------------------------------------------
+def load_rooms_areas_stickler(fileName=''):
     rospack = rospkg.RosPack()
     file_path = rospack.get_path('config_files')
-    room_regions=np.load(file_path+'/room_regions_stickler.npy')
+    if fileName =='':
+        room_regions=np.load(file_path+'/room_regions_stickler.npy')
+    else:
+        room_regions=np.load(file_path+'/'+fileName)
     return np.asarray(room_regions[0]),np.asarray(room_regions[1]),np.asarray(room_regions[2]),np.asarray(room_regions[3])

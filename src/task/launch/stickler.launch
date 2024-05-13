@@ -2,16 +2,15 @@
 <launch>
   <!--param name="file_name" value="/known_locations_stickler.yaml"/-->
   <param name="file_name" value="/known_locations_stickler_sim.yaml"/>
+  <node pkg="known_locations_tf_server"  name="known_locs" type="known_locs_node.py" output="screen" />  
 
-  <node pkg="known_locations_tf_server"  name="known_locs" type="known_locs_node.py" output="screen" />
+  <node pkg="object_classification"  name="objs_reco" type="classification_stickler_server.py"  />  
   <!--include file="$(find nav_pumas)/config_files/launch/navigation_real.launch"/-->
   <node pkg="human_detector"  name="human_detector" type="human_detector_server.py"/>  
   <node pkg="smach_viewer"  name="smach_viewer" type="smach_viewer.py"/>  
   <node pkg="segmentation"  name="segmentator_node" type="segment_node.py"/>  
 
-  <!--node pkg="leg_finder"      name="leg_finder"     type="leg_finder_node" output="screen"/-->  
   
-  <!--node name="human_follower"  pkg="human_follower"  type="human_follower_node"  output="screen"/-->
 
 <!--include file="$(find speech_recog)/launch/ros_vosk.launch"/-->
 
