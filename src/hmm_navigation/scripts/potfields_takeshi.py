@@ -18,8 +18,8 @@ from tf.transformations import euler_from_quaternion
 LIN_ACC = 0.0015
 LIN_DES = - 0.0005
 
-MAX_LIN_SPEED_HIGH = 0.5
-MAX_LIN_SPEED_MID = 0.04
+MAX_LIN_SPEED_HIGH = 0.45
+MAX_LIN_SPEED_MID = 0.08
 
 ANG_ACC_LOW = 0.001
 ANG_ACC_MID = 0.003
@@ -63,11 +63,15 @@ def get_robot_current_pose():
         th = 0
     return x, y, th
 
-def calculate_force():
+def calculate_force(enable_repulsion = True):
     
     # No entiendo por que hay que sumar una cantidad muy pequeña !!!
-    Fth_rep = np.arctan2(Fy_rep, (Fx_rep + 0.000000000001)) + np.pi
-    Fmag_rep = np.linalg.norm((Fx_rep, Fy_rep))
+    if enable_repulsion:
+        Fth_rep = np.arctan2(Fy_rep, (Fx_rep + 0.000000000001)) + np.pi
+        Fmag_rep = np.linalg.norm((Fx_rep, Fy_rep))
+    else:
+        Fth_rep = 0
+        Fmag_rep = 0
     x, y, th = get_robot_current_pose()
 
     # Calculate atractive force
@@ -89,7 +93,7 @@ def calculate_force():
 def speed_behavior(current_speed, Fx, Fy, Fth, distance):
     speed = Twist()
     
-    # Speed behaviors 
+    # Speed behaviors
     if abs(Fth) < FORCE_THRESHOLD_LOW:
         speed.linear.x =  min(current_speed.linear.x + LIN_ACC, MAX_LIN_SPEED_HIGH)
         speed.angular.z = 0
@@ -100,19 +104,24 @@ def speed_behavior(current_speed, Fx, Fy, Fth, distance):
         speed.linear.x  = max(current_speed.linear.x + LIN_DES, MAX_LIN_SPEED_MID)
         speed.angular.z = max(current_speed.angular.z + ANG_ACC_LOW * np.sign(Fth), 
                                 MAX_ANG_SPEED_LOW * np.sign(Fth))
-    
+
     elif abs(Fth) < FORCE_THRESHOLD_HIGH and abs(Fth) > FORCE_THRESHOLD_MID:
         print('Angular movement (mid)')
         speed.linear.x  = 0#max(current_speed.linear.x + LIN_DES * 3.5, MAX_LIN_SPEED_MID)
         speed.angular.z = max(current_speed.angular.z + ANG_ACC_MID * np.sign(Fth), 
                                 MAX_ANG_SPEED_MID * np.sign(Fth))
-    
+
     elif abs(Fth) > FORCE_THRESHOLD_HIGH:
         print('Angular movement (high)')
-        speed.linear.x  = 0 #current_speed.linear.x + LIN_DES * 5#max(current_speed.linear.x + LIN_DES * 4, MAX_LIN_SPEED_MID)
+        speed.linear.x  = 0 #current_speed.linear.x + LIN_DES * 5 #max(current_speed.linear.x + LIN_DES * 4, MAX_LIN_SPEED_MID)
         speed.angular.z = max(current_speed.angular.z + ANG_ACC_HIGH * np.sign(Fth), 
                                 MAX_ANG_SPEED_HIGH * np.sign(Fth))
-        
+    return speed
+
+def final_turn(current_speed, Fth):
+    speed = Twist()
+    speed.angular.z = max(current_speed.angular.z + ANG_ACC_MID * np.sign(Fth), 
+                                MAX_ANG_SPEED_LOW * np.sign(Fth))
     return speed
 
 
@@ -161,6 +170,7 @@ def main():
     rospy.loginfo('Pot Fields Navigation AMCL active')
 
     current_speed = Twist()
+    enable_repulsion = True
 
     while not rospy.is_shutdown():
         if (xcl != 0 and ycl != 0):
@@ -172,19 +182,28 @@ def main():
             # print("Atractive Force: Fx, Fy, Fth: {:.2f}, {:.2f}, {:.2f}".format(Fx_atr, Fy_atr,  np.rad2deg(Fth_atr)))
             # print("Total force Fx, Fy, Tth: {:.2f}, {:.2f}".format(Fx_tot, Fy_tot, np.rad2deg(Fth_tot)))
 
-            # Stop condition
-            Fx, Fy, Fth, euclD = calculate_force()
+            Fx, Fy, Fth, euclD = calculate_force(enable_repulsion)
             
-            proximity_threshold = 0.15
+            #El threshold es alto porque el goal siempre es una persona y se busca no atropellarla
+            proximity_threshold = 1.0 # 0.15 
+            
+            # Stop condition
             if(euclD < proximity_threshold):
                 current_speed.linear.x = 0
                 current_speed.linear.y = 0
-                current_speed.angular.z = 0
-                xcl, ycl = 0.0, 0.0
-                print("Arrived!")
+                #current_speed.angular.z = 0
+                enable_repulsion = False
+                print("Arrived, missing final turn!")
+                if abs(Fth) > 0.1:
+                    current_speed = final_turn(current_speed, Fth)
+                else:
+                    xcl, ycl = 0.0, 0.0
+                    print("Navigation successful!")
             
             else:
                 current_speed = speed_behavior(current_speed, Fx, Fy, Fth, euclD)
+                enable_repulsion = True
+
             
             cmd_vel_pub.publish(current_speed)
             rate.sleep()
