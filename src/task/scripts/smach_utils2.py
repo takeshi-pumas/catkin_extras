@@ -410,7 +410,8 @@ def hand_grasp_D(tf_name='placing_area', THRESHOLD=0.03,timeout=10.0):
             succ =  eX == 0 and eY == 0 and eT==0            
             
                 # grasp_base.tiny_move(velY=-0.4*trans[1], std_time=0.2, MAX_VEL=0.3)
-            omni_base.tiny_move(velX=0.13*velX, velY=-0.4*velY , std_time=0.2, MAX_VEL=0.4) #Pending test
+            #omni_base.tiny_move(velX=0.13*velX, velY=-0.4*velY , std_time=0.2, MAX_VEL=0.4) #Pending test
+            omni_base.tiny_move(velX=0.25*velX, velY=-1*velY , std_time=0.2, MAX_VEL=0.3) #Pending test
     return succ
             
 ##------------------------------------------------------

@@ -221,7 +221,7 @@ class Pickup(smach.State):
             target_pose = Float32MultiArray()
             print (f'target_object {target_object}')        
             print ( 'Applying Bowl Offset') #TODO DIctionary
-            offset_point=[0.0,-0.05,+0.1]   # Offset relative to object tf
+            offset_point=[0.0,-0.05,+0.08]   # Offset relative to object tf
             translated_point = np.array(tf.transformations.quaternion_multiply(quat, offset_point + [0]))[:3] + np.array(pos)
             pose_goal=np.concatenate((translated_point,quat))
             print (f'target_object {target_object}, mode {string_msg.data}')
@@ -528,9 +528,9 @@ if __name__ == '__main__':
     with sm:
         # State machine STICKLER
         smach.StateMachine.add("INITIAL",           Initial(),              transitions={'failed': 'INITIAL',           
-                                                                                         'succ': 'GOTO_PICKUP',   
+                                                                                         'succ': 'WAIT_PUSH_HAND',   
                                                                                          'tries': 'END'})
-        smach.StateMachine.add("WAIT_PUSH_HAND",    Wait_push_hand(),       transitions={'failed': 'WAIT_DOOR',    
+        smach.StateMachine.add("WAIT_PUSH_HAND",    Wait_push_hand(),       transitions={'failed': 'WAIT_PUSH_HAND',    
                                                                                          'succ': 'GOTO_PICKUP',       
                                                                                          'tries': 'END'})
         smach.StateMachine.add("WAIT_DOOR",    Wait_door_opened(),       transitions={'failed': 'WAIT_DOOR',    

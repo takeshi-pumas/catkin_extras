@@ -49,10 +49,10 @@
     </include>
   	
    <!-- moveit--><!-- included in storing groc-->
-    <include file="$(find hsrb_moveit_config)/launch/hsrb_demo_with_controller.launch">
+    <!--include file="$(find hsrb_moveit_config)/launch/hsrb_demo_with_controller.launch">
       <arg name="use_gui" value="true"/>
       <arg name="load_robot_description" value="false"/>
-    </include>
+    </include-->
 
     <node pkg="point_cloud"  name="point_cloud_filter_node" type="passthrough_filter"/>   <!-- included in storing groc-->
 

@@ -13,7 +13,7 @@ from moveit_msgs.msg import CollisionObject, AttachedCollisionObject
 from action_server.msg import GraspAction
 from std_srvs.srv import Empty
 
-from tf.transformations import euler_from_quaternion, quaternion_from_euler
+from tf.transformations import euler_from_quaternion, quaternion_from_euler, quaternion_multiply
 
 from utils import grasp_utils
 
@@ -115,20 +115,22 @@ class PlacingStateMachine:
         if self.approach_limit == self.approach_count:
             return 'cancel'
         goal = self.sm.userdata.goal.target_pose.data
-
-        pos = [goal[0], goal[1], goal[2]]
-        self.add_collision_object(position = pos, dimensions = [0.05, 0.05, 0.05], 
-                                  frame=self.whole_body.get_planning_frame())
+        self.grasp_approach=self.sm.userdata.goal.mode.data
+        print(f'self.sm.userdata.goal -> {self.sm.userdata.goal.target_pose.data}')
+        print (f'self.sm.userdata.goal.mode -> {self.sm.userdata.goal.mode.data}')
+        #pose_goal = [goal[0], goal[1], goal[2], goal[3], goal[4], goal[5], goal[6]]
+        #self.add_collision_object(position = pos, dimensions = [0.05, 0.05, 0.05],frame=self.whole_body.get_planning_frame())
         
 
         self.gripper.open()
-        pose_goal = [goal[0], goal[1], goal[2]]
+        pose_goal = [goal[0], goal[1], goal[2], goal[3], goal[4], goal[5], goal[6]]
+
         if self.grasp_approach == "frontal":
             self.target_pose = self.calculate_frontal_approach(target_position=pose_goal)
-            print(self.target_pose)
+            
         elif self.grasp_approach == "above":
             self.target_pose, gaze_dir = self.calculate_above_approach(target_position=pose_goal)
-            print(self.target_pose)
+            
         #self.head.relative(gaze_dir.point.x, gaze_dir.point.y, gaze_dir.point.z)
         rospy.sleep(0.5)
         succ = self.move_to_pose(self.whole_body, self.target_pose)
@@ -203,8 +205,8 @@ class PlacingStateMachine:
         return succ
 
     
-    def publish_known_areas(self, position = [4.5, 3.0, 0.35], rotation = [0,0,0,1], dimensions = [3.0 ,0.8, 0.02]): #position = [5.9, 5.0,0.3] ##SIM
-                                                                                                                   #position = [1.2, -0.6,0.3]###REAL
+    def publish_known_areas(self, position = [1.4, -0.9, 0.65], rotation = [0,0,0,1], dimensions = [3.0 ,0.8, 0.02]): #position = [5.9, 5.0,0.3] ##SIM
+                                                                                                                   #position = [1.4, -0.9, 0.65]###REAL
                                                                                                                    #position =[4.5, 3.0, 0.4] ### TMR
     
         object_pose = PoseStamped()
@@ -250,31 +252,37 @@ class PlacingStateMachine:
 
     def calculate_frontal_approach(self, target_position = [0.0, 0.0, 0.0]):
         object_point = PointStamped()
-        object_point.header.frame_id = "base_link"
+        object_point.header.frame_id = "odom"#"base_link"
         object_point.point.x = target_position[0]
         object_point.point.y = target_position[1]
         object_point.point.z = target_position[2]
-
+        
         #transformar la posicion del objeto al marco de referencia de la base del robot
         try:
-            transformed_object_point = self.tf2_buffer.transform(object_point, "base_link", timeout=rospy.Duration(1))
+            transformed_object_point = self.tf2_buffer.transform(object_point, "odom", timeout=rospy.Duration(1))
             transformed_base = self.tf2_buffer.lookup_transform("odom", "base_link", rospy.Time(0), timeout=rospy.Duration(1))
+            
         except :
             rospy.WARN("Error al transformar la posicion del objeto al marco de referencia")
             return None, None
         
         approach_pose = Pose()
-        approach_pose.position.x = transformed_object_point.point.x - 0.12
+        approach_pose.position.x = transformed_object_point.point.x 
         approach_pose.position.y = transformed_object_point.point.y
-        approach_pose.position.z = transformed_object_point.point.z
+        approach_pose.position.z = transformed_object_point.point.z+0.1
 
         quat_base = [transformed_base.transform.rotation.x,
                                transformed_base.transform.rotation.y,
                                transformed_base.transform.rotation.z,
                                transformed_base.transform.rotation.w]
-        _,_,theta = euler_from_quaternion(quat_base)
-        quat = quaternion_from_euler(np.pi, -np.pi/2, -theta, axes='sxyx')
+        
+        quat_reqgoal=[target_position[3],target_position[4],target_position[5],target_position[6]]
+        
+        rot_quat=quaternion_multiply(quat_reqgoal, [0,0,1,0])   # rotate 180 on z fixed axis
+        _,_,theta = euler_from_quaternion(rot_quat)
+        quat = quaternion_from_euler(0.0, -0.5*np.pi, theta , axes='sxyz')#theta_reqgoal-theta+np.pi
         approach_pose.orientation = Quaternion(*quat)
+        
         return approach_pose
     
     def calculate_above_approach(self, target_position = [0.0, 0.0, 0.0]):
@@ -298,7 +306,7 @@ class PlacingStateMachine:
         approach_pose = Pose()
         approach_pose.position.x = transformed_object_point.point.x
         approach_pose.position.y = transformed_object_point.point.y
-        approach_pose.position.z = transformed_object_point.point.z + 0.14
+        approach_pose.position.z = transformed_object_point.point.z + 0.1
 
         #print(transformed_base)
         quat_base = [transformed_base.transform.rotation.x,

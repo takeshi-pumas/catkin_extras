@@ -13,7 +13,7 @@ from moveit_msgs.msg import CollisionObject, AttachedCollisionObject
 from action_server.msg import GraspAction
 from std_srvs.srv import Empty
 
-from tf.transformations import euler_from_quaternion, quaternion_from_euler
+from tf.transformations import euler_from_quaternion, quaternion_from_euler , quaternion_multiply
 
 from utils import grasp_utils
 
@@ -39,20 +39,20 @@ class PlacingStateMachine:
         moveit_commander.roscpp_initialize(sys.argv)
         self.robot = moveit_commander.RobotCommander()
         self.scene = moveit_commander.PlanningSceneInterface()
-        self.whole_body = moveit_commander.MoveGroupCommander("whole_body")
+        self.whole_body = moveit_commander.MoveGroupCommander("whole_body_weighted")
         #self.base = moveit_commander.MoveGroupCommander("base")
         #self.whole_body_w = moveit_commander.MoveGroupCommander("whole_body_weighted")
         #self.arm = moveit_commander.MoveGroupCommander("arm")
         self.grasp_approach = "frontal" #above / frontal
         self.eef_link = self.whole_body.get_end_effector_link()
-        self.approach_limit = 2
+        self.approach_limit = 10
         self.approach_count = 0
 
         # Moveit setup
         #self.scene.remove_attached_object(self.eef_link, name="objeto")
         
-        self.whole_body.allow_replanning(True)
-        self.whole_body.set_num_planning_attempts(10)
+        self.whole_body.allow_replanning(False)
+        self.whole_body.set_num_planning_attempts(3)
         self.whole_body.set_planning_time(10.0)
         #self.whole_body_w.allow_replanning(True)
         #self.whole_body_w.set_num_planning_attempts(10)
@@ -61,6 +61,7 @@ class PlacingStateMachine:
         #self.whole_body_w.set_workspace([-2.0, -2.0, 2.0, 2.0])
         self.planning_frame = self.whole_body.get_planning_frame()
         print(self.planning_frame)
+        
         
 
 
@@ -95,9 +96,9 @@ class PlacingStateMachine:
 
     # SMACH states ------------------------------------------------------
     def create_bound(self, userdata):
-        self.add_collision_object('bound_left', position=[0.0, 1.0, 0.3], dimensions=[1.8, 0.05, 0.05])
-        self.add_collision_object('bound_right', position=[0.0, - 1.0, 0.3], dimensions=[1.8, 0.05, 0.05])
-        self.add_collision_object('bound_behind', position=[-1.0, 0.0, 0.3], dimensions=[0.05, 2.0, 0.05])
+        self.add_collision_object('bound_left', position=[0.0, 1.0, 0.3], dimensions=[2.0, 0.05, 0.05])
+        self.add_collision_object('bound_right', position=[0.0, - 1.0, 0.3], dimensions=[2.0, 0.05, 0.05])
+        self.add_collision_object('bound_behind', position=[-0.4, 0.0, 0.3], dimensions=[0.05, 2.0, 0.05])
         self.publish_known_areas()# Add Table
         clear_octo_client()
         self.safe_pose = self.whole_body.get_current_joint_values()
@@ -115,21 +116,17 @@ class PlacingStateMachine:
         if self.approach_limit == self.approach_count:
             return 'cancel'
         goal = self.sm.userdata.goal.target_pose.data
-
         pos = [goal[0], goal[1], goal[2]]
-        self.add_collision_object(position = pos, dimensions = [0.05, 0.05, 0.05], 
-                                  frame=self.whole_body.get_planning_frame())
-        
-
-        
-        pose_goal = [goal[0], goal[1], goal[2]]
+        print(f'self.sm.userdata.goal -> {self.sm.userdata.goal.target_pose.data}')
+        print (f'self.sm.userdata.goal.mode -> {self.sm.userdata.goal.mode.data}')
+        self.grasp_approach=self.sm.userdata.goal.mode.data
+        pose_goal = [goal[0], goal[1], goal[2], goal[3], goal[4], goal[5], goal[6]]
         if self.grasp_approach == "frontal":
             self.target_pose = self.calculate_frontal_approach(target_position=pose_goal)
             print(self.target_pose)
         elif self.grasp_approach == "above":
             self.target_pose, gaze_dir = self.calculate_above_approach(target_position=pose_goal)
             print(self.target_pose)
-        self.head.relative(gaze_dir.point.x, gaze_dir.point.y, gaze_dir.point.z)
         rospy.sleep(0.5)
         succ = self.move_to_pose(self.whole_body, self.target_pose)
         if succ:
@@ -142,11 +139,12 @@ class PlacingStateMachine:
 
         # TODO: check grasp
         # Maybe attach object to gripper (maybe not)
-        joint_values = self.brazo.get_joint_values()
-        joint_values[0] -= 0.09
-        self.brazo.set_joint_values(joint_values)
+        
+        
+        
         self.gripper.open()
-        rospy.sleep(0.6)
+        rospy.sleep(1.0)
+
         #self.attach_object()
         return 'success'
         # if succ:
@@ -203,9 +201,9 @@ class PlacingStateMachine:
         rospy.sleep(0.5)
         group.stop()
         return succ
-
-    
-    def publish_known_areas(self, position = [4.5, 3.0, 0.4], rotation = [0,0,0,1], dimensions = [3.0 ,1.0, 0.2]): #position = [5.9, 5.0,0.3] ##SIM
+                                        #position = [6.2, 1.1, 0.36], rotation = [0,0,0.707,0.707]#Table breakfast
+                                        #position = [4.5, 3.0, 0.35], rotation = [0,0,0,1]#Table pickup
+    def publish_known_areas(self, position =     [6.2, 1.1, 0.36], rotation = [0,0,0.707,0.707], dimensions = [3.0 ,1.0, 0.02]): #position = [5.9, 5.0,0.3] ##SIM
                                                                                                                    #position = [1.2, -0.6,0.3]###REAL
                                                                                                                    #position =[4.5, 3.0, 0.4] ### TMR
     
@@ -252,31 +250,36 @@ class PlacingStateMachine:
 
     def calculate_frontal_approach(self, target_position = [0.0, 0.0, 0.0]):
         object_point = PointStamped()
-        object_point.header.frame_id = "base_link"
+        object_point.header.frame_id = "odom"#"base_link"
         object_point.point.x = target_position[0]
         object_point.point.y = target_position[1]
         object_point.point.z = target_position[2]
-
+        
         #transformar la posicion del objeto al marco de referencia de la base del robot
         try:
-            transformed_object_point = self.tf2_buffer.transform(object_point, "base_link", timeout=rospy.Duration(1))
+            transformed_object_point = self.tf2_buffer.transform(object_point, "odom", timeout=rospy.Duration(1))
             transformed_base = self.tf2_buffer.lookup_transform("odom", "base_link", rospy.Time(0), timeout=rospy.Duration(1))
+            
         except :
             rospy.WARN("Error al transformar la posicion del objeto al marco de referencia")
             return None, None
         
         approach_pose = Pose()
-        approach_pose.position.x = transformed_object_point.point.x - 0.12
+        approach_pose.position.x = transformed_object_point.point.x 
         approach_pose.position.y = transformed_object_point.point.y
-        approach_pose.position.z = transformed_object_point.point.z
+        approach_pose.position.z = transformed_object_point.point.z +0.1
 
         quat_base = [transformed_base.transform.rotation.x,
                                transformed_base.transform.rotation.y,
                                transformed_base.transform.rotation.z,
                                transformed_base.transform.rotation.w]
-        _,_,theta = euler_from_quaternion(quat_base)
-        quat = quaternion_from_euler(np.pi, -np.pi/2, -theta, axes='sxyx')
+        
+        quat_reqgoal=[target_position[3],target_position[4],target_position[5],target_position[6]]  # Quaternion added to pose  act request
+        rot_quat=quaternion_multiply(quat_reqgoal, [0,0,1,0])
+        _,_,theta = euler_from_quaternion(rot_quat)        
+        quat = quaternion_from_euler(0.0, -0.5*np.pi, theta , axes='sxyz')
         approach_pose.orientation = Quaternion(*quat)
+        
         return approach_pose
     
     def calculate_above_approach(self, target_position = [0.0, 0.0, 0.0]):
@@ -285,11 +288,13 @@ class PlacingStateMachine:
         object_point.point.x = target_position[0]
         object_point.point.y = target_position[1]
         object_point.point.z = target_position[2]
-
+        print ('object_point',object_point)
         #transformar la posicion del objeto al marco de referencia de la base del robot
         try:
             transformed_object_point = self.tf2_buffer.transform(object_point, "odom", timeout=rospy.Duration(1))
+            print ('transformed_object_point',transformed_object_point)
             transformed_object_base = self.tf2_buffer.transform(object_point, "base_link", timeout=rospy.Duration(1))
+            print ('transformed_object_base',transformed_object_base)
             transformed_base = self.tf2_buffer.lookup_transform("odom", "base_link", rospy.Time(0), timeout=rospy.Duration(1))
             transformed_object_base.point.x += 0.02
 
@@ -300,17 +305,17 @@ class PlacingStateMachine:
         approach_pose = Pose()
         approach_pose.position.x = transformed_object_point.point.x
         approach_pose.position.y = transformed_object_point.point.y
-        approach_pose.position.z = transformed_object_point.point.z + 0.14
+        approach_pose.position.z = transformed_object_point.point.z + 0.24
 
         #print(transformed_base)
         quat_base = [transformed_base.transform.rotation.x,
-                               transformed_base.transform.rotation.y,
+                               transformed_base.transform.rotation.y, 
                                transformed_base.transform.rotation.z,
                                transformed_base.transform.rotation.w]
         _,_,theta = euler_from_quaternion(quat_base)
         quat = quaternion_from_euler(-theta, 0.0, np.pi, 'szyx')
         approach_pose.orientation = Quaternion(*quat)
-
+        print ('approach_pose',approach_pose)
         return approach_pose, transformed_object_base
 if __name__ == '__main__':
     rospy.init_node('placing_action')

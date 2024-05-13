@@ -95,8 +95,8 @@ class GraspingStateMachine:
 
     # SMACH states ------------------------------------------------------
     def create_bound(self, userdata):
-        self.add_collision_object('bound_left', position=[0.0, 1.0, 0.3], dimensions=[1.8, 0.05, 0.05])
-        self.add_collision_object('bound_right', position=[0.0, - 1.0, 0.3], dimensions=[1.8, 0.05, 0.05])
+        self.add_collision_object('bound_left', position=[0.0, 1.0, 0.3], dimensions=[2.1, 0.05, 0.05])
+        self.add_collision_object('bound_right', position=[0.0, - 1.0, 0.3], dimensions=[2.1, 0.05, 0.05])
         self.add_collision_object('bound_behind', position=[-1.0, 0.0, 0.3], dimensions=[0.05, 2.0, 0.05])
         clear_octo_client()
         self.safe_pose = self.whole_body.get_current_joint_values()
@@ -118,7 +118,7 @@ class GraspingStateMachine:
         pos = [goal[0], goal[1], goal[2]]
         self.add_collision_object(position = pos, dimensions = [0.05, 0.05, 0.05], 
                                   frame=self.whole_body.get_planning_frame())
-        #self.publish_known_areas()# Add Table
+        self.publish_known_areas()# Add Table
 
         self.gripper.open()
         pose_goal = [goal[0], goal[1], goal[2]]
@@ -201,7 +201,10 @@ class GraspingStateMachine:
         group.stop()
         return succ
 
-    def publish_known_areas(self, position = [6.0,5.2,0.3], rotation = [0,0,0,1], dimensions = [1.0 ,1.0, 0.2]):
+    def publish_known_areas(self, position =  [0.7, -1.0,0.6], rotation = [0,0,0,1], dimensions = [2.5 ,1.0, 0.02]):#position = [5.9, 5.0,0.3] ##SIM
+                                                                                                                   #position = [1.2, -0.6,0.3]###REAL
+                                                                                                                   #position =[4.5, 3.0, 0.4] ### TMR
+    
         object_pose = PoseStamped()
         object_pose.header.frame_id = 'map'
         object_pose.pose.position.x = position[0]
@@ -261,7 +264,7 @@ class GraspingStateMachine:
         approach_pose = Pose()
         approach_pose.position.x = transformed_object_point.point.x - 0.12
         approach_pose.position.y = transformed_object_point.point.y
-        approach_pose.position.z = transformed_object_point.point.z
+        approach_pose.position.z = transformed_object_point.point.z + 0.66
 
         quat_base = [transformed_base.transform.rotation.x,
                                transformed_base.transform.rotation.y,
@@ -291,7 +294,7 @@ class GraspingStateMachine:
             rospy.WARN("Error al transformar la posicion del objeto al marco de referencia")
             return None
         approach_pose = Pose()
-        approach_pose.position.x = transformed_object_point.point.x
+        approach_pose.position.x = transformed_object_point.point.x 
         approach_pose.position.y = transformed_object_point.point.y
         approach_pose.position.z = transformed_object_point.point.z + 0.14
 

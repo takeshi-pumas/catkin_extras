@@ -402,13 +402,16 @@ class Place_shelf(smach.State):
         if po[2]> 0.6:
             placing_pose=high_shelf_place
             top_shelf=True
+            print('placing top')
 
-        elif po[2]< 0.2:
+        elif po[2]< 0.3:
             placing_pose=low_shelf_place
             low_shelf=True
+            print('placing low')
         else:
             placing_pose=mid_shelf_place
             mid_shelf=True
+            print('placing mid')
         
         ###########################################
         new_row = {'x':  po[0], 
@@ -562,42 +565,47 @@ class Scan_shelf(smach.State):
         ####################################
         if "shelves_cats" in globals() and len(shelves_cats)==3:###SHELF ALREADY SCANNED
             talk ( "I already scanned the shelf. Maybe dont scan it every time?")
-            print (shelves_cats , cat)
+            print (shelves_cats , cat,"I already scanned the shelf. Maybe dont scan it every time?")
             area=regions['shelves']
             corresponding_key='low'
             for key, value in shelves_cats.items():
                 if value == cat:corresponding_key = key  #Iterate over shelves cats and decide
-            print ('corresponding_key',corresponding_key)
-            print (area)   
-            print ('corresponding_key',corresponding_key)
+            print ('corresponding_key',corresponding_key, )
+            
+            
             area=regions['shelves']        
-            print (area)
+            
             shelf_heights = {
             'top': self.top_shelf_height,
             'mid': self.mid_shelf_height,
             'low': self.low_shelf_height
             }
 
-            z_place = shelf_heights.get(corresponding_key, 0) + 0.1
+            z_place = shelf_heights.get(corresponding_key, 0) + 0.05
             ################ PLACING AREA ESTIMATION FROM KNOWLEDGE DATA BASE
             y_range = np.arange(area[0,1], area[1,1], .15)
             x_range = np.arange(area[0,0], area[1,0], .15)
             grid = np.meshgrid(x_range, y_range)
             grid_points = np.vstack([grid[0].ravel(), grid[1].ravel()]).T
-            free_grid=grid_points.tolist()
-            for i_free , free_pt in enumerate(free_grid):
-                for obj_pt in objs_shelves[objs_shelves[corresponding_key+'_shelf']==True][['x','y']].values:
-                #print ( free_pt,np.linalg.norm(obj_pt- free_pt))
-                    if np.linalg.norm(obj_pt- free_pt)<0.153:
-                        print(f"<<<<<<<<<<<<<<<<{free_pt},{obj_pt}####" )
-                        free_grid.pop(i_free)
+        
+            free_grid = grid_points.tolist()
+            # Create a new list without the unwanted elements
+            free_grid = [free_pt for free_pt in free_grid if all(
+                np.linalg.norm(obj_pt - free_pt) >= 0.153 for obj_pt in objs_shelves[objs_shelves[corresponding_key + '_shelf'] == True][['x', 'y']].values)]
             free_grid=np.asarray((free_grid))
-            print (free_grid)
-            summed_ds_to_objs=[]
-            for pt in free_grid:summed_ds_to_objs.append(np.linalg.norm(pt-objs_shelves[objs_shelves[corresponding_key+'_shelf']==True][['x','y']].values, axis=1).sum())
-            xy_place=free_grid[np.argmax(summed_ds_to_objs)]                        
-            print(f'placing_point at {corresponding_key}_shelf  {xy_place} , {z_place}')               
-            tf_man.pub_static_tf(pos=[xy_place[0], xy_place[1],z_place+0.05], rot =[0,0,0,1], point_name='placing_area')
+            if len (free_grid)==0:
+                print ( 'no placing area found, using generic safe pose')
+                x,y= np.mean(regions['shelves'], axis=0)
+                z=0.44#self.mid_shelf_height=0.4 shelves heights must also be set on SCAN SHELF  state init section.
+                tf_man.pub_static_tf(pos=[x,y,z],point_name='placing_area') ### IF a real placing area is found this tf will be updated
+                                                                    ##  even if no placing area is found for whatever reason au
+            else:            
+                print (free_grid)
+                summed_ds_to_objs=[]
+                for pt in free_grid:summed_ds_to_objs.append(np.linalg.norm(pt-objs_shelves[objs_shelves[corresponding_key+'_shelf']==True][['x','y']].values, axis=1).sum())
+                xy_place=free_grid[np.argmax(summed_ds_to_objs)]                        
+                print(f'placing_point at {corresponding_key}_shelf  {xy_place} , {z_place}')               
+                tf_man.pub_static_tf(pos=[xy_place[0], xy_place[1],z_place+0.05], rot =[0,0,0,1], point_name='placing_area')
             
             
             head.set_joint_values([0.0 , 0.0])
@@ -739,13 +747,22 @@ class Scan_shelf(smach.State):
         free_grid = [free_pt for free_pt in free_grid if all(
             np.linalg.norm(obj_pt - free_pt) >= 0.153 for obj_pt in objs_shelves[objs_shelves[corresponding_key + '_shelf'] == True][['x', 'y']].values)]
         free_grid=np.asarray((free_grid))
-        print (free_grid)
-        summed_ds_to_objs=[]
-        for pt in free_grid:summed_ds_to_objs.append(np.linalg.norm(pt-objs_shelves[objs_shelves[corresponding_key+'_shelf']==True][['x','y']].values, axis=1).sum())
-        xy_place=free_grid[np.argmax(summed_ds_to_objs)]            
         
-        print(f'placing_point at {corresponding_key}_shelf  {xy_place} , {z_place}') 
-        tf_man.pub_static_tf(pos=[xy_place[0], xy_place[1],z_place], rot =[0,0,0,1], point_name='placing_area')
+        
+        if len (free_grid)==0:
+            print ( 'no placing area found, using generic safe pose')
+            x,y= np.mean(regions['shelves'], axis=0)
+            z=0.44#self.mid_shelf_height=0.4 shelves heights must also be set on SCAN SHELF  state init section.
+            tf_man.pub_static_tf(pos=[x,y,z],point_name='placing_area') ### IF a real placing area is found this tf will be updated
+                                                                ##  even if no placing area is found for whatever reason au
+        else:            
+            print (free_grid)
+            summed_ds_to_objs=[]
+            for pt in free_grid:summed_ds_to_objs.append(np.linalg.norm(pt-objs_shelves[objs_shelves[corresponding_key+'_shelf']==True][['x','y']].values, axis=1).sum())
+            xy_place=free_grid[np.argmax(summed_ds_to_objs)]                        
+            print(f'placing_point at {corresponding_key}_shelf  {xy_place} , {z_place}')               
+            tf_man.pub_static_tf(pos=[xy_place[0], xy_place[1],z_place+0.05], rot =[0,0,0,1], point_name='placing_area')
+        
         head.set_joint_values([0.0 , 0.0])
         rospy.sleep(2.6)
         arm.set_named_target('go')
@@ -882,7 +899,7 @@ if __name__ == '__main__':
                                transitions={'preempted': 'END', 'succeeded': 'CHECK_GRASP', 'aborted': 'SCAN_TABLE'})
         
         smach.StateMachine.add("PLACE_GOAL", SimpleActionState('place_server', GraspAction, goal_slots=['target_pose']),              
-                        transitions={'preempted': 'GRASP_GOAL', 'succeeded': 'CHECK_GRASP', 'aborted': 'PLACE_SHELF'})
+                        transitions={'preempted': 'PLACE_SHELF', 'succeeded': 'CHECK_GRASP', 'aborted': 'PLACE_SHELF'})
         
         ###################################################################################################################################################################
         

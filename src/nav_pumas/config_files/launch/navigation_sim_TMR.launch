@@ -98,9 +98,9 @@
   <node pkg="smach_viewer"  name="smach_viewer" type="smach_viewer.py"  />  
   
 
-  <!--include file="$(find hsrb_moveit_config)/launch/hsrb_demo_with_controller.launch"> 
+  <include file="$(find hsrb_moveit_config)/launch/hsrb_demo_with_controller.launch"> 
   <arg name="use_gui" value="true"/> 
-</include-->
+</include>
 <!--##########################################################################################################-->
 
 
