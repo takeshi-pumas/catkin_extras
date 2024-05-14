@@ -1,7 +1,0 @@
-float32 timeout
-std_msgs/String target
----
-float32 timeleft 
----
-#Feedback
-bool Success

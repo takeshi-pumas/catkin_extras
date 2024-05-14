@@ -1,4 +1,0 @@
-<launch>
-  <node pkg="object_classification"  name="objs_reco" type="classification_server.py"  />  
-  <node pkg="segmentation"  name="segmentation" type="segment_node.py"  />  
-</launch>

@@ -1,3 +1,0 @@
-<launch>
-  <include file="$(find hsrb_moveit_config)/launch/hsrb_demo.launch"/>
-</launch>

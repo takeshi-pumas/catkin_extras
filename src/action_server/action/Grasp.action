@@ -1,7 +1,0 @@
-float32 timeout
-std_msgs/Float32MultiArray target_pose
-std_msgs/String  mode  
----
-float32 timeleft 
----
-bool Success

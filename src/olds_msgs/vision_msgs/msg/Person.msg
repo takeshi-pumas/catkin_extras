@@ -1,9 +1,0 @@
-string id
-uint8 age
-string name
-geometry_msgs/PoseStamped pose
-bool gender
-string emotion
-string race
-string shirt
-string pants

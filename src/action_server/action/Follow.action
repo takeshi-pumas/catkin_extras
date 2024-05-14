@@ -1,7 +1,0 @@
-float32 timeout
-bool    push_hand
----
-float32 timeleft 
----
-#Feedback
-bool success
