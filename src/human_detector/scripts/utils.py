@@ -107,8 +107,8 @@ def detect_human(points_msg,dist = 6):
     image, masked_image = removeBackground(points_msg, dist)
     #image = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]
     #rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    #data = len(glob(os.path.join(os.path.expanduser( '~' )+"/Documentos","*"))) # cambiar a Documents si esta en ingles 
-    #cv2.imwrite(os.path.expanduser( '~' )+"/Documentos/maskedImage_"+str(data + 1)+".jpg",masked_image)
+    data = len(glob(os.path.join(os.path.expanduser( '~' )+"/Documents","*"))) # cambiar a Documents si esta en ingles 
+    cv2.imwrite(os.path.expanduser( '~' )+"/Documents/maskedImage_"+str(data + 1)+".jpg",masked_image)
     
 
     print (image.shape)

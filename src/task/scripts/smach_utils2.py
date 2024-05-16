@@ -664,7 +664,6 @@ def load_rooms_areas_stickler(fileName=''):
     else:
         room_regions=np.load(file_path+'/'+fileName)
     # ORDEN: living_room,kitchen,bedroom,dining_room
-    print("ROOM REGIONS",room_regions)
     return np.asarray(room_regions[0]),np.asarray(room_regions[1]),np.asarray(room_regions[2]),np.asarray(room_regions[3])
 
 
@@ -680,9 +679,9 @@ def get_robot_person_coords(pose,fileName=''):
                               kitchen_px_region,
                               bedroom_px_region,
                               dining_room_px_region)
-    pose=get_robot_px()
-    px_pose_robot=np.asarray((origin_map_img[1]+pose[1],
-                              origin_map_img[0]+pose[0]))
+    poseRob=get_robot_px()
+    px_pose_robot=np.asarray((origin_map_img[1]+poseRob[1],
+                              origin_map_img[0]+poseRob[0]))
 
     room_robot = check_room_px(np.flip(px_pose_robot),
                                living_room_px_region,

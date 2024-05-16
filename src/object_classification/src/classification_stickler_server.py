@@ -123,6 +123,8 @@ def classify_server():
     model=attempt_load(ycb_yolo_path,device)
     rospy.loginfo("calssification_ YOLOV5 for drink service available")                    # initialize a ROS node
     s = rospy.Service('classifydrink', Classify, callback) 
+    #s = rospy.Service('classify', Classify, callback) 
+
     print("Classification for drink service available")
     rospy.spin()
 if __name__ == "__main__":
