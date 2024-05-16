@@ -1,7 +1,8 @@
 <?xml version="1.0"?>
 <launch>
-  <!--param name="file_name" value="/known_locations_stickler.yaml"/-->
-  <param name="file_name" value="/known_locations_stickler_sim.yaml"/>
+  <param name="file_name" value="/known_locations_stickler.yaml"/>
+  <!--param name="file_name" value="/known_locations_stickler_sim.yaml"/-->
+  <node pkg="hmm_navigation"  name="pumas_nav" type="pumas_nav.py" output="screen" />
   <node pkg="known_locations_tf_server"  name="known_locs" type="known_locs_node.py" output="screen" />  
 
   <node pkg="object_classification"  name="objs_reco" type="classification_stickler_server.py"  />  

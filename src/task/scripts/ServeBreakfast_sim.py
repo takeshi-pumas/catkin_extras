@@ -174,8 +174,10 @@ class Place(smach.State):
             userdata.target_object='cracker_box'
         if current_target== 'cracker_box':
             string_msg.data='frontal'
-            offset_point=[-0.16,0,0.061]
-            userdata.target_object='milk'
+            #offset_point=[0.16,0.03,0.061]
+            offset_point=[0.2,0.05,0.1]
+
+            #userdata.target_object='milk'
         
         
         #if current_target=='milk':userdata.target_object='spoon'
@@ -528,7 +530,7 @@ if __name__ == '__main__':
     with sm:
         # State machine STICKLER
         smach.StateMachine.add("INITIAL",           Initial(),              transitions={'failed': 'INITIAL',           
-                                                                                         'succ': 'GOTO_PICKUP',   
+                                                                                         'succ': 'WAIT_PUSH_HAND',   
                                                                                          'tries': 'END'})
         smach.StateMachine.add("WAIT_PUSH_HAND",    Wait_push_hand(),       transitions={'failed': 'WAIT_DOOR',    
                                                                                          'succ': 'GOTO_PICKUP',       

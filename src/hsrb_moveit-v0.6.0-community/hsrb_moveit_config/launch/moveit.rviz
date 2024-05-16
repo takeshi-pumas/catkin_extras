@@ -569,18 +569,6 @@ Visualization Manager:
       Filter (whitelist): ""
       Frame Timeout: 15
       Frames:
-        008_pudding_box:
-          Value: true
-        011_banana:
-          Value: true
-        016_pear:
-          Value: true
-        024_bowl:
-          Value: true
-        030_fork:
-          Value: true
-        058_golf_ball:
-          Value: true
         All Enabled: false
         arm_flex_link:
           Value: false
@@ -588,8 +576,6 @@ Visualization Manager:
           Value: false
         arm_roll_link:
           Value: false
-        banana:
-          Value: true
         base_b_bumper_link:
           Value: false
         base_f_bumper_link:
@@ -622,21 +608,7 @@ Visualization Manager:
           Value: false
         base_roll_link:
           Value: false
-        bedroom:
-          Value: true
-        bowl:
-          Value: true
-        breakfast:
-          Value: true
-        dining_room:
-          Value: true
         door_lab:
-          Value: true
-        fork:
-          Value: true
-        goal_for_place:
-          Value: true
-        golf_ball:
           Value: true
         hand_camera_frame:
           Value: false
@@ -680,13 +652,9 @@ Visualization Manager:
           Value: false
         head_pan_link:
           Value: false
-        head_r_stereo_camera_frame:
-          Value: false
         head_r_stereo_camera_gazebo_frame:
           Value: false
         head_r_stereo_camera_link:
-          Value: false
-        head_rgbd_sensor_depth_frame:
           Value: false
         head_rgbd_sensor_gazebo_frame:
           Value: false
@@ -704,21 +672,9 @@ Visualization Manager:
           Value: true
         odom:
           Value: true
-        pear:
-          Value: true
         pickup:
           Value: false
         place_shelf:
-          Value: true
-        placing_area:
-          Value: true
-        placing_cereal:
-          Value: true
-        placing_milk:
-          Value: true
-        placing_spoon:
-          Value: true
-        pudding_box:
           Value: true
         shelf:
           Value: true
@@ -740,21 +696,7 @@ Visualization Manager:
       Show Names: true
       Tree:
         map:
-          banana:
-            {}
-          bedroom:
-            {}
-          bowl:
-            {}
-          breakfast:
-            {}
-          dining_room:
-            {}
           door_lab:
-            {}
-          fork:
-            {}
-          golf_ball:
             {}
           kitchen:
             {}
@@ -819,51 +761,21 @@ Visualization Manager:
                           {}
                       head_l_stereo_camera_link:
                         head_l_stereo_camera_frame:
-                          {}
+                          head_rgbd_sensor_rgb_frame:
+                            {}
                         head_l_stereo_camera_gazebo_frame:
                           {}
                       head_r_stereo_camera_link:
-                        head_r_stereo_camera_frame:
-                          {}
                         head_r_stereo_camera_gazebo_frame:
                           {}
                       head_rgbd_sensor_link:
-                        head_rgbd_sensor_depth_frame:
-                          {}
                         head_rgbd_sensor_gazebo_frame:
                           {}
-                        head_rgbd_sensor_rgb_frame:
-                          008_pudding_box:
-                            {}
-                          011_banana:
-                            {}
-                          016_pear:
-                            {}
-                          024_bowl:
-                            {}
-                          030_fork:
-                            {}
-                          058_golf_ball:
-                            {}
             base_footprint_wheel:
               {}
-            goal_for_place:
-              {}
-          pear:
-            {}
           pickup:
             {}
           place_shelf:
-            {}
-          placing_area:
-            {}
-          placing_cereal:
-            {}
-          placing_milk:
-            {}
-          placing_spoon:
-            {}
-          pudding_box:
             {}
           shelf:
             {}
