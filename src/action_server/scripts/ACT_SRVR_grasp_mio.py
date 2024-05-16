@@ -73,7 +73,7 @@ class PlacingStateMachine:
             smach.StateMachine.add('CREATE_BOUND', smach.CBState(self.create_bound, outcomes=['success', 'failed']),
                                    transitions={'success':'APPROACH', 'failed':'CREATE_BOUND'})
             smach.StateMachine.add('APPROACH', smach.CBState(self.approach, outcomes=['success', 'failed', 'cancel']),
-                                   transitions={'success':'GRASP', 'failed':'APPROACH', 'cancel':'NEUTRAL_POSE' })
+                                   transitions={'success':'GRASP', 'failed':'APPROACH', 'cancel':'failure' })
             smach.StateMachine.add('GRASP', smach.CBState(self.grasp, outcomes=['success', 'failed']),
                                    transitions={'success':'RETREAT', 'failed': 'GRASP'})
             smach.StateMachine.add('RETREAT', smach.CBState(self.retreat, outcomes=['success', 'failed']),
@@ -148,7 +148,12 @@ class PlacingStateMachine:
         joint_values[0] -= 0.09
         self.brazo.set_joint_values(joint_values)
         rospy.sleep(0.6)
-        self.gripper.close(0.07)
+
+        
+        if self.grasp_approach == "frontal":
+            self.base.tiny_move(velX=0.07, std_time=0.5, MAX_VEL=0.7)
+            self.gripper.close(0.0061)
+        elif self.grasp_approach == "above":self.gripper.close(0.07)
         #self.attach_object()
         return 'success'
         # if succ:
@@ -205,7 +210,7 @@ class PlacingStateMachine:
         return succ
 
     
-    def publish_known_areas(self, position = [1.4, -0.9, 0.65], rotation = [0,0,0,1], dimensions = [3.0 ,0.8, 0.02]): #position = [5.9, 5.0,0.3] ##SIM
+    def publish_known_areas(self, position = [0.8, -1.2, 0.65], rotation = [0,0,0,1], dimensions = [3.0 ,0.8, 0.02]): #position = [5.9, 5.0,0.3] ##SIM
                                                                                                                    #position = [1.4, -0.9, 0.65]###REAL
                                                                                                                    #position =[4.5, 3.0, 0.4] ### TMR
     
@@ -216,8 +221,8 @@ class PlacingStateMachine:
         object_pose.pose.position.z = position[2]
         object_pose.pose.orientation.x = rotation[0]
         object_pose.pose.orientation.y = rotation[1]
-        object_pose.pose.orientation.z = rotation[2]
-        object_pose.pose.orientation.w = rotation[3]
+        object_pose.pose.orientation.z = 0.707
+        object_pose.pose.orientation.w = 0.707
         self.scene.add_box('table_storing', object_pose, size = (dimensions[0], dimensions[1], dimensions[2]))
 
     def add_collision_object(self, name = 'objeto', position = [0, 0, 0], rotation = [0,0,0,1], dimensions = [0.1 ,0.1, 0.1], frame = 'base_link'):

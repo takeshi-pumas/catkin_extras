@@ -23,12 +23,18 @@ class Initial(smach.State):
 
         #Strategy. pickup bowl first
         #userdata.target_object='cracker_box'
-        userdata.target_object='bowl'
+        userdata.target_object='cracker_box'
+        #userdata.target_object='bowl'
         hand_rgb = HAND_RGB()
         
-        x,y,z= 5.8 , 1.3, 0.47
-        quat=[0.0,0.0,0.0,1.0]
-        #x,y,z= 5.0 , 2.74, 0.45
+        ######################################
+        #x,y,z= 5.8 , 1.3, 0.47   #SIM TMR
+        #quat=[0.0,0.0,0.0,1.0]
+        ##########################################
+        #####################################
+        x,y,z= -0.53 , -2.89, 0.8   #REAL LAB
+        quat=[0.0,0.0,0.707,-0.707]
+        #########################################
         #quat=[0.0,0.0,0.707,0.707]
         userdata.placing_area=[x,y,z]
         userdata.placing_area_quat=quat
@@ -78,11 +84,12 @@ class Goto_pickup(smach.State):
         self.tries=0
 
     def execute(self, userdata):
-        
+        return 0
         rospy.loginfo('STATE : Navigate to known location')
         self.tries+=1
             
-        
+        rospy.sleep(1.5)
+        res = omni_base.move_base(known_location='pickup', time_out=40)
         res = omni_base.move_base(known_location='pickup', time_out=40)
         print(res)       
 ##################################################################First TIme Only go        
@@ -128,7 +135,7 @@ class Scan_table(smach.State):
         print (objects)
         common_misids=[]
         if userdata.target_object== 'bowl': common_misids.append('plate')
-        elif userdata.target_object== 'cracker_box': common_misids.append('pudding_box')
+        elif userdata.target_object== 'cracker_box': common_misids.append('master_chef_can')
         if len (objects)!=0 :
             _,quat_base= tf_man.getTF('base_link')  
 
@@ -161,48 +168,69 @@ class Place(smach.State):
 
     def execute(self, userdata):
 
-        global cat,target_object
+        
         rospy.loginfo('STATE : PLACE')
         current_target=userdata.target_object
-        string_msg= String()
-
-        print (f'placing {current_target}')
-        #################################################
-        if current_target== 'bowl':
-            offset_point=[-0.066,0,0.15]
-            string_msg.data='above'
-            userdata.target_object='cracker_box'
-        if current_target== 'cracker_box':
-            string_msg.data='frontal'
-            offset_point=[-0.16,0,0.061]
-            userdata.target_object='milk'
-        
-        
-        #if current_target=='milk':userdata.target_object='spoon'
-        ##################################################
-        userdata.mode=string_msg 
-        #####################################################
         pos,i= False,0
         while( pos==False and i<10):
             i+=1
-            print ('why tf fails!?!??!', i)
+            if i>1:print ('why tf fails!?!??!', i)
             tf_man.pub_static_tf(pos=userdata.placing_area, rot=userdata.placing_area_quat,point_name='placing_area') ### Ideal  coordinates to place Bowl
             rospy.sleep(0.5)
-            pos, quat = tf_man.getTF(target_frame = 'placing_area', ref_frame = 'odom')
-        
-        #print ('pose quat',pos,quat,'current target', current_target)        
+            pos, quat = tf_man.getTF(target_frame = 'placing_area', ref_frame = 'odom')      
+                
+        string_msg= String()  #mode mesge new instance
+        print (f'placing {current_target}')
+        print (f'target_object(placng){current_target} , mode {string_msg.data}')
+
+        #current_target='bowl'
+        #################################################
+        if current_target=='bowl':
+            rospy.loginfo('STATE : PLACE BOWL')            
+            print ('STATE : PLACE BOWL')                       
+            offset_point=[0.1,-0.05,-0.031]          # Offset relative to object tf#
+                       
+            string_msg.data='frontal'
+            userdata.target_object='cracker_box'        
+        ######################################################################
+        if current_target== 'cracker_box':
+            rospy.loginfo('STATE : PLACE CEREAL')            
+            print ('STATE : PLACE CEREAL')                       
+            offset_point=[0.08,-0.1,-0.1] 
+            #offset_point=[0.0,-0.05,-0.031]           # Offset relative to object tf#
+                   # Offset relative to object tf
+            
+            string_msg.data='frontal'
+            userdata.target_object='milk'
+        #####################################################################
+        userdata.mode=string_msg 
+            ####################
+            
         translated_point = np.array(tf.transformations.quaternion_multiply(quat, offset_point + [0]))[:3] + np.array(pos)
         pose_goal=np.concatenate((translated_point,quat))
         print (f'transalted_point-<{pose_goal}')    
         target_pose = Float32MultiArray()
         target_pose.data = pose_goal#pos
-        tf_man.pub_static_tf(pos= translated_point, rot=tf.transformations.quaternion_multiply(quat, [0,0,1,0]), ref="odom", point_name='goal_for_place' )             
+        tf_man.pub_static_tf(pos= translated_point, rot=tf.transformations.quaternion_multiply(quat, [0,0,1,0]), ref="odom", point_name='goal_for_place' )  
         userdata.target_pose = target_pose
-        ###################        
+        print (f'transalted_point-<{target_pose.data}')    
+        ###################
         head.set_named_target('neutral')
-        rospy.sleep(0.5)        #clear octo client is recommended
-        clear_octo_client()               
-        return 'succ'        
+        rospy.sleep(0.5)       
+        clear_octo_client()     
+        self.tries+=1  
+        return 'succ'
+        ########################################################################
+        ##if current_target=='milk':userdata.target_object='spoon'
+        ###################################################
+        #userdata.mode=string_msg 
+        ######################################################
+        #userdata.target_pose = target_pose
+        ####################        
+        #head.set_named_target('neutral')
+        #rospy.sleep(0.5)        #clear octo client is recommended
+        #clear_octo_client()               
+        #return 'succ'        
 #########################################################################################################
 
 class Pickup(smach.State):   
@@ -221,7 +249,9 @@ class Pickup(smach.State):
             target_pose = Float32MultiArray()
             print (f'target_object {target_object}')        
             print ( 'Applying Bowl Offset') #TODO DIctionary
-            offset_point=[0.0,-0.05,+0.08]   # Offset relative to object tf
+
+            offset_point=[0.03,-0.05,+0.08]   # Offset relative to object tf
+
             translated_point = np.array(tf.transformations.quaternion_multiply(quat, offset_point + [0]))[:3] + np.array(pos)
             pose_goal=np.concatenate((translated_point,quat))
             print (f'target_object {target_object}, mode {string_msg.data}')
@@ -244,7 +274,9 @@ class Pickup(smach.State):
             ####################
             inv_quat= tf.transformations.quaternion_inverse(quat)
             print ('pose quat',pos,quat)
-            offset_point=[-0.16,0,0.1]          # Offset relative to object tf
+
+            offset_point=[-0.1,0.0,0.031]          # Offset relative to object tf
+
             translated_point = np.array(tf.transformations.quaternion_multiply(quat, offset_point + [0]))[:3] + np.array(pos)
             pose_goal=np.concatenate((translated_point,quat))
             print (f'transalted_point-<{pose_goal}')
@@ -270,7 +302,7 @@ class Pickup(smach.State):
         
 class Goto_breakfast(smach.State):  
     def __init__(self):
-        smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
+        smach.State.__init__(self, input_keys =['target_object'], outcomes=['succ', 'failed', 'tries', 'bowl_place'])
         self.tries = 0
     def execute(self, userdata):
         rospy.loginfo('STATE : Navigate to known location')
@@ -283,12 +315,13 @@ class Goto_breakfast(smach.State):
         if self.tries == 1: talk('Navigating to, breakfast')
         res = omni_base.move_base(known_location='breakfast', time_out=150)
         print (res)
-        #res = omni_base.move_base(known_location='breakfast', time_out=50)
-        #print (res)
+        res = omni_base.move_base(known_location='breakfast', time_out=50)
+        print (res)
         #res = omni_base.move_base(known_location='breakfast', time_out=50)
         #print (res)
         if res:
             self.tries=0
+            if userdata.target_object=='bowl':return 'bowl_place'
             return 'succ'
         else:
             talk('Navigation Failed, retrying')
@@ -383,7 +416,7 @@ class Pour(smach.State):
 #########################################################################################################
 class Place_breakfast(smach.State):  
     def __init__(self):
-        smach.State.__init__(self,output_keys=['target_object'],input_keys=['target_object'], outcomes=['succ', 'failed', 'tries','pour'])
+        smach.State.__init__(self,output_keys=['target_object'],input_keys=['target_object','placing_area','placing_area_quat'], outcomes=['succ', 'failed', 'tries','pour'])
         self.tries = 0
     def execute(self, userdata):
         rospy.loginfo('STATE : Placing ')
@@ -392,9 +425,33 @@ class Place_breakfast(smach.State):
         if userdata.target_object=='cracker_box':place_pose[3]=-0.532
         arm.set_joint_value_target(place_pose)
         arm.go()
-        
+        pos, quat = tf_man.getTF(target_frame = 'placing_area', ref_frame = 'odom')      
+        i=0
+        while( pos==False and i<10):
+            i+=1
+            if i>1:print ('why tf fails!?!??!', i)
+            tf_man.pub_static_tf(pos=userdata.placing_area, rot=userdata.placing_area_quat,point_name='placing_area') ### Ideal  coordinates to place Bowl
+            rospy.sleep(0.5)
+            pos, quat = tf_man.getTF(target_frame = 'placing_area', ref_frame = 'odom')      
+                
         base_grasp_D(tf_name='placing_area',d_x=0.4, d_y=0.0,timeout=30)
-        if userdata.target_object=='cracker_box':return 'pour'
+        if userdata.target_object=='bowl':
+            clear_octo_client()
+            av=arm.get_current_joint_values()
+            av[1]=-1.59        
+            succ=arm.go(av)
+            if not succ:                
+                av[1]=-1.57        
+                sec_chance=arm.go(av)
+                if not sec_chance:
+                        
+                        brazo.set_joint_values([0.6808629824410867,-1.57, 0.04852065465630595, -1.8, 0.07179310822381613])
+                        rospy.sleep(1)
+
+        bowl_pose,_= tf_man.getTF('hand_palm_link')
+        print (bowl_pose)
+        return 0
+                
 
         gripper.open()
         rospy.sleep(2.0)
@@ -433,7 +490,7 @@ class Place_breakfast(smach.State):
 #########################################################################################################
 class Check_grasp(smach.State):   
     def __init__(self):
-        smach.State.__init__(self,input_keys=['target_object'], output_keys=['target_pose'],outcomes=['succ', 'failed', 'tries'])
+        smach.State.__init__(self,input_keys=['target_object','target_pose','mode'], output_keys=['target_pose','mode'],outcomes=['succ', 'failed', 'tries'])
         self.tries=0
 
     def execute(self, userdata):
@@ -442,6 +499,7 @@ class Check_grasp(smach.State):
             self.tries=0
             return 'tries'
         rospy.loginfo('STATE : Check Grasp')
+        print(userdata.mode, userdata.target_pose)
         
 
         arm.set_named_target('go')
@@ -479,29 +537,13 @@ class Check_grasp(smach.State):
                     print ('Grasping May have failed')
                     print (f'recalling grasp action on coordinates{test_pt} wrt map, converting to odom and action goal slot  ')
                     pos, _ = tf_man.getTF(target_frame = userdata.target_object, ref_frame = 'odom')
-
+                    userdata.target_pose 
+                    userdata.mode=mode
                     
-                    
-                    ##################################
-                    if userdata.target_object=='bowl' :
-                        print ( 'Applying Bowl Offset') #TODO DIctionary
-                        pos[0] +=-0.05
-                        pos[1] += -0.02
-                        pos[2] += 0.066
-                    ## SET BOWL OFFSET
-
-
-                    target_pose = Float32MultiArray()
-                    #pos[2] += 0.03
-                    target_pose.data = pos
-                    userdata.target_pose = target_pose
-                    ###################
-                    head.set_named_target('neutral')
-                    rospy.sleep(0.5)
-                    clear_octo_client()
                     return 'failed'
         
         self.tries=0
+        
         return'succ'    
                 
                 
@@ -528,7 +570,7 @@ if __name__ == '__main__':
     with sm:
         # State machine STICKLER
         smach.StateMachine.add("INITIAL",           Initial(),              transitions={'failed': 'INITIAL',           
-                                                                                         'succ': 'WAIT_PUSH_HAND',   
+                                                                                         'succ': 'PLACE',   
                                                                                          'tries': 'END'})
         smach.StateMachine.add("WAIT_PUSH_HAND",    Wait_push_hand(),       transitions={'failed': 'WAIT_PUSH_HAND',    
                                                                                          'succ': 'GOTO_PICKUP',       
@@ -543,7 +585,8 @@ if __name__ == '__main__':
                                                                                          'tries': 'GOTO_PICKUP'})        
         smach.StateMachine.add("GOTO_BREAKFAST",    Goto_breakfast(),       transitions={'failed': 'GOTO_BREAKFAST',    
                                                                                          'succ': 'PLACE',#_BREAKFAST',       
-                                                                                         'tries': 'GOTO_BREAKFAST'})
+                                                                                         'tries': 'GOTO_BREAKFAST',
+                                                                                         'bowl_place':'PLACE_BREAKFAST'})
         
         smach.StateMachine.add("PLACE_BREAKFAST",    Place_breakfast(),       transitions={'failed': 'PLACE_BREAKFAST',    
                                                                                          'succ': 'GOTO_PICKUP',       
@@ -565,7 +608,7 @@ if __name__ == '__main__':
                                                                                          'tries': 'GOTO_BREAKFAST'})        
         
         smach.StateMachine.add("PLACE_GOAL", SimpleActionState('place_server', GraspAction, goal_slots={'target_pose': 'target_pose', 'mode': 'mode'}),              
-                        transitions={'preempted': 'END', 'succeeded': 'GOTO_PICKUP', 'aborted': 'GOTO_BREAKFAST'})
+                        transitions={'preempted': 'END', 'succeeded': 'GOTO_PICKUP', 'aborted': 'GOTO_PICKUP'})
         
         
         

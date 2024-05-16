@@ -60,7 +60,6 @@ class PlacingStateMachine:
         self.whole_body.set_workspace([-20.0, -20.0, 0.0, 20.0, 20.0, 2.0])
         #self.whole_body_w.set_workspace([-2.0, -2.0, 2.0, 2.0])
         self.planning_frame = self.whole_body.get_planning_frame()
-        print(self.planning_frame)
         
         
 
@@ -74,7 +73,7 @@ class PlacingStateMachine:
             smach.StateMachine.add('CREATE_BOUND', smach.CBState(self.create_bound, outcomes=['success', 'failed']),
                                    transitions={'success':'APPROACH', 'failed':'CREATE_BOUND'})
             smach.StateMachine.add('APPROACH', smach.CBState(self.approach, outcomes=['success', 'failed', 'cancel']),
-                                   transitions={'success':'GRASP', 'failed':'APPROACH', 'cancel':'NEUTRAL_POSE' })
+                                   transitions={'success':'succeeded', 'failed':'APPROACH', 'cancel':'failure' })
             smach.StateMachine.add('GRASP', smach.CBState(self.grasp, outcomes=['success', 'failed']),
                                    transitions={'success':'RETREAT', 'failed': 'GRASP'})
             smach.StateMachine.add('RETREAT', smach.CBState(self.retreat, outcomes=['success', 'failed']),
@@ -129,6 +128,7 @@ class PlacingStateMachine:
             print(self.target_pose)
         rospy.sleep(0.5)
         succ = self.move_to_pose(self.whole_body, self.target_pose)
+        rospy.sleep(2.0)
         if succ:
             return 'success'
         else:
@@ -203,8 +203,8 @@ class PlacingStateMachine:
         return succ
                                         #position = [6.2, 1.1, 0.36], rotation = [0,0,0.707,0.707]#Table breakfast
                                         #position = [4.5, 3.0, 0.35], rotation = [0,0,0,1]#Table pickup
-    def publish_known_areas(self, position =     [6.2, 1.1, 0.36], rotation = [0,0,0.707,0.707], dimensions = [3.0 ,1.0, 0.02]): #position = [5.9, 5.0,0.3] ##SIM
-                                                                                                                   #position = [1.2, -0.6,0.3]###REAL
+    def publish_known_areas(self, position =     [-0.7, -3.1, 0.75], rotation = [0,0,0.0,1], dimensions = [3.0 ,1.0, 0.02]): #position = [5.9, 5.0,0.3] ##SIM
+                                                                                                                   #position = [-0.7, -3.3, 0.75]###REAL
                                                                                                                    #position =[4.5, 3.0, 0.4] ### TMR
     
         object_pose = PoseStamped()
@@ -288,16 +288,13 @@ class PlacingStateMachine:
         object_point.point.x = target_position[0]
         object_point.point.y = target_position[1]
         object_point.point.z = target_position[2]
-        print ('object_point',object_point)
+        
         #transformar la posicion del objeto al marco de referencia de la base del robot
         try:
             transformed_object_point = self.tf2_buffer.transform(object_point, "odom", timeout=rospy.Duration(1))
-            print ('transformed_object_point',transformed_object_point)
             transformed_object_base = self.tf2_buffer.transform(object_point, "base_link", timeout=rospy.Duration(1))
-            print ('transformed_object_base',transformed_object_base)
             transformed_base = self.tf2_buffer.lookup_transform("odom", "base_link", rospy.Time(0), timeout=rospy.Duration(1))
             transformed_object_base.point.x += 0.02
-
             transformed_object_point = self.tf2_buffer.transform(transformed_object_base, "odom", timeout=rospy.Duration(1))
         except :
             rospy.WARN("Error al transformar la posicion del objeto al marco de referencia")
@@ -307,7 +304,6 @@ class PlacingStateMachine:
         approach_pose.position.y = transformed_object_point.point.y
         approach_pose.position.z = transformed_object_point.point.z + 0.24
 
-        #print(transformed_base)
         quat_base = [transformed_base.transform.rotation.x,
                                transformed_base.transform.rotation.y, 
                                transformed_base.transform.rotation.z,
@@ -315,7 +311,7 @@ class PlacingStateMachine:
         _,_,theta = euler_from_quaternion(quat_base)
         quat = quaternion_from_euler(-theta, 0.0, np.pi, 'szyx')
         approach_pose.orientation = Quaternion(*quat)
-        print ('approach_pose',approach_pose)
+        
         return approach_pose, transformed_object_base
 if __name__ == '__main__':
     rospy.init_node('placing_action')
