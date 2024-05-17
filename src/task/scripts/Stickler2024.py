@@ -77,31 +77,6 @@ class Wait_push_hand(smach.State):
 
 
 #########################################################################################################
-"""class Goto_door(smach.State):  # ADD KNONW LOCATION DOOR
-    def __init__(self):
-        smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
-        self.tries = 0
-
-    def execute(self, userdata):
-
-        rospy.loginfo('STATE : Navigate to known location')
-
-        print(f'Try {self.tries} of 3 attempts')
-        self.tries += 1
-        if self.tries == 3:
-            return 'tries'
-        if self.tries == 1: talk('Navigating to, door')
-        res = omni_base.move_base(known_location='door')
-        print(res)
-
-        if res:
-            return 'succ'
-        else:
-            talk('Navigation Failed, retrying')
-            return 'failed'
-"""
-
-#########################################################################################################
 class Find_human(smach.State):
     def __init__(self):
         smach.State.__init__(
@@ -158,21 +133,15 @@ class Find_human(smach.State):
 
             ###################
 
-            living_room_px_region,kitchen_px_region,bedroom_px_region,dining_room_px_region = load_rooms_areas_stickler(fileName='room_regions_stickler_lab.npy') #SI poner .npy
+            #living_room_px_region,kitchen_px_region,bedroom_px_region,dining_room_px_region = load_rooms_areas_stickler(fileName='room_regions_stickler_lab.npy') #SI poner .npy
 
-            pose=human_pose[:2]
-            px_pose_human=np.asarray(([origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m)]))
-            room_human =check_room_px(np.flip(px_pose_human),living_room_px_region,kitchen_px_region,bedroom_px_region,dining_room_px_region)
-            pose=get_robot_px()
-            px_pose_robot=np.asarray((origin_map_img[1]+pose[1],origin_map_img[0]+pose[0]))
-        
-            room_robot = check_room_px(np.flip(px_pose_robot),living_room_px_region,kitchen_px_region,bedroom_px_region,dining_room_px_region)
+            room_robot,room_human=get_robot_person_coords(human_pose[:2],load_rooms_areas_stickler(fileName='room_regions_stickler_lab.npy'))
             
 
             
             print('[FINDHUMAN] room_robot,room_human',room_robot,room_human)
-            print ('[FINDHUMAN] px human',px_pose_human)
-            print('[FINDHUMAN] room_human',room_human)
+            #print ('[FINDHUMAN] px human',px_pose_human)
+            #print('[FINDHUMAN] room_human',room_human)
 
             #########################
 
@@ -289,7 +258,7 @@ class Goto_human(smach.State):
 
 
 ###########################################################################################################
-class Lead_to_living_room(smach.State):
+class Lead_to_allowed_room(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
         self.tries = 0
@@ -556,8 +525,7 @@ class Detect_drink(smach.State):
         #
         return 'succ'
         
-    
-        
+     
 ###########################################################################################################
 
 # --------------------------------------------------
@@ -610,7 +578,7 @@ if __name__ == '__main__':
                                                 'tries': 'FIND_HUMAN', 
                                                 'forbidden':'LEAD_TO_LIVING_ROOM'})
         smach.StateMachine.add("LEAD_TO_LIVING_ROOM",
-                                Lead_to_living_room(), 
+                                Lead_to_allowed_room(), 
                                 transitions={'failed': 'LEAD_TO_LIVING_ROOM',
                                                 'succ': 'GOTO_NEXT_ROOM',  
                                                 'tries': 'END'})

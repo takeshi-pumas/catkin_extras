@@ -118,7 +118,6 @@ class Analyse_forbidden(smach.State):  # ADD KNONW LOCATION DOOR
 
         if self.tries >= 6:
             self.tries = 0
-            continueGaze = False
             return 'empty'
 
         head.set_joint_values(self.gaze[self.tries-1])
@@ -139,18 +138,28 @@ class Analyse_forbidden(smach.State):  # ADD KNONW LOCATION DOOR
 
             human_pose,_=tf_man.getTF('human')
             tmp,_=tf_man.getTF('human',ref_frame='base_link')
+            
+            room_robot,room_human=get_robot_person_coords(human_pose[:2],fileName='room_regions_stickler.npy')
+            print("[ANALYSEFORBIDDENROOM] room robot",room_robot," room human",room_human)
             print("[ANALYSEFORBIDDENROOM] DISTANCIA A HUMANO:",np.linalg.norm(tmp))
-            print(f'[ANALYSEFORBIDDENROOM] human found in forbidden room  ')
-            rospy.sleep(0.6)
-            print('[ANALYSEFORBIDDENROOM] I will take him to a valid location')
-            if np.linalg.norm(tmp) >= 1 and np.linalg.norm(tmp) < 1.5:
-                res = omni_base.move_d_to(np.linalg.norm(tmp),'human')
-                rospy.sleep(0.9)
+            if room_robot != room_human :
+                print("[ANALYSEFORBIDDENROOM] Probablemente fuera de forbidden, descarto")
+                return 'tries'
+            elif room_robot == room_human and room_human == forbiden_room:
+                print(f'[ANALYSEFORBIDDENROOM] human found in forbidden room  ')
+                rospy.sleep(0.6)
+                print('[ANALYSEFORBIDDENROOM] I will take him to a valid location')
+                if np.linalg.norm(tmp) >= 1 and np.linalg.norm(tmp) < 1.5:
+                    res = omni_base.move_d_to(np.linalg.norm(tmp),'human')
+                    rospy.sleep(0.9)
+                else:
+                    res = omni_base.move_d_to(1.3,'human')
+                    rospy.sleep(0.9)
+                self.tries -= 1
+                return 'succ' 
             else:
-                res = omni_base.move_d_to(1.3,'human')
-                rospy.sleep(0.9)
-            self.tries -= 1
-            return 'succ' 
+                print("[ANALYSEFORBIDDENROOM]CASO DISTINTO, failed")
+                return 'failed'
 
 #########################################################################################################
 class Confirm_forbidden(smach.State):  # ADD KNONW LOCATION DOOR
@@ -267,10 +276,11 @@ class Find_human(smach.State):
             #robot_room=room_names[np.linalg.norm(dists, axis=1).argmin()]
             #print(f'Robot  in {robot_room}')
             
-
+            room_robot,room_human=get_robot_person_coords(human_pose[:2],load_rooms_areas_stickler(fileName='room_regions_stickler_lab.npy'))
+            
             ###################
 
-            living_room_px_region,kitchen_px_region,bedroom_px_region,dining_room_px_region = load_rooms_areas_stickler()
+            """living_room_px_region,kitchen_px_region,bedroom_px_region,dining_room_px_region = load_rooms_areas_stickler()
 
             pose=human_pose[:2]
             px_pose_human=np.asarray(([origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m)]))
@@ -279,12 +289,12 @@ class Find_human(smach.State):
             px_pose_robot=np.asarray((origin_map_img[1]+pose[1],origin_map_img[0]+pose[0]))
         
             room_robot = check_room_px(np.flip(px_pose_robot),living_room_px_region,kitchen_px_region,bedroom_px_region,dining_room_px_region)
-            
+            """
 
             
             print('[FINDHUMAN] room_robot,room_human',room_robot,room_human)
-            print ('[FINDHUMAN] px human',px_pose_human)
-            print('[FINDHUMAN] room_human',room_human)
+            #print ('[FINDHUMAN] px human',px_pose_human)
+            #print('[FINDHUMAN] room_human',room_human)
 
             #########################
 
@@ -750,7 +760,7 @@ class Detect_drink(smach.State):
 def init(node_name):
     global reqAct,recognize_action
     print('[INIT] smach ready')
-    reqAct = RecognizeRequest()
+    #reqAct = RecognizeRequest()
 
 # --------------------------------------------------
 # Entry point
