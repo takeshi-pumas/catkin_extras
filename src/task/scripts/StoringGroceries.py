@@ -204,7 +204,7 @@ class Scan_table(smach.State):
         regions={'shelves':np.load(file_path+'/shelves_region.npy'),'pickup':np.load(file_path+'/pickup_region.npy')}
 
         print (regions)
-        def is_inside(x,y,z):return ((area_box[:,1].max()+0.2 > y) and (area_box[:,1].min()-0.2 < y)) and ((area_box[:,0].max() +0.2> x) and (area_box[0,0].min() -0.2 < x)) and (0.9*self.pickup_plane_z<z)  
+        def is_inside(x,y,z):return ((area_box[:,1].max() > y) and (area_box[:,1].min()< y)) and ((area_box[:,0].max()> x) and (area_box[0,0].min()  < x)) and (0.9*self.pickup_plane_z<z)  
         for name in regions:
             in_region=[]
             area_box=regions[name]

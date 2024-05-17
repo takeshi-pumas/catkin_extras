@@ -22,9 +22,9 @@ class Initial(smach.State):
         global arm ,  hand_rgb 
 
         #Strategy. pickup bowl first
+        
         #userdata.target_object='cracker_box'
-        userdata.target_object='cracker_box'
-        #userdata.target_object='bowl'
+        userdata.target_object='bowl'
         hand_rgb = HAND_RGB()
         
         ######################################
@@ -32,7 +32,7 @@ class Initial(smach.State):
         #quat=[0.0,0.0,0.0,1.0]
         ##########################################
         #####################################
-        x,y,z= -0.53 , -2.89, 0.8   #REAL LAB
+        x,y,z= -0.522 , -2.84, 0.8   #REAL LAB
         quat=[0.0,0.0,0.707,-0.707]
         #########################################
         #quat=[0.0,0.0,0.707,0.707]
@@ -84,7 +84,7 @@ class Goto_pickup(smach.State):
         self.tries=0
 
     def execute(self, userdata):
-        return 0
+        
         rospy.loginfo('STATE : Navigate to known location')
         self.tries+=1
             
@@ -171,11 +171,12 @@ class Place(smach.State):
         
         rospy.loginfo('STATE : PLACE')
         current_target=userdata.target_object
+        tf_man.pub_static_tf(pos=userdata.placing_area, rot=userdata.placing_area_quat,point_name='placing_area') ### Bowl placed at coords.
         pos,i= False,0
         while( pos==False and i<10):
             i+=1
             if i>1:print ('why tf fails!?!??!', i)
-            tf_man.pub_static_tf(pos=userdata.placing_area, rot=userdata.placing_area_quat,point_name='placing_area') ### Ideal  coordinates to place Bowl
+            tf_man.pub_static_tf(pos=userdata.placing_area, rot=userdata.placing_area_quat,point_name='placing_area') ### 
             rospy.sleep(0.5)
             pos, quat = tf_man.getTF(target_frame = 'placing_area', ref_frame = 'odom')      
                 
@@ -196,11 +197,10 @@ class Place(smach.State):
         if current_target== 'cracker_box':
             rospy.loginfo('STATE : PLACE CEREAL')            
             print ('STATE : PLACE CEREAL')                       
-            offset_point=[0.08,-0.1,-0.1] 
+            offset_point=[0.06,-0.1,-0.1] 
             #offset_point=[0.0,-0.05,-0.031]           # Offset relative to object tf#
-                   # Offset relative to object tf
-            
-            string_msg.data='frontal'
+                   # Offset relative to object tf            
+            string_msg.data='pour'
             userdata.target_object='milk'
         #####################################################################
         userdata.mode=string_msg 
@@ -384,7 +384,7 @@ class Wait_door_opened(smach.State):
 #########################################################################################################
 class Pour(smach.State):
     def __init__(self):
-        smach.State.__init__(self,input_keys=['target_object'], outcomes=['succ', 'failed'])
+        smach.State.__init__(self,input_keys=['target_object','placing_area'], outcomes=['succ', 'failed'])
         self.tries = 0
 
     def execute(self, userdata):
@@ -416,12 +416,12 @@ class Pour(smach.State):
 #########################################################################################################
 class Place_breakfast(smach.State):  
     def __init__(self):
-        smach.State.__init__(self,output_keys=['target_object'],input_keys=['target_object','placing_area','placing_area_quat'], outcomes=['succ', 'failed', 'tries','pour'])
+        smach.State.__init__(self,output_keys=['target_object','placing_area','placing_area_quat'],input_keys=['target_object','placing_area','placing_area_quat'], outcomes=['succ', 'failed', 'tries','pour'])
         self.tries = 0
     def execute(self, userdata):
         rospy.loginfo('STATE : Placing ')
-        #place_pose= [0.390130913590598, -1.4407346556484901, 0.06971320811099346, -1.574294947826301, 0.0003442697253825955]  #SIM
-        place_pose= [0.6808629824410867,-1.0, 0.04852065465630595, -1.8, 0.07179310822381613,0.0]
+        
+        place_pose= [0.6808629824410867,-1.0, 0.04852065465630595, -1.8, 0.07179310822381613,0.0]  # ARM PREDEFINED PALCING POSE 
         if userdata.target_object=='cracker_box':place_pose[3]=-0.532
         arm.set_joint_value_target(place_pose)
         arm.go()
@@ -432,7 +432,8 @@ class Place_breakfast(smach.State):
             if i>1:print ('why tf fails!?!??!', i)
             tf_man.pub_static_tf(pos=userdata.placing_area, rot=userdata.placing_area_quat,point_name='placing_area') ### Ideal  coordinates to place Bowl
             rospy.sleep(0.5)
-            pos, quat = tf_man.getTF(target_frame = 'placing_area', ref_frame = 'odom')      
+            pos, quat = tf_man.getTF(target_frame = 'placing_area', ref_frame = 'odom')   
+
                 
         base_grasp_D(tf_name='placing_area',d_x=0.4, d_y=0.0,timeout=30)
         if userdata.target_object=='bowl':
@@ -449,17 +450,15 @@ class Place_breakfast(smach.State):
                         rospy.sleep(1)
 
         bowl_pose,_= tf_man.getTF('hand_palm_link')
-        print (bowl_pose)
-        return 0
-                
-
+        _,quat_base= tf_man.getTF('base_link')  
+        
+        bowl_pose[2]= userdata.placing_area[2]  ## KEEP SAME PREDIFINDE PLANE PLACING HEIGHT
+        userdata.placing_area_quat= quat_base
+        userdata.placing_area= bowl_pose
+        print (bowl_pose)      
         gripper.open()
         rospy.sleep(2.0)
-
         escape_pose= [0.6808629824410867,-1.2, 0.04852065465630595, -1.3035706302849657, 0.07179310822381613,0.0]
-          
-        
-
         arm.set_joint_value_target(escape_pose)
         arm.go()        
         base_grasp_D(tf_name='placing_area',d_x=0.8, d_y=0.0,timeout=30)
@@ -570,7 +569,7 @@ if __name__ == '__main__':
     with sm:
         # State machine STICKLER
         smach.StateMachine.add("INITIAL",           Initial(),              transitions={'failed': 'INITIAL',           
-                                                                                         'succ': 'PLACE',   
+                                                                                         'succ': 'GOTO_PICKUP',   
                                                                                          'tries': 'END'})
         smach.StateMachine.add("WAIT_PUSH_HAND",    Wait_push_hand(),       transitions={'failed': 'WAIT_PUSH_HAND',    
                                                                                          'succ': 'GOTO_PICKUP',       

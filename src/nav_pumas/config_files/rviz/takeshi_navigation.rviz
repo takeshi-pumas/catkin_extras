@@ -316,10 +316,18 @@ Visualization Manager:
       Filter (whitelist): ""
       Frame Timeout: 15
       Frames:
-        All Enabled: false
-        KNOWNOBJECT/refrigerator_right_drawer_234:
+        008_pudding_box:
           Value: true
-        ar_marker/6:
+        019-a_pitcher_base:
+          Value: true
+        020_pitcher_lid:
+          Value: true
+        024_bowl:
+          Value: true
+        029_plate:
+          Value: true
+        All Enabled: false
+        a_pitcher_base:
           Value: true
         arm_flex_link:
           Value: false
@@ -359,6 +367,14 @@ Visualization Manager:
           Value: false
         base_roll_link:
           Value: false
+        bowl:
+          Value: true
+        dining_room:
+          Value: true
+        door_lab:
+          Value: true
+        goal_for_place:
+          Value: true
         hand_camera_frame:
           Value: false
         hand_camera_gazebo_frame:
@@ -413,19 +429,33 @@ Visualization Manager:
           Value: false
         head_tilt_link:
           Value: false
-        left_elbow:
+        kitchen:
           Value: true
-        left_wrist:
+        living_room:
           Value: true
         map:
           Value: false
         odom:
           Value: false
-        recognized_object/refrigerator_right_drawer/234:
+        pickup:
           Value: true
-        right_elbow:
+        pitcher_lid:
           Value: true
-        right_wrist:
+        place_shelf:
+          Value: true
+        placing_area:
+          Value: true
+        placing_cereal:
+          Value: true
+        placing_milk:
+          Value: true
+        placing_spoon:
+          Value: true
+        plate:
+          Value: true
+        pudding_box:
+          Value: true
+        shelf:
           Value: true
         torso_lift_link:
           Value: false
@@ -445,7 +475,17 @@ Visualization Manager:
       Show Names: true
       Tree:
         map:
-          KNOWNOBJECT/refrigerator_right_drawer_234:
+          a_pitcher_base:
+            {}
+          bowl:
+            {}
+          dining_room:
+            {}
+          door_lab:
+            {}
+          kitchen:
+            {}
+          living_room:
             {}
           odom:
             base_footprint:
@@ -506,19 +546,17 @@ Visualization Manager:
                           {}
                       head_l_stereo_camera_link:
                         head_l_stereo_camera_frame:
-                          ar_marker/6:
-                            {}
                           head_rgbd_sensor_rgb_frame:
-                            left_elbow:
+                            008_pudding_box:
                               {}
-                            left_wrist:
+                            019-a_pitcher_base:
                               {}
-                            right_elbow:
+                            020_pitcher_lid:
                               {}
-                            right_wrist:
+                            024_bowl:
                               {}
-                          recognized_object/refrigerator_right_drawer/234:
-                            {}
+                            029_plate:
+                              {}
                         head_l_stereo_camera_gazebo_frame:
                           {}
                       head_r_stereo_camera_link:
@@ -529,6 +567,28 @@ Visualization Manager:
                           {}
             base_footprint_wheel:
               {}
+            goal_for_place:
+              {}
+          pickup:
+            {}
+          pitcher_lid:
+            {}
+          place_shelf:
+            {}
+          placing_area:
+            {}
+          placing_cereal:
+            {}
+          placing_milk:
+            {}
+          placing_spoon:
+            {}
+          plate:
+            {}
+          pudding_box:
+            {}
+          shelf:
+            {}
       Update Interval: 0
       Value: true
     - Alpha: 1
@@ -660,7 +720,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 29.700376510620117
+      Distance: 14.710433959960938
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -668,17 +728,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 12.260780334472656
-        Y: 4.04939603805542
-        Z: -4.496635913848877
+        X: -0.5935466885566711
+        Y: -5.565619945526123
+        Z: -6.18751859664917
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.9203970432281494
+      Pitch: 1.5497963428497314
       Target Frame: <Fixed Frame>
-      Yaw: 3.535392999649048
+      Yaw: 1.505391001701355
     Saved: ~
 Window Geometry:
   Displays:

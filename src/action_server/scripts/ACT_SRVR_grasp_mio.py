@@ -97,7 +97,7 @@ class PlacingStateMachine:
     def create_bound(self, userdata):
         self.add_collision_object('bound_left', position=[0.0, 1.0, 0.3], dimensions=[2.1, 0.05, 0.05])
         self.add_collision_object('bound_right', position=[0.0, - 1.0, 0.3], dimensions=[2.1, 0.05, 0.05])
-        self.add_collision_object('bound_behind', position=[-1.0, 0.0, 0.3], dimensions=[0.05, 2.0, 0.05])
+        self.add_collision_object('bound_behind', position=[-0.6, 0.0, 0.3], dimensions=[0.05, 2.0, 0.05])
         self.publish_known_areas()# Add Table
         clear_octo_client()
         self.safe_pose = self.whole_body.get_current_joint_values()
@@ -183,12 +183,12 @@ class PlacingStateMachine:
         #     return 'failed'
     
     def neutral_pose(self, userdata):
-        self.brazo.set_named_target('neutral')
+        #sself.brazo.set_named_target('neutral')
         # self.whole_body.go()
-        self.scene.remove_world_object('bound_left')
-        self.scene.remove_world_object('bound_right')
-        self.scene.remove_world_object('bound_behind')
-        self.scene.remove_world_object('objeto')
+        #self.scene.remove_world_object('bound_left')
+        #self.scene.remove_world_object('bound_right')
+        #self.scene.remove_world_object('bound_behind')
+        #self.scene.remove_world_object('objeto')
         return "success"
     
     # ----------------------------------------------------------
@@ -210,7 +210,7 @@ class PlacingStateMachine:
         return succ
 
     
-    def publish_known_areas(self, position = [0.8, -1.2, 0.65], rotation = [0,0,0,1], dimensions = [3.0 ,0.8, 0.02]): #position = [5.9, 5.0,0.3] ##SIM
+    def publish_known_areas(self, position = [0.8, -1.2, 0.65], rotation = [0,0,0.707,0.707], dimensions = [3.0 ,0.8, 0.02]): #position = [5.9, 5.0,0.3] ##SIM
                                                                                                                    #position = [1.4, -0.9, 0.65]###REAL
                                                                                                                    #position =[4.5, 3.0, 0.4] ### TMR
     
@@ -221,8 +221,8 @@ class PlacingStateMachine:
         object_pose.pose.position.z = position[2]
         object_pose.pose.orientation.x = rotation[0]
         object_pose.pose.orientation.y = rotation[1]
-        object_pose.pose.orientation.z = 0.707
-        object_pose.pose.orientation.w = 0.707
+        object_pose.pose.orientation.z = rotation[2]
+        object_pose.pose.orientation.w = rotation[3]
         self.scene.add_box('table_storing', object_pose, size = (dimensions[0], dimensions[1], dimensions[2]))
 
     def add_collision_object(self, name = 'objeto', position = [0, 0, 0], rotation = [0,0,0,1], dimensions = [0.1 ,0.1, 0.1], frame = 'base_link'):
