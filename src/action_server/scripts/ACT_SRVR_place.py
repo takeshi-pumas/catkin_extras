@@ -72,8 +72,8 @@ class PlacingStateMachine:
         with self.sm:
             smach.StateMachine.add('CREATE_BOUND', smach.CBState(self.create_bound, outcomes=['success', 'failed']),
                                    transitions={'success':'APPROACH', 'failed':'CREATE_BOUND'})
-            smach.StateMachine.add('APPROACH', smach.CBState(self.approach, outcomes=['success', 'failed', 'cancel']),
-                                   transitions={'success':'succeeded', 'failed':'APPROACH', 'cancel':'failure' })
+            smach.StateMachine.add('APPROACH', smach.CBState(self.approach, outcomes=['success', 'failed', 'cancel','poured']),
+                                   transitions={'success':'succeeded', 'failed':'APPROACH', 'cancel':'failure','poured':'succeeded' })
             smach.StateMachine.add('GRASP', smach.CBState(self.grasp, outcomes=['success', 'failed']),
                                    transitions={'success':'RETREAT', 'failed': 'GRASP'})
             smach.StateMachine.add('RETREAT', smach.CBState(self.retreat, outcomes=['success', 'failed']),
@@ -99,7 +99,7 @@ class PlacingStateMachine:
         self.add_collision_object('bound_right', position=[0.0, - 1.0, 0.3], dimensions=[2.0, 0.05, 0.05])
         self.add_collision_object('bound_behind', position=[-0.4, 0.0, 0.3], dimensions=[0.05, 2.0, 0.05])
         self.publish_known_areas()# Add Table
-        clear_octo_client()
+        clear_octo_client()        
         self.safe_pose = self.whole_body.get_current_joint_values()
         return 'success'
 
@@ -120,16 +120,27 @@ class PlacingStateMachine:
         print (f'self.sm.userdata.goal.mode -> {self.sm.userdata.goal.mode.data}')
         self.grasp_approach=self.sm.userdata.goal.mode.data
         pose_goal = [goal[0], goal[1], goal[2], goal[3], goal[4], goal[5], goal[6]]
-        if self.grasp_approach == "frontal":
-            self.target_pose = self.calculate_frontal_approach(target_position=pose_goal)
-            print(self.target_pose)
-        elif self.grasp_approach == "above":
+        if self.grasp_approach == "above":
             self.target_pose, gaze_dir = self.calculate_above_approach(target_position=pose_goal)
+            print(self.target_pose)
+        else: #if self.grasp_approach == "frontal":
+            self.target_pose = self.calculate_frontal_approach(target_position=pose_goal)
             print(self.target_pose)
         rospy.sleep(0.5)
         succ = self.move_to_pose(self.whole_body, self.target_pose)
-        rospy.sleep(2.0)
+        ##ASK FOR POUR
+        joint_values = self.brazo.get_joint_values()
+        joint_values[0] += -0.05
+        joint_values[2] = 0.0
+        joint_values[3] = 0.0
+        joint_values[4] = np.pi
+        self.brazo.set_joint_values(joint_values)
+
+        
+
+
         if succ:
+            if self.grasp_approach== 'pour': return 'poured' 
             return 'success'
         else:
             return 'failed'

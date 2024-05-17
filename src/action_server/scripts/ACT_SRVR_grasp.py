@@ -201,8 +201,8 @@ class GraspingStateMachine:
         group.stop()
         return succ
 
-    def publish_known_areas(self, position =  [0.7, -1.0,0.6], rotation = [0,0,0,1], dimensions = [2.5 ,1.0, 0.02]):#position = [5.9, 5.0,0.3] ##SIM
-                                                                                                                   #position = [1.2, -0.6,0.3]###REAL
+    def publish_known_areas(self, position =  [0.8, -1.2, 0.65], rotation = [0,0,0.707,0.707], dimensions = [3.0 ,0.8, 0.02]):#position = [5.9, 5.0,0.3] ##SIM
+                                                                                                                   
                                                                                                                    #position =[4.5, 3.0, 0.4] ### TMR
     
         object_pose = PoseStamped()
