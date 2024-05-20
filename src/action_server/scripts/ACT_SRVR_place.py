@@ -65,7 +65,7 @@ class PlacingStateMachine:
 
 
         # Crear la máquina de estados SMACH
-        self.sm = smach.StateMachine(outcomes=['succeeded', 'failure'],
+        self.sm = smach.StateMachine(outcomes=['succeeded', 'failure', 'poured'],
                                      input_keys=["goal"])
         sis = IntrospectionServer('SMACH_VIEW_SERVER', self.sm, '/PLACE ACTION')
         sis.start()
@@ -73,11 +73,11 @@ class PlacingStateMachine:
             smach.StateMachine.add('CREATE_BOUND', smach.CBState(self.create_bound, outcomes=['success', 'failed']),
                                    transitions={'success':'APPROACH', 'failed':'CREATE_BOUND'})
             smach.StateMachine.add('APPROACH', smach.CBState(self.approach, outcomes=['success', 'failed', 'cancel','poured']),
-                                   transitions={'success':'succeeded', 'failed':'APPROACH', 'cancel':'failure','poured':'succeeded' })
-            smach.StateMachine.add('GRASP', smach.CBState(self.grasp, outcomes=['success', 'failed']),
-                                   transitions={'success':'RETREAT', 'failed': 'GRASP'})
+                                   transitions={'success':'RETREAT', 'failed':'APPROACH', 'cancel':'failure','poured':'succeeded' })
+            #smach.StateMachine.add('GRASP', smach.CBState(self.grasp, outcomes=['success', 'failed']),
+            #                       transitions={'success':'RETREAT', 'failed': 'GRASP'})
             smach.StateMachine.add('RETREAT', smach.CBState(self.retreat, outcomes=['success', 'failed']),
-                                   transitions={'success':'NEUTRAL_POSE', 'failed': 'RETREAT'})
+                                   transitions={'success':'succeeded', 'failed': 'RETREAT'})
             smach.StateMachine.add('NEUTRAL_POSE', smach.CBState(self.neutral_pose, outcomes=['success', 'failed']),
                         transitions={'success':'succeeded', 'failed': 'NEUTRAL_POSE'})
 
@@ -129,19 +129,16 @@ class PlacingStateMachine:
         rospy.sleep(0.5)
         succ = self.move_to_pose(self.whole_body, self.target_pose)
         ##ASK FOR POUR
-        joint_values = self.brazo.get_joint_values()
-        joint_values[0] += -0.05
-        joint_values[2] = 0.0
-        joint_values[3] = 0.0
-        joint_values[4] = np.pi
-        self.brazo.set_joint_values(joint_values)
-
-        
-
-
         if succ:
-            if self.grasp_approach== 'pour': return 'poured' 
-            return 'success'
+            if self.grasp_approach== 'pour':
+                joint_values = self.brazo.get_joint_values()
+                joint_values[0] += -0.05
+                joint_values[2] = 0.0
+                joint_values[3] = 0.0
+                joint_values[4] = np.pi
+                self.brazo.set_joint_values(joint_values)          
+                return 'poured' 
+            else:return 'success'
         else:
             return 'failed'
 
@@ -172,12 +169,13 @@ class PlacingStateMachine:
 
         # TODO: Retreat base safely
         joint_values = self.brazo.get_joint_values()
-        joint_values[0] += 0.15
+        joint_values[0] += -0.1
         self.brazo.set_joint_values(joint_values)
-        rospy.sleep(0.8)
-        self.gripper.steady()
-        self.whole_body.set_joint_value_target(self.safe_pose)
-        self.whole_body.go()
+        self.gripper.open()
+        rospy.sleep(1.0)
+        #rospy.sleep(0.8)
+        #self.whole_body.set_joint_value_target(self.safe_pose)
+        #self.whole_body.go()
 
 
         return 'success'

@@ -40,12 +40,12 @@ class Initial(smach.State):
         userdata.placing_area_quat=quat
         
         tf_man.pub_static_tf(pos=[x,y,z], rot=quat,point_name='placing_area') ### Ideal  coordinates to place Bowl
-        y= 1.1
-        tf_man.pub_static_tf(pos=[x,y,z],point_name='placing_cereal') ### Ideal  coordinates to place Cereal
-        y= 0.9                                      
-        tf_man.pub_static_tf(pos=[x,y,z],point_name='placing_milk') ### Ideal  coordinates to place Cereal
-        y= 1.5
-        tf_man.pub_static_tf(pos=[x,y,z],point_name='placing_spoon') ### Ideal  coordinates to place Bowl
+        #y= 1.1
+        #tf_man.pub_static_tf(pos=[x,y,z],point_name='placing_cereal') ### Ideal  coordinates to place Cereal
+        #y= 0.9                                      
+        #tf_man.pub_static_tf(pos=[x,y,z],point_name='placing_milk') ### Ideal  coordinates to place Cereal
+        #y= 1.5
+        #tf_man.pub_static_tf(pos=[x,y,z],point_name='placing_spoon') ### Ideal  coordinates to place Bowl
         ############################
         arm = moveit_commander.MoveGroupCommander('arm')
         head.set_named_target('neutral')
@@ -135,7 +135,9 @@ class Scan_table(smach.State):
         print (objects)
         common_misids=[]
         if userdata.target_object== 'bowl': common_misids.append('plate')
-        elif userdata.target_object== 'cracker_box': common_misids.append('master_chef_can')
+        elif userdata.target_object== 'cracker_box':
+            common_misids.append('master_chef_can')
+            common_misids.append('pudding_box')
         if len (objects)!=0 :
             _,quat_base= tf_man.getTF('base_link')  
 
@@ -182,7 +184,6 @@ class Place(smach.State):
                 
         string_msg= String()  #mode mesge new instance
         print (f'placing {current_target}')
-        print (f'target_object(placng){current_target} , mode {string_msg.data}')
 
         #current_target='bowl'
         #################################################
@@ -197,8 +198,8 @@ class Place(smach.State):
         if current_target== 'cracker_box':
             rospy.loginfo('STATE : PLACE CEREAL')            
             print ('STATE : PLACE CEREAL')                       
-            offset_point=[0.06,-0.1,-0.1] 
-            #offset_point=[0.0,-0.05,-0.031]           # Offset relative to object tf#
+            #offset_point=[0.06,-0.1,-0.1] # REAL 
+            offset_point=[0.00,-0.05,0.1]           # Offset relative to object tf#
                    # Offset relative to object tf            
             string_msg.data='pour'
             userdata.target_object='milk'
@@ -206,6 +207,7 @@ class Place(smach.State):
         userdata.mode=string_msg 
             ####################
             
+        print (f'target_object(placng){current_target} , mode {string_msg.data}')
         translated_point = np.array(tf.transformations.quaternion_multiply(quat, offset_point + [0]))[:3] + np.array(pos)
         pose_goal=np.concatenate((translated_point,quat))
         print (f'transalted_point-<{pose_goal}')    
@@ -353,7 +355,61 @@ class Goto_place_breakfast(smach.State):
             talk('Navigation Failed, retrying')
             return 'failed'
 
+class Place_post_pour(smach.State):
+    def __init__(self):
+        smach.State.__init__(self, outcomes=['succ', 'continue'], input_keys =['target_object','placing_area','placing_area_quat','mode'], output_keys=['target_pose','target_object','mode'] )
+        
 
+    def execute(self, userdata):
+        print (userdata.mode)
+        if userdata.mode.data   != 'pour':
+            print ('## CONTINUE TO NEXT OBJECT')
+            return 'continue'
+        pose_target=userdata.placing_area
+        rospy.loginfo('STATE : PLACE POST POUR')
+        print('STATE : PLACE POST POUR')
+        if userdata.target_object=='cracker_box':pose_target[1]+=0.25
+
+
+        tf_man.pub_static_tf(pos=pose_target, rot=userdata.placing_area_quat,point_name='placing_area') ### Bowl placed at coords.
+        pos,i= False,0
+        while( pos==False and i<10):
+            i+=1
+            if i>1:print ('why tf fails!?!??!', i)
+            tf_man.pub_static_tf(pos=pose_target, rot=userdata.placing_area_quat,point_name='placing_area') ### 
+            rospy.sleep(0.5)
+            pos, quat = tf_man.getTF(target_frame = 'placing_area', ref_frame = 'odom')      
+                
+        string_msg= String()  #mode mesge new instance
+        rospy.loginfo('STATE : PLACE AFTER POUR')            
+        print ('STATE : PLACE AFTER POUR')                       
+        offset_point=[0.1,-0.05,-0.031]          # Offset relative to object tf#
+        string_msg.data='frontal'
+        userdata.mode=string_msg             
+        ####################
+        translated_point = np.array(tf.transformations.quaternion_multiply(quat, offset_point + [0]))[:3] + np.array(pos)
+        pose_goal=np.concatenate((translated_point,quat))
+        print (f'transalted_point-<{pose_goal}')    
+        target_pose = Float32MultiArray()
+        target_pose.data = pose_goal#pos
+        tf_man.pub_static_tf(pos= translated_point, rot=tf.transformations.quaternion_multiply(quat, [0,0,1,0]), ref="odom", point_name='goal_for_place' )  
+        userdata.target_pose = target_pose
+        print (f'transalted_point-<{target_pose.data}')    
+        ###################
+        head.set_named_target('neutral')
+        rospy.sleep(0.5)       
+        clear_octo_client()     
+        
+        
+        return 'succ' 
+        
+
+
+
+
+        
+
+#########################################################################################################
 class Wait_door_opened(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed'])
@@ -420,8 +476,9 @@ class Place_breakfast(smach.State):
         self.tries = 0
     def execute(self, userdata):
         rospy.loginfo('STATE : Placing ')
-        
-        place_pose= [0.6808629824410867,-1.0, 0.04852065465630595, -1.8, 0.07179310822381613,0.0]  # ARM PREDEFINED PALCING POSE 
+        armlift=userdata.placing_area[2]-0.12  # Takeshi shoulder to placing table heigh offset for placing bowl
+        place_pose= [armlift,-1.0, 0.04852065465630595, -1.8, 0.07179310822381613,0.0]  # ARM PREDEFINED PALCING POSE 
+        print ('place pose',place_pose)
         if userdata.target_object=='cracker_box':place_pose[3]=-0.532
         arm.set_joint_value_target(place_pose)
         arm.go()
@@ -442,7 +499,7 @@ class Place_breakfast(smach.State):
             av[1]=-1.59        
             succ=arm.go(av)
             if not succ:                
-                av[1]=-1.57        
+                av[1]=-1.57        ## ARM FELX JOINT TO PLACE
                 sec_chance=arm.go(av)
                 if not sec_chance:
                         
@@ -536,9 +593,6 @@ class Check_grasp(smach.State):
                     print ('Grasping May have failed')
                     print (f'recalling grasp action on coordinates{test_pt} wrt map, converting to odom and action goal slot  ')
                     pos, _ = tf_man.getTF(target_frame = userdata.target_object, ref_frame = 'odom')
-                    userdata.target_pose 
-                    userdata.mode=mode
-                    
                     return 'failed'
         
         self.tries=0
@@ -607,10 +661,12 @@ if __name__ == '__main__':
                                                                                          'tries': 'GOTO_BREAKFAST'})        
         
         smach.StateMachine.add("PLACE_GOAL", SimpleActionState('place_server', GraspAction, goal_slots={'target_pose': 'target_pose', 'mode': 'mode'}),              
-                        transitions={'preempted': 'END', 'succeeded': 'GOTO_PICKUP', 'aborted': 'GOTO_PICKUP'})
+                        transitions={'preempted': 'END', 'succeeded': 'PLACE_POST_POUR', 'aborted': 'GOTO_PICKUP'})
         
         
-        
+        smach.StateMachine.add("PLACE_POST_POUR",    Place_post_pour(),       transitions={'continue': 'GOTO_PICKUP',    
+                                                                                         'succ': 'PLACE_GOAL'})
+                
         ###################################################################################################################################################################
         
 

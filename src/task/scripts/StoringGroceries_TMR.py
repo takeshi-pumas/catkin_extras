@@ -42,7 +42,7 @@ class Initial(smach.State):
         objs=objs.drop(columns='Unnamed: 0')
         print (objs)
         file_path = rospack.get_path('config_files')+'/regions'         
-        regions={'shelves':np.load(file_path+'/shelves_region_sim.npy'),'pickup':np.load(file_path+'/pickup_region_sim.npy')}   ## KNOWN REGIONS
+        regions={'shelves':np.load(file_path+'/shelves_region.npy'),'pickup':np.load(file_path+'/pickup_region.npy')}   ## KNOWN REGIONS
         print (f'Regions for Storing Groceries(SIM Robot) {regions}')
         ##TO AVOID SMACH DYING IN CASE NO PLACING AREA IS FOUND, THere is a default that at least allows the test to continue
         x,y= np.mean(regions['shelves'], axis=0)
@@ -151,7 +151,7 @@ class Scan_table(smach.State):
         smach.State.__init__(
             self, outcomes=['succ', 'failed', 'tries'])
         self.tries = 0   
-        self.pickup_plane_z  =0.4
+        self.pickup_plane_z  =0.61 ############
     
     def execute(self, userdata):
         rospy.loginfo('State : Scanning_table')
@@ -207,8 +207,8 @@ class Scan_table(smach.State):
         
         rospack = rospkg.RosPack()
         file_path = rospack.get_path('config_files')+'/regions'         
-        #regions={'shelves':np.load(file_path+'/shelf_sim.npy'),'pickup':np.load(file_path+'/pickup_sim.npy')}
-        regions={'shelves':np.load(file_path+'/shelves_region_sim.npy'),'pickup':np.load(file_path+'/pickup_region_sim.npy')}
+        
+        regions={'shelves':np.load(file_path+'/shelves_region.npy'),'pickup':np.load(file_path+'/pickup_region.npy')}
         print (regions)
         def is_inside(x,y,z):return ((area_box[:,1].max()+0.1 > y) and (area_box[:,1].min()-0.1 < y)) and ((area_box[:,0].max() +0.1> x) and (area_box[0,0].min() -0.1 < x)) and (self.pickup_plane_z<z)  
         for name in regions:
@@ -541,9 +541,10 @@ class Scan_shelf(smach.State):
         smach.State.__init__(
             self, outcomes=['succ', 'failed', 'tries'])
         self.tries = 0
-        self.top_shelf_height=0.81
-        self.mid_shelf_height=0.43
-        self.low_shelf_height=0.05    
+        
+        self.top_shelf_height=0.98
+        self.mid_shelf_height=0.41
+        self.low_shelf_height=0.01    
        
     def execute(self, userdata):
         global shelves_cats , objs_shelves
@@ -551,7 +552,7 @@ class Scan_shelf(smach.State):
         
         #######FOR DEBUGGING REMOVE  
         #global cat      
-        #cat= 'food'
+        #cat= 'balls'
         #shelves_cats={}
         #shelves_cats['top']='balls'
         #shelves_cats['mid']='food'
@@ -560,7 +561,7 @@ class Scan_shelf(smach.State):
         ##################
         rospack = rospkg.RosPack()                    
         file_path = rospack.get_path('config_files')+'/regions'        
-        regions={'shelves':np.load(file_path+'/shelves_region_sim.npy'),'pickup':np.load(file_path+'/pickup_region_sim.npy')}
+        regions={'shelves':np.load(file_path+'/shelves_region.npy'),'pickup':np.load(file_path+'/pickup_region.npy')}
         print('Shelves region',regions['shelves'],'###################################')
         ####################################
         if "shelves_cats" in globals() and len(shelves_cats)==3:###SHELF ALREADY SCANNED
@@ -583,11 +584,10 @@ class Scan_shelf(smach.State):
 
             z_place = shelf_heights.get(corresponding_key, 0) + 0.05
             ################ PLACING AREA ESTIMATION FROM KNOWLEDGE DATA BASE
-            y_range = np.arange(area[0,1], area[1,1], .15)
-            x_range = np.arange(area[0,0], area[1,0], .15)
+            y_range = np.arange(area[0,1]+0.1, area[1,1]-0.15, .15)
+            x_range = np.arange(area[0,0]+0.1, area[1,0]-0.15, .15)
             grid = np.meshgrid(x_range, y_range)
-            grid_points = np.vstack([grid[0].ravel(), grid[1].ravel()]).T
-        
+            grid_points = np.vstack([grid[0].ravel(), grid[1].ravel()]).T        
             free_grid = grid_points.tolist()
             # Create a new list without the unwanted elements
             free_grid = [free_pt for free_pt in free_grid if all(
@@ -856,7 +856,8 @@ if __name__ == '__main__':
     with sm:
         # State machine STICKLER
         smach.StateMachine.add("INITIAL",           Initial(),              transitions={'failed': 'INITIAL',           
-                                                                                         'succ': 'GOTO_PICKUP',   
+                                                                                         'succ': 'GOTO_SHELF',   
+                                                                                         #'succ': 'WAIT_PUSH_HAND',   
                                                                                          'tries': 'END'})
         smach.StateMachine.add("WAIT_PUSH_HAND",    Wait_push_hand(),       transitions={'failed': 'WAIT_PUSH_HAND',    
                                                                                          'succ': 'GOTO_PICKUP',       
@@ -876,8 +877,8 @@ if __name__ == '__main__':
                                                                                          'succ': 'SCAN_SHELF',       
                                                                                          'tries': 'GOTO_SHELF'})
         smach.StateMachine.add("GOTO_PLACE_SHELF",    Goto_place_shelf(),       transitions={'failed': 'GOTO_PLACE_SHELF',    
-                                                                                         #'succ': 'PLACE_SHELF',       
-                                                                                         'succ': 'PLACE',       
+                                                                                         'succ': 'PLACE_SHELF',       
+                                                                                         #'succ': 'PLACE',       
                                                                                          'tries': 'GOTO_SHELF'})
         smach.StateMachine.add("PLACE_SHELF",    Place_shelf(),       transitions={'failed': 'PLACE_SHELF',    
                                                                                          'succ': 'GOTO_PICKUP',       
