@@ -167,7 +167,7 @@ class Scan_floor(smach.State):
         request.height.data=0.00
         res=segmentation_server.call(request)
         img=bridge.imgmsg_to_cv2(res.im_out.image_msgs[0])
-        save_image(img)
+        save_image(img,name="segmentCarry")
         print (res.poses.data)
         #res=segmentation_server.call()
         origin_map_img=[round(img_map.shape[0]*0.5) ,round(img_map.shape[1]*0.5)]

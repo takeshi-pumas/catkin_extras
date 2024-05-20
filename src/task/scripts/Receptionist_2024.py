@@ -26,7 +26,7 @@ class Initial(smach.State):
         #drinks=['coke','juice','beer', 'water', 'soda', 'wine', 'i want a', 'i would like a']
         #drinks = ['coke','juice','milk', 'water', 'soda', 'wine', 
         #          'i want a', 'i would like a', 'tea', 'icedtea', 'cola', 'redwine', 'orangejuice', 'tropicaljuice']
-        drinks = ['water', 'soda', 'coke', 'juice', 'icedtea', 'i want a', 'i would like a']
+        drinks = ['water', 'soda', 'coke', 'juice', 'iced tea', 'i want a', 'i would like a']
         #names=['rebeca','ana','jack', 'michael', ' my name is' , 'i am','george','mary','ruben','oscar','yolo','mitzi']
         #names = [' my name is' , 'i am','adel', 'angel', 'axel', 
         #         'charlie', 'jane', 'john', 'jules', 'morgan', 'paris', 'robin', 'simone', 'jack']

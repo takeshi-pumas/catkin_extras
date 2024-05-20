@@ -793,7 +793,8 @@ if __name__ == '__main__':
                                 Lead_to_drinks(),      
                                 transitions={'failed': 'LEAD_TO_DRINK_PLACE',    
                                                 'succ': 'GOTO_NEXT_ROOM', 
-                                                'tries': 'LEAD_TO_DRINK_PLACE'})  
+                                                'tries': 'LEAD_TO_DRINK_PLACE',
+                                                'continue':'GOTO_NEXT_ROOM'})  
         #-------------------
         smach.StateMachine.add("ANALYZE_TRASH",      
                                 Analyze_trash(),         
