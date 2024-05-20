@@ -584,8 +584,8 @@ class Scan_shelf(smach.State):
 
             z_place = shelf_heights.get(corresponding_key, 0) + 0.05
             ################ PLACING AREA ESTIMATION FROM KNOWLEDGE DATA BASE
-            y_range = np.arange(area[0,1]+0.1, area[1,1]-0.15, .15)
-            x_range = np.arange(area[0,0]+0.1, area[1,0]-0.15, .15)
+            y_range = np.arange(area[0,1]+0.15, area[1,1]-0.15, .15)
+            x_range = np.arange(area[0,0]+0.15, area[1,0]-0.15, .15)
             grid = np.meshgrid(x_range, y_range)
             grid_points = np.vstack([grid[0].ravel(), grid[1].ravel()]).T        
             free_grid = grid_points.tolist()
@@ -738,8 +738,8 @@ class Scan_shelf(smach.State):
         #if corresponding_key=='mid':z_place=self.mid_shelf_height+0.1
         #if corresponding_key=='low':z_place=self.low_shelf_height+0.1
         ################ PLACING AREA ESTIMATION FROM KNOWLEDGE DATA BASE
-        y_range = np.arange(area[0,1], area[1,1], .15)
-        x_range = np.arange(area[0,0], area[1,0], .15)
+        y_range = np.arange(area[0,1]+0.15, area[1,1]-0.15, .15)
+        x_range = np.arange(area[0,0]+0.15, area[1,0]-0.15, .15)
         grid = np.meshgrid(x_range, y_range)
         grid_points = np.vstack([grid[0].ravel(), grid[1].ravel()]).T        
         free_grid = grid_points.tolist()
@@ -856,8 +856,8 @@ if __name__ == '__main__':
     with sm:
         # State machine STICKLER
         smach.StateMachine.add("INITIAL",           Initial(),              transitions={'failed': 'INITIAL',           
-                                                                                         'succ': 'GOTO_SHELF',   
-                                                                                         #'succ': 'WAIT_PUSH_HAND',   
+                                                                                         #'succ': 'GOTO_SHELF',   
+                                                                                         'succ': 'WAIT_PUSH_HAND',   
                                                                                          'tries': 'END'})
         smach.StateMachine.add("WAIT_PUSH_HAND",    Wait_push_hand(),       transitions={'failed': 'WAIT_PUSH_HAND',    
                                                                                          'succ': 'GOTO_PICKUP',       
