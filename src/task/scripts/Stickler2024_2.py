@@ -458,7 +458,7 @@ class Analyze_shoes(smach.State):           # Talvez una accion por separado?
         rospy.sleep(1.9)
         for i in range (5):
             img=rgbd.get_image()
-            cv2.imwrite(path.expanduser( '~' )+"/Documents/feet.jpg",img)
+            save_image(img,name="feet")
             print ('[ANALYZESHOES] got image for feet analysis')
             keys=[ "feet", "shoes",'socks','sandals','sock']
             image = preprocess(Image.fromarray(img)).unsqueeze(0).to(device) #img array from grbd get image
@@ -522,7 +522,7 @@ class Analyze_trash(smach.State):           # Talvez una accion por separado?
         img=rgbd.get_image()
         talk('Analysing...')
         rospy.sleep(0.7)
-        cv2.imwrite(path.expanduser( '~' )+"/Documents/rubb.jpg",img)
+        save_image(img,name="rubbish")
         print ('[ANALYZETRASH] got image for segmentation')
         res=segmentation_server.call()
         origin_map_img=[round(img_map.shape[0]*0.5) ,round(img_map.shape[1]*0.5)]
@@ -626,7 +626,7 @@ class Detect_drink(smach.State):
 
         img = rgbd.get_image()
         img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
-        cv2.imwrite(path.expanduser( '~' )+"/Documents/drink.jpg",img)
+        save_image(img,name="drink")
         img_msg  = bridge.cv2_to_imgmsg(img)
         
         talk('Ok, thank you. Analysing...')
@@ -637,26 +637,6 @@ class Detect_drink(smach.State):
         req.in_.image_msgs.append(img_msg)
         res      = classify_drink_client(req)
 
-        """points_msg=rospy.wait_for_message("/hsrb/head_rgbd_sensor/depth_registered/rectified_points",PointCloud2,timeout=5)
-        original_img,image = removeBackground(points_msg,distance = 2)
-        cv2.imwrite(path.expanduser( '~' )+"/Documents/drink.jpg",image)
-        print ('[ANALYZEDRINK] got image for drink analysis')
-        
-        rospy.sleep(0.1)
-        
-        keys=[ "beverage", "food"]
-        image = preprocess(Image.fromarray(image)).unsqueeze(0).to(device) #img array from grbd get image
-        text = clip.tokenize(keys).to(device)
-
-        with torch.no_grad():
-            image_features = model.encode_image(image)
-            text_features = model.encode_text(text)
-            
-            logits_per_image, logits_per_text = model(image, text)
-            probs = logits_per_image.softmax(dim=-1).cpu().numpy()
-        
-        print("[ANALYZEDRINK] Label probs:", probs,keys[np.argmax(probs)] ,keys, probs[0][1] ) # prints: [[0.9927937  0.00421068 0.00299572]]
-        """
         talk('Done')
         rospy.sleep(0.1)
 
@@ -669,7 +649,7 @@ class Detect_drink(smach.State):
             self.tries = 0
             return 'succ'
         else:
-            talk('My guess is that you do not have a drink in your hand')
+            talk('My guess is that you do not have a drink in your hand, rule broken')
             rospy.sleep(0.3)
             return 'failed'
 
@@ -807,7 +787,7 @@ if __name__ == '__main__':
                                 Detect_drink(),      
                                 transitions={'failed': 'LEAD_TO_DRINK_PLACE',    
                                                 'succ': 'ANALYZE_TRASH', 
-                                                'tries': 'ANALYZE_TRASH'})    
+                                                'tries': 'GOTO_NEXT_ROOM'})    
         #-------------------
         smach.StateMachine.add("LEAD_TO_DRINK_PLACE",         
                                 Lead_to_drinks(),      
@@ -818,15 +798,15 @@ if __name__ == '__main__':
         smach.StateMachine.add("ANALYZE_TRASH",      
                                 Analyze_trash(),         
                                 transitions={'failed': 'ANALYZE_TRASH' ,     
-                                                'succ': 'DETECT_DRINK' ,    
-                                                'tries': 'DETECT_DRINK'}) 
+                                                'succ': 'ANALYZE_SHOES' ,    
+                                                'tries': 'ANALYZE_SHOES'}) 
         #-------------------
-        """smach.StateMachine.add("ANALYZE_SHOES",      
+        smach.StateMachine.add("ANALYZE_SHOES",      
                               Analyze_shoes(),       
-                              transitions={'failed': 'FIND_HUMAN',        
-                                              'succ': 'ANALYZE_TRASH'})
+                              transitions={'failed': 'DETECT_DRINK',        
+                                              'succ': 'DETECT_DRINK'})
                 
-        """  
+          
     
         ###########################################################################################################
         
