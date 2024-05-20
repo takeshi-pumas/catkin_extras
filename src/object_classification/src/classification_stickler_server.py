@@ -88,7 +88,7 @@ def callback(req):
         
         print(f'### number of detections -> {num_preds}')
     rgb_debug_img = cv2.cvtColor(debug_img, cv2.COLOR_BGR2RGB)    
-
+    save_image(rgb_debug_img,name="obj_classif_img_stickler")
     res.debug_image.image_msgs.append(bridge.cv2_to_imgmsg(rgb_debug_img))
 
     ##### TFS

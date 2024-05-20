@@ -16,7 +16,7 @@ from smach_tuner import *
 from object_classification.srv import *
 #from utils_srv import RGBD
 from std_msgs.msg import String
-
+from smach_utils2 import save_image
 
 first= True
 rospack = rospkg.RosPack()
@@ -115,6 +115,7 @@ def callback(points_msg):
 
             debug_image=bridge.imgmsg_to_cv2(res.debug_image.image_msgs[0])
             cv2.imshow('our of res'  , debug_image)
+            save_image(debug_image,name="yolo_result")
 
         elif key=='p':
             print ('#############Pointing  SERVICE openPose REQUESTED')
@@ -130,6 +131,7 @@ def callback(points_msg):
                 tf_man.pub_static_tf(pos=[res.x_l, res.y_l,0], rot =[0,0,0,1], point_name='pointing_left')
             debug_image=bridge.imgmsg_to_cv2(res.debug_image[0])
             cv2.imshow('our of res'  , debug_image)
+            save_image(debug_image,name="openP_result")
 
         elif key=='s': 
 
@@ -146,6 +148,8 @@ def callback(points_msg):
             print (f'heights{res.heights.data}, widths {res.widths.data}')
             img=bridge.imgmsg_to_cv2(res.im_out.image_msgs[0])
             cv2.imshow('our of res'  , img)
+            save_image(img,name="segment_result")
+
         elif key=='l': #PLACING FINDER
 
             request= segmentation_server.request_class() 
@@ -161,6 +165,7 @@ def callback(points_msg):
             tf_man.pub_static_tf(pos=[res.poses.data[0], res.poses.data[1],res.poses.data[2]], rot =[0,0,0,1], point_name='placing_area')
             img=bridge.imgmsg_to_cv2(res.im_out.image_msgs[0])
             cv2.imshow('our of res'  , img)
+            save_image(img,name="placingFinder_result")
       
         #elif key == 'g':
             #rospack.get_path("config_files")

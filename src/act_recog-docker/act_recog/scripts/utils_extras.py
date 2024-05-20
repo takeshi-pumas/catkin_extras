@@ -7,6 +7,10 @@ import tf2_ros as tf2
 from sensor_msgs.msg import Image ,PointCloud2
 from math import ceil,floor
 
+from glob import glob
+from os import path
+import rospkg
+
 import cv2
 
 #---------------------------------------------------
@@ -214,3 +218,32 @@ def get_rect_bbox(dataout,im):
     return bbox
 
 #---------------------------------------------------
+
+def save_image(img,name='',dirName=''):
+    rospack = rospkg.RosPack()
+    file_path = rospack.get_path('images_repos')
+    
+    num_data = len(glob(path.join(file_path,"src",dirName,"*"))) if dirName else len(glob(path.join(file_path,"src","*")))
+    
+    num_data = str(num_data+1).zfill(4)
+
+    name = "/" + name if (name and not(name.startswith("/"))) else name
+    dirName = "/" + dirName if (dirName and not(dirName.startswith("/"))) else dirName
+
+ 
+    if name and dirName:
+        #print(file_path+"/src"+dirName+name+".jpg")
+        cv2.imwrite(file_path+"/src"+dirName+name+num_data+".jpg",img)
+    
+    elif dirName and not(name):
+        #print(file_path+"/src"+dirName+"/"+"image"+".jpg")
+        cv2.imwrite(file_path+"/src"+dirName+"/"+"image"+num_data+".jpg",img)
+
+    elif not(dirName) and name:
+        #print(file_path+"/src"+name+".jpg")
+        cv2.imwrite(file_path+"/src"+name+num_data+".jpg",img)
+    
+    else:
+        #print(file_path+"/src"+"tmp"+".jpg")
+        cv2.imwrite(file_path+"/src"+"image"+".jpg",img)
+  

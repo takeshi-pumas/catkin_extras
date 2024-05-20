@@ -16,6 +16,7 @@ import moveit_msgs.msg
 import tf2_ros
 import logging 
 from os import path
+from glob import glob
 import ros_numpy
 from geometry_msgs.msg import PoseStamped, Point  , Quaternion , TransformStamped , Twist
 from tf2_geometry_msgs import PointStamped
@@ -621,14 +622,36 @@ def base_grasp_D(tf_name,d_x=0.66,d_y=-0.1,timeout=1.0):
 
     
     
-#------------------------------------------------------
-def save_image(img, dir = ""):
-    if dir == "":
-        dir = path.expanduser('~')+"/Pictures/"
-    elif dir != "" and dir[-1]!="/":
-        dir+="/"
-    cv2.imwrite(dir+"imageTmp.jpg",img)
 
+#-----------------------------------------------------------------
+def save_image(img,name='',dirName=''):
+    rospack = rospkg.RosPack()
+    file_path = rospack.get_path('images_repos')
+    
+    num_data = len(glob(path.join(file_path,"src",dirName,"*"))) if dirName else len(glob(path.join(file_path,"src","*")))
+    
+    num_data = str(num_data+1).zfill(4)
+
+    name = "/" + name if (name and not(name.startswith("/"))) else name
+    dirName = "/" + dirName if (dirName and not(dirName.startswith("/"))) else dirName
+
+ 
+    if name and dirName:
+        #print(file_path+"/src"+dirName+name+".jpg")
+        cv2.imwrite(file_path+"/src"+dirName+name+num_data+".jpg",img)
+    
+    elif dirName and not(name):
+        #print(file_path+"/src"+dirName+"/"+"image"+".jpg")
+        cv2.imwrite(file_path+"/src"+dirName+"/"+"image"+num_data+".jpg",img)
+
+    elif not(dirName) and name:
+        #print(file_path+"/src"+name+".jpg")
+        cv2.imwrite(file_path+"/src"+name+num_data+".jpg",img)
+    
+    else:
+        #print(file_path+"/src"+"tmp"+".jpg")
+        cv2.imwrite(file_path+"/src"+"image"+".jpg",img)
+    
 ###################################################
 
 

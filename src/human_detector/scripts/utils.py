@@ -17,8 +17,8 @@ import cv2
 from sensor_msgs.msg import Image , LaserScan , PointCloud2
 from geometry_msgs.msg import TransformStamped, Pose
 from tf2_sensor_msgs.tf2_sensor_msgs import do_transform_cloud
-#from utils.misc_utils import *
-
+import rospkg
+from glob import glob
 #-----------------------------------------------------------------
 global tf_listener, ptcld_lis, broadcaster , bridge , net
 
@@ -107,9 +107,7 @@ def detect_human(points_msg,dist = 6):
     image, masked_image = removeBackground(points_msg, dist)
     #image = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]
     #rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    data = len(glob(os.path.join(os.path.expanduser( '~' )+"/Documents","*"))) # cambiar a Documents si esta en ingles 
-    cv2.imwrite(os.path.expanduser( '~' )+"/Documents/maskedImage_"+str(data + 1)+".jpg",masked_image)
-    
+    save_image(image,name="maskedImg",dirName="")
 
     print (image.shape)
     frame=masked_image
@@ -311,3 +309,34 @@ def removeBackground(points_msg,distance = 2):
     #img_corrected = img_corrected.astype(np.uint8)
     masked_image = cv2.bitwise_and(rgb_image, rgb_image, mask=img_corrected.astype(np.uint8))
     return rgb_image, masked_image
+
+
+#-----------------------------------------------------------------
+def save_image(img,name='',dirName=''):
+    rospack = rospkg.RosPack()
+    file_path = rospack.get_path('images_repos')
+    
+    num_data = len(glob(os.path.join(file_path,"src",dirName,"*"))) if dirName else len(glob(os.path.join(file_path,"src","*")))
+    
+    num_data = str(num_data+1).zfill(4)
+
+    name = "/" + name if (name and not(name.startswith("/"))) else name
+    dirName = "/" + dirName if (dirName and not(dirName.startswith("/"))) else dirName
+
+ 
+    if name and dirName:
+        #print(file_path+"/src"+dirName+name+".jpg")
+        cv2.imwrite(file_path+"/src"+dirName+name+num_data+".jpg",img)
+    
+    elif dirName and not(name):
+        #print(file_path+"/src"+dirName+"/"+"image"+".jpg")
+        cv2.imwrite(file_path+"/src"+dirName+"/"+"image"+num_data+".jpg",img)
+
+    elif not(dirName) and name:
+        #print(file_path+"/src"+name+".jpg")
+        cv2.imwrite(file_path+"/src"+name+num_data+".jpg",img)
+    
+    else:
+        #print(file_path+"/src"+"tmp"+".jpg")
+        cv2.imwrite(file_path+"/src"+"image"+".jpg",img)
+    

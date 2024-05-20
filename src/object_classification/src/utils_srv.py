@@ -19,7 +19,8 @@ import moveit_commander
 import moveit_msgs.msg
 from cv_bridge import CvBridge, CvBridgeError
 import rospkg
-
+from os import path
+from glob import glob
 import actionlib
 import subprocess
 
@@ -102,4 +103,31 @@ class RGBD():
  
 
 
+#-----------------------------------------------------------------
+def save_image(img,name='',dirName=''):
+    rospack = rospkg.RosPack()
+    file_path = rospack.get_path('images_repos')
     
+    num_data = len(glob(path.join(file_path,"src",dirName,"*"))) if dirName else len(glob(path.join(file_path,"src","*")))
+    
+    num_data = str(num_data+1).zfill(4)
+
+    name = "/" + name if (name and not(name.startswith("/"))) else name
+    dirName = "/" + dirName if (dirName and not(dirName.startswith("/"))) else dirName
+
+ 
+    if name and dirName:
+        #print(file_path+"/src"+dirName+name+".jpg")
+        cv2.imwrite(file_path+"/src"+dirName+name+num_data+".jpg",img)
+    
+    elif dirName and not(name):
+        #print(file_path+"/src"+dirName+"/"+"image"+".jpg")
+        cv2.imwrite(file_path+"/src"+dirName+"/"+"image"+num_data+".jpg",img)
+
+    elif not(dirName) and name:
+        #print(file_path+"/src"+name+".jpg")
+        cv2.imwrite(file_path+"/src"+name+num_data+".jpg",img)
+    
+    else:
+        #print(file_path+"/src"+"tmp"+".jpg")
+        cv2.imwrite(file_path+"/src"+"image"+".jpg",img)

@@ -8,6 +8,7 @@ import rospy
 from utils_inference import *
 from utils_extras import *
 
+
 """
 	Servicio usando docker para utilizar OpenPose sin ocuparse
 	de si la computadora lo tiene instalado, con el objetivo de 
@@ -303,7 +304,9 @@ def callback(req):
 				print(path.expanduser( '~' )+"/Documents/wavingPersonOP.jpg")
 				print(dataout.shape)
 				
-				cv2.imwrite(path.expanduser( '~' )+"/Documents/wavingPersonOP.jpg",maskedImage)
+				#cv2.imwrite(path.expanduser( '~' )+"/Documents/wavingPersonOP.jpg",maskedImage)
+				save_image(image,name="wavingPersonOP",dirName="")
+    
 			img_msg=bridge.cv2_to_imgmsg(maskedImage)
 			if len(response.im_out.image_msgs)==0:
 				response.im_out.image_msgs.append(img_msg)

@@ -20,6 +20,8 @@ from collections import Counter
 from sensor_msgs.msg import Image , LaserScan , PointCloud2
 from geometry_msgs.msg import TransformStamped, Pose
 from tf2_sensor_msgs.tf2_sensor_msgs import do_transform_cloud
+import rospkg
+
 #from utils.misc_utils import TF_MANAGER
 
 #-----------------------------------------------------------------
@@ -199,9 +201,8 @@ def detect_pointing(points_msg,dist = 6):
     # PERO NO ES MUY EXACTO
     # <<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><
     image, masked_image = removeBackground(points_msg, dist)
-    data = len(glob(os.path.join(os.path.expanduser( '~' )+"/Documentos","*"))) # cambiar a Documents si esta en ingles 
-    cv2.imwrite(os.path.expanduser( '~' )+"/Documentos/maskedImage_"+str(data + 1)+".jpg",masked_image)
-    
+    save_image(masked_image,name="maskedImage")
+
     #---
     frame=image
     inHeight = frame.shape[0]
@@ -479,9 +480,7 @@ def detect_pointing2(points_msg,dist = 6):
     #print("DISTANCIA AL HUMANO ",distToTF)
 
     image, masked_image = removeBackground(points_msg,distance = dist)
-    data = len(glob(os.path.join(os.path.expanduser( '~' )+"/Documents","*"))) # cambiar a Documents si esta en ingles 
-    cv2.imwrite(os.path.expanduser( '~' )+"/Documents/maskedImage_"+str(data + 1)+".jpg",masked_image)
-    
+    save_image(masked_image,name="maskedImage")
     #image_data = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]   
     #image=cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
     #pts= points_data
@@ -497,14 +496,12 @@ def detect_pointing2(points_msg,dist = 6):
     try:
         poses = getconectionJoints(output,inHeight,inWidth)
         imageDraw = drawSkeletons(image,poses,plot=False)
-        cv2.imwrite(os.path.expanduser( '~' )+"/Documents/maskedImageWithOP.jpg",imageDraw)
+        save_image(imageDraw,name="maskedImageWithOP")
     
     except Exception as e:
         print("Ocurrio un error al construir el esqueleto",e,type(e).__name__)
         raise Exception("Ocurrio un error al construir el esqueleto ")
 
-    #print(os.path.expanduser( '~' )+"/Documents/tmpPOINTING.jpg")
-    #cv2.imwrite(os.path.expanduser( '~' )+"/Documents/tmpPOINTING.jpg",imageDraw)
     res.debug_image.append(bridge.cv2_to_imgmsg(imageDraw))
 
     dists=[]
@@ -756,3 +753,34 @@ def removeBackground(points_msg,distance = 2):
     #img_corrected = img_corrected.astype(np.uint8)
     masked_image = cv2.bitwise_and(rgb_image, rgb_image, mask=img_corrected.astype(np.uint8))
     return rgb_image, masked_image
+
+
+#-----------------------------------------------------------------
+def save_image(img,name='',dirName=''):
+    rospack = rospkg.RosPack()
+    file_path = rospack.get_path('images_repos')
+    
+    num_data = len(glob(os.path.join(file_path,"src",dirName,"*"))) if dirName else len(glob(os.path.join(file_path,"src","*")))
+    
+    num_data = str(num_data+1).zfill(4)
+
+    name = "/" + name if (name and not(name.startswith("/"))) else name
+    dirName = "/" + dirName if (dirName and not(dirName.startswith("/"))) else dirName
+
+ 
+    if name and dirName:
+        #print(file_path+"/src"+dirName+name+".jpg")
+        cv2.imwrite(file_path+"/src"+dirName+name+num_data+".jpg",img)
+    
+    elif dirName and not(name):
+        #print(file_path+"/src"+dirName+"/"+"image"+".jpg")
+        cv2.imwrite(file_path+"/src"+dirName+"/"+"image"+num_data+".jpg",img)
+
+    elif not(dirName) and name:
+        #print(file_path+"/src"+name+".jpg")
+        cv2.imwrite(file_path+"/src"+name+num_data+".jpg",img)
+    
+    else:
+        #print(file_path+"/src"+"tmp"+".jpg")
+        cv2.imwrite(file_path+"/src"+"image"+".jpg",img)
+    
