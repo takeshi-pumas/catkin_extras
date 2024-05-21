@@ -49,7 +49,7 @@ class PlacingStateMachine:
         self.approach_count = 0
 
         # Moveit setup
-        #self.scene.remove_attached_object(self.eef_link, name="objeto")
+        self.scene.remove_attached_object(self.eef_link, name="objeto")
         
         self.whole_body.allow_replanning(False)
         self.whole_body.set_num_planning_attempts(3)
@@ -99,6 +99,7 @@ class PlacingStateMachine:
         self.add_collision_object('bound_right', position=[0.0, - 1.0, 0.3], dimensions=[2.0, 0.05, 0.05])
         self.add_collision_object('bound_behind', position=[-0.4, 0.0, 0.3], dimensions=[0.05, 2.0, 0.05])
         self.publish_known_areas()# Add Table
+        self.add_collision_object(position = pos, dimensions = [0.05, 0.05, 0.05], frame=self.whole_body.get_planning_frame()) # Add object
         clear_octo_client()        
         self.safe_pose = self.whole_body.get_current_joint_values()
         return 'success'
@@ -110,12 +111,14 @@ class PlacingStateMachine:
         # TODO: Check planning 10 times, if failed exit or something...
         # Maybe create a safe area to plan
         #rospy.loginfo()
-
         self.approach_count += 1
         if self.approach_limit == self.approach_count:
             return 'cancel'
         goal = self.sm.userdata.goal.target_pose.data
         pos = [goal[0], goal[1], goal[2]]
+        
+        
+        self.attach_object()
         print(f'self.sm.userdata.goal -> {self.sm.userdata.goal.target_pose.data}')
         print (f'self.sm.userdata.goal.mode -> {self.sm.userdata.goal.mode.data}')
         self.grasp_approach=self.sm.userdata.goal.mode.data
@@ -136,7 +139,8 @@ class PlacingStateMachine:
                 joint_values[2] = 0.0
                 joint_values[3] = 0.0
                 joint_values[4] = np.pi
-                self.brazo.set_joint_values(joint_values)          
+                self.brazo.set_joint_values(joint_values)     
+                rospy.sleep(1.0)     
                 return 'poured' 
             else:return 'success'
         else:
@@ -153,7 +157,7 @@ class PlacingStateMachine:
         self.gripper.open()
         rospy.sleep(1.0)
 
-        #self.attach_object()
+        
         return 'success'
         # if succ:
         #     return 'success'
@@ -227,7 +231,7 @@ class PlacingStateMachine:
         object_pose.pose.orientation.w = rotation[3]
         self.scene.add_box('table_storing', object_pose, size = (dimensions[0], dimensions[1], dimensions[2]))
 
-    def add_collision_object(self, name = 'objeto', position = [0, 0, 0], rotation = [0,0,0,1], dimensions = [0.1 ,0.1, 0.1], frame = 'base_link'):
+    def add_collision_object(self, name = 'objeto', position = [0, 0, 0], rotation = [0,0,0,1], dimensions = [0.3 ,0.3, 0.3], frame = 'base_link'):
         object_pose = PoseStamped()
         object_pose.header.frame_id = frame
         object_pose.pose.position.x = position[0]

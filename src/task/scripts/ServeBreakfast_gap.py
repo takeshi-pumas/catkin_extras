@@ -23,17 +23,17 @@ class Initial(smach.State):
 
         #Strategy. pickup bowl first
         
-        #userdata.target_object='cracker_box'
-        userdata.target_object='bowl'
+        userdata.target_object='cracker_box'
+        #userdata.target_object='bowl'
         hand_rgb = HAND_RGB()
         
         ######################################
-        #x,y,z= 5.8 , 1.3, 0.47   #SIM TMR
-        #quat=[0.0,0.0,0.0,1.0]
+        x,y,z= 5.8 , 1.3, 0.47   #SIM TMR
+        quat=[0.0,0.0,0.0,1.0]
         ##########################################
         #####################################
-        x,y,z= -0.522 , -2.84, 0.8   #REAL LAB
-        quat=[0.0,0.0,0.707,-0.707]
+        #x,y,z= -0.522 , -2.84, 0.8   #REAL LAB
+        #quat=[0.0,0.0,0.707,-0.707]
         #########################################
         #quat=[0.0,0.0,0.707,0.707]
         userdata.placing_area=[x,y,z]
@@ -199,7 +199,7 @@ class Place(smach.State):
             rospy.loginfo('STATE : PLACE CEREAL')            
             print ('STATE : PLACE CEREAL')                       
             #offset_point=[0.06,-0.1,-0.1] # REAL 
-            offset_point=[0.00,-0.05,0.1]           # Offset relative to object tf#
+            offset_point=[0.00,-0.1,0.1]           # Offset relative to object tf#
                    # Offset relative to object tf            
             string_msg.data='pour'
             userdata.target_object='milk'
@@ -368,7 +368,7 @@ class Place_post_pour(smach.State):
         pose_target=userdata.placing_area
         rospy.loginfo('STATE : PLACE POST POUR')
         print('STATE : PLACE POST POUR')
-        if userdata.target_object=='cracker_box':pose_target[1]+=0.25
+        if userdata.target_object=='cracker_box':pose_target[1]+=-0.35
 
 
         tf_man.pub_static_tf(pos=pose_target, rot=userdata.placing_area_quat,point_name='placing_area') ### Bowl placed at coords.
