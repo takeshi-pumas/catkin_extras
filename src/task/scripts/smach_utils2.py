@@ -484,7 +484,7 @@ def bbox_3d_mean(points,boundRect):
 def read_yaml(known_locations_file='/known_locations.yaml'):
     rospack = rospkg.RosPack()
     file_path = rospack.get_path('config_files') + known_locations_file
-
+    #print("FILE PATH",file_path)
     with open(file_path, 'r') as file:
         content = yaml.safe_load(file)
     return content
