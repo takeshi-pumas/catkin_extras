@@ -403,16 +403,16 @@ def hand_grasp_D(tf_name='placing_area', THRESHOLD=0.03,timeout=10.0):
             if eT < -np.pi: eT= 2*np.pi+eT
             if abs(eT) < 0.05:eT=0
             
-            if eX >0: velX = max( 0.005,eX)
-            if eX <=0: velX = min(-0.005,eX)
-            if eY >0: velY = max( 0.005,eY)
-            if eY <=0: velY = min(-0.005,eY)
+            if eX >0: velX = max( 0.001,eX)
+            if eX <=0: velX = min(-0.001,eX)
+            if eY >0: velY = max( 0.001,eY)
+            if eY <=0: velY = min(-0.001,eY)
             print("error: {:.2f}, {:.2f}, angle {:.2f}, target obj frame placing area".format(eX, eY , eT))
             succ =  eX == 0 and eY == 0 and eT==0            
             
-                # grasp_base.tiny_move(velY=-0.4*trans[1], std_time=0.2, MAX_VEL=0.3)
-            #omni_base.tiny_move(velX=0.13*velX, velY=-0.4*velY , std_time=0.2, MAX_VEL=0.4) #Pending test
-            omni_base.tiny_move(velX=0.25*velX, velY=-1*velY , std_time=0.2, MAX_VEL=0.3) #Pending test
+            
+            
+            omni_base.tiny_move(velX=0.25*velX, velY=-1*velY , std_time=0.2, MAX_VEL=0.1) 
     return succ
             
 ##------------------------------------------------------
@@ -618,7 +618,7 @@ def base_grasp_D(tf_name,d_x=0.66,d_y=-0.1,timeout=1.0):
         if i %10 ==0 :
             print("Pose: {:.2f}, {:.2f}, angle {:.2f}, target obj frame {}".format(X, Y , eT,target_object))
             i=0
-        omni_base.tiny_move( velX=corr_velX,velY=corr_velY, velT=-eT,std_time=0.2, MAX_VEL=0.4) 
+        omni_base.tiny_move( velX=corr_velX,velY=corr_velY, velT=-eT,std_time=0.2, MAX_VEL=0.3) 
 
     
     
