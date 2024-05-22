@@ -382,7 +382,7 @@ class Find_human(smach.State):
 #########################################################################################################
 class Goto_human(smach.State):
     def __init__(self):
-        smach.State.__init__(self, outcomes=['succ', 'failed', 'tries','forbidden'])
+        smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
         self.tries = 0
 
     def execute(self, userdata):
@@ -698,7 +698,7 @@ if __name__ == '__main__':
         smach.StateMachine.add("INITIAL",           
                                 Initial(),
                                 transitions={'failed': 'INITIAL',
-                                            'succ': 'WAIT_PUSH_HAND',   
+                                            'succ': 'GOTO_FORBIDDEN',   
                                             'tries': 'END'})
         #-------------------
         smach.StateMachine.add("WAIT_PUSH_HAND",    
