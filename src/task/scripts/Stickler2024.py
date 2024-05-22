@@ -308,7 +308,6 @@ class Confirm_forbidden(smach.State):  # ADD KNONW LOCATION DOOR
 
             return 'failed'
 
-
 #########################################################################################################
 class Goto_next_room(smach.State):  # ADD KNONW LOCATION DOOR
     def __init__(self):
@@ -326,7 +325,7 @@ class Goto_next_room(smach.State):  # ADD KNONW LOCATION DOOR
             self.tries = 0
         print("[GOTONEXTROOM] Tries:",self.tries)
         next_room = room_names[self.tries]
-        talk('Navigating to {next_room}')
+        talk('Navigating to ' + next_room)
 
         res = omni_base.move_base(known_location=next_room)
         print("[GOTONEXTROOM] ",res)
@@ -440,7 +439,7 @@ class Analyze_trash(smach.State):           # Talvez una accion por separado?
         
         self.tries+=1
 
-        if self.tries!= 3:
+        if self.tries < 2:
             talk('Checking for trash, please do not move')
             rospy.sleep(0.8)
         
@@ -464,6 +463,8 @@ class Analyze_trash(smach.State):           # Talvez una accion por separado?
         rospy.sleep(0.7)
         save_image(img,name="rubbish")
         res=segmentation_server.call()
+        img=bridge.imgmsg_to_cv2(res.im_out.image_msgs[0])
+        save_image(img,name="rubbish_result")
         origin_map_img=[round(img_map.shape[0]*0.5) ,round(img_map.shape[1]*0.5)]
 
         if len(res.poses.data)==0:
@@ -538,9 +539,10 @@ class Analyze_shoes(smach.State):           # Talvez una accion por separado?
         rospy.sleep(1)
         probss=[]
         head.absolute(human_pos[0],human_pos[1],-0.1)
-        rospy.sleep(1.9)
+        rospy.sleep(4.9)
         for i in range (5):
             img=rgbd.get_image()
+            img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
             save_image(img,name="feet")
             print ('[ANALYZESHOES] got image for feet analysis')
             keys=[ "feet", "shoes",'socks','sandals','sock']
@@ -606,7 +608,7 @@ class Detect_drink(smach.State):
             rospy.sleep(1.5)
             talk('If possible, please stay like in any position I am showing you ')
             rospy.sleep(0.3)
-            point_msg = String("DrinkingPose.gif")
+            point_msg = String("drinkingPose.gif")
             self.point_img_pub.publish(point_msg)
             rospy.sleep(1.2)
             talk("Three")
@@ -642,7 +644,8 @@ class Detect_drink(smach.State):
         req      = classify_drink_client.request_class()
         req.in_.image_msgs.append(img_msg)
         res      = classify_drink_client(req)
-
+        debug_image = bridge.imgmsg_to_cv2(res.debug_image.image_msgs[0])
+        save_image(img,name="drinkYOLO_result")
         talk('Done')
         rospy.sleep(0.1)
 
@@ -655,7 +658,7 @@ class Detect_drink(smach.State):
             self.retry = False
             self.tries = 0
             return 'succ'
-        print(f'[ANALYZEDRINK] len res names{len(res.names)} and wrong:{self.wrong}')
+        print(f'[ANALYZEDRINK] len res names{len(res.names)} and wrong:{self.retry}')
         if not(self.retry):
             self.retry = True
             return 'tries'
