@@ -10,6 +10,8 @@ import moveit_commander
 from geometry_msgs.msg import Pose, Point, Quaternion, PointStamped, PoseStamped, TransformStamped
 from shape_msgs.msg import SolidPrimitive
 from moveit_msgs.msg import CollisionObject, AttachedCollisionObject
+from moveit_commander import Constraints
+from moveit_msgs.msg import OrientationConstraint
 from action_server.msg import GraspAction
 from std_srvs.srv import Empty
 
@@ -95,11 +97,10 @@ class PlacingStateMachine:
 
     # SMACH states ------------------------------------------------------
     def create_bound(self, userdata):
-        self.add_collision_object('bound_left', position=[0.0, 1.0, 0.3], dimensions=[2.0, 0.05, 0.05])
+        self.add_collision_object('bound_left', position=[0.0, 0.6, 0.3], dimensions=[2.0, 0.05, 0.05])
         self.add_collision_object('bound_right', position=[0.0, - 1.0, 0.3], dimensions=[2.0, 0.05, 0.05])
         self.add_collision_object('bound_behind', position=[-0.4, 0.0, 0.3], dimensions=[0.05, 2.0, 0.05])
         self.publish_known_areas()# Add Table
-        self.add_collision_object(position = pos, dimensions = [0.05, 0.05, 0.05], frame=self.whole_body.get_planning_frame()) # Add object
         clear_octo_client()        
         self.safe_pose = self.whole_body.get_current_joint_values()
         return 'success'
@@ -116,9 +117,11 @@ class PlacingStateMachine:
             return 'cancel'
         goal = self.sm.userdata.goal.target_pose.data
         pos = [goal[0], goal[1], goal[2]]
-        
-        
+      
+        self.add_collision_object(position = [0,0,0.15], dimensions = [0.1, 0.1, 0.051], frame='hand_palm_link')
         self.attach_object()
+        
+        rospy.sleep(1)
         print(f'self.sm.userdata.goal -> {self.sm.userdata.goal.target_pose.data}')
         print (f'self.sm.userdata.goal.mode -> {self.sm.userdata.goal.mode.data}')
         self.grasp_approach=self.sm.userdata.goal.mode.data
@@ -130,17 +133,53 @@ class PlacingStateMachine:
             self.target_pose = self.calculate_frontal_approach(target_position=pose_goal)
             print(self.target_pose)
         rospy.sleep(0.5)
+        
+
+        # Calculate the target pose based on the grasp approach
+        if self.grasp_approach == "above":
+            self.target_pose, gaze_dir = self.calculate_above_approach(target_position=pose_goal)
+        else:
+            self.target_pose = self.calculate_frontal_approach(target_position=pose_goal)
+
+        # Print the target pose for debugging
+        print("Target Pose:", self.target_pose)
+
+        # Wait for a short duration
+        rospy.sleep(0.5)
+
+        # Attempt to retrieve the transform between "odom" and "base_link"
+        try:
+            transform = self.tf2_buffer.lookup_transform("odom", "base_link", rospy.Time(0), timeout=rospy.Duration(1))
+            rotation = transform.transform.rotation
+            fixed_quat = [rotation.x, rotation.y, rotation.z, rotation.w]
+            # Set orientation constraint based on the current orientation of base_link
+            self.set_orientation_constraint(fixed_quat=fixed_quat)
+        except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
+            rospy.logwarn("Could not get transform from 'odom' to 'base_link'. Using default quaternion.")
+            # Use a default quaternion if unable to retrieve the current orientation
+            fixed_quat = [0, 0, 0, 1]
+            self.set_orientation_constraint(fixed_quat=fixed_quat)
+
+        # Move the robot to the target pose with orientation constraint
         succ = self.move_to_pose(self.whole_body, self.target_pose)
+
+        # Clear the orientation constraint after the movement
+        self.clear_orientation_constraint()
+
+        
+        
         ##ASK FOR POUR
         if succ:
             if self.grasp_approach== 'pour':
                 joint_values = self.brazo.get_joint_values()
+                safe_jv=joint_values
                 joint_values[0] += -0.05
                 joint_values[2] = 0.0
                 joint_values[3] = 0.0
                 joint_values[4] = np.pi
                 self.brazo.set_joint_values(joint_values)     
                 rospy.sleep(1.0)     
+                self.brazo.set_joint_values(safe_jv)     
                 return 'poured' 
             else:return 'success'
         else:
@@ -198,7 +237,29 @@ class PlacingStateMachine:
         return "success"
     
     # ----------------------------------------------------------
+     # Add the orientation constraint
+    def set_orientation_constraint(self, fixed_quat =[0, 0, 0, 1]):
+        orientation_constraint = OrientationConstraint()
+        orientation_constraint.link_name = "base_link"
+        orientation_constraint.header.frame_id = "odom"
+        orientation_constraint.orientation.x = fixed_quat[0]
+        orientation_constraint.orientation.y = fixed_quat[1]
+        orientation_constraint.orientation.z = fixed_quat[2]
+        orientation_constraint.orientation.w = fixed_quat[3]
+        orientation_constraint.absolute_x_axis_tolerance = 0.1
+        orientation_constraint.absolute_y_axis_tolerance = 0.1
+        orientation_constraint.absolute_z_axis_tolerance = 0.1
+        orientation_constraint.weight = 1.0
 
+        constraints = Constraints()
+        constraints.orientation_constraints.append(orientation_constraint)
+        self.whole_body.set_path_constraints(constraints)
+
+    # Clear the orientation constraint
+    def clear_orientation_constraint(self):
+        self.whole_body.clear_path_constraints()
+
+###################################################################################################        
     def move_to_position(self, group, position_goal):
         group.set_start_state_to_current_state()
         group.set_position_target(position_goal)

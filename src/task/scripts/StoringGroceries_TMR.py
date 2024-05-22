@@ -151,7 +151,7 @@ class Scan_table(smach.State):
         smach.State.__init__(
             self, outcomes=['succ', 'failed', 'tries'])
         self.tries = 0   
-        self.pickup_plane_z  =0.61 ############
+        self.pickup_plane_z  =0.65 ############
     
     def execute(self, userdata):
         rospy.loginfo('State : Scanning_table')
@@ -209,7 +209,7 @@ class Scan_table(smach.State):
         file_path = rospack.get_path('config_files')+'/regions'         
         
         regions={'shelves':np.load(file_path+'/shelves_region.npy'),'pickup':np.load(file_path+'/pickup_region.npy')}
-        print (regions)
+        print (regions, self.pickup_plane_z)
         def is_inside(x,y,z):return ((area_box[:,1].max()+0.1 > y) and (area_box[:,1].min()-0.1 < y)) and ((area_box[:,0].max() +0.1> x) and (area_box[0,0].min() -0.1 < x)) and (self.pickup_plane_z<z)  
         for name in regions:
             in_region=[]
@@ -549,16 +549,24 @@ class Scan_shelf(smach.State):
     def execute(self, userdata):
         global shelves_cats , objs_shelves
         self.tries+=1
+
         
-        #######FOR DEBUGGING REMOVE  
-        #global cat      
+        #######FOR DEBUGGING REMOVE  s
+        #global cat  , target_object     
         #cat= 'balls'
+        #target_object='tennis_ball'
         #shelves_cats={}
         #shelves_cats['top']='balls'
         #shelves_cats['mid']='food'
         #shelves_cats['low']='fruits'
         ######
         ##################
+        
+        print (cat, 'cat')
+        
+        
+        
+        
         rospack = rospkg.RosPack()                    
         file_path = rospack.get_path('config_files')+'/regions'        
         regions={'shelves':np.load(file_path+'/shelves_region.npy'),'pickup':np.load(file_path+'/pickup_region.npy')}
@@ -573,7 +581,6 @@ class Scan_shelf(smach.State):
                 if value == cat:corresponding_key = key  #Iterate over shelves cats and decide
             print ('corresponding_key',corresponding_key, )
             
-            
             area=regions['shelves']        
             
             shelf_heights = {
@@ -584,8 +591,8 @@ class Scan_shelf(smach.State):
 
             z_place = shelf_heights.get(corresponding_key, 0) + 0.05
             ################ PLACING AREA ESTIMATION FROM KNOWLEDGE DATA BASE
-            y_range = np.arange(area[0,1]+0.15, area[1,1]-0.15, .15)
-            x_range = np.arange(area[0,0]+0.15, area[1,0]-0.15, .15)
+            y_range = np.arange(area[0,1]+0.15, area[1,1]-0.15, .1)
+            x_range = np.arange(area[0,0]+0.15, area[1,0]-0.15, .1)
             grid = np.meshgrid(x_range, y_range)
             grid_points = np.vstack([grid[0].ravel(), grid[1].ravel()]).T        
             free_grid = grid_points.tolist()
@@ -728,6 +735,8 @@ class Scan_shelf(smach.State):
         'mid': self.mid_shelf_height,
         'low': self.low_shelf_height
         }
+        print('here',objs_shelves[objs_shelves[corresponding_key + '_shelf']])
+        objs_shelves.to_csv('/home/roboworks/Documents/objs.csv') 
 
         z_place = shelf_heights.get(corresponding_key, 0) + 0.1
 
@@ -738,8 +747,8 @@ class Scan_shelf(smach.State):
         #if corresponding_key=='mid':z_place=self.mid_shelf_height+0.1
         #if corresponding_key=='low':z_place=self.low_shelf_height+0.1
         ################ PLACING AREA ESTIMATION FROM KNOWLEDGE DATA BASE
-        y_range = np.arange(area[0,1]+0.15, area[1,1]-0.15, .15)
-        x_range = np.arange(area[0,0]+0.15, area[1,0]-0.15, .15)
+        y_range = np.arange(area[0,1]+0.05, area[1,1]-0.015, .15)
+        x_range = np.arange(area[0,0]+0.05, area[1,0]-0.015, .15)
         grid = np.meshgrid(x_range, y_range)
         grid_points = np.vstack([grid[0].ravel(), grid[1].ravel()]).T        
         free_grid = grid_points.tolist()

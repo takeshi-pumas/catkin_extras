@@ -16,7 +16,7 @@ from smach_tuner import *
 from object_classification.srv import *
 #from utils_srv import RGBD
 from std_msgs.msg import String
-from smach_utils2 import save_image
+from smach_tuner import save_image
 
 first= True
 rospack = rospkg.RosPack()

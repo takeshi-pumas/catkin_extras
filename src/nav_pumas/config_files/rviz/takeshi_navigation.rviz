@@ -316,19 +316,45 @@ Visualization Manager:
       Filter (whitelist): ""
       Frame Timeout: 15
       Frames:
-        008_pudding_box:
+        002_master_chef_can:
           Value: true
-        019-a_pitcher_base:
+        005_tomato_soup_can:
+          Value: true
+        010_potted_meat_can:
+          Value: true
+        015_peach:
+          Value: true
+        019-b_pitcher_base_v2:
           Value: true
         020_pitcher_lid:
+          Value: true
+        022_windex_bottle:
           Value: true
         024_bowl:
           Value: true
         029_plate:
           Value: true
-        All Enabled: false
-        a_pitcher_base:
+        031_spoon:
           Value: true
+        033_spatula:
+          Value: true
+        050_medium_clamp:
+          Value: true
+        053-b_mini_soccer_ball_v2:
+          Value: true
+        059_chain:
+          Value: true
+        062_dice:
+          Value: true
+        063-b_marbles:
+          Value: true
+        071_nine_hole_peg_test:
+          Value: true
+        073-d_lego_duplo:
+          Value: true
+        073-f_lego_duplo:
+          Value: true
+        All Enabled: false
         arm_flex_link:
           Value: false
         arm_lift_link:
@@ -367,12 +393,6 @@ Visualization Manager:
           Value: false
         base_roll_link:
           Value: false
-        bowl:
-          Value: true
-        dining_room:
-          Value: true
-        door_lab:
-          Value: true
         goal_for_place:
           Value: true
         hand_camera_frame:
@@ -429,31 +449,11 @@ Visualization Manager:
           Value: false
         head_tilt_link:
           Value: false
-        kitchen:
-          Value: true
-        living_room:
-          Value: true
         map:
           Value: false
         odom:
           Value: false
-        pickup:
-          Value: true
-        pitcher_lid:
-          Value: true
-        place_shelf:
-          Value: true
         placing_area:
-          Value: true
-        placing_cereal:
-          Value: true
-        placing_milk:
-          Value: true
-        placing_spoon:
-          Value: true
-        plate:
-          Value: true
-        pudding_box:
           Value: true
         shelf:
           Value: true
@@ -475,18 +475,6 @@ Visualization Manager:
       Show Names: true
       Tree:
         map:
-          a_pitcher_base:
-            {}
-          bowl:
-            {}
-          dining_room:
-            {}
-          door_lab:
-            {}
-          kitchen:
-            {}
-          living_room:
-            {}
           odom:
             base_footprint:
               base_link:
@@ -547,15 +535,43 @@ Visualization Manager:
                       head_l_stereo_camera_link:
                         head_l_stereo_camera_frame:
                           head_rgbd_sensor_rgb_frame:
-                            008_pudding_box:
+                            002_master_chef_can:
                               {}
-                            019-a_pitcher_base:
+                            005_tomato_soup_can:
+                              {}
+                            010_potted_meat_can:
+                              {}
+                            015_peach:
+                              {}
+                            019-b_pitcher_base_v2:
                               {}
                             020_pitcher_lid:
+                              {}
+                            022_windex_bottle:
                               {}
                             024_bowl:
                               {}
                             029_plate:
+                              {}
+                            031_spoon:
+                              {}
+                            033_spatula:
+                              {}
+                            050_medium_clamp:
+                              {}
+                            053-b_mini_soccer_ball_v2:
+                              {}
+                            059_chain:
+                              {}
+                            062_dice:
+                              {}
+                            063-b_marbles:
+                              {}
+                            071_nine_hole_peg_test:
+                              {}
+                            073-d_lego_duplo:
+                              {}
+                            073-f_lego_duplo:
                               {}
                         head_l_stereo_camera_gazebo_frame:
                           {}
@@ -569,23 +585,7 @@ Visualization Manager:
               {}
             goal_for_place:
               {}
-          pickup:
-            {}
-          pitcher_lid:
-            {}
-          place_shelf:
-            {}
           placing_area:
-            {}
-          placing_cereal:
-            {}
-          placing_milk:
-            {}
-          placing_spoon:
-            {}
-          plate:
-            {}
-          pudding_box:
             {}
           shelf:
             {}
@@ -720,7 +720,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 14.710433959960938
+      Distance: 18.45276641845703
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1

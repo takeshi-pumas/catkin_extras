@@ -118,7 +118,7 @@ class Scan_table(smach.State):
             return 'tries'
         if self.tries==1:
             head.set_joint_values([ 0.0, -0.5])
-            talk('Scanning Table')
+            talk(f'Scanning Table , looking for {userdata.target_object}')
         if self.tries==2:
             head.set_joint_values([ -0.3, -0.3])
             talk('Scanning Table')
@@ -173,7 +173,7 @@ class Place(smach.State):
         
         rospy.loginfo('STATE : PLACE')
         current_target=userdata.target_object
-        tf_man.pub_static_tf(pos=userdata.placing_area, rot=userdata.placing_area_quat,point_name='placing_area') ### Bowl placed at coords.
+        
         pos,i= False,0
         while( pos==False and i<10):
             i+=1
@@ -190,16 +190,58 @@ class Place(smach.State):
         if current_target=='bowl':
             rospy.loginfo('STATE : PLACE BOWL')            
             print ('STATE : PLACE BOWL')                       
-            offset_point=[0.1,-0.05,-0.031]          # Offset relative to object tf#
+            offset_point=[0.04,-0.05,-0.031]          # Offset relative to object tf#
                        
             string_msg.data='frontal'
             userdata.target_object='cracker_box'        
         ######################################################################
-        if current_target== 'cracker_box':
-            rospy.loginfo('STATE : PLACE CEREAL')            
-            print ('STATE : PLACE CEREAL')                       
+        if current_target== 'cracker_box' or  current_target== 'milk':
+            if current_target== 'milk':
+                rospy.loginfo('STATE : POUR MILK')            
+                print ('STATE : POUR MILK')     
+            else:
+                rospy.loginfo('STATE : POUR CEREAL')            
+                print ('STATE : POUR CEREAL')
+                talk( 'pouring cereal')     
+            # LOOK FOR BOWL
+            talk ('looking for bowl')
+            rospy.sleep(3.0)                        
+            img_msg  = bridge.cv2_to_imgmsg( cv2.cvtColor(rgbd.get_image(), cv2.COLOR_RGB2BGR))### Using Yolo to find [bowl,milk,cereal , spoon]
+            req      = classify_client.request_class()
+            req.in_.image_msgs.append(img_msg)
+            res      = classify_client(req)
+            objects=detect_object_yolo('all',res)   
+            print (objects)
+            common_misids=[]
+            common_misids.append('plate')
+            if len (objects)!=0 :
+                _,quat_base= tf_man.getTF('base_link')  
+                for i in range(len(res.poses)):
+                        if res.names[i].data[4:]== 'bowl' or  res.names[i].data[4:] in  common_misids:
+                            #tf_man.getTF("head_rgbd_sensor_rgb_frame")
+                            position = [res.poses[i].position.x ,res.poses[i].position.y,res.poses[i].position.z]
+                            #print ('position,name',position,res.names[i].data[4:])
+                            ##########################################################
+                            object_point = PointStamped()
+                            object_point.header.frame_id = "head_rgbd_sensor_rgb_frame"
+                            object_point.point.x = position[0]
+                            object_point.point.y = position[1]
+                            object_point.point.z = position[2]
+                            position_map = tfBuffer.transform(object_point, "map", timeout=rospy.Duration(1))
+                            #print ('position_map',position_map)
+                            tf_man.pub_static_tf(pos= [position_map.point.x,position_map.point.y,position_map.point.z], rot=quat_base, ref="map", point_name="placing_area")  #res.names[i].data[4:] )
+                            rospy.sleep(0.5)
+                            pos, quat = tf_man.getTF(target_frame = 'placing_area', ref_frame = 'odom')      
+            
+                            talk('bowl found ')
+
+
+
+
+
+
             #offset_point=[0.06,-0.1,-0.1] # REAL 
-            offset_point=[0.00,-0.1,0.1]           # Offset relative to object tf#
+            offset_point=[-0.1,0.06,0.1]           # Offset relative to object tf#
                    # Offset relative to object tf            
             string_msg.data='pour'
             userdata.target_object='milk'
@@ -363,6 +405,9 @@ class Place_post_pour(smach.State):
     def execute(self, userdata):
         print (userdata.mode)
         if userdata.mode.data   != 'pour':
+            gripper.steady()
+            brazo.set_named_target('go')
+            rospy.sleep(2.0) # BRAZO FACE PALM AVOIDANCE
             print ('## CONTINUE TO NEXT OBJECT')
             return 'continue'
         pose_target=userdata.placing_area
@@ -623,7 +668,7 @@ if __name__ == '__main__':
     with sm:
         # State machine STICKLER
         smach.StateMachine.add("INITIAL",           Initial(),              transitions={'failed': 'INITIAL',           
-                                                                                         'succ': 'GOTO_PICKUP',   
+                                                                                         'succ': 'GOTO_BREAKFAST',   
                                                                                          'tries': 'END'})
         smach.StateMachine.add("WAIT_PUSH_HAND",    Wait_push_hand(),       transitions={'failed': 'WAIT_PUSH_HAND',    
                                                                                          'succ': 'GOTO_PICKUP',       
