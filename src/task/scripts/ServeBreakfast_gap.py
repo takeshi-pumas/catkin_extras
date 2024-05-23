@@ -28,12 +28,12 @@ class Initial(smach.State):
         hand_rgb = HAND_RGB()
         
         ######################################
-        x,y,z= 5.8 , 1.3, 0.47   #SIM TMR
-        quat=[0.0,0.0,0.0,1.0]
+        #x,y,z= 5.8 , 1.3, 0.47   #SIM TMR
+        #quat=[0.0,0.0,0.0,1.0]
         ##########################################
         #####################################
-        #x,y,z= -0.522 , -2.84, 0.8   #REAL LAB
-        #quat=[0.0,0.0,0.707,-0.707]
+        x,y,z= -0.522 , -2.84, 0.8   #REAL LAB
+        quat=[0.0,0.0,0.707,-0.707]
         #########################################
         #quat=[0.0,0.0,0.707,0.707]
         userdata.placing_area=[x,y,z]
@@ -125,7 +125,7 @@ class Scan_table(smach.State):
         
         print ('scanNING TABLE')
 
-
+        head.set_named_target('neutral')
         rospy.sleep(3.0)                        
         img_msg  = bridge.cv2_to_imgmsg( cv2.cvtColor(rgbd.get_image(), cv2.COLOR_RGB2BGR))### Using Yolo to find [bowl,milk,cereal , spoon]
         req      = classify_client.request_class()
@@ -138,6 +138,9 @@ class Scan_table(smach.State):
         elif userdata.target_object== 'cracker_box':
             common_misids.append('master_chef_can')
             common_misids.append('pudding_box')
+        elif userdata.target_object== 'milk':
+            common_misids.append('bleach_cleanser')
+            
         if len (objects)!=0 :
             _,quat_base= tf_man.getTF('base_link')  
 
@@ -156,6 +159,8 @@ class Scan_table(smach.State):
                         #print ('position_map',position_map)
                         tf_man.pub_static_tf(pos= [position_map.point.x,position_map.point.y,position_map.point.z], rot=quat_base, ref="map", point_name=userdata.target_object)#res.names[i].data[4:] )
                         self.tries=0
+                        talk(f'{userdata.target_object} found , grasping')
+
                         return 'succ'
                         ###########################################################                
         print(f'Couldnt find {userdata.target_object}, will retry.')
@@ -186,34 +191,40 @@ class Place(smach.State):
         print (f'placing {current_target}')
 
         #current_target='bowl'
+        common_misids=[]
         #################################################
         if current_target=='bowl':
             rospy.loginfo('STATE : PLACE BOWL')            
             print ('STATE : PLACE BOWL')                       
-            offset_point=[0.04,-0.05,-0.031]          # Offset relative to object tf#
-                       
-            string_msg.data='frontal'
-            userdata.target_object='cracker_box'        
+            offset_point=[0.04,-0.05,-0.031]          # Offset relative to object tf#                       
+            string_msg.data='frontal'       
+             
         ######################################################################
-        if current_target== 'cracker_box' or  current_target== 'milk':
-            if current_target== 'milk':
-                rospy.loginfo('STATE : POUR MILK')            
-                print ('STATE : POUR MILK')     
-            else:
+        else:                           #if current_target== 'cracker_box' or current_target== 'milk'  :
+            string_msg.data='pour'               # Offset relative to object tf            
+            offset_point=[-0.025,0.066,0.1]           # Offset relative to object tf#
+            # LOOK FOR OBJECT current target
+            if current_target== 'cracker_box':
                 rospy.loginfo('STATE : POUR CEREAL')            
                 print ('STATE : POUR CEREAL')
                 talk( 'pouring cereal')     
-            # LOOK FOR BOWL
+            elif current_target== 'milk':
+                rospy.loginfo('STATE : POUR MILK')            
+                print ('STATE : POUR MILK')
+                talk( 'pouring cereal')    
+            #else: SPOON
+            head.set_named_target('neutral')
+            rospy.sleep(0.5)       
+            common_misids.append('plate')           #grasp_type 
             talk ('looking for bowl')
-            rospy.sleep(3.0)                        
+            rospy.sleep(3.0)  
+                                 
             img_msg  = bridge.cv2_to_imgmsg( cv2.cvtColor(rgbd.get_image(), cv2.COLOR_RGB2BGR))### Using Yolo to find [bowl,milk,cereal , spoon]
             req      = classify_client.request_class()
             req.in_.image_msgs.append(img_msg)
             res      = classify_client(req)
             objects=detect_object_yolo('all',res)   
-            print (objects)
-            common_misids=[]
-            common_misids.append('plate')
+            print (objects)            
             if len (objects)!=0 :
                 _,quat_base= tf_man.getTF('base_link')  
                 for i in range(len(res.poses)):
@@ -231,20 +242,8 @@ class Place(smach.State):
                             #print ('position_map',position_map)
                             tf_man.pub_static_tf(pos= [position_map.point.x,position_map.point.y,position_map.point.z], rot=quat_base, ref="map", point_name="placing_area")  #res.names[i].data[4:] )
                             rospy.sleep(0.5)
-                            pos, quat = tf_man.getTF(target_frame = 'placing_area', ref_frame = 'odom')      
-            
-                            talk('bowl found ')
-
-
-
-
-
-
-            #offset_point=[0.06,-0.1,-0.1] # REAL 
-            offset_point=[-0.1,0.06,0.1]           # Offset relative to object tf#
-                   # Offset relative to object tf            
-            string_msg.data='pour'
-            userdata.target_object='milk'
+                            pos, quat = tf_man.getTF(target_frame = 'placing_area', ref_frame = 'odom')                  
+                            talk('bowl found. pouring')   
         #####################################################################
         userdata.mode=string_msg 
             ####################
@@ -263,19 +262,14 @@ class Place(smach.State):
         rospy.sleep(0.5)       
         clear_octo_client()     
         self.tries+=1  
+
+
+        
         return 'succ'
-        ########################################################################
-        ##if current_target=='milk':userdata.target_object='spoon'
-        ###################################################
-        #userdata.mode=string_msg 
-        ######################################################
-        #userdata.target_pose = target_pose
-        ####################        
-        #head.set_named_target('neutral')
-        #rospy.sleep(0.5)        #clear octo client is recommended
-        #clear_octo_client()               
-        #return 'succ'        
+        
 #########################################################################################################
+
+
 
 class Pickup(smach.State):   
     def __init__(self):
@@ -283,7 +277,7 @@ class Pickup(smach.State):
         self.tries = 0
     def execute(self, userdata):
         target_object= userdata.target_object
-        if target_object=='bowl':           
+        if target_object=='bowl' :           
             
             string_msg= String()
             string_msg.data='above'                
@@ -306,7 +300,7 @@ class Pickup(smach.State):
             #pos[2] += 0.066                #pos[2] += 0.03
     
           
-        if target_object=='cracker_box':
+        if target_object=='cracker_box'or target_object=='milk':
             
             string_msg= String()
             string_msg.data='frontal'
@@ -319,7 +313,7 @@ class Pickup(smach.State):
             inv_quat= tf.transformations.quaternion_inverse(quat)
             print ('pose quat',pos,quat)
 
-            offset_point=[-0.1,0.0,0.031]          # Offset relative to object tf
+            offset_point=[-0.1,-0.06,0.031]          # Offset relative to object tf
 
             translated_point = np.array(tf.transformations.quaternion_multiply(quat, offset_point + [0]))[:3] + np.array(pos)
             pose_goal=np.concatenate((translated_point,quat))
@@ -332,7 +326,7 @@ class Pickup(smach.State):
         target_pose = Float32MultiArray()
         target_pose.data = pose_goal#pos
         
-        tf_man.pub_static_tf(pos= translated_point, rot=tf.transformations.quaternion_multiply(quat, [0,0,1,0]), ref="odom", point_name='goal_for_place' )             
+        tf_man.pub_static_tf(pos= translated_point, rot=tf.transformations.quaternion_multiply(quat, [0,0,1,0]), ref="odom", point_name='goal_for_grasp' )             
         
         
         userdata.target_pose = target_pose
@@ -404,6 +398,7 @@ class Place_post_pour(smach.State):
 
     def execute(self, userdata):
         print (userdata.mode)
+        
         if userdata.mode.data   != 'pour':
             gripper.steady()
             brazo.set_named_target('go')
@@ -413,8 +408,9 @@ class Place_post_pour(smach.State):
         pose_target=userdata.placing_area
         rospy.loginfo('STATE : PLACE POST POUR')
         print('STATE : PLACE POST POUR')
-        if userdata.target_object=='cracker_box':pose_target[1]+=-0.35
-
+        if userdata.target_object=='cracker_box':
+            pose_target[0]+=-0.35
+            userdata.target_object='milk'
 
         tf_man.pub_static_tf(pos=pose_target, rot=userdata.placing_area_quat,point_name='placing_area') ### Bowl placed at coords.
         pos,i= False,0
@@ -668,7 +664,7 @@ if __name__ == '__main__':
     with sm:
         # State machine STICKLER
         smach.StateMachine.add("INITIAL",           Initial(),              transitions={'failed': 'INITIAL',           
-                                                                                         'succ': 'GOTO_BREAKFAST',   
+                                                                                         'succ': 'GOTO_PICKUP',   
                                                                                          'tries': 'END'})
         smach.StateMachine.add("WAIT_PUSH_HAND",    Wait_push_hand(),       transitions={'failed': 'WAIT_PUSH_HAND',    
                                                                                          'succ': 'GOTO_PICKUP',       

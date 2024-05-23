@@ -569,61 +569,15 @@ Visualization Manager:
       Filter (whitelist): ""
       Frame Timeout: 15
       Frames:
-        001_chips_can:
-          Value: true
-        002_master_chef_can:
-          Value: true
         005_tomato_soup_can:
           Value: true
-        007_tuna_fish_can:
+        024_bowl:
           Value: true
-        008_pudding_box:
-          Value: true
-        010_potted_meat_can:
-          Value: true
-        011_banana:
-          Value: true
-        013_apple:
-          Value: true
-        015_peach:
-          Value: true
-        016_pear:
-          Value: true
-        019-a_pitcher_base:
-          Value: true
-        020_pitcher_lid:
-          Value: true
-        022_windex_bottle:
-          Value: true
-        040_large_marker:
-          Value: true
-        053-a_mini_soccer_ball:
-          Value: true
-        054_softball:
-          Value: true
-        055_baseball:
+        050_medium_clamp:
           Value: true
         062_dice:
           Value: true
-        063-a_marbles:
-          Value: true
-        063-b_marbles:
-          Value: true
-        071_nine_hole_peg_test:
-          Value: true
-        072-a_toy_airplane:
-          Value: true
         All Enabled: false
-        a_marbles:
-          Value: true
-        a_mini_soccer_ball:
-          Value: true
-        a_pitcher_base:
-          Value: true
-        a_toy_airplane:
-          Value: true
-        apple:
-          Value: true
         arm_flex_link:
           Value: false
         arm_lift_link:
@@ -662,17 +616,7 @@ Visualization Manager:
           Value: false
         base_roll_link:
           Value: false
-        baseball:
-          Value: true
-        bedroom:
-          Value: true
-        breakfast:
-          Value: true
-        chips_can:
-          Value: true
-        dining_room:
-          Value: true
-        door_lab:
+        goal_for_place:
           Value: true
         hand_camera_frame:
           Value: false
@@ -730,40 +674,22 @@ Visualization Manager:
           Value: false
         kitchen:
           Value: false
-        large_marker:
-          Value: true
         living_room:
           Value: false
         map:
-          Value: true
-        master_chef_can:
-          Value: true
-        nine_hole_peg_test:
           Value: true
         odom:
           Value: true
         pickup:
           Value: false
-        pitcher_lid:
-          Value: true
         place_shelf:
           Value: true
         placing_area:
           Value: true
-        pudding_box:
-          Value: true
         shelf:
-          Value: true
-        softball:
-          Value: true
-        tomato_soup_can:
           Value: true
         torso_lift_link:
           Value: false
-        tuna_fish_can:
-          Value: true
-        windex_bottle:
-          Value: true
         wrist_flex_link:
           Value: false
         wrist_ft_sensor_frame:
@@ -780,37 +706,9 @@ Visualization Manager:
       Show Names: true
       Tree:
         map:
-          a_marbles:
-            {}
-          a_mini_soccer_ball:
-            {}
-          a_pitcher_base:
-            {}
-          a_toy_airplane:
-            {}
-          apple:
-            {}
-          baseball:
-            {}
-          bedroom:
-            {}
-          breakfast:
-            {}
-          chips_can:
-            {}
-          dining_room:
-            {}
-          door_lab:
-            {}
           kitchen:
             {}
-          large_marker:
-            {}
           living_room:
-            {}
-          master_chef_can:
-            {}
-          nine_hole_peg_test:
             {}
           odom:
             base_footprint:
@@ -872,49 +770,13 @@ Visualization Manager:
                       head_l_stereo_camera_link:
                         head_l_stereo_camera_frame:
                           head_rgbd_sensor_rgb_frame:
-                            001_chips_can:
-                              {}
-                            002_master_chef_can:
-                              {}
                             005_tomato_soup_can:
                               {}
-                            007_tuna_fish_can:
+                            024_bowl:
                               {}
-                            008_pudding_box:
-                              {}
-                            010_potted_meat_can:
-                              {}
-                            011_banana:
-                              {}
-                            013_apple:
-                              {}
-                            015_peach:
-                              {}
-                            016_pear:
-                              {}
-                            019-a_pitcher_base:
-                              {}
-                            020_pitcher_lid:
-                              {}
-                            022_windex_bottle:
-                              {}
-                            040_large_marker:
-                              {}
-                            053-a_mini_soccer_ball:
-                              {}
-                            054_softball:
-                              {}
-                            055_baseball:
+                            050_medium_clamp:
                               {}
                             062_dice:
-                              {}
-                            063-a_marbles:
-                              {}
-                            063-b_marbles:
-                              {}
-                            071_nine_hole_peg_test:
-                              {}
-                            072-a_toy_airplane:
                               {}
                         head_l_stereo_camera_gazebo_frame:
                           {}
@@ -926,25 +788,15 @@ Visualization Manager:
                           {}
             base_footprint_wheel:
               {}
+            goal_for_place:
+              {}
           pickup:
-            {}
-          pitcher_lid:
             {}
           place_shelf:
             {}
           placing_area:
             {}
-          pudding_box:
-            {}
           shelf:
-            {}
-          softball:
-            {}
-          tomato_soup_can:
-            {}
-          tuna_fish_can:
-            {}
-          windex_bottle:
             {}
       Update Interval: 0
       Value: true

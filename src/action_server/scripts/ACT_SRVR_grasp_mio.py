@@ -118,8 +118,8 @@ class PlacingStateMachine:
         self.grasp_approach=self.sm.userdata.goal.mode.data
         print(f'self.sm.userdata.goal -> {self.sm.userdata.goal.target_pose.data}')
         print (f'self.sm.userdata.goal.mode -> {self.sm.userdata.goal.mode.data}')
-        #pose_goal = [goal[0], goal[1], goal[2], goal[3], goal[4], goal[5], goal[6]]
-        #self.add_collision_object(position = pos, dimensions = [0.05, 0.05, 0.05],frame=self.whole_body.get_planning_frame())
+        pose_goal = [goal[0], goal[1], goal[2], goal[3], goal[4], goal[5], goal[6]]
+        self.add_collision_object(position = [goal[0], goal[1] , goal[2]], dimensions = [0.05, 0.05, 0.05],frame=self.whole_body.get_planning_frame())
         
 
         self.gripper.open()

@@ -76,8 +76,7 @@ class PlacingStateMachine:
                                    transitions={'success':'APPROACH', 'failed':'CREATE_BOUND'})
             smach.StateMachine.add('APPROACH', smach.CBState(self.approach, outcomes=['success', 'failed', 'cancel','poured']),
                                    transitions={'success':'RETREAT', 'failed':'APPROACH', 'cancel':'failure','poured':'succeeded' })
-            #smach.StateMachine.add('GRASP', smach.CBState(self.grasp, outcomes=['success', 'failed']),
-            #                       transitions={'success':'RETREAT', 'failed': 'GRASP'})
+            
             smach.StateMachine.add('RETREAT', smach.CBState(self.retreat, outcomes=['success', 'failed']),
                                    transitions={'success':'succeeded', 'failed': 'RETREAT'})
             smach.StateMachine.add('NEUTRAL_POSE', smach.CBState(self.neutral_pose, outcomes=['success', 'failed']),
@@ -147,18 +146,19 @@ class PlacingStateMachine:
         # Wait for a short duration
         rospy.sleep(0.5)
 
-        # Attempt to retrieve the transform between "odom" and "base_link"
-        try:
-            transform = self.tf2_buffer.lookup_transform("odom", "base_link", rospy.Time(0), timeout=rospy.Duration(1))
-            rotation = transform.transform.rotation
-            fixed_quat = [rotation.x, rotation.y, rotation.z, rotation.w]
-            # Set orientation constraint based on the current orientation of base_link
-            self.set_orientation_constraint(fixed_quat=fixed_quat)
-        except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
-            rospy.logwarn("Could not get transform from 'odom' to 'base_link'. Using default quaternion.")
-            # Use a default quaternion if unable to retrieve the current orientation
-            fixed_quat = [0, 0, 0, 1]
-            self.set_orientation_constraint(fixed_quat=fixed_quat)
+        ## ADD constraints for pouring ( Placing may not need them)
+        if self.sm.userdata.goal.mode.data== 'pour':
+            try:
+                transform = self.tf2_buffer.lookup_transform("odom", "base_link", rospy.Time(0), timeout=rospy.Duration(1))
+                rotation = transform.transform.rotation
+                fixed_quat = [rotation.x, rotation.y, rotation.z, rotation.w]
+                # Set orientation constraint based on the current orientation of base_link
+                self.set_orientation_constraint(fixed_quat=fixed_quat)
+            except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
+                rospy.logwarn("Could not get transform from 'odom' to 'base_link'. Using default quaternion.")
+                # Use a default quaternion if unable to retrieve the current orientation
+                #fixed_quat = [0, 0, 0, 1]
+                #self.set_orientation_constraint(fixed_quat=fixed_quat)
 
         # Move the robot to the target pose with orientation constraint
         succ = self.move_to_pose(self.whole_body, self.target_pose)
@@ -178,30 +178,19 @@ class PlacingStateMachine:
                 joint_values[3] = 0.0
                 joint_values[4] = np.pi
                 self.brazo.set_joint_values(joint_values)     
-                rospy.sleep(1.0)     
-                self.brazo.set_joint_values(safe_jv)     
+                rospy.sleep(3.0)     
+                joint_values[0] += 0.1
+                joint_values[4] = 0.0
+                self.brazo.set_joint_values(joint_values)     
+                #self.brazo.set_joint_values(safe_jv)     
+                rospy.sleep(0.5)    
+                self.scene.remove_attached_object(self.eef_link, name="objeto") 
                 return 'poured' 
             else:return 'success'
         else:
             return 'failed'
 
-    def grasp(self, userdata):
-        #Plan to grasp object
-
-        # TODO: check grasp
-        # Maybe attach object to gripper (maybe not)
-        
-        
-        
-        self.gripper.open()
-        rospy.sleep(1.0)
-
-        
-        return 'success'
-        # if succ:
-        #     return 'success'
-        # else:
-        #     return 'failed'
+    
 
     def retreat(self, userdata):
         # pose_goal = self.target_pose
@@ -216,11 +205,16 @@ class PlacingStateMachine:
         self.brazo.set_joint_values(joint_values)
         self.gripper.open()
         rospy.sleep(1.0)
-        #rospy.sleep(0.8)
-        #self.whole_body.set_joint_value_target(self.safe_pose)
-        #self.whole_body.go()
+        self.scene.remove_attached_object(self.eef_link, name="objeto")
+        ### 
+        ###TODO CREATE A SAFE RETREAT POSE!
+        joint_values = self.brazo.get_joint_values()
+        
+        joint_values[0] += 0.2
+        joint_values[1] += 0.2
+        self.brazo.set_joint_values(joint_values)     
 
-
+        rospy.sleep(1.0)
         return 'success'
         # if succ:
         #     return 'success'
@@ -248,7 +242,7 @@ class PlacingStateMachine:
         orientation_constraint.orientation.w = fixed_quat[3]
         orientation_constraint.absolute_x_axis_tolerance = 0.1
         orientation_constraint.absolute_y_axis_tolerance = 0.1
-        orientation_constraint.absolute_z_axis_tolerance = 0.1
+        orientation_constraint.absolute_z_axis_tolerance = 0.2
         orientation_constraint.weight = 1.0
 
         constraints = Constraints()
