@@ -65,8 +65,8 @@ class GRIPPER:
         self._effort = 0
         self._manipulate_gripper()
 
-    def steady(self):
-        self._position = 0.2
+    def steady(self, open = 0.2):
+        self._position = open
         self._effort = -0.3
         self._manipulate_gripper()
         
