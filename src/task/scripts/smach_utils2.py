@@ -27,7 +27,7 @@ from tf2_sensor_msgs.tf2_sensor_msgs import do_transform_cloud
 from object_classification.srv import *
 from segmentation.srv import *
 from human_detector.srv import Human_detector  ,Human_detectorRequest 
-from human_detector.srv import Point_detector 
+from human_detector.srv import Point_detector ,Point_detectorRequest
 from ros_whisper_vosk.srv import GetSpeech
 from object_classification.srv import *
 from face_recog.msg import *
@@ -527,9 +527,10 @@ def read_tf(t):
 
 
 #------------------------------------------------------
-def detect_human_to_tf(dist = 6):
+def detect_human_to_tf(dist = 6,remove_bkg = True):
     req = Human_detectorRequest()
     req.dist = dist
+    req.removeBKG = remove_bkg
     humanpose=human_detect_server(req)
     #print ("humanpose",humanpose)
     if (np.asarray((humanpose.x,humanpose.y,humanpose.z)).all()== np.zeros(3).all()):

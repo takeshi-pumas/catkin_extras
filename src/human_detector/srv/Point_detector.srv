@@ -1,4 +1,5 @@
 float64 dist
+bool removeBKG
 ---
 float64 x_r		#World coords w.r.t. map  poiting with right hand
 float64 y_r

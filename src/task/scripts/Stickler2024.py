@@ -21,7 +21,7 @@ class Initial(smach.State):
 
     def execute(self, userdata):
 
-        global forbiden_room,closest_room , xys , room_names , drinks_room , human_found,roomsDataName
+        global forbiden_room, closest_room, room_names, drinks_room, human_found, roomsDataName
         rospy.loginfo('STATE : INITIAL')
         print('[INITIAL]Robot neutral pose')
         self.tries += 1
@@ -30,15 +30,16 @@ class Initial(smach.State):
             return 'tries'
         
         #READ YAML ROOMS XYS
-        df=yaml_to_df()
+        """df=yaml_to_df()
         xys=[]
         xys.append(df[df['child_id_frame']=='bedroom'][['x','y']].values.ravel())
         xys.append(df[df['child_id_frame']=='living_room'][['x','y']].values.ravel())
         xys.append(df[df['child_id_frame']=='dining_room'][['x','y']].values.ravel())
-        xys.append(df[df['child_id_frame']=='kitchen'][['x','y']].values.ravel())
-        #room_names=['none','bedroom','kitchen','living_room','dining_room']
-        room_names=['living_room','living_room','kitchen','dining_room']
-        xys, room_names
+        xys.append(df[df['child_id_frame']=='kitchen'][['x','y']].values.ravel())"""
+        
+        # Cambiar dependiendo el orden de los cuartos (no poner el forbidden)
+        room_names=['living_room','living_room','kitchen','dining_room'] 
+
         #####
         ####FORBIDEN ROOM 
         forbiden_room='bedroom'
@@ -46,10 +47,8 @@ class Initial(smach.State):
         drinks_room = 'drink_room'
         human_found = False
         head.set_named_target('neutral')
-        roomsDataName = 'room_regions_stickler_lab.npy'
-        #print('head listo')
-        #brazo.set_named_target('go')
-        #print('brazo listo')
+        roomsDataName = 'room_regions_stickler_lab.npy'     # cambiar si es para pruebas o para la competencia (ojo al launch con el yaml y tfs tambien)
+ 
         rospy.sleep(0.8)
 
         return 'succ'
@@ -132,7 +131,7 @@ class Analyse_forbidden(smach.State):  # ADD KNONW LOCATION DOOR
 
         #rospy.sleep(2)   
         origin_map_img=[round(img_map.shape[0]*0.5) ,round(img_map.shape[1]*0.5)] 
-        humanpose=detect_human_to_tf(self.distGaze[self.tries-1])  #make sure service is running
+        humanpose=detect_human_to_tf(self.distGaze[self.tries-1],remove_bkg=True)  #make sure service is running
         
         print("[ANALYSEFORBIDDENROOM] human? :",humanpose)
         #humanpose = False
@@ -249,7 +248,7 @@ class Confirm_forbidden(smach.State):  # ADD KNONW LOCATION DOOR
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
         self.tries = 0
-        self.distGaze = 2
+        self.distGaze = 3
 
     def execute(self, userdata):
 
@@ -268,7 +267,7 @@ class Confirm_forbidden(smach.State):  # ADD KNONW LOCATION DOOR
             rospy.sleep(2)  
         talk('Scanning again...')
         rospy.sleep(0.5)
-        humanpose=detect_human_to_tf(self.distGaze)  #make sure service is running
+        humanpose=detect_human_to_tf(self.distGaze,remove_bkg=True)  #make sure service is running
         
         print("[CONFIRMFORBIDDENROOM] human? :",humanpose)
         #humanpose = False
@@ -345,7 +344,7 @@ class Find_human(smach.State):
         smach.State.__init__(
             self, outcomes=['succ', 'failed', 'tries'])
         self.tries = 0
-        self.distGaze=[6,6,3,3,3,3]
+        self.distGaze=[6,3,3,3,3,3]
         self.gaze = [[ 0.0, 0.15],[1.35, 0.15],[1.45, 0.4],[-1.35, 0.15],[-1.45, 0.4]]
     def execute(self, userdata):
         
@@ -363,7 +362,7 @@ class Find_human(smach.State):
         head.set_joint_values(self.gaze[self.tries-1])
         rospy.sleep(2.5)
         
-        humanpose=detect_human_to_tf(self.distGaze[self.tries])  #make sure service is running
+        humanpose=detect_human_to_tf(self.distGaze[self.tries],remove_bkg=True)  #make sure service is running
         if humanpose== False:
             print ('no human ')
             return 'failed'
