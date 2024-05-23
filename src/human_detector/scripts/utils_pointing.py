@@ -232,6 +232,7 @@ def detect_pointing(points_msg,dist = 6):
         deb_imgb[np.where(probMap>=thresh)]= 255
     deb_img_rgb=cv2.merge((deb_imgr, deb_imgg, deb_imgb))
     res.debug_image.append(bridge.cv2_to_imgmsg(deb_img_rgb))
+    save_image(deb_img_rgb,name="debugImgDetectPointing_1")
     #right elbow       ####
     # right wrist      ####
     # left elbow

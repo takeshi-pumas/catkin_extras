@@ -26,8 +26,8 @@ from sensor_msgs.msg import Image , LaserScan  , PointCloud2
 from tf2_sensor_msgs.tf2_sensor_msgs import do_transform_cloud
 from object_classification.srv import *
 from segmentation.srv import *
-from human_detector.srv import Human_detector ,Human_detectorResponse ,Human_detectorRequest 
-from human_detector.srv import Point_detector ,Point_detectorResponse , Point_detectorRequest 
+from human_detector.srv import Human_detector  ,Human_detectorRequest 
+from human_detector.srv import Point_detector 
 from ros_whisper_vosk.srv import GetSpeech
 from object_classification.srv import *
 from face_recog.msg import *
@@ -124,6 +124,7 @@ def call_yolo_service(height = -1):
     #cv2.imshow('our of res'  , img)
     return response
 
+#------------------------------------------------------
 def detect_object_yolo(object_name,res):
     # find object_name in the response message from object_classification service (Yolo)
     objs=[]
@@ -132,7 +133,8 @@ def detect_object_yolo(object_name,res):
         if name.data[4:]==object_name:return res.poses[i]
     if object_name=='all': return objs
     return []
-#############################################################################################
+
+#------------------------------------------------------
 def seg_res_tf(res):
     # Extract pose information from segmentation response an publish a tf... 
     # No rot is tf with pose relating to map  zero angles (robot facing)
@@ -239,7 +241,6 @@ def find_placing_area (plane_height=-1):
             return True    
     return False    
 
-
 #------------------------------------------------------
 def get_robot_px():
     trans, rot=tf_man.getTF('base_link')
@@ -284,6 +285,7 @@ def point_to_px(x,y):
     safe_xy=np.asarray((x,y))
     return np.round(safe_xy/pix_per_m).astype('int')
 
+#------------------------------------------------------
 def px_to_point(px,py):
     return np.asarray((px,py))*pix_per_m
 
@@ -621,8 +623,6 @@ def base_grasp_D(tf_name,d_x=0.66,d_y=-0.1,timeout=1.0):
         omni_base.tiny_move( velX=corr_velX,velY=corr_velY, velT=-eT,std_time=0.2, MAX_VEL=0.3) 
 
     
-    
-
 #-----------------------------------------------------------------
 def save_image(img,name='',dirName=''):
     rospack = rospkg.RosPack()
@@ -652,8 +652,6 @@ def save_image(img,name='',dirName=''):
         #print(file_path+"/src"+"tmp"+".jpg")
         cv2.imwrite(file_path+"/src"+"image"+".jpg",img)
     
-###################################################
-
 
 #------------------------------------------------------
 # para quitar fondo, es necesario rgbd de la camara del robot

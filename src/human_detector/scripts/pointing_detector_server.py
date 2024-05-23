@@ -6,18 +6,16 @@ from utils_pointing import *
 
 
 def trigger_response(request):    
-    print ('Segmenting')
+    print ('Segmenting for Pointing')
     points_msg=rospy.wait_for_message("/hsrb/head_rgbd_sensor/depth_registered/rectified_points",PointCloud2,timeout=5)
     
     dist = 6 if request.dist == 0 else request.dist
-    #print("\n\nDISTANCIA",dist,"\n\n")
     res= detect_pointing(points_msg,dist)
     
     return res
     
 def callback(request):
-	print ('Segmenting')  
-	print("\n\nDISTANCIA",request.dist,"\n\n")
+	print ('Segmenting for HUMAN DETECTOR')  
 	points_msg=rospy.wait_for_message("/hsrb/head_rgbd_sensor/depth_registered/rectified_points",PointCloud2,timeout=5)
 	dist = 6 if request.dist == 0 else request.dist
 	#print("\n\nDISTANCIA",dist,"\n\n")

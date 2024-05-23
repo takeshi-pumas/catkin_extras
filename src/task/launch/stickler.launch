@@ -7,7 +7,7 @@
 
   <node pkg="object_classification"  name="objs_reco" type="classification_stickler_server.py"  />  
   <!--include file="$(find nav_pumas)/config_files/launch/navigation_real.launch"/-->
-  <node pkg="human_detector"  name="human_detector" type="human_detector_server.py"/>  
+  <node pkg="human_detector"  name="human_detector" type="pointing_detector_server.py"/>  
   <node pkg="smach_viewer"  name="smach_viewer" type="smach_viewer.py"/>  
   <node pkg="segmentation"  name="segmentator_node" type="segment_node.py"/>  
 
