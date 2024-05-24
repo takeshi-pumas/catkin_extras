@@ -91,8 +91,8 @@ class Goto_pickup(smach.State):
         rospy.sleep(1.5)
         res = omni_base.move_base(known_location='pickup', time_out=40)
         res = omni_base.move_base(known_location='pickup', time_out=40)
-        print(res)       
-##################################################################First TIme Only go        
+         
+
         if self.tries <= 1: 
             talk('Navigating to, pickup')
         if res:
@@ -313,7 +313,7 @@ class Pickup(smach.State):
             inv_quat= tf.transformations.quaternion_inverse(quat)
             print ('pose quat',pos,quat)
 
-            offset_point=[-0.1,-0.06,0.031]          # Offset relative to object tf
+            offset_point=[-0.1,-0.03,0.031]          # Offset relative to object tf
 
             translated_point = np.array(tf.transformations.quaternion_multiply(quat, offset_point + [0]))[:3] + np.array(pos)
             pose_goal=np.concatenate((translated_point,quat))

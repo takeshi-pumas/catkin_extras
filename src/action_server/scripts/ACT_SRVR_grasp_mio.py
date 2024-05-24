@@ -152,6 +152,10 @@ class PlacingStateMachine:
         
         if self.grasp_approach == "frontal":
             self.base.tiny_move(velX=0.07, std_time=0.5, MAX_VEL=0.7)
+            #self.gripper.close(0.005)
+            
+            #self.gripper.open()
+            
             self.gripper.steady()
             rospy.sleep(0.5)
         elif self.grasp_approach == "above":self.gripper.close(0.07)

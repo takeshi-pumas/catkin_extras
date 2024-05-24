@@ -16,6 +16,8 @@ def trigger_response(request):
     lower_v=df['lower']    #Lower Area Limit
     reg_hy_v=df['reg_hy']  #higher limit of pix y ( bottom part of img) 
     reg_ly_v=df['reg_ly']  #lower limit of pix y ( high part of img) 
+    reg_hx_v=df['reg_hx']  #higher limit of pix y ( bottom part of img) 
+    reg_lx_v=df['reg_lx']  #lower limit of pix y ( high part of img) 
     #print ( 'segmentation params ',df)
     points_data = ros_numpy.numpify(points_msg)    
     image_data = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]   
@@ -86,7 +88,7 @@ def trigger_response(request):
                 M = cv2.moments(contour)                
                 cX = int(M["m10"] / M["m00"])
                 cY = int(M["m01"] / M["m00"])                
-                if (cY > reg_ly_v and cY < reg_hy_v  ):    ### REJECT CENTROID OUTSIDE OF THIS RANGE: READ FROM YAML                
+                if (cY > reg_ly_v and cY < reg_hy_v and cX > reg_lx_v and cY < reg_hX_v   ):    ### REJECT CENTROID OUTSIDE OF THIS RANGE: READ FROM YAML                
                     boundRect = cv2.boundingRect(contour)
                     mask = np.zeros_like(binary_image) 
                     mask=cv2.rectangle(mask,(boundRect[0], boundRect[1]),(boundRect[0]+boundRect[2], boundRect[1]+boundRect[3]), (255,255,255), -1)

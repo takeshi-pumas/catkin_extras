@@ -57,11 +57,15 @@ def callback(points_msg):
         cv2.createTrackbar('Min Area', 'class rgbd', 0, 2000, nothing)  
         cv2.createTrackbar('Hi limit pix y', 'class rgbd',240,480,nothing)
         cv2.createTrackbar('Lo limit pix y', 'class rgbd',0,240,nothing)
+        cv2.createTrackbar('Hi limit pix x', 'class rgbd',320,640,nothing)
+        cv2.createTrackbar('Lo limit pix x', 'class rgbd',0,319,nothing)
         cv2.createTrackbar('Plane height (cms)', 'class rgbd', -10, 100, nothing)   ### AREA MAX IS half THE WHOLE IMAGE 
         cv2.setTrackbarPos('Max Area', 'class rgbd',df['higher']) 
         cv2.setTrackbarPos('Min Area', 'class rgbd',df['lower']) 
         cv2.setTrackbarPos('Hi limit pix y','class rgbd',df['reg_hy']) 
         cv2.setTrackbarPos('Lo limit pix y','class rgbd',df['reg_ly']) 
+        cv2.setTrackbarPos('Hi limit pix x','class rgbd',df['reg_hx']) 
+        cv2.setTrackbarPos('Lo limit pix x','class rgbd',df['reg_lx']) 
         first=False
     cv2.imshow('class rgbd' , img)
     #print (r)
@@ -91,6 +95,10 @@ def callback(points_msg):
             df['reg_hy']=r
             r = cv2.getTrackbarPos('Lo limit pix y', 'class rgbd')
             df['reg_ly']=r
+            r = cv2.getTrackbarPos('Hi limit pix x', 'class rgbd')
+            df['reg_hx']=r
+            r = cv2.getTrackbarPos('Lo limit pix x', 'class rgbd')
+            df['reg_lx']=r
 
 
             with open(file_path, 'w') as file:
