@@ -15,14 +15,14 @@ class Initial(smach.State):
         rospy.loginfo('STATE : INITIAL')
         print('Robot neutral pose')
         self.tries += 1
-        print(f'Try {self.tries} of 5 attempts')
+        print(f'[INITIAL] Try {self.tries} of 5 attempts')
         if self.tries == 3:
             return 'tries'
         
         #READ YAML ROOMS XYS
         
-        global arm ,  hand_rgb
-        hand_rgb = HAND_RGB()
+        global arm #,  hand_rgb
+        #hand_rgb = HAND_RGB()
 
         arm = moveit_commander.MoveGroupCommander('arm')
         head.set_named_target('neutral')
@@ -83,6 +83,8 @@ class Goto_living_room(smach.State):
             talk('Starting Carry my luggage task')
             rospy.sleep(0.8)
         #res = omni_base.move_base(known_location='living_room', time_out=200)
+        head.set_named_target('neutral')        
+        rospy.sleep(2.0)
         res = True
         print(res)
         if res:
@@ -98,20 +100,22 @@ class Find_human(smach.State):
             self, outcomes=['succ', 'failed', 'tries'])
         self.tries = 0
         self.point_img_pub = rospy.Publisher("/image_topic_name", String, queue_size=1)
-
+        self.dist=3
     def execute(self, userdata):
         rospy.loginfo('State : Find_human')
         rospy.sleep(1.5)
-        talk('Scanning the room for humans')
+        
         self.tries += 1
         if self.tries >= 4:
             self.tries = 0
             return 'tries'
-        if self.tries==1:head.set_joint_values([ 0.0, 0.0])# Looking ahead
+        if self.tries==1:
+            talk('Scanning the room for humans')
+            head.set_joint_values([ 0.0, 0.0])# Looking ahead
         if self.tries==2:head.set_joint_values([ 0.5, 0.1])#looking left
         if self.tries==3:head.set_joint_values([-0.5, 0.1])#looking right        
-        
-        humanpose=detect_human_to_tf(dist = 3,remove_bkg=True)  #make sure service is running (pointing detector server now hosts this service)
+        rospy.sleep(1.0)
+        humanpose=detect_human_to_tf(dist = self.dist,remove_bkg=True)  #make sure service is running (pointing detector server now hosts this service)
         if humanpose== False:
             print ('no human ')
             return 'failed'
@@ -130,12 +134,16 @@ class Find_human(smach.State):
         rospy.sleep(0.1)
 
         req = Point_detectorRequest()
-        req.dist = 2.0
+        req.dist = self.dist
         req.removeBKG = True        # CAMBIAR SI SE QUIERE QUITAR EL FONDO (CHISMOSOS) O NO
         res=pointing_detect_server(req)
-        if (res.x_r+res.y_r)==0 and  (res.x_l+res.y_l)==0  :
+        print("RES",res.x_r,res.x_l,res.y_r,res.y_l)
+        print(res.x_r+res.x_l,res.y_r+res.y_l)
+        if (res.x_r+res.x_l) == -1 and  (res.y_r+res.y_l) == -1  :
             talk('I did not find a pointing arm, I will try again')
+            rospy.sleep(0.8)
             print ('no pointing ')
+            self.tries -= 1
             return 'failed'
         talk('Ok')
         rospy.sleep(0.8)
@@ -168,7 +176,7 @@ class Scan_floor(smach.State):
         ##### Segment and analyze
         rospy.sleep(1.5)
         request= segmentation_server.request_class() 
-        request.height.data=0.00
+        request.height.data=-0.05
         res=segmentation_server.call(request)
         img=bridge.imgmsg_to_cv2(res.im_out.image_msgs[0])
         save_image(img,name="segmentCarry")
@@ -198,6 +206,7 @@ class Pre_pickup(smach.State):
         head.set_named_target('neutral')
         rospy.sleep(0.5)
         clear_octo_client()
+        
         res = omni_base.move_d_to(0.55,self.target)
 
         gripper.open()
@@ -391,9 +400,15 @@ class Post_Pickup(smach.State):
         talk('Rotating to previous human location found')
         rospy.sleep(0.7)
         
-        omni_base.move_d_to(target_distance= 1.0, target_link='human')
-        
-        return 'succ'
+        res = new_move_D_to(tf_name='human',d_x=15)
+        #omni_base.move_d_to(target_distance= 1.0, target_link='human')
+        if res:
+            return 'succ'
+
+        else:
+            talk('Failed, retrying')
+            rospy.sleep(0.8)
+            return 'failed'
 
 #########################################################################################################
 class Deliver_Luggage(smach.State):
@@ -484,7 +499,7 @@ if __name__ == '__main__':
         smach.StateMachine.add("GIVE_TO_ME",        Give_to_me(),                transitions={'failed': 'GIVE_TO_ME',
                                                                                          'succ': 'POST_PICKUP'})
 
-        smach.StateMachine.add("POST_PICKUP",       Post_Pickup(),          transitions={'failed': 'END',        
+        smach.StateMachine.add("POST_PICKUP",       Post_Pickup(),          transitions={'failed': 'POST_PICKUP',        
                                                                                          'succ': 'GOTO_HUMAN',   
                                                                                          'tries': 'END'})        
     

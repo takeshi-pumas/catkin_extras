@@ -144,7 +144,7 @@ class Analyse_forbidden(smach.State):  # ADD KNONW LOCATION DOOR
 
         else : 
             print('[ANALYSEFORBIDDENROOM] Human Found')
-            talk('Human found')
+           
             
             human_pose,_=tf_man.getTF('human')
             tmp,_=tf_man.getTF('human',ref_frame='base_link')
@@ -155,6 +155,8 @@ class Analyse_forbidden(smach.State):  # ADD KNONW LOCATION DOOR
             
             if room_robot != room_human :
                 print("[ANALYSEFORBIDDENROOM] Probablemente fuera de forbidden, descarto")
+                talk('Human found in different room')
+                rospy.sleep(0.8)
                 return 'tries'
             
             elif room_robot == room_human and room_human == forbiden_room:
@@ -163,10 +165,12 @@ class Analyse_forbidden(smach.State):  # ADD KNONW LOCATION DOOR
                 rospy.sleep(0.6)
                 print('[ANALYSEFORBIDDENROOM] I will take him to a valid location')
                 if np.linalg.norm(tmp) >= 1 and np.linalg.norm(tmp) < 1.5:
-                    res = omni_base.move_d_to(np.linalg.norm(tmp),'human')
+                    res = new_move_D_to(tf_name='human',d_x=np.linalg.norm(tmp))
+                    #res = omni_base.move_d_to(np.linalg.norm(tmp),'human')
                     rospy.sleep(0.9)
                 else:
-                    res = omni_base.move_d_to(1.3,'human')
+                    res = new_move_D_to(tf_name='human',d_x=1.5)
+                    #res = omni_base.move_d_to(1.3,'human')
                     rospy.sleep(0.9)
                 self.tries -= 1
                 return 'succ' 
@@ -298,10 +302,12 @@ class Confirm_forbidden(smach.State):  # ADD KNONW LOCATION DOOR
             rospy.sleep(0.7)
 
             if np.linalg.norm(tmp) >= 1 and np.linalg.norm(tmp) < 1.5:
-                res = omni_base.move_d_to(np.linalg.norm(tmp),'human')
+                res = new_move_D_to(tf_name='human',d_x=np.linalg.norm(tmp))
+                #res = omni_base.move_d_to(np.linalg.norm(tmp),'human')
                 rospy.sleep(0.9)
             else:
-                res = omni_base.move_d_to(1.3,'human')
+                res = new_move_D_to(tf_name='human',d_x=1.5)
+                #res = omni_base.move_d_to(1.3,'human')
                 rospy.sleep(0.9)
             self.tries=0
 
@@ -362,7 +368,7 @@ class Find_human(smach.State):
         head.set_joint_values(self.gaze[self.tries-1])
         rospy.sleep(2.5)
         
-        humanpose=detect_human_to_tf(self.distGaze[self.tries],remove_bkg=True)  #make sure service is running
+        humanpose=detect_human_to_tf(self.distGaze[self.tries-1],remove_bkg=True)  #make sure service is running
         if humanpose== False:
             print ('no human ')
             return 'failed'
@@ -407,10 +413,12 @@ class Goto_human(smach.State):
         human_pose,_=tf_man.getTF('human')
         tmp,_=tf_man.getTF('human',ref_frame='base_link')
         if np.linalg.norm(tmp) >= 1 and np.linalg.norm(tmp) < 1.5:
-            res = omni_base.move_d_to(np.linalg.norm(tmp),'human')
+            res = new_move_D_to(tf_name='human',d_x=np.linalg.norm(tmp))
+            #res = omni_base.move_d_to(np.linalg.norm(tmp),'human')
             rospy.sleep(0.9)
         else:
-            res = omni_base.move_d_to(1.3,'human')
+            res = new_move_D_to(tf_name='human',d_x=1.5)
+            #res = omni_base.move_d_to(1.3,'human')
             rospy.sleep(0.9)
 
         if res :
@@ -461,7 +469,9 @@ class Analyze_trash(smach.State):           # Talvez una accion por separado?
         talk('Analysing...')
         rospy.sleep(0.7)
         save_image(img,name="rubbish")
-        res=segmentation_server.call()
+        request= segmentation_server.request_class() 
+        request.height.data=-0.05
+        res=segmentation_server.call(request)
         img=bridge.imgmsg_to_cv2(res.im_out.image_msgs[0])
         save_image(img,name="rubbish_result")
         origin_map_img=[round(img_map.shape[0]*0.5) ,round(img_map.shape[1]*0.5)]
@@ -620,7 +630,7 @@ class Detect_drink(smach.State):
             rospy.sleep(0.1)
         
         if self.tries ==2:
-            talk('I may not found a drink, I will try one more time')
+            talk('I might not found a drink, I will try one more time')
             rospy.sleep(3)
             talk('If possible, please stay like in any position I showed you earlier')
             rospy.sleep(1.2)
@@ -652,7 +662,7 @@ class Detect_drink(smach.State):
         print(f'[ANALYZEDRINK] len res names{len(res.names)}')
         #
         if len(res.names) != 0 :
-            talk('I believe you do have a drink, thank you')
+            talk('Rule followed, I believe you have a drink, thank you')
             rospy.sleep(0.3)
             self.retry = False
             self.tries = 0
