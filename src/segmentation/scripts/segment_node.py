@@ -88,7 +88,7 @@ def trigger_response(request):
                 M = cv2.moments(contour)                
                 cX = int(M["m10"] / M["m00"])
                 cY = int(M["m01"] / M["m00"])                
-                if (cY > reg_ly_v and cY < reg_hy_v and cX > reg_lx_v and cY < reg_hX_v   ):    ### REJECT CENTROID OUTSIDE OF THIS RANGE: READ FROM YAML                
+                if (cY > reg_ly_v and cY < reg_hy_v and cX > reg_lx_v and cY < reg_hx_v   ):    ### REJECT CENTROID OUTSIDE OF THIS RANGE: READ FROM YAML                
                     boundRect = cv2.boundingRect(contour)
                     mask = np.zeros_like(binary_image) 
                     mask=cv2.rectangle(mask,(boundRect[0], boundRect[1]),(boundRect[0]+boundRect[2], boundRect[1]+boundRect[3]), (255,255,255), -1)

@@ -175,7 +175,11 @@ def callback(points_msg):
             cv2.imshow('our of res'  , img)
             save_image(img,name="placingFinder_result")
       
-        #elif key == 'g':
+        elif key == 'i':        # obtener una imagen 'normal'
+            img = rgbd.get_image()
+            img = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+            save_image(img,name="image",dirName="train")    # dirName requiere que la carpeta exista !!!
             #rospack.get_path("config_files")
             #cv2.imwrite("breakfast", rgbd.get_image())
 
