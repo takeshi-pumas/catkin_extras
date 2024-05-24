@@ -67,7 +67,7 @@ def calculate_force(enable_repulsion = True):
     
     # No entiendo por que hay que sumar una cantidad muy pequeña !!!
     if enable_repulsion:
-        Fth_rep = np.arctan2(Fy_rep, (Fx_rep + 0.000000000001)) + np.pi
+        Fth_rep = np.arctan2(Fy_rep, Fx_rep) + np.pi
         Fmag_rep = np.linalg.norm((Fx_rep, Fy_rep))
     else:
         Fth_rep = 0
@@ -124,6 +124,10 @@ def final_turn(current_speed, Fth):
                                 MAX_ANG_SPEED_LOW * np.sign(Fth))
     return speed
 
+def calculate_weight(num_readings):
+    center = num_readings / 2
+    weights = np.array([-(x - center)**2 + center**2 for x in range(num_readings)])
+    return weights / np.max(weights)
 
 # Suscribers callbacks
 
@@ -140,7 +144,7 @@ def read_sensor_cb(msg):
 
     # No entiendo por que Fy_rep no inicia en 0 como los otros !!!
     Fx_rep = 0.0
-    Fy_rep = 0.001
+    Fy_rep = 0.0
 
     # Calculate repulsive force
     for idx, deg in enumerate(laser_degs):            

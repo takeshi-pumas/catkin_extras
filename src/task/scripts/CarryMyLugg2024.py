@@ -79,7 +79,9 @@ class Goto_living_room(smach.State):
         self.tries += 1
         if self.tries == 3:
             return 'tries'
-        if self.tries == 1: talk('Navigating to, living room')
+        if self.tries == 1: #talk('Navigating to, living room')
+            talk('Starting Carry my luggage task')
+            rospy.sleep(0.8)
         #res = omni_base.move_base(known_location='living_room', time_out=200)
         res = True
         print(res)
@@ -109,10 +111,11 @@ class Find_human(smach.State):
         if self.tries==2:head.set_joint_values([ 0.5, 0.1])#looking left
         if self.tries==3:head.set_joint_values([-0.5, 0.1])#looking right        
         
-        humanpose=detect_human_to_tf(dist = 3)  #make sure service is running (pointing detector server now hosts this service)
+        humanpose=detect_human_to_tf(dist = 3,remove_bkg=True)  #make sure service is running (pointing detector server now hosts this service)
         if humanpose== False:
             print ('no human ')
             return 'failed'
+        
         talk('Please start pointing at the bag.')
         point_msg = String("pointingBAG.gif")
         self.point_img_pub.publish(point_msg)
@@ -128,6 +131,7 @@ class Find_human(smach.State):
 
         req = Point_detectorRequest()
         req.dist = 2.0
+        req.removeBKG = True        # CAMBIAR SI SE QUIERE QUITAR EL FONDO (CHISMOSOS) O NO
         res=pointing_detect_server(req)
         if (res.x_r+res.y_r)==0 and  (res.x_l+res.y_l)==0  :
             talk('I did not find a pointing arm, I will try again')
@@ -170,7 +174,7 @@ class Scan_floor(smach.State):
         save_image(img,name="segmentCarry")
         print (res.poses.data)
         #res=segmentation_server.call()
-        origin_map_img=[round(img_map.shape[0]*0.5) ,round(img_map.shape[1]*0.5)]
+        #origin_map_img=[round(img_map.shape[0]*0.5) ,round(img_map.shape[1]*0.5)]
 
         if len(res.poses.data)==0:
             talk('no Objects in area....')
@@ -179,8 +183,6 @@ class Scan_floor(smach.State):
             succ=seg_res_tf_pointing(res)   # Cambia ya que depende de tf pointing_
             return 'succ'
             
-#########################################################################################################
-
 #########################################################################################################
 class Pre_pickup(smach.State):
     def __init__(self):
@@ -245,7 +247,7 @@ class Pre_pickup(smach.State):
         return 'failed'
 
 #########################################################################################################
-class Pickup(smach.State):
+"""class Pickup(smach.State):
     def __init__(self):
         smach.State.__init__(
             self, outcomes=['succ', 'failed', 'tries'])
@@ -279,6 +281,7 @@ class Pickup(smach.State):
             return 'succ'
         else:
             return 'failed'
+"""
 
 #########################################################################################################
 class Pickup_two(smach.State):
@@ -355,7 +358,7 @@ class Pickup_two(smach.State):
         talk (' I think I missed the object, I will retry ')
         return 'failed'
         
-
+#########################################################################################################
 class Give_to_me(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed'])
@@ -375,7 +378,6 @@ class Give_to_me(smach.State):
         gripper.close(0.05)
         return 'succ'
         
-
 #########################################################################################################
 class Post_Pickup(smach.State):
     def __init__(self):
@@ -392,7 +394,8 @@ class Post_Pickup(smach.State):
         omni_base.move_d_to(target_distance= 1.0, target_link='human')
         
         return 'succ'
-    
+
+#########################################################################################################
 class Deliver_Luggage(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed'])
@@ -414,6 +417,7 @@ class Deliver_Luggage(smach.State):
         talk("Thank you")
         return 'succ'
 
+#########################################################################################################
 class Return_Living_Room(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed'])
@@ -430,7 +434,7 @@ class Return_Living_Room(smach.State):
             talk('Navigation Failed, retrying')
             return 'failed'
 
-
+#########################################################################################################
 
 # --------------------------------------------------
 def init(node_name):
@@ -470,9 +474,9 @@ if __name__ == '__main__':
         smach.StateMachine.add("PRE_PICKUP",        Pre_pickup(),           transitions={'failed': 'PRE_PICKUP',        
                                                                                          'succ': 'PICKUPTWO',  
                                                                                          'tries': 'END'})        
-        smach.StateMachine.add("PICKUP",            Pickup(),               transitions={'failed': 'PICKUP',        
+        """smach.StateMachine.add("PICKUP",            Pickup(),               transitions={'failed': 'PICKUP',        
                                                                                          'succ': 'GOTO_HUMAN',   
-                                                                                         'tries': 'END'})        
+                                                                                         'tries': 'END'})      """  
         smach.StateMachine.add("PICKUPTWO",         Pickup_two(),           transitions={'failed': 'GIVE_TO_ME',        
                                                                                          'succ': 'POST_PICKUP',   
                                                                                          'tries': 'END'})

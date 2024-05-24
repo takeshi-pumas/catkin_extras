@@ -1,4 +1,5 @@
 float64 dist
+bool removeBKG
 ---
 float64 x		#World coords w.r.t. map  
 float64 y

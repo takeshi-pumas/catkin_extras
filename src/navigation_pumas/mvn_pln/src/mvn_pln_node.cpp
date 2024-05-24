@@ -157,7 +157,7 @@ int main(int argc, char** argv)
     
     ros::Rate loop(RATE);
     //ros::Rate slow_loop(1);
-    ros::Rate slow_loop(10);
+    ros::Rate slow_loop(1);
 
     float robot_x = 0;
     float robot_y = 0;
