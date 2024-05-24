@@ -544,39 +544,6 @@ def detect_human_to_tf(dist = 6):
         return succ
 
 #------------------------------------------------------
-def get_keywords_speech(timeout=5):
-    try:
-        msg = rospy.wait_for_message('/speech_recognition/final_result', String, timeout)
-        result = msg.data
-        return result
-            
-    except ROSException:
-        rospy.loginfo('timeout')
-        return 'timeout'
-
-#------------------------------------------------------
-def check_room_px(px_pose,living_room_px_region,kitchen_px_region,bedroom_px_region,dining_room_px_region ):
-
-    
-    for i in range(4):
-        if i==0:
-            px_region=living_room_px_region
-            region='living_room'
-        if i==1:
-            px_region=kitchen_px_region
-            region='kitchen'
-        if i==2:
-            px_region=bedroom_px_region
-            region='bedroom'
-        if i==3:
-            px_region=dining_room_px_region
-            region='dining_room'
-        #print (region,px_region,px_pose)
-        if (px_pose[1]< px_region[1,1]) and (px_pose[1]> px_region[0,1]) and (px_pose[0]> px_region[0,0]) and (px_pose[0]< px_region[1,0]) : 
-            print (f'in  {region}')
-            return region
-
-#------------------------------------------------------
 def base_grasp_D(tf_name,d_x=0.66,d_y=-0.1,timeout=1.0):
     timeout = rospy.Time.now().to_sec() + timeout
     rob_pos,rot=tf_man.getTF('base_link')    
@@ -622,7 +589,83 @@ def base_grasp_D(tf_name,d_x=0.66,d_y=-0.1,timeout=1.0):
             i=0
         omni_base.tiny_move( velX=corr_velX,velY=corr_velY, velT=-eT,std_time=0.2, MAX_VEL=0.3) 
 
+#------------------------------------------------------
+
+def new_move_D_to(tf_name='placing_area',d_x=15 , timeout=30.0):
+
+    timeout = rospy.Time.now().to_sec() + timeout
+    succ = False            
+    i=0
+    while (timeout >= rospy.Time.now().to_sec()) and not succ and not rospy.is_shutdown():
+        
+        _,rot=tf_man.getTF('base_link')    
+        robot_yaw=tf.transformations.euler_from_quaternion(rot)[2]
+        pose,_= tf_man.getTF("base_link",ref_frame=tf_name)
+        target_yaw = math.atan2(pose[1], pose[0])+np.pi
+        delta_th=   target_yaw-robot_yaw
+        delta_th = (delta_th + np.pi) % (2 * np.pi) - np.pi
+        i+=1                
+        eX = np.linalg.norm((pose[0:2]))
+        eX+= -d_x  #x offest
+        velX= eX 
+        if abs(delta_th)>=0.1:velX=0
+        succ =  eX <= 0.1  and abs(delta_th)<=0.1
+        corr_velX = max(min(velX, 0.051), -0.051)
+        if i >=10:
+            print("error_D: {:.2f}, , delta_th {:.2f}, target obj frame {}".format(eX,  delta_th,tf_name))
+            i=0
+        omni_base.tiny_move( velX=corr_velX,velY=0, velT=delta_th,std_time=0.2, MAX_VEL=0.3) 
+    return succ
+
+#------------------------------------------------------
+def line_up_placing_area(timeout=10.0):
+    pose,rot= tf_man.getTF("base_link",ref_frame='placing_area')
+    delta_th=tf.transformations.euler_from_quaternion(rot)[2]
+    print (pose[1], delta_th)
+    timeout = rospy.Time.now().to_sec() + timeout
+    active= True
+    while (active and timeout >= rospy.Time.now().to_sec()) and not rospy.is_shutdown():
+        if (abs(pose[1])<0.01 and abs(delta_th)<0.1 ): active = False
+        print (pose[1], delta_th, active)
+        pose,rot= tf_man.getTF("base_link",ref_frame='placing_area')
+        if (abs(delta_th)>0.1):pose[1]=0
+        delta_th=tf.transformations.euler_from_quaternion(rot)[2]
+        omni_base.tiny_move( velX=0.0,velY=-pose[1], velT=-delta_th,std_time=0.2, MAX_VEL=0.3) 
+    return (abs(pose[1])<0.01 and abs(delta_th)<0.1 )
     
+#------------------------------------------------------
+def get_keywords_speech(timeout=5):
+    try:
+        msg = rospy.wait_for_message('/speech_recognition/final_result', String, timeout)
+        result = msg.data
+        return result
+            
+    except ROSException:
+        rospy.loginfo('timeout')
+        return 'timeout'
+
+#------------------------------------------------------
+def check_room_px(px_pose,living_room_px_region,kitchen_px_region,bedroom_px_region,dining_room_px_region ):
+
+    
+    for i in range(4):
+        if i==0:
+            px_region=living_room_px_region
+            region='living_room'
+        if i==1:
+            px_region=kitchen_px_region
+            region='kitchen'
+        if i==2:
+            px_region=bedroom_px_region
+            region='bedroom'
+        if i==3:
+            px_region=dining_room_px_region
+            region='dining_room'
+        #print (region,px_region,px_pose)
+        if (px_pose[1]< px_region[1,1]) and (px_pose[1]> px_region[0,1]) and (px_pose[0]> px_region[0,0]) and (px_pose[0]< px_region[1,0]) : 
+            print (f'in  {region}')
+            return region
+
 #-----------------------------------------------------------------
 def save_image(img,name='',dirName=''):
     rospack = rospkg.RosPack()
