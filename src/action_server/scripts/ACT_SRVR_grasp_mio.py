@@ -125,7 +125,7 @@ class PlacingStateMachine:
         self.gripper.open()
         pose_goal = [goal[0], goal[1], goal[2], goal[3], goal[4], goal[5], goal[6]]
 
-        if self.grasp_approach == "frontal":
+        if self.grasp_approach == "frontal" or self.grasp_approach == "pour" :
             self.target_pose = self.calculate_frontal_approach(target_position=pose_goal)
             
         elif self.grasp_approach == "above":
@@ -150,15 +150,13 @@ class PlacingStateMachine:
         rospy.sleep(0.6)
 
         
-        if self.grasp_approach == "frontal":
+        if self.grasp_approach == "frontal" or self.grasp_approach == "pour":
             self.base.tiny_move(velX=0.07, std_time=0.5, MAX_VEL=0.7)
-            #self.gripper.close(0.005)
-            
-            #self.gripper.open()
-            
-            self.gripper.steady()
-            rospy.sleep(0.5)
+            if self.grasp_approach == "frontal":self.gripper.close(0.07)
+            else:self.gripper.steady()
         elif self.grasp_approach == "above":self.gripper.close(0.07)
+        rospy.sleep(1.5)
+        
         #self.attach_object()
         return 'success'
         # if succ:
@@ -214,9 +212,9 @@ class PlacingStateMachine:
         group.stop()
         return succ
 
-    
-    def publish_known_areas(self, position = [0.8, -1.2, 0.65], rotation = [0,0,0.707,0.707], dimensions = [3.0 ,0.8, 0.02]): #position = [5.9, 5.0,0.3] ##SIM
-                                                                                                                   #position = [1.4, -0.9, 0.65]###REAL
+    #[0.8, -1.2, 0.65]  [0,0,0.707,0.707]
+    def publish_known_areas(self, position =[4.5,3.0,0.4] , rotation = [0,0,0.0,1], dimensions = [3.0 ,0.8, 0.02]): #position = [5.9, 5.0,0.3] ##SIM
+                                                                                                                   #position = [0.8, -1.2, 0.65],###REAL
                                                                                                                    #position =[4.5, 3.0, 0.4] ### TMR
     
         object_pose = PoseStamped()

@@ -43,7 +43,7 @@ class Initial(smach.State):
         print (objs)
         file_path = rospack.get_path('config_files')+'/regions'         
         regions={'shelves':np.load(file_path+'/shelves_region.npy'),'pickup':np.load(file_path+'/pickup_region.npy')}   ## KNOWN REGIONS
-        print (f'Regions for Storing Groceries(Real Robot) {regions}')
+        print (f'Regions for Storing Groceries(SIM Robot) {regions}')
         ##TO AVOID SMACH DYING IN CASE NO PLACING AREA IS FOUND, THere is a default that at least allows the test to continue
         x,y= np.mean(regions['shelves'], axis=0)
         z=0.44#self.mid_shelf_height=0.4 shelves heights must also be set on SCAN SHELF  state init section.
@@ -115,61 +115,69 @@ class Wait_door_opened(smach.State):
 class Goto_pickup(smach.State):  
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed', 'tries','pickup'])
-        
+        self.tries = 0
+        self.First=True
 
     def execute(self, userdata):
 
         rospy.loginfo('STATE : Navigate to known location')
-        
+
+        print(f'Try {self.tries} of 3 attempts')
+        self.tries += 1
+        if self.tries == 3:
+            self.tries = 0
+            return 'tries'
         #talk('Navigating to, pickup')        
         res = omni_base.move_base(known_location='pickup', time_out=40)
-        print(res)    
-        talk('Navigating to, pickup ')
-
-        if res:
-            return 'succ'
-        else:
-            talk('Navigation Failed, retrying')
-            return 'failed'
-
+        print(res)
+##################################################################First TIme Only go        
+        if self.tries == 1: 
+            if res:
+                return 'succ'
+            else:
+                talk('Navigation Failed, retrying')
+                return 'failed'
+#########################################################################################################
+        if self.tries > 1: 
+            #talk('Navigating to, pickup')
+            if res:
+                return 'pickup'
+            else:
+                talk('Navigation Failed, retrying')
+                return 'failed'
+#########################################################################################################
 class Scan_table(smach.State):
     def __init__(self):
         smach.State.__init__(
             self, outcomes=['succ', 'failed', 'tries'])
-        self.tries = 0     
-        self.pickup_plane_z  =0.61
+        self.tries = 0   
+        self.pickup_plane_z  =0.65 ############
+    
     def execute(self, userdata):
         rospy.loginfo('State : Scanning_table')
-        clear_octo_client()
         self.tries += 1
         if self.tries >= 3:
             self.tries = 0            
             print ( "I could not find more objects ")
             return 'tries'
         if self.tries==1:
-            head.set_joint_values([ 0.0, -0.5])
-
+            
             talk('Scanning Table')
-        if self.tries==2:
-            head.set_joint_values([ -0.3, -0.5])
-
-            talk('Scanning Table')
-        global objs , pickup_plane_z
-        pickup_plane_z=self.pickup_plane_z 
-        head.set_joint_values([ 0.0, -0.5])
-        rospy.sleep(5.0)                        
-        img_msg  = bridge.cv2_to_imgmsg( cv2.cvtColor(rgbd.get_image(), cv2.COLOR_RGB2BGR))### GAZEBO BGR!?!??!
-        req      = classify_client.request_class()
-        request= segmentation_server.request_class() 
-        req.in_.image_msgs.append(img_msg)
         
-        # VERY NICE AND ALL BUT THIS CAN BE DONE OFFLINE 
+        global objs ,pickup_plane_z
+        pickup_plane_z=self.pickup_plane_z
+        #request= segmentation_server.request_class()   ### Very nice and all but better done offline
         #request.height.data=-1.0   # autodetect planes   # SEGEMENTATION SERVICE
         #res_seg=segmentation_server.call(request)
         #print (f'Planes candidates{res_seg.planes.data}')
         #pickup_plane_z= res_seg.planes.data[0]
         #print (f'Height if max area plane{pickup_plane_z}')
-        ###############################################
+        
+        head.set_joint_values([ 0.0, -0.5])
+        rospy.sleep(5.0)                        
+        img_msg  = bridge.cv2_to_imgmsg( cv2.cvtColor(rgbd.get_image(), cv2.COLOR_RGB2BGR))### GAZEBO BGR!?!??!
+        req      = classify_client.request_class()
+        req.in_.image_msgs.append(img_msg)        
         res      = classify_client(req)
         objects=detect_object_yolo('all',res)   
         if len (objects)!=0 :
@@ -200,11 +208,9 @@ class Scan_table(smach.State):
         rospack = rospkg.RosPack()
         file_path = rospack.get_path('config_files')+'/regions'         
         
-        #regions={'shelves':np.load(file_path+'/shelf_sim.npy'),'pickup':np.load(file_path+'/pickup_sim.npy')}  #THE SIMS
         regions={'shelves':np.load(file_path+'/shelves_region.npy'),'pickup':np.load(file_path+'/pickup_region.npy')}
-
-        print (regions)
-        def is_inside(x,y,z):return ((area_box[:,1].max() > y) and (area_box[:,1].min()< y)) and ((area_box[:,0].max()> x) and (area_box[0,0].min()  < x)) and (0.9*self.pickup_plane_z<z)  
+        print (regions, self.pickup_plane_z)
+        def is_inside(x,y,z):return ((area_box[:,1].max()+0.1 > y) and (area_box[:,1].min()-0.1 < y)) and ((area_box[:,0].max() +0.1> x) and (area_box[0,0].min() -0.1 < x)) and (self.pickup_plane_z<z)  
         for name in regions:
             in_region=[]
             area_box=regions[name]
@@ -213,7 +219,8 @@ class Scan_table(smach.State):
         cats=[]
         for name in objs['obj_name']:cats.append(categorize_objs(name))
         objs['category'] = cats    
-        objs.dropna(inplace=True)             
+        objs.dropna(inplace=True)
+             
         print (objs)
         pickup_objs=objs[objs['pickup']==True]
         if len (pickup_objs)== 0:
@@ -234,22 +241,21 @@ class Pickup(smach.State):
         rospy.loginfo('STATE : PICKUP')
         rob_pos,_=tf_man.getTF('base_link')
         pickup_objs=objs[objs['pickup']==True]
-        pickup_objs=pickup_objs[pickup_objs['z']>pickup_plane_z]#PICKUP AREA HEIGHT        
+        pickup_objs=pickup_objs[pickup_objs['z']>pickup_plane_z]#PICKUP AREA HEIGHT
+        
         print ('pickup_objs',len(pickup_objs['obj_name'].values))
         if  len(pickup_objs['obj_name'].values)==0:
             talk ('No more objects found')
-        ix=np.argmin(np.linalg.norm(rob_pos-pickup_objs[['x','y','z']]  .values  , axis=1))  #FIND CLOSEST TABLE OBJECT TO ROBOT
-        name, cat=pickup_objs[['obj_name','category']].iloc[ix]                                #state category
+
+        ix=np.argmin(np.linalg.norm(rob_pos-pickup_objs[['x','y','z']]  .values  , axis=1))
+        name, cat=pickup_objs[['obj_name','category']].iloc[ix]
         print('closest',name , cat)
         talk ( f'closest object is {name}, of category {cat}, picking it up ')
         target_object= name  
+
         ##################################################
-        
-
-        pos , _ = tf_man.getTF(target_frame = target_object, ref_frame = 'odom')
-
+        pos, _ = tf_man.getTF(target_frame = target_object, ref_frame = 'odom')
         target_pose = Float32MultiArray()
-        
         pos[2] += 0.03
         target_pose.data = pos
         userdata.target_pose = target_pose
@@ -265,7 +271,34 @@ class Pickup(smach.State):
             
 
         return 'succ'
+#################################################################################################
+class Place(smach.State):   
+    def __init__(self):
+        smach.State.__init__(self, output_keys=['target_pose'],outcomes=['succ', 'failed', 'tries'])
+        self.tries = 0
+
+    def execute(self, userdata):
+
+        global cat,target_object
+        rospy.loginfo('STATE : PLACE')
+
+        ##################################################
         
+        pos, _ = tf_man.getTF(target_frame = 'placing_area', ref_frame = 'odom')
+        target_pose = Float32MultiArray()
+        pos[2] += 0.03
+        target_pose.data = pos
+        userdata.target_pose = target_pose
+
+        ###################
+        head.set_named_target('neutral')
+        rospy.sleep(0.5)
+        
+
+        #clear octo client is recommended
+        clear_octo_client()               
+
+        return 'succ'        
 class Goto_shelf(smach.State):  
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
@@ -281,7 +314,9 @@ class Goto_shelf(smach.State):
             corresponding_key='low'
             
             for key, value in shelves_cats.items():
-                if value == cat:corresponding_key = key  #Iterate over shelves cats and decide            
+                if value == cat:corresponding_key = key  #Iterate over shelves cats and decide
+
+            
             
             if corresponding_key=='mid' or  corresponding_key=='low':
                 talk ( f"I already scanned the shelf. placing in {corresponding_key} shelf")
@@ -333,8 +368,8 @@ class Goto_place_shelf(smach.State):
         arm.go()
         #if self.tries == 1: talk('Navigating to, shelf')
         res = omni_base.move_base(known_location='place_shelf', time_out=30)
-        #res = omni_base.move_base(known_location='place_shelf', time_out=10)
-        #res = omni_base.move_base(known_location='place_shelf', time_out=10)
+        res = omni_base.move_base(known_location='place_shelf', time_out=10)
+        res = omni_base.move_base(known_location='place_shelf', time_out=10)
 
         
 
@@ -355,41 +390,52 @@ class Place_shelf(smach.State):
         rospy.loginfo('STATE : Placing in shelf')
         print(f'Try {self.tries} of 3 attempts')
         self.tries += 1
-        if self.tries==2:
-            clear_octo_client()
-
         print(f'shelves_cats{shelves_cats}, object picked up cat {cat}')
         ###########################################
         high_shelf_place=[0.669, -1.44, 0.292,  -0.01729,-0.338, 0.0]
         mid_shelf_place= [0.276, -1.581, 0.15, 0.0621, -0.1234, 0.0]
         low_shelf_place= [0.01, -2.09, 0.0, 0.455, -0.004, 0.0]
+        low_shelf,mid_shelf,top_shelf,=False,False,False
         ###########################################
         #placing_places=np.asarray(('placing_area_top_shelf1','placing_area_mid_shelf1','placing_area_low_shelf1'))
-        po,_=tf_man.getTF('placing_area' )
+        po,_=tf_man.getTF('placing_area')
         if po[2]> 0.6:
             placing_pose=high_shelf_place
-            placing_shelf='high'
-        elif po[2]< 0.2:
-            placing_shelf='bottom'
+            top_shelf=True
+            print('placing top')
+
+        elif po[2]< 0.3:
             placing_pose=low_shelf_place
+            low_shelf=True
+            print('placing low')
         else:
             placing_pose=mid_shelf_place
-            placing_shelf='middle'
+            mid_shelf=True
+            print('placing mid')
         
         ###########################################
-        talk ( f'placing object on  {placing_shelf} shelf') 
-        
-       
+        new_row = {'x':  po[0], 
+           'y':  po[1], 
+           'z':  po[2], 
+           'obj_name': target_object, 
+           'low_shelf': low_shelf,
+           'mid_shelf': mid_shelf, 
+           'top_shelf': top_shelf, 
+           'category': cat}
 
-        base_grasp_D(tf_name='placing_area',d_x=0.8+0.05*self.tries , d_y=0.0,timeout=10)
+        objs_shelves.loc[len(objs_shelves)+1]=new_row
+        objs_shelves.to_csv('/home/roboworks/Documents/objs.csv') 
+
+        print( "############",new_row,objs_shelves )
+        
+
+        base_grasp_D(tf_name='placing_area',d_x=1.0, d_y=0.0,timeout=10)
         succ=arm.go(placing_pose)
         if succ == False :
-            omni_base.tiny_move( velX=-0.1,std_time=1.0)
-            succ=arm.go(placing_pose) 
-            if not succ:
-                return 'failed'
+            omni_base.tiny_move( velX=-0.1,std_time=1.0) 
+            return 'failed'
         hand_grasp_D()  
-        if placing_pose==low_shelf_place:omni_base.tiny_move( velX=0.21,std_time=2.0) 
+        #if placing_pose==low_shelf_place:omni_base.tiny_move( velX=0.1,std_time=1.5) 
 
         
         rospy.sleep(1.0)
@@ -398,9 +444,14 @@ class Place_shelf(smach.State):
         #gripper.steady()
         head.set_joint_values([0,0])
         omni_base.tiny_move( velX=-0.3,std_time=8.0) 
-        gripper.steady()
         arm.set_named_target('go')
         arm.go()
+
+
+ 
+
+        #base_grasp_D(tf_name='placing_area',d_x=0.6, d_y=0.0,timeout=30)
+        #rospy.sleep(1.0)
         #gripper.steady()
         if succ:
             self.tries=0
@@ -411,21 +462,21 @@ class Place_shelf(smach.State):
 #########################################################################################################
 class Check_grasp(smach.State):   
     def __init__(self):
-        smach.State.__init__(self, output_keys=['target_pose'],outcomes=['succ', 'failed', 'tries'])
+        smach.State.__init__(self, output_keys=['target_pose'],outcomes=['succ', 'failed'])
         self.tries=0
 
     def execute(self, userdata):
         self.tries+=1
         if self.tries>=4:
             self.tries=0
-            return 'tries'
+            
         rospy.loginfo('STATE : Check Grasp')
-        if brazo.check_grasp(): print ( f'brazo check grap result True')        
-        else: 
-            talk ('grasping might have failed')
-            return 'failed'
+        succ=brazo.check_grasp()
+        print ( f'brazo check grap result{succ}')
+        
 
         arm.set_named_target('go')
+
         arm.go()
         head.to_tf(target_object)
         rospy.sleep(1.0)
@@ -434,16 +485,15 @@ class Check_grasp(smach.State):
         req.in_.image_msgs.append(img_msg)
         res      = classify_client(req)
         objects=detect_object_yolo('all',res)   
-        def check_if_grasped(pose_target,test_pt,tolerance=0.1):return np.linalg.norm(pose_target-test_pt)<tolerance
+
+        def check_if_grasped(pose_target,test_pt,tolerance=0.05):return np.linalg.norm(pose_target-test_pt)<tolerance
         ##############################
         pose_target,_=tf_man.getTF(target_object)
         #########################
 
         if len (objects)!=0 :
-            for i in range(len(res.poses)):
-                
-                position = [res.poses[i].position.x ,res.poses[i].position.y,res.poses[i].position.z]
-                
+            for i in range(len(res.poses)):                
+                position = [res.poses[i].position.x ,res.poses[i].position.y,res.poses[i].position.z]                
                 object_point = PointStamped()
                 object_point.header.frame_id = "head_rgbd_sensor_rgb_frame"
                 object_point.point.x = position[0]
@@ -472,8 +522,8 @@ class Check_grasp(smach.State):
         #objs.drop(objs[objs['obj_name'] == target_object].index, inplace=True)
         obj_rows = objs[objs['obj_name'] == target_object]
         approx_coords =  objs[(objs['x'].round(1) == obj_rows.iloc[0]['x'].round(1)) &
-                              (objs['y'].round(1) == obj_rows.iloc[0]['y'].round(1)) &
-                              (objs['z'].round(1) == obj_rows.iloc[0]['z'].round(1))]
+                            (objs['y'].round(1) == obj_rows.iloc[0]['y'].round(1)) &
+                            (objs['z'].round(1) == obj_rows.iloc[0]['z'].round(1))]
         objs.drop(approx_coords.index,inplace=True) 
         self.tries=0
         return'succ'    
@@ -491,144 +541,112 @@ class Scan_shelf(smach.State):
         smach.State.__init__(
             self, outcomes=['succ', 'failed', 'tries'])
         self.tries = 0
-        self.top_shelf_height=0.87
+        
+        self.top_shelf_height=0.98
         self.mid_shelf_height=0.41
         self.low_shelf_height=0.01    
        
     def execute(self, userdata):
         global shelves_cats , objs_shelves
         self.tries+=1
+
         
-
-
-
-        #######FOR DEBUGGING REMOVE  
-        #global cat      
-        #cat= 'food'
+        #######FOR DEBUGGING REMOVE  s
+        #global cat  , target_object     
+        #cat= 'balls'
+        #target_object='tennis_ball'
         #shelves_cats={}
         #shelves_cats['top']='balls'
         #shelves_cats['mid']='food'
         #shelves_cats['low']='fruits'
         ######
-        if "shelves_cats" in globals() and len(shelves_cats)==3:
+        ##################
+        
+        print (cat, 'cat')
+        
+        
+        
+        
+        rospack = rospkg.RosPack()                    
+        file_path = rospack.get_path('config_files')+'/regions'        
+        regions={'shelves':np.load(file_path+'/shelves_region.npy'),'pickup':np.load(file_path+'/pickup_region.npy')}
+        print('Shelves region',regions['shelves'],'###################################')
+        ####################################
+        if "shelves_cats" in globals() and len(shelves_cats)==3:###SHELF ALREADY SCANNED
             talk ( "I already scanned the shelf. Maybe dont scan it every time?")
-            print (shelves_cats , cat)
+            print (shelves_cats , cat,"I already scanned the shelf. Maybe dont scan it every time?")
+            area=regions['shelves']
             corresponding_key='low'
             for key, value in shelves_cats.items():
                 if value == cat:corresponding_key = key  #Iterate over shelves cats and decide
-            if corresponding_key=='top':
+            print ('corresponding_key',corresponding_key, )
+            
+            area=regions['shelves']        
+            
+            shelf_heights = {
+            'top': self.top_shelf_height,
+            'mid': self.mid_shelf_height,
+            'low': self.low_shelf_height
+            }
 
-                talk(f'Category {cat} found in top shelf... Placing')
-                print ('GOTO PLACE SHELF TOP')
-                head.set_joint_values([0.0 , 0.0])
-                rospy.sleep(2.5)
-                clear_octo_client()
-                av=arm.get_current_joint_values()
-                av[0]=0.67
-                av[1]=-0.74
-                arm.go(av)
-                #head.set_joint_values([-np.pi/2 , -0.7])  
-                head.to_tf('top_shelf')
-                rospy.sleep(2.6)
-                rospy.sleep(2.5) 
-                omni_base.tiny_move( velY=-0.3,std_time=20.0)              
-                
-                if find_placing_area(self.top_shelf_height) != True:
-                    omni_base.tiny_move( velY=-0.2,std_time=6.66)
-                    head.to_tf('top_shelf')
-                    find_placing_area(self.top_shelf_height )
-
-                
-                clear_octo_client()
-                head.set_joint_values([0.0 , 0.0])
-                rospy.sleep(2.6)
-                rospy.sleep(2.6)
-                arm.set_named_target('go')
-                arm.go()
-                rospy.sleep(2.5)         
-                return 'succ'
-
-            elif corresponding_key=='low':
-
-                talk(f'Category {cat} found in low shelf... Placing')
-                print ('GOTO PLACE SHELF LOW')
-                head.set_joint_values([0.0 , 0.0])
-                arm.set_named_target('go')
-                arm.go()                
-                #omni_base.move_base(known_location='place_shelf', time_out=10)
-                #omni_base.move_base(known_location='place_shelf', time_out=10)
-                
-                
-                
-                head.to_tf('low_shelf')
-                rospy.sleep(2.5)
-                if find_placing_area(self.low_shelf_height) != True:
-                    omni_base.tiny_move( velX=0.2,std_time=8.5)
-                    head.to_tf('low_shelf')
-                    find_placing_area(self.low_shelf_height) 
-                clear_octo_client()
-                rospy.sleep(2.6)
-                arm.set_named_target('go')
-                arm.go()                
-                 
-                return 'succ'
-
-            else:
-                talk(f'Category {cat} found in mid shelf... Placing')
-
-                head.set_joint_values([0.0 , 0.0])# 
-                arm.set_named_target('go')
-                arm.go()
-                rospy.sleep(1.0)
-                
-                rospy.sleep(2.5)
-                rospy.sleep(2.5)            
-                omni_base.tiny_move( velX=0.2,std_time=5.5)
-                head.to_tf('mid_shelf')     
-                rospy.sleep(2.6)
-                if find_placing_area(self.mid_shelf_height) != True:
-                    omni_base.tiny_move( velX=0.4,std_time=4)
-                    head.to_tf('mid_shelf')
-                    find_placing_area(self.mid_shelf_height) 
-
-
-                    
-                head.set_joint_values([0.0 , 0.0])                
-                rospy.sleep(2.6)
-                arm.set_named_target('go')
-                arm.go()
-                omni_base.tiny_move( velX=-0.3,std_time=4.0)
-                return 'succ'
+            z_place = shelf_heights.get(corresponding_key, 0) + 0.05
+            ################ PLACING AREA ESTIMATION FROM KNOWLEDGE DATA BASE
+            y_range = np.arange(area[0,1]+0.15, area[1,1]-0.15, .1)
+            x_range = np.arange(area[0,0]+0.15, area[1,0]-0.15, .1)
+            grid = np.meshgrid(x_range, y_range)
+            grid_points = np.vstack([grid[0].ravel(), grid[1].ravel()]).T        
+            free_grid = grid_points.tolist()
+            # Create a new list without the unwanted elements
+            free_grid = [free_pt for free_pt in free_grid if all(
+                np.linalg.norm(obj_pt - free_pt) >= 0.153 for obj_pt in objs_shelves[objs_shelves[corresponding_key + '_shelf'] == True][['x', 'y']].values)]
+            free_grid=np.asarray((free_grid))
+            if len (free_grid)==0:
+                print ( 'no placing area found, using generic safe pose')
+                x,y= np.mean(regions['shelves'], axis=0)
+                z=0.44#self.mid_shelf_height=0.4 shelves heights must also be set on SCAN SHELF  state init section.
+                tf_man.pub_static_tf(pos=[x,y,z],point_name='placing_area') ### IF a real placing area is found this tf will be updated
+                                                                    ##  even if no placing area is found for whatever reason au
+            else:            
+                print (free_grid)
+                summed_ds_to_objs=[]
+                for pt in free_grid:summed_ds_to_objs.append(np.linalg.norm(pt-objs_shelves[objs_shelves[corresponding_key+'_shelf']==True][['x','y']].values, axis=1).sum())
+                xy_place=free_grid[np.argmax(summed_ds_to_objs)]                        
+                print(f'placing_point at {corresponding_key}_shelf  {xy_place} , {z_place}')               
+                tf_man.pub_static_tf(pos=[xy_place[0], xy_place[1],z_place+0.05], rot =[0,0,0,1], point_name='placing_area')
+            
+            
+            head.set_joint_values([0.0 , 0.0])
+            rospy.sleep(2.6)
+            arm.set_named_target('go')
+            arm.go()
+            return 'succ'
+###########################################################################################            
                 
 
         rospy.loginfo('State : Scanning_shelf')
         talk('Scanning shelf')
-        clear_octo_client()
-        ##################
-        rospack = rospkg.RosPack()                    
-        file_path = rospack.get_path('config_files')+'/regions'         
-        #regions={'shelves':np.load(file_path+'/shelf_sim.npy'),'pickup':np.load(file_path+'/pickup_sim.npy')}
-        regions={'shelves':np.load(file_path+'/shelves_region.npy'),'pickup':np.load(file_path+'/pickup_region.npy')}
-        print('Shelves region',regions['shelves'],'###################################')
-        ####################################
-        x,y= np.mean(regions['shelves'], axis=0)
-        tf_man.pub_static_tf(pos=[x,y,self.top_shelf_height],point_name='top_shelf')
-        tf_man.pub_static_tf(pos=[x,y,self.mid_shelf_height],point_name='mid_shelf')
-        tf_man.pub_static_tf(pos=[x,y,self.low_shelf_height],point_name='low_shelf')
         
-    
-        file_path = rospack.get_path('config_files') 
-        objs_shelves = pd.read_csv (file_path+'/objects.csv') #EMPTY DATAFRAME
-        objs_shelves=objs_shelves.drop(columns='Unnamed: 0')
-        ###########################################
-        head.set_joint_values([0.0 , 0.0])
-        rospy.sleep(2.5)  ## wait for head beofre moving hand
-        av=arm.get_current_joint_values()
-        av[0]=0.67
-        av[1]=-0.74
-        arm.go(av)
-        head.set_joint_values([-np.pi/2 , -0.7])        
-        rospy.sleep(2.6)
+        
+        if self.tries==1:
+            file_path = rospack.get_path('config_files') 
+            objs_shelves = pd.read_csv (file_path+'/objects.csv') #EMPTY DATAFRAME
+            objs_shelves=objs_shelves.drop(columns='Unnamed: 0')
+            ###########################################
+            head.set_joint_values([0.0 , 0.0])
+            av=arm.get_current_joint_values()
+            av[0]=0.67
+            av[1]=-0.74
+            arm.go(av)
+            head.set_joint_values([-np.pi/2 , -0.7])        
+            rospy.sleep(2.6)
+        if self.tries==2:
+            head.set_joint_values([0.0 , 0.0])
+            av=arm.get_current_joint_values()
+            av[0]=0.0            
+            arm.go(av)
+            head.set_joint_values([-np.pi/2 , -0.7])        
+            rospy.sleep(5)       
+
         rospy.sleep(3.0)
         image= cv2.cvtColor(rgbd.get_image(), cv2.COLOR_RGB2BGR)
         img_msg  = bridge.cv2_to_imgmsg(image)
@@ -640,9 +658,9 @@ class Scan_shelf(smach.State):
         ####################################
         area_box=regions['shelves']
         print (area_box)
-        def is_inside_top(x,y,z):return ((area_box[:,1].max()+0.15 > y) and (area_box[:,1].min()-0.15 < y)) and ((area_box[:,0].max()+0.15 > x) and (area_box[0,0].min()-0.15 < x))    and (0.9*self.top_shelf_height < z )  
-        def is_inside_mid(x,y,z):return ((area_box[:,1].max()+0.15 > y) and (area_box[:,1].min()-0.15 < y)) and ((area_box[:,0].max()+0.15 > x) and (area_box[0,0].min()-0.15 < x))    and ((0.9*self.top_shelf_height > z) and (self.mid_shelf_height < z  )  )  
-        def is_inside_low(x,y,z):return ((area_box[:,1].max()+0.15 > y) and (area_box[:,1].min()-0.15 < y)) and ((area_box[:,0].max()+0.15 > x) and (area_box[0,0].min()-0.15 < x))    and ((0.9*self.mid_shelf_height > z  )  )
+        def is_inside_top(x,y,z):return ((area_box[:,1].max() > y) and (area_box[:,1].min() < y)) and ((area_box[:,0].max() > x) and (area_box[0,0].min() < x))    and (self.top_shelf_height < z )  
+        def is_inside_mid(x,y,z):return ((area_box[:,1].max() > y) and (area_box[:,1].min() < y)) and ((area_box[:,0].max() > x) and (area_box[0,0].min() < x))    and ((0.9*self.top_shelf_height > z) and (self.mid_shelf_height < z  )  )  
+        def is_inside_low(x,y,z):return ((area_box[:,1].max() > y) and (area_box[:,1].min() < y)) and ((area_box[:,0].max() > x) and (area_box[0,0].min() < x))    and ((0.9*self.mid_shelf_height > z  )  )
         #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
         if len (objects)!=0 :
             for i in range(len(res.poses)):                
@@ -653,9 +671,10 @@ class Scan_shelf(smach.State):
                 object_point.header.frame_id = "head_rgbd_sensor_rgb_frame"
                 object_point.point.x = position[0]
                 object_point.point.y = position[1]
-                object_point.point.z = position[2]
+                object_point.point.z = position[2]                
                 position_map = tfBuffer.transform(object_point, "map", timeout=rospy.Duration(1))
                 print ('position_map',position_map.point.x,position_map.point.y,position_map.point.z)     
+                ###########################################################################################
                 x,y,z=position_map.point.x,position_map.point.y,position_map.point.z
                 print (is_inside_top(x,y,z),                is_inside_mid(x,y,z),                is_inside_low(x,y,z))
                 new_row = {'x': position_map.point.x, 'y': position_map.point.y, 'z': position_map.point.z, 'obj_name': res.names[i].data[4:]}
@@ -678,16 +697,11 @@ class Scan_shelf(smach.State):
         objs_shelves['top_shelf']=pd.Series(in_region)
         objs_shelves['mid_shelf']=pd.Series(in_region_mid)
         objs_shelves['low_shelf']=pd.Series(in_region_low)
-
-        
-
         objs_shelves.dropna(inplace=True)
         for name in objs_shelves['obj_name']:cats.append(categorize_objs(name))
         objs_shelves['category'] = cats 
-        print (objs_shelves)
-
-
-
+        print (objs_shelves)        
+        #objs_shelves.to_csv('/home/roboworks/Documents/objs.csv') 
         shelves_cats={}
         a=objs_shelves[objs_shelves['top_shelf']]['category'].value_counts()
         if 'other' in objs_shelves[objs_shelves['top_shelf']]['category'].values:a.drop('other',inplace=True)
@@ -707,39 +721,90 @@ class Scan_shelf(smach.State):
         if 'other' in objs_shelves[objs_shelves['mid_shelf']]['category'].values:a.drop('other',inplace=True)
         if len(a.values)!=0:
             print(f'MID  shelf category {a.index[a.argmax()]}')
-            shelves_cats['mid'] =a.index[a.argmax()]
-            
+            shelves_cats['mid'] =a.index[a.argmax()]           
         
         print (shelves_cats , cat)
         corresponding_key='low'  # fall back case
         for key, value in shelves_cats.items():
             if value == cat:corresponding_key = key        
         print ('corresponding_key',corresponding_key)
+        area=regions['shelves']        
+        print (area)
+        shelf_heights = {
+        'top': self.top_shelf_height,
+        'mid': self.mid_shelf_height,
+        'low': self.low_shelf_height
+        }
+        print('here',objs_shelves[objs_shelves[corresponding_key + '_shelf']])
+        objs_shelves.to_csv('/home/roboworks/Documents/objs.csv') 
+
+        z_place = shelf_heights.get(corresponding_key, 0) + 0.1
+
+        ##############################################################
+        # ######3
+        #if corresponding_key=='top':z_place=self.top_shelf_height+0.1
+
+        #if corresponding_key=='mid':z_place=self.mid_shelf_height+0.1
+        #if corresponding_key=='low':z_place=self.low_shelf_height+0.1
+        ################ PLACING AREA ESTIMATION FROM KNOWLEDGE DATA BASE
+        y_range = np.arange(area[0,1]+0.05, area[1,1]-0.015, .15)
+        x_range = np.arange(area[0,0]+0.05, area[1,0]-0.015, .15)
+        grid = np.meshgrid(x_range, y_range)
+        grid_points = np.vstack([grid[0].ravel(), grid[1].ravel()]).T        
+        free_grid = grid_points.tolist()
+        # Create a new list without the unwanted elements
+        free_grid = [free_pt for free_pt in free_grid if all(
+            np.linalg.norm(obj_pt - free_pt) >= 0.153 for obj_pt in objs_shelves[objs_shelves[corresponding_key + '_shelf'] == True][['x', 'y']].values)]
+        free_grid=np.asarray((free_grid))
         
-        if corresponding_key=='top':
+        
+        if len (free_grid)==0:
+            print ( 'no placing area found, using generic safe pose')
+            x,y= np.mean(regions['shelves'], axis=0)
+            z=0.44#self.mid_shelf_height=0.4 shelves heights must also be set on SCAN SHELF  state init section.
+            tf_man.pub_static_tf(pos=[x,y,z],point_name='placing_area') ### IF a real placing area is found this tf will be updated
+                                                                ##  even if no placing area is found for whatever reason au
+        else:            
+            print (free_grid)
+            summed_ds_to_objs=[]
+            for pt in free_grid:summed_ds_to_objs.append(np.linalg.norm(pt-objs_shelves[objs_shelves[corresponding_key+'_shelf']==True][['x','y']].values, axis=1).sum())
+            xy_place=free_grid[np.argmax(summed_ds_to_objs)]                        
+            print(f'placing_point at {corresponding_key}_shelf  {xy_place} , {z_place}')               
+            tf_man.pub_static_tf(pos=[xy_place[0], xy_place[1],z_place+0.05], rot =[0,0,0,1], point_name='placing_area')
+        
+        head.set_joint_values([0.0 , 0.0])
+        rospy.sleep(2.6)
+        arm.set_named_target('go')
+        arm.go()
+        self.tries=0
+        return 'succ'
+        
+        """if corresponding_key=='top':
             talk(f'Category {cat} found in top shelf... Placing')
             print ('GOTO PLACE SHELF TOP')
-            omni_base.tiny_move( velY=-0.3,std_time=15.0)
+            head.set_joint_values([0.0 , 0.0])
+            arm.set_named_target('go')
+            arm.go()
+            rospy.sleep(4.0)
             #omni_base.move_base(known_location='high_place_area', time_out=10)
             #omni_base.move_base(known_location='high_place_area', time_out=10)
-            #omni_base.move_base(known_location='shelf', time_out=10)
-            #omni_base.move_base(known_location='shelf', time_out=10)
-            #head.set_joint_values([0.0 , 0.0])
-            #av=arm.get_current_joint_values()
-            #av[0]=0.67
-            #av[1]=-0.74
-            #arm.go(av)
-            #head.set_joint_values([-np.pi/2 , -0.7])        
-            #rospy.sleep(5.0)     
+            omni_base.move_base(known_location='shelf', time_out=10)
+            omni_base.move_base(known_location='shelf', time_out=10)
+            head.set_joint_values([0.0 , 0.0])
+            av=arm.get_current_joint_values()
+            av[0]=0.67
+            av[1]=-0.74
+            arm.go(av)
+            head.set_joint_values([-np.pi/2 , -0.7])        
+            rospy.sleep(5.0)     
             if find_placing_area(self.top_shelf_height):
                 head.set_joint_values([0.0 , 0.0])
                 rospy.sleep(2.6)
                 return 'succ'
             else :
-                omni_base.tiny_move( velY=-0.3,std_time=10.0)
-                find_placing_area(self.top_shelf_height)
+                find_placing_area(self.top_shelf_height+0.03)
                 head.set_joint_values([0.0 , 0.0])
-                rospy.sleep(5.0)
+                rospy.sleep(2.6)
                 return 'succ'
         
         elif corresponding_key=='mid':
@@ -756,30 +821,11 @@ class Scan_shelf(smach.State):
             rospy.sleep(2.5)            
             head.set_joint_values([0.0 , -0.7])        
             rospy.sleep(2.6)
-            omni_base.tiny_move( velX=0.2,std_time=5.0) 
-            if find_placing_area(self.mid_shelf_height):
-                head.set_joint_values([0.0 , 0.0])
-                rospy.sleep(2.6)
-                arm.set_named_target('go')
-                arm.go()
-                return 'succ'
-            omni_base.tiny_move( velX=0.2,std_time=5.0) 
-            if find_placing_area(self.mid_shelf_height):
-                head.set_joint_values([0.0 , 0.0])
-                rospy.sleep(2.6)
-                arm.set_named_target('go')
-                arm.go()
-                return 'succ'                
-                
-            omni_base.tiny_move( velX=0.2,std_time=5.0) 
-            if find_placing_area(self.mid_shelf_height):
-                head.set_joint_values([0.0 , 0.0])
-                rospy.sleep(2.6)
-                arm.set_named_target('go')
-                arm.go()
-                return 'succ'                
-            return 'failed'
-            
+            find_placing_area(self.mid_shelf_height)
+            head.set_joint_values([0.0 , 0.0])
+            rospy.sleep(2.6)
+            arm.set_named_target('go')
+            arm.go()
 
             return 'succ'
 
@@ -793,20 +839,15 @@ class Scan_shelf(smach.State):
             #omni_base.move_base(known_location='bottom_place_area', time_out=10)
             #omni_base.move_base(known_location='bottom_place_area', time_out=10)
             omni_base.move_base(known_location='place_shelf', time_out=10)
+            omni_base.move_base(known_location='place_shelf', time_out=10)
             rospy.sleep(2.5)
             rospy.sleep(2.5)
-            omni_base.tiny_move( velX=0.1,std_time=5.0) 
-            head.to_tf('low_shelf')
+            head.set_joint_values([0.0, -1.05])        
             rospy.sleep(2.5)
-            if find_placing_area(self.low_shelf_height):
-                return 'succ'
-            omni_base.tiny_move( velX=0.1,std_time=5.0) 
-            if find_placing_area(self.low_shelf_height):                
-                return 'succ'
-            omni_base.tiny_move( velX=0.1,std_time=5.0) 
-            if find_placing_area(self.low_shelf_height):
-                return 'succ'
-            return 'failed'
+            if find_placing_area(self.low_shelf_height): return 'succ'"""
+       
+        
+        
 
 # --------------------------------------------------
 def init(node_name):
@@ -824,6 +865,7 @@ if __name__ == '__main__':
     with sm:
         # State machine STICKLER
         smach.StateMachine.add("INITIAL",           Initial(),              transitions={'failed': 'INITIAL',           
+                                                                                         #'succ': 'GOTO_SHELF',   
                                                                                          'succ': 'WAIT_PUSH_HAND',   
                                                                                          'tries': 'END'})
         smach.StateMachine.add("WAIT_PUSH_HAND",    Wait_push_hand(),       transitions={'failed': 'WAIT_PUSH_HAND',    
@@ -838,13 +880,14 @@ if __name__ == '__main__':
                                                                                          'tries':'GOTO_PICKUP',                                                                                               
                                                                                          'pickup':'PICKUP'})
         smach.StateMachine.add("SCAN_TABLE",    Scan_table(),       transitions={'failed': 'SCAN_TABLE',    
-                                                                                         'succ': 'PICKUP',       
+                                                                                         'succ': 'GOTO_PICKUP',       
                                                                                          'tries': 'GOTO_PICKUP'})        
         smach.StateMachine.add("GOTO_SHELF",    Goto_shelf(),       transitions={'failed': 'GOTO_SHELF',    
                                                                                          'succ': 'SCAN_SHELF',       
                                                                                          'tries': 'GOTO_SHELF'})
         smach.StateMachine.add("GOTO_PLACE_SHELF",    Goto_place_shelf(),       transitions={'failed': 'GOTO_PLACE_SHELF',    
                                                                                          'succ': 'PLACE_SHELF',       
+                                                                                         #'succ': 'PLACE',       
                                                                                          'tries': 'GOTO_SHELF'})
         smach.StateMachine.add("PLACE_SHELF",    Place_shelf(),       transitions={'failed': 'PLACE_SHELF',    
                                                                                          'succ': 'GOTO_PICKUP',       
@@ -857,9 +900,16 @@ if __name__ == '__main__':
                                                                                          'tries': 'GOTO_PICKUP'})
         smach.StateMachine.add("CHECK_GRASP",    Check_grasp(),       transitions={'failed': 'GRASP_GOAL',    
                                                                                          'succ': 'GOTO_SHELF',
-                                                                                         'tries': 'GOTO_PICKUP'})
+                                                                                         })
+        smach.StateMachine.add("PLACE",    Place(),       transitions={'failed': 'PLACE',    
+                                                                                         'succ': 'PLACE_GOAL',
+                                                                                         'tries': 'GOTO_PLACE_SHELF'})
+        
         smach.StateMachine.add("GRASP_GOAL", SimpleActionState('grasp_server', GraspAction, goal_slots=['target_pose']),              
-                        transitions={'preempted': 'END', 'succeeded': 'CHECK_GRASP', 'aborted': 'CHECK_GRASP'})
+                               transitions={'preempted': 'END', 'succeeded': 'CHECK_GRASP', 'aborted': 'SCAN_TABLE'})
+        
+        smach.StateMachine.add("PLACE_GOAL", SimpleActionState('place_server', GraspAction, goal_slots=['target_pose']),              
+                        transitions={'preempted': 'PLACE_SHELF', 'succeeded': 'CHECK_GRASP', 'aborted': 'PLACE_SHELF'})
         
         ###################################################################################################################################################################
         

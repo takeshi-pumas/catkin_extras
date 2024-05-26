@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+from scipy.spatial import KDTree
 import cv2  
 import rospy 
 import numpy as np
@@ -619,21 +619,36 @@ def new_move_D_to(tf_name='placing_area',d_x=15 , timeout=30.0):
     return succ
 
 #------------------------------------------------------
-def line_up_placing_area(timeout=10.0):
-    pose,rot= tf_man.getTF("base_link",ref_frame='placing_area')
+
+def line_up_TF(tf_name='placing_area', timeout=30.0):
+    pose,rot= tf_man.getTF("base_link",ref_frame=tf_name)
     delta_th=tf.transformations.euler_from_quaternion(rot)[2]
     print (pose[1], delta_th)
     timeout = rospy.Time.now().to_sec() + timeout
     active= True
     while (active and timeout >= rospy.Time.now().to_sec()) and not rospy.is_shutdown():
-        if (abs(pose[1])<0.01 and abs(delta_th)<0.1 ): active = False
-        print (pose[1], delta_th, active)
-        pose,rot= tf_man.getTF("base_link",ref_frame='placing_area')
-        if (abs(delta_th)>0.1):pose[1]=0
+        
+        if (abs(pose[1])<0.01 and abs(delta_th)<0.05 ): active = False
+        pose,rot= tf_man.getTF("base_link",ref_frame=tf_name)
         delta_th=tf.transformations.euler_from_quaternion(rot)[2]
+        print (pose[1], delta_th, active)
+        
+        if (abs(delta_th)>0.1):pose[1]=0
+        
         omni_base.tiny_move( velX=0.0,velY=-pose[1], velT=-delta_th,std_time=0.2, MAX_VEL=0.3) 
     return (abs(pose[1])<0.01 and abs(delta_th)<0.1 )
-    
+
+#------------------------------------------------------
+def find_best_grid_point(free_grid, radius=0.1):
+    tree = KDTree(free_grid)
+    max_neighbors = 0
+    best_point = None
+    for point in free_grid:
+        neighbors = tree.query_ball_point(point, radius)
+        if len(neighbors) > max_neighbors:
+            max_neighbors = len(neighbors)
+            best_point = point
+    return best_point
 #------------------------------------------------------
 def get_keywords_speech(timeout=5):
     try:
