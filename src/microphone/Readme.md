@@ -2,8 +2,7 @@ In order to use HSRB PS-EYE (microphone) on ROS laptop you MUST do the following
 
 1. Run gstreamer server:
     ssh administrator@hsrb.local_et
-    cd microphone
-    #sudo nano GstreamerServer_robot.sh (change host ip to your ROS laptop ip)
+    #sudo nano GstreamerServer_robot.sh (change host ip to your ROS laptop ip) (No needed if you're using takeshi or tamagawa laptop)
     ./GstreamerServer_robot.sh
 
 2. Run gstreamer client:

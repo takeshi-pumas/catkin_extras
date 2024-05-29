@@ -9,10 +9,13 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <geometry_msgs/TransformStamped.h>
 #include <point_cloud/PointCloudFilter.h>
-
+#include <std_msgs/Bool.h>
 
 ros::Publisher pub;
+ros::Subscriber sub_point_cloud;
 tf2_ros::Buffer tf_buffer;
+
+bool enable = true;
 //tf2_ros::TransformListener* tf_listener_ptr;
 
 
@@ -70,21 +73,30 @@ bool filterPointCloudService(point_cloud::PointCloudFilter::Request& req,
 // Filter PC topic
 void pointCloudCallback(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr& msg) {
     // Transforma la nube de puntos al marco base_link
-    pcl::PointCloud<pcl::PointXYZ>::Ptr transformed_cloud(new pcl::PointCloud<pcl::PointXYZ>);
-    if (!transformPointCloud("base_link", msg, transformed_cloud)) {
-        ROS_WARN("Failed to transform point cloud.");
-        return;
+
+    if (enable) {
+        pcl::PointCloud<pcl::PointXYZ>::Ptr transformed_cloud(new pcl::PointCloud<pcl::PointXYZ>);
+        if (!transformPointCloud("base_link", msg, transformed_cloud)) {
+            ROS_WARN("Failed to transform point cloud.");
+            return;
+        }
+
+        float z_min = 0.05;
+        float z_max = 1.5;
+
+        // Filtra la nube de puntos en la coordenada Z de base_link
+        pcl::PointCloud<pcl::PointXYZ>::Ptr filtered_cloud(new pcl::PointCloud<pcl::PointXYZ>);
+        filterPointCloudZ(transformed_cloud, filtered_cloud, z_min, z_max);
+
+        // Publica la nube de puntos filtrada
+        pub.publish(filtered_cloud);
     }
+}
 
-    float z_min = 0.05;
-    float z_max = 1.5;
+void filterEnableCallback(const std_msgs::Bool::ConstPtr& msg) {
 
-    // Filtra la nube de puntos en la coordenada Z de base_link
-    pcl::PointCloud<pcl::PointXYZ>::Ptr filtered_cloud(new pcl::PointCloud<pcl::PointXYZ>);
-    filterPointCloudZ(transformed_cloud, filtered_cloud, z_min, z_max);
-
-    // Publica la nube de puntos filtrada
-    pub.publish(filtered_cloud);
+    enable = msg->data;
+    std::cout << "Point Cloud filter is set as:" << enable << std::endl;
 }
 
 
@@ -100,7 +112,8 @@ int main(int argc, char** argv) {
     ROS_INFO("Point Cloud filtered Service: /filter_point_cloud");
     ros::Duration(0.5).sleep();
     // Suscribe al tópico de la nube de puntos de la cámara
-    ros::Subscriber sub = nh.subscribe("/hsrb/head_rgbd_sensor/depth_registered/rectified_points", 10, pointCloudCallback);
+    sub_point_cloud = nh.subscribe("/hsrb/head_rgbd_sensor/depth_registered/rectified_points", 10, pointCloudCallback);
+    ros::Subscriber sub_enable = nh.subscribe("/point_cloud_filter/enable", 10, filterEnableCallback);
 
     // Publica la nube de puntos filtrada
     pub = nh.advertise<pcl::PointCloud<pcl::PointXYZ>>("/filtered_point_cloud", 10);
