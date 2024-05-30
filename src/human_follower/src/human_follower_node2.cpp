@@ -6,7 +6,6 @@
 #include "geometry_msgs/Twist.h"
 #include "geometry_msgs/PointStamped.h"
 #include "sensor_msgs/LaserScan.h"
-//#include "std_msgs/Float32.h"
 #include "tf/transform_listener.h"
 #include "tf_conversions/tf_eigen.h"
 
@@ -14,8 +13,10 @@
 ros::NodeHandle* n;
 ros::Subscriber  sub_legs_pose;
 ros::Subscriber  sub_lidar;
+ros::Subscriber sub_last_waypoint;
 ros::Publisher   pub_cmd_vel;
 ros::Publisher   pub_head_pose;
+ros::Publisher   pub_next_wp;
 tf::TransformListener* listener;
 std::string legs_pose_topic = "/hri/human_follower/active_waypoint";
 std::string laser_topic = "/hsrb/base_scan";
@@ -34,6 +35,7 @@ float dist_to_human  = 1.0;
 bool  move_backwards = false;
 bool  move_head      = false;
 bool  pot_fields     = false;
+bool  last_pose      = false;
 
 bool new_legs_pose = false;
 bool enable = false;
@@ -59,6 +61,8 @@ geometry_msgs::Twist calculate_speeds(float goal_x, float goal_y)
     }
     else
     {
+        std_msgs::Empty msg;
+        pub_next_wp.publish(msg);
         result.linear.x  = 0;
         result.linear.y  = 0;
         if(fabs(angle_error) >= M_PI_4 / 6.0f)
@@ -85,6 +89,7 @@ void callback_legs_pose(const geometry_msgs::PointStamped::ConstPtr& msg)
 {
     float human_x = msg->point.x;
     float human_y = msg->point.y;
+    std::cout << "New goal received: " << human_x << human_y << std::endl;
     if(msg->header.frame_id.compare("base_link") != 0)
     {
         //std::cout << "LegFinder.->WARNING!! Leg positions must be expressed wrt robot" << std::endl;
@@ -105,7 +110,7 @@ void callback_lidar(const sensor_msgs::LaserScan::ConstPtr& msg)
 {
     repulsiveForceX = 0.0;
     repulsiveForceY = 0.0;
-    float laser_threshold = 2.0;
+    float laser_threshold = 0.95;
     for(size_t i = 0; i < msg->ranges.size(); i++)
     {
         if(msg->ranges[i] < laser_threshold) //msg->range_max)
@@ -118,6 +123,13 @@ void callback_lidar(const sensor_msgs::LaserScan::ConstPtr& msg)
             std::cout << repulsiveForceY << std::endl;
         }
     }    
+}
+
+void callback_last_waypoint(const std_msgs::Bool::ConstPtr& msg) {
+
+    last_pose = msg->data;
+    if (last_pose) dist_to_human = 1.0;
+    else dist_to_human = 0.1;
 }
 
 void callback_enable(const std_msgs::Bool::ConstPtr& msg)
@@ -162,11 +174,15 @@ int main(int argc, char** argv)
     if(ros::param::has("~cmd_vel_topic"))   ros::param::get("~cmd_vel_topic", cmd_vel_topic);
     if(ros::param::has("~head_topic"))      ros::param::get("~head_topic", head_topic);
     
-    ros::Subscriber sub_enable = n->subscribe("/hri/human_following/start_follow", 1, callback_enable);
-    ros::Subscriber sub_stop   = n->subscribe("/stop", 1, callback_stop);
-    listener = new tf::TransformListener();
     pub_cmd_vel   = n->advertise<geometry_msgs::Twist>(cmd_vel_topic, 1);
     pub_head_pose = n->advertise<std_msgs::Float32MultiArray>(head_topic, 1);
+    pub_next_wp   = n->advertise<std_msgs::Empty>("/hri/waypoints/next_waypoint", 1);
+    sub_last_waypoint = n->subscribe("/hri/human_follower/last_waypoint", 1, callback_last_waypoint);
+    
+    ros::Subscriber sub_enable = n->subscribe("/hri/human_following/start_follow", 1, callback_enable);
+    ros::Subscriber sub_stop   = n->subscribe("/stop", 1, callback_stop);
+    
+    listener = new tf::TransformListener();
     ros::Rate loop(30);
 
     std::cout << "HumanFollower.-> max_linear="<<max_linear<<"  max_angular="<<max_angular<<"  alpha="<<control_alpha<<"  beta="<<control_beta<<std::endl;

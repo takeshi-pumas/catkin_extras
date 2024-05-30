@@ -11,6 +11,7 @@
 ros::NodeHandle* nh;
 ros::Publisher pub_marker_array;
 ros::Publisher pub_active_waypoint;
+ros::Publisher pub_last_waypoint;
 ros::Subscriber sub_legs_pose;
 ros::Subscriber sub_next_waypoint;
 
@@ -42,7 +43,7 @@ visualization_msgs::Marker create_waypoint(float posx, float posy, int id) {
     marker.color.r = 0.0;
     marker.color.g = 0.0;
     marker.color.b = 1.0;
-    marker.lifetime = ros::Duration();
+    marker.lifetime = ros::Duration(5.0);
     return marker;
 }
 
@@ -55,6 +56,10 @@ void publish_active_waypoint() {
         active_waypoint.point.y = leg_positions[active_waypoint_index].second;
         active_waypoint.point.z = 0.1;
         pub_active_waypoint.publish(active_waypoint);
+
+        std_msgs::Bool last_waypoint_msg;
+        last_waypoint_msg.data = (active_waypoint_index == leg_positions.size() - 1);
+        pub_last_waypoint.publish(last_waypoint_msg);
     }
 }
 
@@ -116,7 +121,8 @@ void callback_enable(const std_msgs::Bool::ConstPtr& msg) {
         std::cout << "LegFinder.->Enable recevied" << std::endl;
         sub_legs_pose = nh->subscribe("/hri/leg_finder/leg_pose", 1, legs_pose_callback);
         sub_next_waypoint = nh->subscribe("/hri/waypoints/next_waypoint", 1, next_waypoint_callback);
-        timer = nh->createTimer(ros::Duration(2.0), timer_callback);  
+        timer = nh->createTimer(ros::Duration(2.0), timer_callback);
+        publish_active_waypoint();
     }
     else
     {
@@ -133,10 +139,10 @@ int main(int argc, char** argv) {
 
     tf_listener = new tf::TransformListener();
 
-    
-    ros::Subscriber sub_enable = nh->subscribe("/hri/human_following/start_follow", 1, callback_enable);
+    ros::Subscriber sub_enable = nh->subscribe("/hri/waypoints/enable", 1, callback_enable);
     pub_marker_array = nh->advertise<visualization_msgs::MarkerArray>("/hri/human_follower/waypoints", 1);
-    pub_active_waypoint = nh->advertise<geometry_msgs::PointStamped>("/hri/human_follower/active_waypoint", 1);
+    pub_active_waypoint = nh->advertise<geometry_msgs::PointStamped>("/hri/human_follower/active_waypoint", 1, true);
+    pub_last_waypoint = nh->advertise<std_msgs::Bool>("/hri/human_follower/last_waypoint",1);
 
     ros::spin();
 
