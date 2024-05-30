@@ -23,13 +23,13 @@ class Initial(smach.State):
         #userdata.target_object='cracker_box'   #Strategy. pickup bowl first
         userdata.target_object='bowl'
         hand_rgb = HAND_RGB()        
-        ######################################
-        x,y,z= 5.8 , 1.3, 0.47   #SIM TMR  table plane
-        quat=[0.0,0.0,0.0,1.0]
+        #######################################
+        #x,y,z= 5.8 , 1.3, 0.47   #SIM TMR  table plane
+        #quat=[0.0,0.0,0.0,1.0]
         ##########################################
         #####################################
-        #x,y,z= -0.522 , -2.84, 0.8   #REAL LAB
-        #quat=[0.0,0.0,0.707,-0.707]
+        x,y,z= -0.522 , -2.84, 0.8   #REAL LAB
+        quat=[0.0,0.0,0.707,-0.707]
         #########################################
         #quat=[0.0,0.0,0.707,0.707]
         userdata.placing_area=[x,y,z]
@@ -312,7 +312,8 @@ class Pickup(smach.State):
         if target_object=='cracker_box'or target_object=='milk':
             
             string_msg= String()
-            string_msg.data='pour'
+            if target_object=='cracker_box': string_msg.data='pour'
+            if target_object=='milk': string_msg.data='frontal'
             userdata.mode=string_msg 
             rospy.loginfo('STATE : PICKUP CEREAL')            
             print ('STATE : PICKUP CEREAL')            
@@ -321,7 +322,7 @@ class Pickup(smach.State):
             ####################                        
             line_up_TF(target_object)####################
             print ( 'linning up') #TODO DIctionary ( grasping dict)        
-            string_msg.data='frontal'    
+            #string_msg.data='frontal'    
             userdata.mode=string_msg 
             pos, quat = tf_man.getTF(target_frame = target_object, ref_frame = 'map')
             print (f'target_object {target_object}, mode {string_msg.data}')
@@ -430,7 +431,7 @@ class Place_post_pour(smach.State):
         rospy.loginfo('STATE : PLACE POST POUR')
         print('STATE : PLACE POST POUR')
         
-        
+        target_object=userdata.target_object
         #if userdata.target_object=='cracker_box':
         #    pose_target[0]+=-0.35
         #    userdata.target_object='milk'
@@ -443,7 +444,8 @@ class Place_post_pour(smach.State):
         string_msg= String()  #mode mesge new instance
         rospy.loginfo('STATE : PLACE AFTER POUR')            
         print ('STATE : PLACE AFTER POUR')                       
-        offset_point=[-0.1,-0.15,-0.031]          # Offset relative to object tf#
+        if userdata.target_object=='cracker_box':offset_point=[-0.1,-0.15,-0.031]          # Offset relative to object tf#
+        else:offset_point=[-0.1,-0.35,-0.031]
         string_msg.data='frontal'
         userdata.mode=string_msg             
         ###################
@@ -470,7 +472,13 @@ class Place_post_pour(smach.State):
         head.set_named_target('neutral')
         rospy.sleep(0.5)       
         clear_octo_client()     
-        
+        if target_object=='cracker_box':
+            userdata.target_object='milk'
+            talk('milk?')
+            talk (f'Now going for {userdata.target_object } ')
+        if target_object=='milk':
+            userdata.target_object='spoon'
+            talk (f'Now going for {userdata.target_object } ')
         return 'succ'
         
 

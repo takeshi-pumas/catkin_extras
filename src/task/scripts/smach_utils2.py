@@ -54,7 +54,7 @@ from utils.nav_utils import *
 global listener, broadcaster, tfBuffer, tf_static_broadcaster, scene, rgbd, head,train_new_face, wrist, human_detect_server, line_detector, clothes_color , head_mvit
 global clear_octo_client, goal,navclient,segmentation_server  , tf_man , omni_base, brazo, speech_recog_server, bridge, map_msg, pix_per_m, analyze_face , arm , set_grammar
 global recognize_action , classify_client,pointing_detect_server ,placing_finder_server
-rospy.init_node('smach')
+rospy.init_node('smach', anonymous=True)
 logger = logging.getLogger('rosout')
 logger.setLevel(logging.ERROR)
 #head_mvit = moveit_commander.MoveGroupCommander('head')
@@ -635,7 +635,7 @@ def line_up_TF(tf_name='placing_area', timeout=30.0):
         
         if (abs(delta_th)>0.1):pose[1]=0
         
-        omni_base.tiny_move( velX=0.0,velY=-pose[1], velT=-delta_th,std_time=0.2, MAX_VEL=0.3) 
+        omni_base.tiny_move( velX=0.0,velY=-pose[1], velT=-delta_th,std_time=0.2, MAX_VEL=0.1) 
     return (abs(pose[1])<0.01 and abs(delta_th)<0.1 )
 
 #------------------------------------------------------

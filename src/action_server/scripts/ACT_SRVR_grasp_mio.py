@@ -12,7 +12,8 @@ from shape_msgs.msg import SolidPrimitive
 from moveit_msgs.msg import CollisionObject, AttachedCollisionObject
 from action_server.msg import GraspAction
 from std_srvs.srv import Empty
-
+from moveit_commander import Constraints
+from moveit_msgs.msg import OrientationConstraint
 from tf.transformations import euler_from_quaternion, quaternion_from_euler, quaternion_multiply
 
 from utils import grasp_utils
@@ -57,7 +58,7 @@ class PlacingStateMachine:
         #self.whole_body_w.allow_replanning(True)
         #self.whole_body_w.set_num_planning_attempts(10)
         #self.whole_body_w.set_planning_time(10.0)
-        self.whole_body.set_workspace([-20.0, -20.0, 0.0, 20.0, 20.0, 2.0])
+        self.whole_body.set_workspace([-1.0, -1.0, 0.0, 20.0, 20.0, 2.0])
         #self.whole_body_w.set_workspace([-2.0, -2.0, 2.0, 2.0])
         self.planning_frame = self.whole_body.get_planning_frame()
         print(self.planning_frame)
@@ -95,9 +96,9 @@ class PlacingStateMachine:
 
     # SMACH states ------------------------------------------------------
     def create_bound(self, userdata):
-        self.add_collision_object('bound_left', position=[0.0, 1.0, 0.3], dimensions=[2.1, 0.05, 0.05])
-        self.add_collision_object('bound_right', position=[0.0, - 1.0, 0.3], dimensions=[2.1, 0.05, 0.05])
-        self.add_collision_object('bound_behind', position=[-0.6, 0.0, 0.3], dimensions=[0.05, 2.0, 0.05])
+        #self.add_collision_object('bound_left', position=[0.0, 1.0, 0.3], dimensions=[2.1, 0.05, 0.05])
+        #self.add_collision_object('bound_right', position=[0.0, - 1.0, 0.3], dimensions=[2.1, 0.05, 0.05])
+        #self.add_collision_object('bound_behind', position=[-0.6, 0.0, 0.3], dimensions=[0.05, 2.0, 0.05])
         self.publish_known_areas()# Add Table
         clear_octo_client()
         self.safe_pose = self.whole_body.get_current_joint_values()
@@ -133,7 +134,19 @@ class PlacingStateMachine:
             
         #self.head.relative(gaze_dir.point.x, gaze_dir.point.y, gaze_dir.point.z)
         rospy.sleep(0.5)
+        try:
+            transform = self.tf2_buffer.lookup_transform("odom", "base_link", rospy.Time(0), timeout=rospy.Duration(1))
+            rotation = transform.transform.rotation
+            fixed_quat = [rotation.x, rotation.y, rotation.z, rotation.w]
+            # Set orientation constraint based on the current orientation of base_link
+            self.set_orientation_constraint(fixed_quat=fixed_quat)
+        except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
+            rospy.logwarn("Could not get transform from 'odom' to 'base_link'. Using default quaternion.")
+            
+        # Move the robot to the target pose with orientation constraint    
         succ = self.move_to_pose(self.whole_body, self.target_pose)
+        self.clear_orientation_constraint()
+
         if succ:
             return 'success'
         else:
@@ -153,7 +166,7 @@ class PlacingStateMachine:
         if self.grasp_approach == "frontal" or self.grasp_approach == "pour":
             self.base.tiny_move(velX=0.07, std_time=0.5, MAX_VEL=0.7)
             if self.grasp_approach == "frontal":self.gripper.close(0.07)
-            else:self.gripper.steady()
+            else:self.gripper.close(0.005)
         elif self.grasp_approach == "above":self.gripper.close(0.07)
         rospy.sleep(1.5)
         
@@ -178,6 +191,10 @@ class PlacingStateMachine:
         #self.base.tiny_move(velX=-0.07, std_time=1.5, MAX_VEL=0.7)
         self.whole_body.set_joint_value_target(self.safe_pose)
         self.whole_body.go()
+        #self.scene.remove_world_object('bound_left')
+        #self.scene.remove_world_object('bound_right')
+        #self.scene.remove_world_object('bound_behind')
+        self.scene.remove_world_object('objeto')
 
         return 'success'
         # if succ:
@@ -188,12 +205,31 @@ class PlacingStateMachine:
     def neutral_pose(self, userdata):
         #sself.brazo.set_named_target('neutral')
         # self.whole_body.go()
-        #self.scene.remove_world_object('bound_left')
-        #self.scene.remove_world_object('bound_right')
-        #self.scene.remove_world_object('bound_behind')
-        #self.scene.remove_world_object('objeto')
         return "success"
-    
+# ----------------------------------------------------------
+     # Add the orientation constraint
+    def set_orientation_constraint(self, fixed_quat =[0, 0, 0, 1]):
+        orientation_constraint = OrientationConstraint()
+        orientation_constraint.link_name = "base_link"
+        orientation_constraint.header.frame_id = "odom"
+        orientation_constraint.orientation.x = fixed_quat[0]
+        orientation_constraint.orientation.y = fixed_quat[1]
+        orientation_constraint.orientation.z = fixed_quat[2]
+        orientation_constraint.orientation.w = fixed_quat[3]
+        orientation_constraint.absolute_x_axis_tolerance = 0.1
+        orientation_constraint.absolute_y_axis_tolerance = 0.1
+        orientation_constraint.absolute_z_axis_tolerance = 0.2
+        orientation_constraint.weight = 1.0
+
+        constraints = Constraints()
+        constraints.orientation_constraints.append(orientation_constraint)
+        self.whole_body.set_path_constraints(constraints)
+
+    # Clear the orientation constraint
+    def clear_orientation_constraint(self):
+        self.whole_body.clear_path_constraints()
+
+###################################################################################################            
     # ----------------------------------------------------------
 
     def move_to_position(self, group, position_goal):
@@ -211,12 +247,10 @@ class PlacingStateMachine:
         rospy.sleep(0.5)
         group.stop()
         return succ
-
-    #[0.8, -1.2, 0.65]  [0,0,0.707,0.707]
-    def publish_known_areas(self, position =[4.5,3.0,0.4] , rotation = [0,0,0.0,1], dimensions = [3.0 ,0.8, 0.02]): #position = [5.9, 5.0,0.3] ##SIM
+    
+    def publish_known_areas(self, position =[0.8, -1.2, 0.65] , rotation = [0,0,0.707,0.707], dimensions = [3.0 ,0.8, 0.02]): #position = [5.9, 5.0,0.3] ##SIM
                                                                                                                    #position = [0.8, -1.2, 0.65],###REAL
                                                                                                                    #position =[4.5, 3.0, 0.4] ### TMR
-    
         object_pose = PoseStamped()
         object_pose.header.frame_id = 'map'
         object_pose.pose.position.x = position[0]
