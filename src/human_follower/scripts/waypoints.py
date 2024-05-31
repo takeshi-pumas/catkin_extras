@@ -45,7 +45,7 @@ class WaypointsNode:
         self.current_position = self.transform_point_to_map(msg)
         if self.waypoints:
             self.publisher.publish(self.waypoints[self.current_index])
-            self.end_of_list_publisher.publish(self.current_index == len(self.waypoints) - 1)
+
 
     def is_far_enough(self, last_point, new_point):
         distance = math.sqrt((last_point.x - new_point.x)**2 + (last_point.y - new_point.y)**2)
@@ -55,6 +55,8 @@ class WaypointsNode:
         if not self.waypoints or self.is_far_enough(self.waypoints[-1].point, self.current_position.point):
             print(f"New waypoint added: {self.current_index} / {len(self.waypoints)}")
             self.waypoints.append(self.current_position)
+            
+            self.end_of_list_publisher.publish(self.current_index == len(self.waypoints) - 1)
         
 
     def change_index_callback(self, msg):
