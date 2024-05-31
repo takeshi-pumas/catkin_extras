@@ -45,6 +45,7 @@ class WaypointsNode:
         self.current_position = self.transform_point_to_map(msg)
         if self.waypoints:
             self.publisher.publish(self.waypoints[self.current_index])
+            
 
 
     def is_far_enough(self, last_point, new_point):
@@ -56,14 +57,15 @@ class WaypointsNode:
             print(f"New waypoint added: {self.current_index} / {len(self.waypoints)}")
             self.waypoints.append(self.current_position)
             
-            self.end_of_list_publisher.publish(self.current_index == len(self.waypoints) - 1)
         
 
     def change_index_callback(self, msg):
-        if self.current_index == len(self.waypoints) -1:
-            pass
-        else:
+        is_last = self.current_index == len(self.waypoints) - 1
+        if not is_last:
             self.current_index += 1
+        self.end_of_list_publisher.publish(Bool(data=is_last))
+        
+            
 
 if __name__ == '__main__':
     rospy.init_node('waypoints_node')

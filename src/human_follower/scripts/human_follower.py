@@ -7,6 +7,7 @@ import tf2_geometry_msgs
 import math
 from std_msgs.msg import Bool, Empty
 from tf.transformations import euler_from_quaternion
+from sensor_msgs.msg import LaserScan
 
 class HumanFollower:
     def __init__(self):
@@ -16,21 +17,22 @@ class HumanFollower:
         self.dist_to_target = 1.0
         self.control_alpha = 0.6584
         self.control_beta = 0.3
-        self.max_linear = 0.3
+        self.max_linear = 0.25
         self.max_angular = 0.7
-        self.kInfRep = 0.03
+        self.kInfRep = 0.05
+        self.Fx_rep = 0.0
+        self.Fy_rep = 0.0
 
-        # Suscribirse a los waypoints
-        self.subscriber = rospy.Subscriber('/hri/active_waypoint', PointStamped, self.target_callback)
+        print("Waiting for Laser Message")
+        msg = rospy.wait_for_message("/hsrb/base_scan", LaserScan)
+        self.laser_low_limit = int(2/5 * len(msg.ranges))
+        self.laser_high_limit = int(3/5 * len(msg.ranges))
 
-         # Suscribirse al estado de si estamos en el último waypoint
-        self.last_waypoint_subscriber = rospy.Subscriber('/hri/last_waypoint', Bool, self.last_waypoint_callback)
-
-        # Publicar comandos de movimiento
-        self.cmd_vel_publisher = rospy.Publisher("/hsrb/command_velocity", Twist, queue_size=10)
-
-        # Publicar para pedir el siguiente elemento en la lista
-        self.next_element_publisher = rospy.Publisher('/hri/request_next_waypoint', Empty, queue_size=10)
+        self.sub_active_waypoint_sub = rospy.Subscriber('/hri/active_waypoint', PointStamped, self.target_callback)
+        self.sub_last_waypoint = rospy.Subscriber('/hri/last_waypoint', Bool, self.last_waypoint_callback)
+        self.sub_lidar = rospy.Subscriber("/hsrb/base_scan", LaserScan, self.callback_lidar)
+        self.pub_cmd_vel = rospy.Publisher("/hsrb/command_velocity", Twist, queue_size=10)
+        self.pub_next_element = rospy.Publisher('/hri/request_next_waypoint', Empty, queue_size=10)
 
         self.tf_buffer = tf2_ros.Buffer()
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)
@@ -41,8 +43,22 @@ class HumanFollower:
         self.current_target = msg
 
     def last_waypoint_callback(self, msg):
-        self.dist_to_target = 1.0 if msg.data else 0.1
+        self.dist_to_target = 1.0 if msg.data else 0.40
         #self.is_last_waypoint = msg.data
+
+    def callback_lidar(self, msg):
+        self.Fx_rep = 0.0
+        self.Fy_rep = 0.0
+        laser_threshold = 0.95
+        lectures = msg.ranges
+
+        for i in range(self.laser_low_limit, self.laser_high_limit):
+            if lectures[i] < laser_threshold:
+                angle = msg.angle_min + i * msg.angle_increment
+                force = 1 / lectures[i]**2
+                self.Fx_rep = force * math.cos(angle)
+                self.Fy_rep = force * math.sin(angle)
+        
 
     def get_robot_position(self):
         try:
@@ -62,15 +78,14 @@ class HumanFollower:
                     print(f"current position: {current_position.point}")
                     print(f"target_position: {self.current_target.point}")
                     distance = self.calculate_distance(current_position.point, self.current_target.point)
-                    #threshold = 1.0 if self.is_last_waypoint else 0.1
                     if distance > self.dist_to_target:  # Si la distancia es mayor al umbral
                         cmd_vel = self.calculate_velocity(current_position, self.current_target)
-                        self.cmd_vel_publisher.publish(cmd_vel)
+                        self.pub_cmd_vel.publish(cmd_vel)
                     else:
                         # Si hemos llegado al objetivo, detenemos el robot
-                        self.cmd_vel_publisher.publish(Twist())
+                        self.pub_cmd_vel.publish(Twist())
                         # Pedir el siguiente elemento en la lista
-                        self.next_element_publisher.publish(Empty())
+                        self.pub_next_element.publish(Empty())
             self.rate.sleep()
 
     def calculate_distance(self, pos1, pos2):
@@ -92,8 +107,8 @@ class HumanFollower:
             cmd_vel = Twist()
             if distance > 0 :
                 
-                cmd_vel.linear.x = distance * math.exp(-(angle_error**2) / self.control_alpha)
-                cmd_vel.linear.y = 0
+                cmd_vel.linear.x = distance * math.exp(-(angle_error**2) / self.control_alpha) - self.kInfRep * self.Fx_rep
+                cmd_vel.linear.y = 0 - self.kInfRep * self.Fy_rep
                 cmd_vel.angular.z = self.max_angular * (2 / (1 + math.exp(-angle_error / self.control_beta)) -1)
             else:
                 cmd_vel.linear.x = 0
