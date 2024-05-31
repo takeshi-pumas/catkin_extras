@@ -15,6 +15,9 @@ class HumanFollower:
         #self.is_last_waypoint = True
         
         self.dist_to_target = 1.0
+        self.dist_to_waypoint = 0.45
+        self.dist_to_human = 1.0
+        
         self.control_alpha = 0.6584
         self.control_beta = 0.3
         self.max_linear = 0.25
@@ -28,8 +31,9 @@ class HumanFollower:
         self.laser_low_limit = int(2/5 * len(msg.ranges))
         self.laser_high_limit = int(3/5 * len(msg.ranges))
 
+        self.subscriber = rospy.Subscriber("/hri/leg_finder/leg_pose", PointStamped, self.new_legs_callback)
         self.sub_active_waypoint_sub = rospy.Subscriber('/hri/active_waypoint', PointStamped, self.target_callback)
-        self.sub_last_waypoint = rospy.Subscriber('/hri/last_waypoint', Bool, self.last_waypoint_callback)
+        #self.sub_last_waypoint = rospy.Subscriber('/hri/last_waypoint', Bool, self.last_waypoint_callback)
         self.sub_lidar = rospy.Subscriber("/hsrb/base_scan", LaserScan, self.callback_lidar)
         self.pub_cmd_vel = rospy.Publisher("/hsrb/command_velocity", Twist, queue_size=10)
         self.pub_next_element = rospy.Publisher('/hri/request_next_waypoint', Empty, queue_size=10)
@@ -38,6 +42,21 @@ class HumanFollower:
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)
 
         self.rate = rospy.Rate(30)  # 30 Hz
+
+    def new_legs_callback(self, msg):
+        #self.goal = msg.point
+        #self.goal.x
+        #punto = PointStamped()
+        current_target = self.transform_PS_to_base_link(self.current_target)
+        dist_human_wp = self.calculate_distance(msg.point, current_target.point)
+        #dist_to_wp = self.calculate_distance(current_target.point, punto.point)
+
+        if dist_human_wp < 1.0:
+            self.dist_to_target = self.dist_to_human
+        else:
+            self.dist_to_target = self.dist_to_waypoint 
+
+            
 
     def target_callback(self, msg):
         self.current_target = msg
@@ -67,7 +86,14 @@ class HumanFollower:
         except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
             rospy.logwarn("Failed to get robot position")
             return None
-        
+    
+    def transform_PS_to_base_link(self, point_stamped):
+        try:
+            transform = self.tf_buffer.lookup_transform("base_link", "map", rospy.Time(0), rospy.Duration(1.0))
+            return tf2_geometry_msgs.do_transform_point(point_stamped, transform)
+        except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
+            rospy.logwarn("Failed to get robot position")
+            return None
 
     def move_to_target(self):
         while not rospy.is_shutdown():
