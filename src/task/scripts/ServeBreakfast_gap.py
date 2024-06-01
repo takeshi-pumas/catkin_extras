@@ -20,16 +20,16 @@ class Initial(smach.State):
             return 'tries'        
              
         global arm ,  hand_rgb         
-        #userdata.target_object='cracker_box'   #Strategy. pickup bowl first
+        #userdata.target_object='cereal_box'   #Strategy. pickup bowl first
         userdata.target_object='bowl'
         hand_rgb = HAND_RGB()        
         #######################################
-        #x,y,z= 5.8 , 1.3, 0.47   #SIM TMR  table plane
-        #quat=[0.0,0.0,0.0,1.0]
+        x,y,z= 5.8 , 1.3, 0.47   #SIM TMR  table plane
+        quat=[0.0,0.0,0.0,1.0]
         ##########################################
         #####################################
-        x,y,z= -0.522 , -2.84, 0.8   #REAL LAB
-        quat=[0.0,0.0,0.707,-0.707]
+        #x,y,z= -0.522 , -2.84, 0.8   #REAL LAB
+        #quat=[0.0,0.0,0.707,-0.707]
         #########################################
         #quat=[0.0,0.0,0.707,0.707]
         userdata.placing_area=[x,y,z]
@@ -129,7 +129,7 @@ class Scan_table(smach.State):
         print (objects)
         common_misids=[]
         if userdata.target_object== 'bowl': common_misids.append('plate')
-        elif userdata.target_object== 'cracker_box':
+        elif userdata.target_object== 'cereal_box':
             common_misids.append('master_chef_can')
             common_misids.append('pudding_box')
         elif userdata.target_object== 'milk':
@@ -190,11 +190,11 @@ class Place(smach.State):
             string_msg.data='frontal'       
              
         ######################################################################
-        else:                           #if current_target== 'cracker_box' or current_target== 'milk'  :
+        else:                           #if current_target== 'cereal_box' or current_target== 'milk'  :
             string_msg.data='pour'               # Offset relative to object tf            
             offset_point=[-0.025,0.066,0.1]           # Offset relative to object tf#
             # LOOK FOR OBJECT current target
-            if current_target== 'cracker_box':
+            if current_target== 'cereal_box':
                 rospy.loginfo('STATE : POUR CEREAL')            
                 print ('STATE : POUR CEREAL')
                 talk( 'pouring cereal')     
@@ -309,10 +309,10 @@ class Pickup(smach.State):
             #return 'succ'
     
           
-        if target_object=='cracker_box'or target_object=='milk':
+        if target_object=='cereal_box'or target_object=='milk':
             
             string_msg= String()
-            if target_object=='cracker_box': string_msg.data='pour'
+            if target_object=='cereal_box': string_msg.data='pour'
             if target_object=='milk': string_msg.data='frontal'
             userdata.mode=string_msg 
             rospy.loginfo('STATE : PICKUP CEREAL')            
@@ -432,7 +432,7 @@ class Place_post_pour(smach.State):
         print('STATE : PLACE POST POUR')
         
         target_object=userdata.target_object
-        #if userdata.target_object=='cracker_box':
+        #if userdata.target_object=='cereal_box':
         #    pose_target[0]+=-0.35
         #    userdata.target_object='milk'
         #if userdata.target_object=='milk':
@@ -444,7 +444,7 @@ class Place_post_pour(smach.State):
         string_msg= String()  #mode mesge new instance
         rospy.loginfo('STATE : PLACE AFTER POUR')            
         print ('STATE : PLACE AFTER POUR')                       
-        if userdata.target_object=='cracker_box':offset_point=[-0.1,-0.15,-0.031]          # Offset relative to object tf#
+        if userdata.target_object=='cereal_box':offset_point=[-0.1,-0.25,-0.031]          # Offset relative to object tf#
         else:offset_point=[-0.1,-0.35,-0.031]
         string_msg.data='frontal'
         userdata.mode=string_msg             
@@ -472,7 +472,7 @@ class Place_post_pour(smach.State):
         head.set_named_target('neutral')
         rospy.sleep(0.5)       
         clear_octo_client()     
-        if target_object=='cracker_box':
+        if target_object=='cereal_box':
             userdata.target_object='milk'
             talk('milk?')
             talk (f'Now going for {userdata.target_object } ')
@@ -535,7 +535,7 @@ class Pour(smach.State):
         av[-2]=-1.9
         succ=arm.go(av)
         
-        if userdata.target_object=='cracker_box':target_placing= 'placing_cereal'
+        if userdata.target_object=='cereal_box':target_placing= 'placing_cereal'
         if userdata.target_object=='milk':target_placing= 'placing_milk'
         hand_grasp_D(target_placing)  
 
@@ -554,7 +554,7 @@ class Place_breakfast(smach.State):
         armlift=userdata.placing_area[2]-0.12  # Takeshi shoulder to placing table heigh offset for placing bowl
         place_pose= [armlift,-1.0, 0.04852065465630595, -1.8, 0.07179310822381613,0.0]  # ARM PREDEFINED PALCING POSE 
         print ('place pose',place_pose)
-        if userdata.target_object=='cracker_box':place_pose[3]=-0.532
+        if userdata.target_object=='cereal_box':place_pose[3]=-0.532
         arm.set_joint_value_target(place_pose)
         arm.go()
         pos, quat = tf_man.getTF(target_frame = 'placing_area', ref_frame = 'odom')      
@@ -601,7 +601,7 @@ class Place_breakfast(smach.State):
         arm.set_named_target('go')
         succ=arm.go()        
         if succ:
-            userdata.target_object='cracker_box'
+            userdata.target_object='cereal_box'
             return'succ'
         else:
             clear_octo_client()
@@ -609,7 +609,7 @@ class Place_breakfast(smach.State):
             arm.set_named_target('go')
             succ=arm.go()
             if succ:
-                userdata.target_object='cracker_box'
+                userdata.target_object='cereal_box'
                 return'succ'
         return 'failed'
 

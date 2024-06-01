@@ -46,7 +46,8 @@ class Initial(smach.State):
         userdata.grasping_dict = pd.read_csv (file_path+'/GraspingDict.csv')
         print (pd.read_csv (file_path+'/GraspingDict.csv'))
         file_path = rospack.get_path('config_files')+'/regions'         
-        o=read_yaml('/regions/regions_sim.yaml')
+        #o=read_yaml('/regions/regions_sim.yaml')#SIM
+        o=read_yaml('/regions/regions.yaml')#REAL
         regions_df=pd.DataFrame.from_dict(o)
         
         
@@ -134,6 +135,8 @@ class Goto_pickup(smach.State):
             return 'tries'
         #talk('Navigating to, pickup')        
         res = omni_base.move_base(known_location='pickup', time_out=40)
+        res = omni_base.move_base(known_location='pickup', time_out=40)
+        
         print(res)
 ##################################################################First TIme Only go        
         if self.tries == 1: 
@@ -154,8 +157,9 @@ class Goto_pickup(smach.State):
 class Scan_table(smach.State):
     def __init__(self):
         smach.State.__init__(
-            self, outcomes=['succ', 'failed', 'tries'])
-        self.tries = 0   
+            self, outcomes=['succ', 'failed'])
+        self.tries = 0
+        self.scanned=False   
         #self.pickup_plane_z  =0.65 ############REAL
         
         
@@ -163,15 +167,11 @@ class Scan_table(smach.State):
     
     def execute(self, userdata):
         rospy.loginfo('State : Scanning_table')
-        self.tries += 1
-        if self.tries >= 3:
-            self.tries = 0            
-            print ( "I could not find more objects ")
-            return 'tries'
-        if self.tries==1:
-            
-            talk('Scanning Table')
         
+        if self.tries==0:talk('Scanning Table')
+        self.tries+=1
+        
+        #if  self.scanned:return'succ'
         global objs 
         pickup_plane_z=regions_df['pickup']['z']
         
@@ -247,7 +247,8 @@ class Scan_table(smach.State):
         if len (pickup_objs)== 0:
             talk('no more objects found')
             return 'failed'
-        self.tries=0  
+        self.tries=0
+        self.scanned=True  
         return 'succ'
 #########################################################################################################
 
@@ -350,36 +351,82 @@ class Place(smach.State):
         return 'succ'        
 class Goto_shelf(smach.State):  
     def __init__(self):
-        smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
+        smach.State.__init__(self, outcomes=['succ', 'failed', 'tries', 'scanned_shelf'])
         self.tries = 0
 
     def execute(self, userdata):
-
-        
-
         rospy.loginfo('STATE : Navigate to known location')
-        if "shelves_cats" in globals() and len(shelves_cats)==3:
-            print (shelves_cats , cat)
-            corresponding_key='low'
-            
-            for key, value in shelves_cats.items():
-                if value == cat:corresponding_key = key  #Iterate over shelves cats and decide
-
-            
-            
-            if corresponding_key=='mid' or  corresponding_key=='low':
-                talk ( f"I already scanned the shelf. placing in {corresponding_key} shelf")
-                res=omni_base.move_base(known_location='place_shelf', time_out=35)  #OPTIMAL VIEWING POSITION (PREKNOWN)          
-
-                if res:
-                    self.tries=0
-                    return 'succ'
-                else:
-                    talk('Navigation Failed, retrying')
-                    return 'failed'
-
         
+        
+        
+        if "shelves_cats" in globals() and len(shelves_cats)==3:
+            ### IF ALREADY SCANNED JUMP HERE
+            print (shelves_cats , cat)
 
+            ####################################################################################3
+            string_list=regions_df['shelves']['z'].split(',')
+            top,mid,low=[list(map(float, s.split(','))) for s in string_list]
+            top_shelf_height=top[0]  #0.98 #0.8
+            mid_shelf_height=mid[0]  #0.41
+            low_shelf_height=low[0]  #0.01    
+            area_bo_x=regions_df['shelves'][['x_min','x_max']].values
+            area_bo_y=regions_df['shelves'][['y_min','y_max']].values
+            area_box=np.concatenate((area_bo_x,area_bo_y)).reshape((2,2)).T
+            ###################################################################################################
+            corresponding_key='low'  # fall back case
+            for key, value in shelves_cats.items():
+                print ('key',key)
+                if value == cat:corresponding_key = key        
+            print ('corresponding_key',corresponding_key)
+            
+            shelf_heights = {
+            'top': top_shelf_height,
+            'mid': mid_shelf_height,
+            'low': low_shelf_height
+            }
+            print('here',objs_shelves[corresponding_key + '_shelf'])
+            objs_shelves.to_csv('/home/roboworks/Documents/objs.csv') 
+            z_place = shelf_heights.get(corresponding_key, 0) + 0.1
+            
+            ################ PLACING AREA ESTIMATION FROM KNOWLEDGE DATA BASE
+            y_range = np.arange(area_box[0,1]+0.05, area_box[1,1]-0.05, .06)
+            x_range = np.arange(area_box[0,0]+0.05, area_box[1,0]-0.05, .06)
+            grid = np.meshgrid(x_range, y_range)
+            grid_points = np.vstack([grid[0].ravel(), grid[1].ravel()]).T        
+            free_grid = grid_points.tolist()
+            # Create a new list without the unwanted elements
+            free_grid = [free_pt for free_pt in free_grid if all(
+                np.linalg.norm(obj_pt - free_pt) >= 0.08 for obj_pt in objs_shelves[objs_shelves[corresponding_key + '_shelf'] == True][['x', 'y']].values)]
+            free_grid=np.asarray((free_grid))
+            
+            
+            if len (free_grid)==0:
+                print ( 'no placing area found, using generic safe pose')
+                talk ( f'no placing area found in {corresponding_key}, using generic safe pose')
+                x,y= np.mean(area_box, axis=0)
+                z=0.44#self.mid_shelf_height=0.4 shelves heights must also be set on SCAN SHELF  state init section.
+                tf_man.pub_static_tf(pos=[x,y,z],point_name='placing_area') ### IF a real placing area is found this tf will be updated
+                                                                    ##  even if no placing area is found for whatever reason au
+            else:            
+                print (free_grid)
+                summed_ds_to_objs=[]
+                for pt in free_grid:summed_ds_to_objs.append(np.linalg.norm(pt-objs_shelves[objs_shelves[corresponding_key+'_shelf']==True][['x','y']].values, axis=1).sum())
+                xy_place=free_grid[np.argmax(summed_ds_to_objs)]                        
+                print(f'placing_point at {corresponding_key}_shelf  {xy_place} , {z_place}')               
+                tf_man.pub_static_tf(pos=[xy_place[0], xy_place[1],z_place+0.05], rot =[0,0,0,1], point_name='placing_area')
+            
+            head.set_joint_values([0.0 , 0.0])
+            rospy.sleep(2.6)
+            arm.set_named_target('go')
+            arm.go()
+            self.tries=0
+            res=omni_base.move_base(known_location='place_shelf', time_out=35)  #OPTIMAL VIEWING POSITION (PREKNOWN)          
+            if res:
+                self.tries=0
+                return 'scanned_shelf'
+            else:
+                talk('Navigation Failed, retrying')
+                return 'failed'
 
 
         print(f'Try {self.tries} of 3 attempts')
@@ -436,6 +483,8 @@ class Place_shelf(smach.State):
         smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
         self.tries = 0
     def execute(self, userdata):
+        
+        head.set_joint_values([0,0])
         rospy.loginfo('STATE : Placing in shelf')
         print(f'Try {self.tries} of 3 attempts')
         self.tries += 1
@@ -448,20 +497,22 @@ class Place_shelf(smach.State):
         ###########################################
         #placing_places=np.asarray(('placing_area_top_shelf1','placing_area_mid_shelf1','placing_area_low_shelf1'))
         po,_=tf_man.getTF('placing_area')
-        if po[2]> 0.6:
+        if po[2]> 0.9:
             placing_pose=high_shelf_place
             top_shelf=True
-            print('placing top')
+            print('placing at top shelf')
+            talk('placing top')
 
-        elif po[2]< 0.3:
+        elif po[2]< 0.4:
             placing_pose=low_shelf_place
             low_shelf=True
-            print('placing low')
+            print('placing in bottom shelf')
+            talk('placing low')
         else:
             placing_pose=mid_shelf_place
             mid_shelf=True
-            print('placing mid')
-        
+            print
+            talk ('placing at middle shelf')
         ###########################################
         new_row = {'x':  po[0], 
            'y':  po[1], 
@@ -629,16 +680,16 @@ class Scan_shelf(smach.State):
            
             corresponding_key='low'
             for key, value in shelves_cats.items():
+                print (key, value)
                 if value == cat:
                     corresponding_key = key  #Iterate over shelves cats and decide
-                    print ('here')
                     print (corresponding_key,key)
-                print (key, value)
             print ('corresponding_key',corresponding_key )
             
         else:
     ###########################################################################################            
             rospy.loginfo('State : Scanning_shelf')
+            clear_octo_client()
             talk('Scanning shelf')
             if self.tries==1:
                 rospack = rospkg.RosPack()        
@@ -690,7 +741,7 @@ class Scan_shelf(smach.State):
                     print ('position_map',position_map.point.x,position_map.point.y,position_map.point.z)     
                     ###########################################################################################
                     x,y,z=position_map.point.x,position_map.point.y,position_map.point.z
-                    print (is_inside_top(x,y,z),                is_inside_mid(x,y,z),                is_inside_low(x,y,z))
+                    if (is_inside_top(x,y,z)    or                is_inside_mid(x,y,z)  or               is_inside_low(x,y,z)):  tf_man.pub_static_tf(pos=[x,y,z],point_name=res.names[i].data[4:]) ### IF a real placing area is found this tf will be updated
                     new_row = {'x': position_map.point.x, 'y': position_map.point.y, 'z': position_map.point.z, 'obj_name': res.names[i].data[4:]}
                     print (new_row)
                     objs_shelves.loc[len(objs_shelves)] = new_row
@@ -739,7 +790,7 @@ class Scan_shelf(smach.State):
             shelves_cats['mid'] =a.index[a.argmax()]           
         #####################################3
                
-        
+        ### IF ALREADY SCANNED JUMP HERE
         print (shelves_cats , cat)
 
         ####################################################################################3
@@ -758,19 +809,20 @@ class Scan_shelf(smach.State):
         z_place = shelf_heights.get(corresponding_key, 0) + 0.1
         
         ################ PLACING AREA ESTIMATION FROM KNOWLEDGE DATA BASE
-        y_range = np.arange(area_box[0,1]+0.05, area_box[1,1]-0.015, .15)
-        x_range = np.arange(area_box[0,0]+0.05, area_box[1,0]-0.015, .15)
+        y_range = np.arange(area_box[0,1]+0.05, area_box[1,1]-0.05, .06)
+        x_range = np.arange(area_box[0,0]+0.05, area_box[1,0]-0.05, .06)
         grid = np.meshgrid(x_range, y_range)
         grid_points = np.vstack([grid[0].ravel(), grid[1].ravel()]).T        
         free_grid = grid_points.tolist()
         # Create a new list without the unwanted elements
         free_grid = [free_pt for free_pt in free_grid if all(
-            np.linalg.norm(obj_pt - free_pt) >= 0.153 for obj_pt in objs_shelves[objs_shelves[corresponding_key + '_shelf'] == True][['x', 'y']].values)]
+            np.linalg.norm(obj_pt - free_pt) >= 0.08 for obj_pt in objs_shelves[objs_shelves[corresponding_key + '_shelf'] == True][['x', 'y']].values)]
         free_grid=np.asarray((free_grid))
         
         
         if len (free_grid)==0:
             print ( 'no placing area found, using generic safe pose')
+            talk ( f'no placing area found in {corresponding_key}, using generic safe pose')
             x,y= np.mean(area_box, axis=0)
             z=0.44#self.mid_shelf_height=0.4 shelves heights must also be set on SCAN SHELF  state init section.
             tf_man.pub_static_tf(pos=[x,y,z],point_name='placing_area') ### IF a real placing area is found this tf will be updated
@@ -823,11 +875,12 @@ if __name__ == '__main__':
                                                                                          'tries':'GOTO_PICKUP',                                                                                               
                                                                                          'pickup':'PICKUP'})
         smach.StateMachine.add("SCAN_TABLE",    Scan_table(),       transitions={'failed': 'SCAN_TABLE',    
-                                                                                         'succ': 'GOTO_PICKUP',       
-                                                                                         'tries': 'GOTO_PICKUP'})        
+                                                                                         'succ': 'GOTO_PICKUP'       
+                                                                                         })        
         smach.StateMachine.add("GOTO_SHELF",    Goto_shelf(),       transitions={'failed': 'GOTO_SHELF',    
                                                                                          'succ': 'SCAN_SHELF',       
-                                                                                         'tries': 'GOTO_SHELF'})
+                                                                                         'tries': 'GOTO_SHELF',
+                                                                                         'scanned_shelf':'GOTO_PLACE_SHELF'})
         smach.StateMachine.add("GOTO_PLACE_SHELF",    Goto_place_shelf(),       transitions={'failed': 'GOTO_PLACE_SHELF',    
                                                                                          'succ': 'PLACE_SHELF',       
                                                                                          #'succ': 'PLACE',       

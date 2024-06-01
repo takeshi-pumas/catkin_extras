@@ -60,6 +60,7 @@ class PlacingStateMachine:
         #self.whole_body_w.set_planning_time(10.0)
         self.whole_body.set_workspace([-1.0, -1.0, 0.0, 20.0, 20.0, 2.0])
         #self.whole_body_w.set_workspace([-2.0, -2.0, 2.0, 2.0])
+        #self.whole_body.set_workspace([-2.0, -1.0, 0.0, 10.0, 1.0 , 2.0])#START HERE
         self.planning_frame = self.whole_body.get_planning_frame()
         print(self.planning_frame)
         self.gripper.open()
@@ -139,7 +140,7 @@ class PlacingStateMachine:
             rotation = transform.transform.rotation
             fixed_quat = [rotation.x, rotation.y, rotation.z, rotation.w]
             # Set orientation constraint based on the current orientation of base_link
-            self.set_orientation_constraint(fixed_quat=fixed_quat)
+            #self.set_orientation_constraint(fixed_quat=fixed_quat)
         except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
             rospy.logwarn("Could not get transform from 'odom' to 'base_link'. Using default quaternion.")
             
@@ -160,7 +161,7 @@ class PlacingStateMachine:
         joint_values = self.brazo.get_joint_values()
         joint_values[0] -= 0.09
         self.brazo.set_joint_values(joint_values)
-        rospy.sleep(0.6)
+        rospy.sleep(1.0)
 
         
         if self.grasp_approach == "frontal" or self.grasp_approach == "pour":
@@ -185,12 +186,16 @@ class PlacingStateMachine:
         # succ = self.move_to_position(self.whole_body, position_goal)  # Retirarse a una posición segura
 
         # TODO: Retreat base safely
+        
+        
         joint_values = self.brazo.get_joint_values()
         joint_values[0] += 0.15
         self.brazo.set_joint_values(joint_values)
-        #self.base.tiny_move(velX=-0.07, std_time=1.5, MAX_VEL=0.7)
-        self.whole_body.set_joint_value_target(self.safe_pose)
-        self.whole_body.go()
+        self.base.tiny_move(velX=-0.07, std_time=2.5, MAX_VEL=0.7)
+        clear_octo_client()
+
+        #self.whole_body.set_joint_value_target(self.safe_pose)
+        #self.whole_body.go()
         #self.scene.remove_world_object('bound_left')
         #self.scene.remove_world_object('bound_right')
         #self.scene.remove_world_object('bound_behind')
@@ -216,8 +221,8 @@ class PlacingStateMachine:
         orientation_constraint.orientation.y = fixed_quat[1]
         orientation_constraint.orientation.z = fixed_quat[2]
         orientation_constraint.orientation.w = fixed_quat[3]
-        orientation_constraint.absolute_x_axis_tolerance = 0.1
-        orientation_constraint.absolute_y_axis_tolerance = 0.1
+        orientation_constraint.absolute_x_axis_tolerance = 0.31
+        orientation_constraint.absolute_y_axis_tolerance = 0.31
         orientation_constraint.absolute_z_axis_tolerance = 0.2
         orientation_constraint.weight = 1.0
 
@@ -248,8 +253,8 @@ class PlacingStateMachine:
         group.stop()
         return succ
     
-    def publish_known_areas(self, position =[0.8, -1.2, 0.65] , rotation = [0,0,0.707,0.707], dimensions = [3.0 ,0.8, 0.02]): #position = [5.9, 5.0,0.3] ##SIM
-                                                                                                                   #position = [0.8, -1.2, 0.65],###REAL
+    def publish_known_areas(self, position =[4.5, 3.0, 0.4] , rotation = [0,0,0.0,1], dimensions = [3.0 ,0.8, 0.02]): #position = [5.9, 5.0,0.3] ##SIM
+                                                                                                                  # position =[1.0, -0.7, 0.65]#real  [0,0,0.707,0.707]
                                                                                                                    #position =[4.5, 3.0, 0.4] ### TMR
         object_pose = PoseStamped()
         object_pose.header.frame_id = 'map'

@@ -59,7 +59,9 @@ class PlacingStateMachine:
         #self.whole_body_w.allow_replanning(True)
         #self.whole_body_w.set_num_planning_attempts(10)
         #self.whole_body_w.set_planning_time(10.0)
-        self.whole_body.set_workspace([-20.0, -20.0, 0.0, 20.0, 20.0, 2.0])
+        #self.whole_body.set_workspace([-20.0, -20.0, 0.0, 20.0, 20.0, 2.0])
+        self.whole_body.set_workspace([-2.0, -1.0, 0.0, 10.0, 1.0 , 2.0])#START HERE
+
         #self.whole_body_w.set_workspace([-2.0, -2.0, 2.0, 2.0])
         self.planning_frame = self.whole_body.get_planning_frame()
         
@@ -96,9 +98,9 @@ class PlacingStateMachine:
 
     # SMACH states ------------------------------------------------------
     def create_bound(self, userdata):
-        self.add_collision_object('bound_left', position=[0.0, 0.6, 0.3], dimensions=[2.0, 0.05, 0.05])
-        self.add_collision_object('bound_right', position=[0.0, - 1.0, 0.3], dimensions=[2.0, 0.05, 0.05])
-        self.add_collision_object('bound_behind', position=[-0.4, 0.0, 0.3], dimensions=[0.05, 2.0, 0.05])
+        #self.add_collision_object('bound_left', position=[0.0, 0.6, 0.3], dimensions=[2.0, 0.05, 0.05])
+        #self.add_collision_object('bound_right', position=[0.0, - 1.0, 0.3], dimensions=[2.0, 0.05, 0.05])
+        #self.add_collision_object('bound_behind', position=[-0.4, 0.0, 0.3], dimensions=[0.05, 2.0, 0.05])
         self.publish_known_areas()# Add Table
         clear_octo_client()        
         self.safe_pose = self.whole_body.get_current_joint_values()
