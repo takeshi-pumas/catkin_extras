@@ -52,17 +52,9 @@ class PlacingStateMachine:
 
         # Moveit setup
         self.scene.remove_attached_object(self.eef_link, name="objeto")
-        
         self.whole_body.allow_replanning(False)
         self.whole_body.set_num_planning_attempts(3)
-        self.whole_body.set_planning_time(10.0)
-        #self.whole_body_w.allow_replanning(True)
-        #self.whole_body_w.set_num_planning_attempts(10)
-        #self.whole_body_w.set_planning_time(10.0)
-        #self.whole_body.set_workspace([-20.0, -20.0, 0.0, 20.0, 20.0, 2.0])
-        self.whole_body.set_workspace([-2.0, -1.0, 0.0, 10.0, 1.0 , 2.0])#START HERE
-
-        #self.whole_body_w.set_workspace([-2.0, -2.0, 2.0, 2.0])
+        self.whole_body.set_planning_time(1.0)
         self.planning_frame = self.whole_body.get_planning_frame()
         
         

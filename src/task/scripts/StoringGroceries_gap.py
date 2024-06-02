@@ -46,8 +46,8 @@ class Initial(smach.State):
         userdata.grasping_dict = pd.read_csv (file_path+'/GraspingDict.csv')
         print (pd.read_csv (file_path+'/GraspingDict.csv'))
         file_path = rospack.get_path('config_files')+'/regions'         
-        regions={'shelves':np.load(file_path+'/shelves_region.npy'),'pickup':np.load(file_path+'/pickup_region.npy')}   ## KNOWN REGIONS
-        #regions={'shelves':np.load(file_path+'/shelves_region_sim.npy'),'pickup':np.load(file_path+'/pickup_region_sim.npy')}
+        #regions={'shelves':np.load(file_path+'/shelves_region.npy'),'pickup':np.load(file_path+'/pickup_region.npy')}   ## KNOWN REGIONS
+        regions={'shelves':np.load(file_path+'/shelves_region_sim.npy'),'pickup':np.load(file_path+'/pickup_region_sim.npy')}
         print (f'Regions for Storing Groceries(SIM Robot) {regions}')
         ##TO AVOID SMACH DYING IN CASE NO PLACING AREA IS FOUND, THere is a default that at least allows the test to continue
         x,y= np.mean(regions['shelves'], axis=0)
@@ -657,13 +657,8 @@ class Scan_shelf(smach.State):
             arm.set_named_target('go')
             arm.go()
             self.tries=0
-            return 'succ'
-            
-            
-            
-            
-            
-            
+            return 'succ'           
+                        
 ###########################################################################################            
                 
 

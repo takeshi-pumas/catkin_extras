@@ -34,16 +34,14 @@ class PlacingStateMachine:
         # Inicializar tf2_ros
         self.tf2_buffer = tf2_ros.Buffer()
         self.listener = tf2_ros.TransformListener(self.tf2_buffer)
-        #self.br = tf2_ros.StaticTransformBroadcaster()
+        
 
         # Inicializar MoveIt
         moveit_commander.roscpp_initialize(sys.argv)
         self.robot = moveit_commander.RobotCommander()
         self.scene = moveit_commander.PlanningSceneInterface()
         self.whole_body = moveit_commander.MoveGroupCommander("whole_body")
-        #self.base = moveit_commander.MoveGroupCommander("base")
-        #self.whole_body_w = moveit_commander.MoveGroupCommander("whole_body_weighted")
-        #self.arm = moveit_commander.MoveGroupCommander("arm")
+        
         self.grasp_approach = "above" #above / frontal
         self.eef_link = self.whole_body.get_end_effector_link()
         self.approach_limit = 5
@@ -54,13 +52,8 @@ class PlacingStateMachine:
         
         self.whole_body.allow_replanning(True)
         self.whole_body.set_num_planning_attempts(10)
-        self.whole_body.set_planning_time(10.0)
-        #self.whole_body_w.allow_replanning(True)
-        #self.whole_body_w.set_num_planning_attempts(10)
-        #self.whole_body_w.set_planning_time(10.0)
-        self.whole_body.set_workspace([-1.0, -1.0, 0.0, 20.0, 20.0, 2.0])
-        #self.whole_body_w.set_workspace([-2.0, -2.0, 2.0, 2.0])
-        #self.whole_body.set_workspace([-2.0, -1.0, 0.0, 10.0, 1.0 , 2.0])#START HERE
+        self.whole_body.set_planning_time(1.0)
+        
         self.planning_frame = self.whole_body.get_planning_frame()
         print(self.planning_frame)
         self.gripper.open()
@@ -140,7 +133,7 @@ class PlacingStateMachine:
             rotation = transform.transform.rotation
             fixed_quat = [rotation.x, rotation.y, rotation.z, rotation.w]
             # Set orientation constraint based on the current orientation of base_link
-            #self.set_orientation_constraint(fixed_quat=fixed_quat)
+            self.set_orientation_constraint(fixed_quat=fixed_quat)
         except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
             rospy.logwarn("Could not get transform from 'odom' to 'base_link'. Using default quaternion.")
             
@@ -166,6 +159,7 @@ class PlacingStateMachine:
         
         if self.grasp_approach == "frontal" or self.grasp_approach == "pour":
             self.base.tiny_move(velX=0.07, std_time=0.5, MAX_VEL=0.7)
+            rospy.sleep(0.5)
             if self.grasp_approach == "frontal":self.gripper.close(0.07)
             else:self.gripper.close(0.005)
         elif self.grasp_approach == "above":self.gripper.close(0.07)
