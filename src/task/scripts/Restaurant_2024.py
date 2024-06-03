@@ -57,8 +57,8 @@ class Wait_push_hand(smach.State):
         print(f'Try {self.tries} of 4 attempts')
         # if self.tries == 4:
         #     return 'failed'
-        head.set_named_target('neutral')
-        brazo.set_named_target('go')
+        #head.set_named_target('neutral')
+        #brazo.set_named_target('go')
         talk('Gently... push my hand to begin')
         succ = wait_for_push_hand(100)
 
@@ -99,19 +99,25 @@ class Wait_for_waving(smach.State):
         
         resAct=recognize_action(req)
         print("[WAITFORWAVING] RES OF DOCKER:",resAct.i_out)
-        img = bridge.imgmsg_to_cv2(resAct.im_out.image_msgs[0])
+        
+        #cnt=0
+        
+            #print("[WAITFORWAVING] conteo:\t",cnt)
+        resAct=recognize_action(req)
+            
 
-        save_image(img,name="wavingRestaurant")
+        #img = bridge.imgmsg_to_cv2(resAct.im_out.image_msgs[0])
+        save_image(bridge.imgmsg_to_cv2(resAct.im_out.image_msgs[0]),name="wavingRestaurant")
         if resAct.i_out == 1:
             talk('I found someone waving')
             print("[WAITFORWAVING] I found someone waving")
-        else:
+        """else:
             talk('I did not found someone waving')
             print("[WAITFORWAVING] I did not found someone waving")
             return 'failed' if self.tries < 6 else 'tries'
-
+        """
         talk('Aproaching to the waving person')
-        print('[WAITFORWAVING]Aproaching to the waving person')
+        print('[WAITFORWAVING] Aproaching to the waving person')
 
         return 'succ'
 
@@ -490,12 +496,12 @@ if __name__ == '__main__':
 
         # Initial states routine
         smach.StateMachine.add("INITIAL", Initial(),              
-                               transitions={'failed': 'INITIAL', 'succ': 'WAITING_WAVING'})
+                               transitions={'failed': 'INITIAL', 'succ': 'WAIT_PUSH_HAND'})
         smach.StateMachine.add("WAIT_PUSH_HAND", Wait_push_hand(),       
                                transitions={'failed': 'WAIT_PUSH_HAND', 'succ': 'WAITING_WAVING'})
 
         smach.StateMachine.add("WAITING_WAVING", Wait_for_waving(),            
-                               transitions={'failed': 'WAITING_WAVING', 'succ': 'GOTO_WAVING_PERSON', 'tries':'END'})
+                               transitions={'failed': 'WAITING_WAVING', 'succ': 'END', 'tries':'END'})
         
         
         smach.StateMachine.add("GOTO_WAVING_PERSON", Goto_waving_person(),    

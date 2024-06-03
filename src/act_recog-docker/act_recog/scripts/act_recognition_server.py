@@ -277,61 +277,72 @@ def callback(req):
 	#RESTAURANTE
 	elif req.in_ ==5 :
 		#print("OPCION 5 PARA RESTAURANT")
-		points_msg=rospy.wait_for_message("/hsrb/head_rgbd_sensor/depth_registered/rectified_points",PointCloud2,timeout=5)
-		points_data = ros_numpy.numpify(points_msg)
-		image,maskedImage = removeBackground(points_msg,distance = 10)
-		h,w,_=image.shape
-		#dataout=np.zeros((25,2))
-		datum.cvInputData = maskedImage
-		opWrapper.emplaceAndPop(op.VectorDatum([datum]))
-		if datum.poseKeypoints is None:
-			
-			print("No se encontro esqueleto/persona")
-			response.i_out=-1
-			img_msg=bridge.cv2_to_imgmsg(maskedImage)
-			if len(response.im_out.image_msgs)==0:
-				response.im_out.image_msgs.append(img_msg)
-			else:
-				response.im_out.image_msgs[0]=img_msg
-		
-		else:
-			#print("datum shape",datum.poseKeypoints.shape)
-			dataout=np.copy(datum.poseKeypoints[:,:,:2])
-			for i in range(dataout.shape[0]):
-				maskedImage=draw_skeleton(dataout[i],h,w,maskedImage,bkground=True)
-				draw_text_bkgn(maskedImage,text="Person "+str(i)+": ",pos=(int(dataout[i,0,0]), int(dataout[i,0,1])-40),
-		                           font_scale=1.3,text_color=(32, 255, 255))
-				
-			img_msg=bridge.cv2_to_imgmsg(maskedImage)
-			if len(response.im_out.image_msgs)==0:
-				response.im_out.image_msgs.append(img_msg)
-			else:
-				response.im_out.image_msgs[0]=img_msg
-			sk_idx = detectWaving(dataout,maskedImage,points_msg)
-			if sk_idx == -1:
-				print("NO PERSON WAVING")
-				response.i_out=-1
-			else:
-				
-				head_mean = np.concatenate((dataout[sk_idx,0:1,:],dataout[sk_idx,15:19,:]),axis=0)
-				head_mean = np.sum(head_mean,axis=0)/np. count_nonzero(head_mean,axis=0)[0] 
-				
+		counting=0
+		while True:
 
-				head_xyz =[points_data['x'][int(head_mean[1]), int(head_mean[0])],
-							points_data['y'][int(head_mean[1]), int(head_mean[0])],
-							points_data['z'][int(head_mean[1]), int(head_mean[0])]]
-				print("HEAD XYZ of waving person", head_xyz)
-				if head_xyz[0] is not None:
-					print("PUBLICANDO....")
-					tf_man.pub_static_tf(pos=head_xyz,point_name='person_waving',ref='head_rgbd_sensor_link')
-					rospy.sleep(0.3)
-					print("CAMBIANDO REF")
-					tf_man.change_ref_frame_tf(point_name='person_waving',new_frame='map')
-					rospy.sleep(0.8)
-					response.i_out = 1
+			points_msg=rospy.wait_for_message("/hsrb/head_rgbd_sensor/depth_registered/rectified_points",PointCloud2,timeout=5)
+			points_data = ros_numpy.numpify(points_msg)
+			image,maskedImage = removeBackground(points_msg,distance = 10)
+			h,w,_=image.shape
+			#dataout=np.zeros((25,2))
+			datum.cvInputData = maskedImage
+			opWrapper.emplaceAndPop(op.VectorDatum([datum]))
+			if datum.poseKeypoints is None:
+				
+				print("No se encontro esqueleto/persona")
+				response.i_out=-1
+				img_msg=bridge.cv2_to_imgmsg(maskedImage)
+				if len(response.im_out.image_msgs)==0:
+					response.im_out.image_msgs.append(img_msg)
 				else:
-					response.i_out = 1
+					response.im_out.image_msgs[0]=img_msg
 			
+			else:
+				#print("datum shape",datum.poseKeypoints.shape)
+				dataout=np.copy(datum.poseKeypoints[:,:,:2])
+				for i in range(dataout.shape[0]):
+					maskedImage=draw_skeleton(dataout[i],h,w,maskedImage,bkground=True)
+					draw_text_bkgn(maskedImage,text="Person "+str(i)+": ",pos=(int(dataout[i,0,0]), int(dataout[i,0,1])-40),
+									font_scale=1.3,text_color=(32, 255, 255))
+					
+				img_msg=bridge.cv2_to_imgmsg(maskedImage)
+				if len(response.im_out.image_msgs)==0:
+					response.im_out.image_msgs.append(img_msg)
+				else:
+					response.im_out.image_msgs[0]=img_msg
+				sk_idx = detectWaving(dataout,maskedImage,points_msg)
+				if sk_idx == -1:
+					print("NO PERSON WAVING")
+					response.i_out=-1
+					counting = 0
+				else:
+					counting += 1
+
+			if counting == 15:
+				break
+
+			#----	
+			head_mean = np.concatenate((dataout[sk_idx,0:1,:],dataout[sk_idx,15:19,:]),axis=0)
+			head_mean = np.sum(head_mean,axis=0)/np. count_nonzero(head_mean,axis=0)[0] 
+			
+
+			head_xyz =[points_data['x'][int(head_mean[1]), int(head_mean[0])],
+						points_data['y'][int(head_mean[1]), int(head_mean[0])],
+						points_data['z'][int(head_mean[1]), int(head_mean[0])]]
+			print("HEAD XYZ of waving person", head_xyz)
+
+			if head_xyz[0] is not None:
+				print("PUBLICANDO....")
+				tf_man.pub_static_tf(pos=head_xyz,point_name='person_waving',ref='head_rgbd_sensor_link')
+				rospy.sleep(0.8)
+				print("CAMBIANDO REF")
+				tf_man.change_ref_frame_tf(point_name='person_waving',new_frame='map')
+				rospy.sleep(0.8)
+				response.i_out = 1
+			else:
+				print("No se pudo publicar")
+				response.i_out = 2
+		
 			img_msg2=bridge.cv2_to_imgmsg(dataout)
 			response.im_out.image_msgs.append(img_msg2)
 

@@ -1,22 +1,25 @@
 <?xml version="1.0"?>
-<launch>  
-  
-  <include file="$(find hsrb_moveit_config)/launch/hsrb_demo_with_controller.launch"> 
-  <arg name="use_gui" value="false"/> 
-  </include>
+<launch>
 
-
-  <param name="file_name" value="/known_locations.yaml"/>
-  <node pkg="hmm_navigation"  name="pumas_nav" type="pumas_nav.py" output="screen" />
-  <node pkg="known_locations_tf_server"  name="known_locs" type="known_locs_node.py" output="screen" />
-  <node pkg="object_classification"  name="objs_reco" type="classification_server.py"  />  
-
-  <node pkg="smach_viewer"  name="smach_viewer" type="smach_viewer.py"  />  
+  <!-- <include file="$(find nav_pumas)/config_files/launch/navigation_real.launch"/> -->
   <node pkg="human_detector"  name="human_detector" type="pointing_detector_server.py"/>  
-  <node pkg="leg_finder"  name="leg_finder_node" type="leg_finder_node"/>  
-  <node pkg="human_follower"  name="human_follower_node" type="human_follower_node"/>  
-  <node pkg="action_server"  name="action_server" type="ACT_SRVR_Follow.py"/>   
-  <include file="$(find speech_recog)/launch/ros_vosk.launch"/>
-  <node pkg="head" name="mic_enable" type="mic_node"/>
+  <node pkg="face_recog"  name="face_recog" type="face_recog_server.py"/>
+  <node pkg="face_recog"  name="face_recog_deep" type="face_recog_server_deep.py"/>
 
-</launch>  
+  <node pkg="face_recog"  name="analyze_face_backgnd" type="analyze_face_backgnd_node"/>
+  <node pkg="head"  name="mic_node" type="mic_node"/>
+  <!-- <node pkg="task"        name="write_analyze_result" type="write_analyze_result.py"/> -->
+
+  <!-- <node pkg="smach_viewer"  name="smach_viewer" type="smach_viewer.py"/>   -->
+  <!-- <node pkg="segmentation"  name="segmentator_node" type="segment_floor.py"/>   -->
+
+<include file="$(find speech_recog)/launch/ros_vosk.launch"/>
+
+  
+<!-- </include> -->
+<!-- <include file="$(find pocketsphinx)/launch/pocketsphinx.launch"> -->
+  <!-- </include> -->
+<!--node pkg="task" name="receptionist" type="Receptionist_gr.py"/-->
+</launch>
+
+ 
