@@ -247,9 +247,9 @@ class PlacingStateMachine:
         group.stop()
         return succ
     
-    def publish_known_areas(self, position =[4.5, 3.0, 0.4] , rotation = [0,0,0.0,1], dimensions = [3.0 ,0.8, 0.02]): #position = [5.9, 5.0,0.3] ##SIM
+    def publish_known_areas(self, position =[1.0, -0.7, 0.65] , rotation = [0,0,0.707,0.707], dimensions = [3.0 ,0.8, 0.02]): #position = [5.9, 5.0,0.3] ##SIM
                                                                                                                   # position =[1.0, -0.7, 0.65]#real  [0,0,0.707,0.707]
-                                                                                                                   #position =[4.5, 3.0, 0.4] ### TMR
+                                                                                                                   #position =[4.5, 3.0, 0.4] , [0,0,0,1] ### TMR
         object_pose = PoseStamped()
         object_pose.header.frame_id = 'map'
         object_pose.pose.position.x = position[0]

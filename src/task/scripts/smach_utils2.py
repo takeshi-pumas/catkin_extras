@@ -128,10 +128,15 @@ def call_yolo_service(height = -1):
 def detect_object_yolo(object_name,res):
     # find object_name in the response message from object_classification service (Yolo)
     objs=[]
+    poses=[]
     for i,name in enumerate(res.names):
-        objs.append(name.data[4:])
+        if res.poses[i].position.x is not np.nan :
+            objs.append(name.data[4:])
+            poses.append(res.poses[i])
         if name.data[4:]==object_name:return res.poses[i]
-    if object_name=='all': return objs
+    if object_name=='all':
+        print (objs, poses)
+        return objs , poses
     return []
 
 #------------------------------------------------------

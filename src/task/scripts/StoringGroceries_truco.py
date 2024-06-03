@@ -39,24 +39,29 @@ class Initial(smach.State):
         ####KNOWLEDGE DATAFRAME 
         rospack = rospkg.RosPack()        
         file_path = rospack.get_path('config_files') 
-
-        
         objs = pd.read_csv (file_path+'/objects.csv') #EMPTY DATAFRAME
         objs=objs.drop(columns='Unnamed: 0')
-        print (objs)
+        
         grasping_dict = pd.read_csv (file_path+'/GraspingDict.csv')
         print (pd.read_csv (file_path+'/GraspingDict.csv'))
         file_path = rospack.get_path('config_files')+'/regions'         
-        o=read_yaml('/regions/regions_sim.yaml')#SIM
-        #o=read_yaml('/regions/regions.yaml')#REAL
+        
+        ###############################################
+        o=read_yaml('/regions/regions.yaml')#REAL
+        ###########################################
+        #o=read_yaml('/regions/regions_sim.yaml')#SIM
+        ###############################################
         regions_df=pd.DataFrame.from_dict(o)
-        
-        
         ############################
         ##TO AVOID SMACH DYING IN CASE NO PLACING AREA IS FOUND, THere is a default that at least allows the test to continue
         #x,y= np.mean(regions['shelves'], axis=0)
-        #z=0.44#self.mid_shelf_height=0.4 shelves heights must also be set on SCAN SHELF  state init section.
-        #tf_man.pub_static_tf(pos=[x,y,z],point_name='placing_area') ### IF a real placing area is found this tf will be updated
+        x= 0.5 * (regions_df['shelves']['x_max']-regions_df['shelves']['x_min'])
+        y= 0.5 * (regions_df['shelves']['y_max']-regions_df['shelves']['y_min'])
+        string_list=regions_df['shelves']['z'].split(',')
+        top,mid,low=[list(map(float, s.split(','))) for s in string_list]
+        z=mid[0]
+        shelf_quat=[regions_df['shelves']['quat_w'],regions_df['shelves']['quat_x'],regions_df['shelves']['quat_y'],regions_df['shelves']['quat_z']]
+        tf_man.pub_static_tf(pos=[x,y,z],rot=shelf_quat,point_name='placing_area') ### IF a real placing area is found this tf will be updated
         ############################
         arm = moveit_commander.MoveGroupCommander('arm')
         head.set_named_target('neutral')
@@ -197,7 +202,7 @@ class Scan_table(smach.State):
         req      = classify_client.request_class()
         req.in_.image_msgs.append(img_msg)        
         res      = classify_client(req)
-        objects=detect_object_yolo('all',res)   
+        objects, poses=detect_object_yolo('all',res)   
         if len (objects)!=0 :
             _,quat_base= tf_man.getTF('base_link')  
             #print (regions, self.pickup_plane_z)
@@ -212,7 +217,7 @@ class Scan_table(smach.State):
             def is_inside(x,y,z):return ((area_box[:,1].max() > y) and (area_box[:,1].min() < y)) and ((area_box[:,0].max() > x) and (area_box[0,0].min() < x)) and (pickup_plane_z<z)  
             for i in range(len(res.poses)):
                
-                position = [res.poses[i].position.x ,res.poses[i].position.y,res.poses[i].position.z]
+                position = [poses[i].position.x ,poses[i].position.y,poses[i].position.z]
                
                 ##########################################################
 
@@ -222,7 +227,7 @@ class Scan_table(smach.State):
                 object_point.point.y = position[1]
                 object_point.point.z = position[2]
                 position_map = tfBuffer.transform(object_point, "map", timeout=rospy.Duration(1))
-                print ('position_map',position_map)
+                print ('position_map',position_map,'name' ,res.names[i].data[4:])
                 if is_inside(position_map.point.x,position_map.point.y,position_map.point.z): 
                     tf_man.pub_static_tf(pos= [position_map.point.x,position_map.point.y,position_map.point.z], rot=quat_base, ref="map", point_name=res.names[i].data[4:] )
                     new_row = {'x': position_map.point.x, 'y': position_map.point.y, 'z': position_map.point.z, 'obj_name': res.names[i].data[4:]}
@@ -390,9 +395,9 @@ class Goto_shelf(smach.State):
             z_place = shelf_heights.get(corresponding_key, 0) + 0.1
             
             ################ PLACING AREA ESTIMATION FROM KNOWLEDGE DATA BASE
-            y_range = np.arange(area_box[0,1]+0.1, area_box[1,1]-0.1, .06)
-            x_range = np.arange(area_box[0,0]+0.1, area_box[1,0]-0.1, .06)
-            print (f'ys = {y_range}, xs = {x_range}')
+            y_range = np.arange(area_box[0,1]+0.05, area_box[1,1]-0.05, .06)
+            x_range = np.arange(area_box[0,0]+0.12, area_box[1,0]-0.12, .06)
+            print (f'ys = {y_range}, xs = {x_range}, areabox ={area_box}')
             grid = np.meshgrid(x_range, y_range)
             grid_points = np.vstack([grid[0].ravel(), grid[1].ravel()]).T        
             free_grid = grid_points.tolist()
@@ -547,10 +552,10 @@ class Place_shelf(smach.State):
         rospy.sleep(1.0)
         gripper.open()
         rospy.sleep(1.0)
-        #gripper.steady()
         head.set_joint_values([0,0])
         omni_base.tiny_move( velX=-0.3,std_time=10.0) 
         arm.set_named_target('go')
+        gripper.steady()
         arm.go()
         rospy.sleep(1.5)
 
@@ -794,7 +799,7 @@ class Scan_shelf(smach.State):
                     rospy.sleep(1.0)
 
         ### IF ALREADY SCANNED JUMP HERE
-        print (shelves_cats , cat)
+        print (f'shelves_cats , cat{shelves_cats , cat} missing shelves {missing_shelves}')
         ####################################################################################3
         corresponding_key='low'  # fall back case
         for key, value in shelves_cats.items():
@@ -806,14 +811,14 @@ class Scan_shelf(smach.State):
         'low': low_shelf_height
         }
         print('here',objs_shelves[corresponding_key + '_shelf'])
+        talk ( f' I will place object in {corresponding_key} shelf')
         objs_shelves.to_csv('/home/roboworks/Documents/objs.csv') 
         z_place = shelf_heights.get(corresponding_key, 0) + 0.1
-        
         ################ PLACING AREA ESTIMATION FROM KNOWLEDGE DATA BASE
         print (area_box)
-        y_range = np.arange(area_box[0,1]+0.1, area_box[1,1]-0.1, .06)
-        x_range = np.arange(area_box[0,0]+0.1, area_box[1,0]-0.1, .06)
-        print (f'ys = {area_box[0,1]+0.1, area_box[1,1]}, xs = {area_box[0,0]+0.1, area_box[1,0]}')
+        y_range = np.arange(area_box[0,1]+0.05, area_box[1,1]-0.05, .06)
+        x_range = np.arange(area_box[0,0]+0.12, area_box[1,0]-0.12, .06)
+        print (f'ys = {y_range}, xs = {x_range}')
         grid = np.meshgrid(x_range, y_range)
         grid_points = np.vstack([grid[0].ravel(), grid[1].ravel()]).T        
         free_grid = grid_points.tolist()
