@@ -105,14 +105,16 @@ def callback(points_msg):
                 documents = yaml.dump(df, file, default_flow_style=False)
             return True
 
+        elif key=='h':
+            print ('############# hand cam')           
+            cv2.imshow('our of res'  , cv2.cvtColor(hand_rgb.get_image(), cv2.COLOR_BGR2RGB)   )
+
         elif key=='y':
             print ('#############YOLO SERVICE YCB REQUESTED')
             img_msg  = bridge.cv2_to_imgmsg(image)
             req      = classify_client.request_class()
             req.in_.image_msgs.append(img_msg)
             res      = classify_client(req)
-
-
             for i in range(len(res.poses)):
                 tf_man.getTF("head_rgbd_sensor_rgb_frame")
                 position = [res.poses[i].position.x ,res.poses[i].position.y,res.poses[i].position.z]
@@ -120,7 +122,6 @@ def callback(points_msg):
                 tf_man.pub_static_tf(pos= position, rot=[0,0,0,1], ref="head_rgbd_sensor_rgb_frame", point_name=res.names[i].data[4:] )   
                 rospy.sleep(0.3)
                 tf_man.change_ref_frame_tf(res.names[i].data[4:])
-
             debug_image=bridge.imgmsg_to_cv2(res.debug_image.image_msgs[0])
             cv2.imshow('our of res'  , debug_image)
             save_image(debug_image,name="yolo_result")
@@ -176,8 +177,10 @@ def callback(points_msg):
             save_image(img,name="placingFinder_result")
       
         elif key == 'i':        # obtener una imagen 'normal'
-            img = rgbd.get_image()
+            img = hand_rgb.get_image()
             img = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
 
             save_image(img,name="image",dirName="train")    # dirName requiere que la carpeta exista !!!
             #rospack.get_path("config_files")

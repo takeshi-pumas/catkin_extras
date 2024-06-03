@@ -151,7 +151,7 @@ def read_sensor_cb(msg):
         Fx_rep = Fx_rep + (1/lectures[idx])**2 * np.cos(deg)
         Fy_rep = Fy_rep + (1/lectures[idx])**2 * np.sin(deg)
 
-# Cambio de nombre de inoutinout a main
+# Cambio de nombre de inoutinout a main #:D:D:D
 def main():
     global listener, tfBuffer, xcl, ycl, laser_degs
 
