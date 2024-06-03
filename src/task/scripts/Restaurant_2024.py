@@ -1,7 +1,12 @@
 #!/usr/bin/env python3
 from smach_utils2 import *
+from act_recog.srv import Recognize,RecognizeResponse,RecognizeRequest
 
 # Initial STATE: task setup (grammar, knowledge, robot position, ...)
+
+recognize_action = rospy.ServiceProxy('recognize_act', Recognize) 
+
+
 
 class Initial(smach.State):
     def __init__(self):
@@ -13,11 +18,11 @@ class Initial(smach.State):
         rospy.loginfo('STATE : INITIAL')
         rospy.loginfo(f'Try {self.tries} of 5 attempts')
 
-        party.clean_knowledge(host_name = "john", host_location = "Place_3")
+        #party.clean_knowledge(host_name = "john", host_location = "Place_3")
         #party.clean_knowledge()
         #places_2_tf()
         #party.publish_tf_seats()
-        places_2_tf()
+        #places_2_tf()
 
         ###-----INIT GRAMMAR FOR VOSK
         ###-----Use with get_keywords_speech()
@@ -25,23 +30,22 @@ class Initial(smach.State):
         #drinks=['coke','juice','beer', 'water', 'soda', 'wine', 'i want a', 'i would like a']
         #drinks = ['coke','juice','milk', 'water', 'soda', 'wine', 
         #          'i want a', 'i would like a', 'tea', 'icedtea', 'cola', 'redwine', 'orangejuice', 'tropicaljuice']
-        drinks = ['water', 'soda', 'coke', 'juice', 'iced tea', 'i want a', 'i would like a']
+        #drinks = ['water', 'soda', 'coke', 'juice', 'iced tea', 'i want a', 'i would like a']
         #names=['rebeca','ana','jack', 'michael', ' my name is' , 'i am','george','mary','ruben','oscar','yolo','mitzi']
         #names = [' my name is' , 'i am','adel', 'angel', 'axel', 
         #         'charlie', 'jane', 'john', 'jules', 'morgan', 'paris', 'robin', 'simone', 'jack']
-        names = ['my name is', 'i am','john', 'jack', 'paris', 'charlie', 'simone', 'robin', 'jane', 'jules']
-        confirmation = ['yes','no', 'robot yes', 'robot no','not','now','nope','yeah']                     
-        gram = drinks + names + confirmation                                                                                
+        #names = ['my name is', 'i am','john', 'jack', 'paris', 'charlie', 'simone', 'robin', 'jane', 'jules']
+        #confirmation = ['yes','no', 'robot yes', 'robot no','not','now','nope','yeah']                     
+        #gram = drinks + names + confirmation                                                                                
         
         if self.tries == 1:
-            set_grammar(gram)  ##PRESET DRINKS
+            #set_grammar(gram)  ##PRESET DRINKS
             rospy.sleep(0.2)
             return 'succ'
         elif self.tries == 3:
             return 'failed'
 
 # Wait push hand STATE: Trigger for task to start
-
 class Wait_push_hand(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed'])
@@ -55,7 +59,7 @@ class Wait_push_hand(smach.State):
         #     return 'failed'
         head.set_named_target('neutral')
         brazo.set_named_target('go')
-        voice.talk('Gently... push my hand to begin')
+        talk('Gently... push my hand to begin')
         succ = wait_for_push_hand(100)
 
         if succ:
@@ -63,36 +67,79 @@ class Wait_push_hand(smach.State):
         else:
             return 'failed'
 
-# Wait door opened STATE: Trigger for task to start
 
-class Wait_door_opened(smach.State):
+# Wait for someone to start waving
+class Wait_for_waving(smach.State):
     def __init__(self):
-        smach.State.__init__(self, outcomes=['succ', 'failed'])
+        smach.State.__init__(self, outcomes=['succ', 'failed','tries'])
+        self.tries = 0
+        self.gaze = [[ 0.0, 0.0],[ 0.0, 0.0],[ 0.0, 0.1],[ 0.2, 0.0],[ 0.2, 0.1],[ -0.2, 0.1]]
+    def execute(self, userdata):
+        req = RecognizeRequest()
+        rospy.loginfo('STATE : Wait for Wait_push_hand')
+        self.tries += 1
+        print(f'Try {self.tries} of N attempts')
+        
+        talk('Waiting for someone waving')
+        print('[WAITFORWAVING] Waiting for someone waving')
+        head.set_joint_values(self.gaze[self.tries-1])
+        rospy.sleep(1.5)
+        req.visual=0
+        # reqAct.in_ --> 5  para detectar Waving en Restaurant
+        req.in_ = 5
+        talk("Three")
+        print("[WAITFORWAVING] 3")
+        rospy.sleep(1.0)
+        talk('Two')
+        print("[WAITFORWAVING] 2")
+        rospy.sleep(1.0)
+        talk('One')
+        print("[WAITFORWAVING] 1")
+        rospy.sleep(1.0)
+        
+        resAct=recognize_action(req)
+        print("[WAITFORWAVING] RES OF DOCKER:",resAct.i_out)
+        img = bridge.imgmsg_to_cv2(resAct.im_out.image_msgs[0])
+
+        save_image(img,name="wavingRestaurant")
+        if resAct.i_out == 1:
+            talk('I found someone waving')
+            print("[WAITFORWAVING] I found someone waving")
+        else:
+            talk('I did not found someone waving')
+            print("[WAITFORWAVING] I did not found someone waving")
+            return 'failed' if self.tries < 6 else 'tries'
+
+        talk('Aproaching to the waving person')
+        print('[WAITFORWAVING]Aproaching to the waving person')
+
+        return 'succ'
+
+class Goto_waving_person(smach.State):
+    def __init__(self):
+        smach.State.__init__(self, outcomes=['succ', 'failed','tries'])
         self.tries = 0
 
     def execute(self, userdata):
+        rospy.loginfo('STATE : Navigate to forbidden room')
 
-        rospy.loginfo('STATE : Wait for door to be opened')
-        print('Waiting for door to be opened')
-
+        print(f'[GOTOWAVINGPERSON] Try {self.tries} of 3 attempts')
         self.tries += 1
-        print(f'Try {self.tries} of 4 attempts')
+        if self.tries == 3:
+            return 'tries'
+        
+        if self.tries == 1: 
+            print('[GOTOWAVINGPERSON] Navigating ')
+            talk('Navigating')
+            rospy.sleep(0.5)
+        res = omni_base.move_base(known_location='person_waving')
+        print("[GOTOWAVINGPERSON]",res)
 
-        # if self.tries == 100:
-        #     return 'tries'
-        voice.talk('I am ready for receptionist task.')
-        rospy.sleep(0.8)
-        voice.talk('I am waiting for the door to be opened')
-        succ = line_detector.line_found()
-        #succ = wait_for_push_hand(100)
-        rospy.sleep(1.0)
-        if succ:
-            self.tries = 0
+        if res:
             return 'succ'
         else:
+            print('[GOTOWAVINGPERSON] Navigation Failed, retrying')
             return 'failed'
-
-
 
 class Scan_face(smach.State):
     def __init__(self):
@@ -104,7 +151,7 @@ class Scan_face(smach.State):
     def execute(self, userdata):
         rospy.loginfo('State : Scan face')
         head.set_joint_values([0.0, 0.3])
-        voice.talk('Waiting for guest, look at me, please')             TODO
+        voice.talk('Waiting for guest, look at me, please')             #TODO
         res, userdata.face_img = wait_for_face()  # default 10 secs   #### MODIFY WAVE DETECTOR
         #rospy.sleep(0.7)
         if res != None:
@@ -114,7 +161,6 @@ class Scan_face(smach.State):
             return 'failed'
 
 # Decide face STATE: Decide if the new guest is known, unknown or can't be decided
-
 class Decide_face(smach.State):
     def __init__(self):
         smach.State.__init__(self, 
@@ -153,7 +199,6 @@ class Decide_face(smach.State):
                 return 'succ'
 
 # New face STATE: Train new guest on DB
-
 class New_face(smach.State):
     def __init__(self):
         smach.State.__init__(self, 
@@ -207,7 +252,6 @@ class New_face(smach.State):
             return 'failed'
 
 # Get drink STATE: Ask guest for their favourite drink
-
 class Get_drink(smach.State):
     def __init__(self):
         smach.State.__init__(self, 
@@ -258,7 +302,6 @@ class Get_drink(smach.State):
         return 'succ'
 
 # Lead to living room STATE: Ask guest to be followed to living room
-
 class Lead_to_living_room(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed'])
@@ -279,7 +322,6 @@ class Lead_to_living_room(smach.State):
             return 'failed'
 
 # Find sitting place STATE: Find a place to sit according to previous knowledge of the world
-
 class Find_sitting_place(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed'])
@@ -333,7 +375,6 @@ class Find_sitting_place(smach.State):
             return 'failed'
 
 # Find host from previous knowledge or find them by vision
-
 class Find_host_alternative(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes= ['succ', 'failed'],
@@ -449,18 +490,19 @@ if __name__ == '__main__':
 
         # Initial states routine
         smach.StateMachine.add("INITIAL", Initial(),              
-                               transitions={'failed': 'INITIAL', 'succ': 'WAIT_PUSH_HAND'})
+                               transitions={'failed': 'INITIAL', 'succ': 'WAITING_WAVING'})
         smach.StateMachine.add("WAIT_PUSH_HAND", Wait_push_hand(),       
-                               transitions={'failed': 'WAIT_PUSH_HAND', 'succ': 'GOTO_DOOR'})
-        smach.StateMachine.add("WAIT_DOOR_OPENED", Wait_door_opened(),     
-                               transitions={'failed': 'WAIT_DOOR_OPENED', 'succ': 'GOTO_DOOR'})
-        smach.StateMachine.add("GOTO_DOOR", Goto_door(),            
-                               transitions={'failed': 'GOTO_DOOR', 'succ': 'SCAN_FACE'})
+                               transitions={'failed': 'WAIT_PUSH_HAND', 'succ': 'WAITING_WAVING'})
+
+        smach.StateMachine.add("WAITING_WAVING", Wait_for_waving(),            
+                               transitions={'failed': 'WAITING_WAVING', 'succ': 'GOTO_WAVING_PERSON', 'tries':'END'})
         
-        # Guest recognition states
-        smach.StateMachine.add("SCAN_FACE", Scan_face(),    
-                               transitions={'failed': 'SCAN_FACE', 'succ': 'GOTO_WAVING'})
-        smach.StateMachine.add("DECIDE_FACE", Decide_face(),
+        
+        smach.StateMachine.add("GOTO_WAVING_PERSON", Goto_waving_person(),    
+                               transitions={'failed': 'GOTO_WAVING_PERSON', 'succ': 'END','tries':'END'})
+        
+
+        """smach.StateMachine.add("DECIDE_FACE", Decide_face(),
                                transitions={'failed': 'SCAN_FACE', 'succ': 'GET_DRINK', 'unknown': 'NEW_FACE'})
         smach.StateMachine.add("NEW_FACE", New_face(),     
                                transitions={'failed': 'NEW_FACE', 'succ': 'GET_DRINK'})
@@ -475,7 +517,7 @@ if __name__ == '__main__':
         smach.StateMachine.add("FIND_HOST", Find_host_alternative(),
                                transitions={'failed': 'FIND_HOST', 'succ':'INTRODUCE_GUEST'})
         smach.StateMachine.add("INTRODUCE_GUEST", Introduce_guest(),
-                               transitions={'failed': 'INTRODUCE_GUEST', 'succ':'WAIT_PUSH_HAND', 'tries':'END'})
+                               transitions={'failed': 'INTRODUCE_GUEST', 'succ':'WAIT_PUSH_HAND', 'tries':'END'})"""
 
 
     outcome = sm.execute()

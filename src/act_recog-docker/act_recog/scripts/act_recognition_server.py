@@ -301,12 +301,7 @@ def callback(req):
 				maskedImage=draw_skeleton(dataout[i],h,w,maskedImage,bkground=True)
 				draw_text_bkgn(maskedImage,text="Person "+str(i)+": ",pos=(int(dataout[i,0,0]), int(dataout[i,0,1])-40),
 		                           font_scale=1.3,text_color=(32, 255, 255))
-				print(path.expanduser( '~' )+"/Documents/wavingPersonOP.jpg")
-				print(dataout.shape)
 				
-				#cv2.imwrite(path.expanduser( '~' )+"/Documents/wavingPersonOP.jpg",maskedImage)
-				save_image(image,name="wavingPersonOP",dirName="")
-    
 			img_msg=bridge.cv2_to_imgmsg(maskedImage)
 			if len(response.im_out.image_msgs)==0:
 				response.im_out.image_msgs.append(img_msg)

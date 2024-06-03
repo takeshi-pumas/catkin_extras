@@ -16,6 +16,7 @@ from face_recog.srv import *
 import cv2  
 import rospy 
 import numpy as np
+import math
 import actionlib
 from hmm_navigation.msg import NavigateActionGoal, NavigateAction
 from cv_bridge import CvBridge, CvBridgeError
@@ -251,3 +252,31 @@ def match_speech(speech, to_match):
         if element in speech:
             return True
     return False
+
+#------------------------------------------------------
+def new_move_D_to(tf_name='placing_area',d_x=15 , timeout=30.0):
+
+    timeout = rospy.Time.now().to_sec() + timeout
+    succ = False            
+    i=0
+    while (timeout >= rospy.Time.now().to_sec()) and not succ and not rospy.is_shutdown():
+        
+        _,rot=tf_man.getTF('base_link')    
+        robot_yaw=tf.transformations.euler_from_quaternion(rot)[2]
+        pose,_= tf_man.getTF("base_link",ref_frame=tf_name)
+        target_yaw = math.atan2(pose[1], pose[0])+np.pi
+        delta_th=   target_yaw-robot_yaw
+        delta_th = (delta_th + np.pi) % (2 * np.pi) - np.pi
+        i+=1                
+        eX = np.linalg.norm((pose[0:2]))
+        eX+= -d_x  #x offest
+        velX= eX 
+        if abs(delta_th)>=0.1:velX=0
+        succ =  eX <= 0.1  and abs(delta_th)<=0.1
+        corr_velX = max(min(velX, 0.051), -0.051)
+        if i >=10:
+            print("error_D: {:.2f}, , delta_th {:.2f}, target obj frame {}".format(eX,  delta_th,tf_name))
+            i=0
+        omni_base.tiny_move( velX=corr_velX,velY=0, velT=delta_th,std_time=0.2, MAX_VEL=0.3) 
+    return succ
+
