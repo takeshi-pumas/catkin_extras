@@ -13,11 +13,10 @@ from moveit_msgs.msg import CollisionObject, AttachedCollisionObject
 from action_server.msg import GraspAction
 from std_srvs.srv import Empty
 from moveit_commander import Constraints
-from moveit_msgs.msg import OrientationConstraint
+from moveit_msgs.msg import OrientationConstraint , PositionConstraint
 from tf.transformations import euler_from_quaternion, quaternion_from_euler, quaternion_multiply
 
 from utils import grasp_utils
-
 global clear_octo_client
 
 clear_octo_client = rospy.ServiceProxy('/clear_octomap', Empty)
@@ -133,7 +132,8 @@ class PlacingStateMachine:
             rotation = transform.transform.rotation
             fixed_quat = [rotation.x, rotation.y, rotation.z, rotation.w]
             # Set orientation constraint based on the current orientation of base_link
-            self.set_orientation_constraint(fixed_quat=fixed_quat)
+            self.set_combined_constraints(fixed_quat=fixed_quat   )
+            
         except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
             rospy.logwarn("Could not get transform from 'odom' to 'base_link'. Using default quaternion.")
             
@@ -206,8 +206,8 @@ class PlacingStateMachine:
         # self.whole_body.go()
         return "success"
 # ----------------------------------------------------------
-     # Add the orientation constraint
-    def set_orientation_constraint(self, fixed_quat =[0, 0, 0, 1]):
+    # Add the orientation constraint
+    def get_orientation_constraint(self, fixed_quat=[0, 0, 0, 1]):
         orientation_constraint = OrientationConstraint()
         orientation_constraint.link_name = "base_link"
         orientation_constraint.header.frame_id = "odom"
@@ -220,15 +220,44 @@ class PlacingStateMachine:
         orientation_constraint.absolute_z_axis_tolerance = 0.2
         orientation_constraint.weight = 1.0
 
-        constraints = Constraints()
-        constraints.orientation_constraints.append(orientation_constraint)
-        self.whole_body.set_path_constraints(constraints)
-
+        return orientation_constraint
     # Clear the orientation constraint
     def clear_orientation_constraint(self):
         self.whole_body.clear_path_constraints()
 
 ###################################################################################################            
+    def get_spatial_constraint(self):
+        # Define the spatial constraint
+        constraint = Constraints()
+        constraint.name = "spatial_constraint"
+        
+        # Define the position constraint
+        position_constraint = PositionConstraint()
+        position_constraint.header.frame_id = "base_link"
+        position_constraint.link_name = "base_link"
+        position_constraint.target_point_offset.x = 1.0
+        position_constraint.target_point_offset.y = 0.0
+        position_constraint.target_point_offset.z = 0.0
+        position_constraint.constraint_region.primitives.append(SolidPrimitive(type=SolidPrimitive.BOX, dimensions=[3.0, 1.0, 2.0]))
+        position_constraint.constraint_region.primitive_poses.append(Pose(position=Point(x=0.0, y=0.0, z=0.0), orientation=Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)))
+        position_constraint.weight = 1.0
+        # Add the position constraint to the spatial constraint
+        constraint.position_constraints.append(position_constraint)
+
+        return constraint
+    def set_combined_constraints(self, fixed_quat=[0, 0, 0, 1]):
+        # Get the orientation constraint
+        orientation_constraint = self.get_orientation_constraint(fixed_quat)
+        # Get the spatial constraint
+        spatial_constraint = self.get_spatial_constraint()
+        # Combine both constraints into a single Constraints object
+        combined_constraints = Constraints()
+        combined_constraints.orientation_constraints.append(orientation_constraint)
+        combined_constraints.position_constraints.append(spatial_constraint.position_constraints[0])
+        # Apply the combined constraints to the motion planning request
+        self.whole_body.set_path_constraints(combined_constraints)
+    
+    
     # ----------------------------------------------------------
 
     def move_to_position(self, group, position_goal):

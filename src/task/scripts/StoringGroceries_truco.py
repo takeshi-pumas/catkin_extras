@@ -47,9 +47,9 @@ class Initial(smach.State):
         file_path = rospack.get_path('config_files')+'/regions'         
         
         ###############################################
-        o=read_yaml('/regions/regions.yaml')#REAL
-        ###########################################
-        #o=read_yaml('/regions/regions_sim.yaml')#SIM
+        #o=read_yaml('/regions/regions.yaml')#REAL
+        ############################################
+        o=read_yaml('/regions/regions_sim.yaml')#SIM
         ###############################################
         regions_df=pd.DataFrame.from_dict(o)
         ############################
@@ -127,43 +127,30 @@ class Wait_door_opened(smach.State):
 class Goto_pickup(smach.State):  
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed', 'tries','pickup'])
-        self.tries = 0
-        self.First=True
-
+        
     def execute(self, userdata):
 
         rospy.loginfo('STATE : Navigate to known location')
 
-        print(f'Try {self.tries} of 3 attempts')
-        self.tries += 1
-        if self.tries == 3:
-            self.tries = 0
-            return 'tries'
+        
+        
+        
         #talk('Navigating to, pickup')        
         res = omni_base.move_base(known_location='pickup', time_out=40)
         res = omni_base.move_base(known_location='pickup', time_out=40)
         
         print(res)
-##################################################################First TIme Only go        
-        if self.tries == 1: 
-            if res:
-                return 'succ'
-            else:
-                talk('Navigation Failed, retrying')
-                return 'failed'
-#########################################################################################################
-        if self.tries > 1: 
-            #talk('Navigating to, pickup')
-            if res:
-                return 'pickup'
-            else:
-                talk('Navigation Failed, retrying')
-                return 'failed'
-#########################################################################################################
+
+        if res:
+            return 'succ'
+        else:
+            talk('Navigation Failed, retrying')
+            return 'failed'
+
 class Scan_table(smach.State):
     def __init__(self):
         smach.State.__init__(
-            self, outcomes=['succ', 'failed'])
+            self, outcomes=['succ', 'failed','tries'])
         self.tries = 0
         self.scanned=False   
         #self.pickup_plane_z  =0.65 ############REAL
@@ -175,7 +162,8 @@ class Scan_table(smach.State):
         rospy.loginfo('State : Scanning_table')
         
         if self.tries==0:talk('Scanning Table')
-        self.tries+=1
+        if self.tries==3: return 'tries'
+        #self.tries+=1
         global objs
         #if  self.scanned:return'succ'
         rospack = rospkg.RosPack()        
@@ -238,13 +226,10 @@ class Scan_table(smach.State):
         else:
             print('Objects list empty')
             talk( 'I could not find more objects')
+            self.tries+=1
             return 'failed'
         
-        #rospack = rospkg.RosPack()
-        #file_path = rospack.get_path('config_files')+'/regions'         
-        #regions={'shelves':np.load(file_path+'/shelves_region.npy'),'pickup':np.load(file_path+'/pickup_region.npy')}
-        #regions={'shelves':np.load(file_path+'/shelves_region_sim.npy'),'pickup':np.load(file_path+'/pickup_region_sim.npy')}
-        #area_box=regions[name]
+        
         in_region=[]
         for index, row in objs[['x','y','z']].iterrows():in_region.append(is_inside(row.x, row.y,row.z))
         objs['pickup']=pd.Series(in_region)
@@ -253,13 +238,12 @@ class Scan_table(smach.State):
         objs['category'] = cats    
         objs.dropna(inplace=True)
              
-        print (objs)
+        #print (objs)
         pickup_objs=objs[objs['pickup']==True]
         if len (pickup_objs)== 0:
             talk('no more objects found')
             return 'failed'
-        self.tries=0
-        self.scanned=True  
+        print (f'pickup_objs{pickup_objs}')
         return 'succ'
 #########################################################################################################
 
@@ -409,7 +393,7 @@ class Goto_shelf(smach.State):
             
             if len (free_grid)==0:
                 print ( 'no placing area found, using generic safe pose')
-                talk ( f'no placing area found in {corresponding_key}, using generic safe pose')
+                talk ( f'no placing area found in {corresponding_key} shelf, using generic safe pose')
                 x,y= np.mean(area_box, axis=0)
                 z=0.44#self.mid_shelf_height=0.4 shelves heights must also be set on SCAN SHELF  state init section.
                 tf_man.pub_static_tf(pos=[x,y,z],point_name='placing_area') ### IF a real placing area is found this tf will be updated
@@ -876,10 +860,10 @@ if __name__ == '__main__':
 
         smach.StateMachine.add("GOTO_PICKUP",    Goto_pickup(),       transitions={'failed': 'GOTO_PICKUP',    
                                                                                          'succ': 'SCAN_TABLE', 
-                                                                                         'tries':'GOTO_PICKUP',                                                                                               
-                                                                                         'pickup':'PICKUP'})
+                                                                                         })
         smach.StateMachine.add("SCAN_TABLE",    Scan_table(),       transitions={'failed': 'SCAN_TABLE',    
-                                                                                         'succ': 'GOTO_PICKUP'       
+                                                                                         'succ': 'PICKUP',
+                                                                                         'tries': 'GOTO_PICKUP',      
                                                                                          })        
         smach.StateMachine.add("GOTO_SHELF",    Goto_shelf(),       transitions={'failed': 'GOTO_SHELF',    
                                                                                          'succ': 'SCAN_SHELF',       
