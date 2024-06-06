@@ -47,9 +47,9 @@ class Initial(smach.State):
         file_path = rospack.get_path('config_files')+'/regions'         
         
         ###############################################
-        #o=read_yaml('/regions/regions.yaml')#REAL
+        o=read_yaml('/regions/regions.yaml')#REAL
         ############################################
-        o=read_yaml('/regions/regions_sim.yaml')#SIM
+        #o=read_yaml('/regions/regions_sim.yaml')#SIM
         ###############################################
         regions_df=pd.DataFrame.from_dict(o)
         ############################
@@ -126,15 +126,12 @@ class Wait_door_opened(smach.State):
 ##########################################################
 class Goto_pickup(smach.State):  
     def __init__(self):
-        smach.State.__init__(self, outcomes=['succ', 'failed', 'tries','pickup'])
+        smach.State.__init__(self, outcomes=['succ', 'failed'])
         
     def execute(self, userdata):
 
         rospy.loginfo('STATE : Navigate to known location')
-
-        
-        
-        
+        print('Navigating to, pickup')        
         #talk('Navigating to, pickup')        
         res = omni_base.move_base(known_location='pickup', time_out=40)
         res = omni_base.move_base(known_location='pickup', time_out=40)
@@ -221,8 +218,6 @@ class Scan_table(smach.State):
                     new_row = {'x': position_map.point.x, 'y': position_map.point.y, 'z': position_map.point.z, 'obj_name': res.names[i].data[4:]}
                     objs.loc[len(objs)] = new_row
                     ###########################################################
-                
-               
         else:
             print('Objects list empty')
             talk( 'I could not find more objects')
@@ -237,21 +232,14 @@ class Scan_table(smach.State):
         for name in objs['obj_name']:cats.append(categorize_objs(name))
         objs['category'] = cats    
         objs.dropna(inplace=True)
-             
-        #print (objs)
-        pickup_objs=objs[objs['pickup']==True]
-        if len (pickup_objs)== 0:
-            talk('no more objects found')
-            return 'failed'
-        print (f'pickup_objs{pickup_objs}')
+        self.tries=0 
         return 'succ'
 #########################################################################################################
 
 class Pickup(smach.State):   
     def __init__(self):
-        smach.State.__init__(self, output_keys=['target_pose','mode'], input_keys =['target_object'],outcomes=['succ', 'failed', 'tries'])
+        smach.State.__init__(self, output_keys=['target_pose','mode'], input_keys =['target_object'],outcomes=['succ', 'failed'])
         
-        self.tries = 0
 
     def execute(self, userdata):
 
@@ -270,6 +258,7 @@ class Pickup(smach.State):
         name, cat=pickup_objs[['obj_name','category']].iloc[ix]
         print('closest',name , cat)
         talk ( f'closest object is {name}, of category {cat}, picking it up ')
+        
         target_object= name  
         
         line_up_TF(target_object)####################
@@ -308,7 +297,7 @@ class Pickup(smach.State):
         head.set_named_target('neutral')
         rospy.sleep(0.5)       
         clear_octo_client()     
-        self.tries+=1  
+        
         return 'succ'
         
 #################################################################################################
@@ -600,7 +589,7 @@ class Check_grasp(smach.State):
                 new_row = {'x': position_map.point.x, 'y': position_map.point.y, 'z': position_map.point.z, 'obj_name': res.names[i].data[4:]}
                 objs.loc[len(objs)] = new_row                
                 test_pt=np.asarray((position_map.point.x,position_map.point.y,position_map.point.z))
-                print (np.linalg.norm(pose_target-test_pt))
+                #print (np.linalg.norm(pose_target-test_pt))
                 if check_if_grasped(pose_target,test_pt):
                     print (f'Centroid found in area {test_pt}, obj_name: {res.names[i].data[4:]}')
                     print ('Grasping May have failed')
@@ -714,11 +703,11 @@ class Scan_shelf(smach.State):
             debug_image=   cv2.cvtColor(bridge.imgmsg_to_cv2(res.debug_image.image_msgs[0]), cv2.COLOR_RGB2BGR)
             objects=detect_object_yolo('all',res)  # list of objects detected objects
 
-            def is_inside_top(x,y,z):return ((area_box[1,1] > y) and (area_box[0,1] < y)) and ((area_box[1,0] > x) and (area_box[0,0] < x))    and (top_shelf_height < z )  
-            def is_inside_mid(x,y,z):return ((area_box[1,1] > y) and (area_box[0,1] < y)) and ((area_box[1,0] > x) and (area_box[0,0] < x))    and ((0.9*top_shelf_height > z) and (mid_shelf_height < z  )  )  
-            def is_inside_low(x,y,z):return ((area_box[1,1] > y) and (area_box[0,1] < y)) and ((area_box[1,0] > x) and (area_box[0,0] < x))    and ((0.9*mid_shelf_height > z  )  )
+            def is_inside_top(x,y,z):return ((area_box[1,1] +0.1 > y) and (area_box[0,1]-0.1 < y)) and ((area_box[1,0] +0.1  > x) and (area_box[0,0]-0.1  < x))    and (top_shelf_height < z )  
+            def is_inside_mid(x,y,z):return ((area_box[1,1] +0.1 > y) and (area_box[0,1]-0.1 < y)) and ((area_box[1,0] +0.1  > x) and (area_box[0,0]-0.1  < x))    and ((0.9*top_shelf_height > z) and (mid_shelf_height < z  )  )  
+            def is_inside_low(x,y,z):return ((area_box[1,1] +0.1 > y) and (area_box[0,1]-0.1 < y)) and ((area_box[1,0] +0.1  > x) and (area_box[0,0]-0.1  < x))    and ((0.9*mid_shelf_height > z  )  )
             #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-            for i in range (3):
+            for i in range (5):
                 image= cv2.cvtColor(rgbd.get_image(), cv2.COLOR_RGB2BGR)
                 img_msg  = bridge.cv2_to_imgmsg(image)
                 req      = classify_client.request_class()
@@ -777,9 +766,15 @@ class Scan_shelf(smach.State):
                         missing_shelves.append(shelf)
                 if len (missing_shelves)==0:break
                 else:
-                    if (missing_shelves[0]=='top'): head.set_joint_values([-np.pi/2 , -0.3])    
-                    elif (missing_shelves[0]=='mid'): head.set_joint_values([-np.pi/2 , -0.7])    
-                    elif (missing_shelves[0]=='low'): head.set_joint_values([-np.pi/2 , -1.0])    
+                    if (missing_shelves[0]=='top'): 
+                        talk( 'top shelf missing, scanning again')
+                        head.set_joint_values([-np.pi/2 , -0.3])    
+                    elif (missing_shelves[0]=='mid'): 
+                        head.set_joint_values([-np.pi/2 , -0.7])  
+                        talk( 'mid shelf missing, scanning again')  
+                    elif (missing_shelves[0]=='low'): 
+                        head.set_joint_values([-np.pi/2 , -1.0])    
+                        talk( 'bottom shelf missing, scanning again')
                     rospy.sleep(1.0)
 
         ### IF ALREADY SCANNED JUMP HERE
@@ -847,25 +842,25 @@ if __name__ == '__main__':
     sis.start()
     with sm:
         # State machine STICKLER
-        smach.StateMachine.add("INITIAL",           Initial(),              transitions={'failed': 'INITIAL',           
+        smach.StateMachine.add("INITIAL",           Initial(),          transitions={'failed': 'INITIAL',           
                                                                                          #'succ': 'SCAN_SHELF',   
                                                                                          'succ': 'GOTO_PICKUP',   
                                                                                          'tries': 'END'})
-        smach.StateMachine.add("WAIT_PUSH_HAND",    Wait_push_hand(),       transitions={'failed': 'WAIT_PUSH_HAND',    
+        smach.StateMachine.add("WAIT_PUSH_HAND",    Wait_push_hand(),   transitions={'failed': 'WAIT_PUSH_HAND',    
                                                                                          'succ': 'GOTO_PICKUP',       
                                                                                          'tries': 'END'})
 
-        smach.StateMachine.add("WAIT_DOOR",    Wait_door_opened(),       transitions={'failed': 'WAIT_DOOR',    
+        smach.StateMachine.add("WAIT_DOOR",    Wait_door_opened(),      transitions={'failed': 'WAIT_DOOR',    
                                                                                          'succ': 'GOTO_PICKUP'})
 
-        smach.StateMachine.add("GOTO_PICKUP",    Goto_pickup(),       transitions={'failed': 'GOTO_PICKUP',    
+        smach.StateMachine.add("GOTO_PICKUP",    Goto_pickup(),         transitions={'failed': 'GOTO_PICKUP',    
                                                                                          'succ': 'SCAN_TABLE', 
                                                                                          })
-        smach.StateMachine.add("SCAN_TABLE",    Scan_table(),       transitions={'failed': 'SCAN_TABLE',    
+        smach.StateMachine.add("SCAN_TABLE",    Scan_table(),           transitions={'failed': 'SCAN_TABLE',    
                                                                                          'succ': 'PICKUP',
                                                                                          'tries': 'GOTO_PICKUP',      
                                                                                          })        
-        smach.StateMachine.add("GOTO_SHELF",    Goto_shelf(),       transitions={'failed': 'GOTO_SHELF',    
+        smach.StateMachine.add("GOTO_SHELF",    Goto_shelf(),           transitions={'failed': 'GOTO_SHELF',    
                                                                                          'succ': 'SCAN_SHELF',       
                                                                                          'tries': 'GOTO_SHELF',
                                                                                          'scanned_shelf':'GOTO_PLACE_SHELF'})
@@ -873,18 +868,17 @@ if __name__ == '__main__':
                                                                                          'succ': 'PLACE_SHELF',       
                                                                                          #'succ': 'PLACE',       
                                                                                          'tries': 'GOTO_SHELF'})
-        smach.StateMachine.add("PLACE_SHELF",    Place_shelf(),       transitions={'failed': 'PLACE_SHELF',    
+        smach.StateMachine.add("PLACE_SHELF",    Place_shelf(),         transitions={'failed': 'PLACE_SHELF',    
                                                                                          'succ': 'GOTO_PICKUP'})
-        smach.StateMachine.add("SCAN_SHELF",    Scan_shelf(),       transitions={'failed': 'SCAN_SHELF',    
+        smach.StateMachine.add("SCAN_SHELF",    Scan_shelf(),           transitions={'failed': 'SCAN_SHELF',    
                                                                                          'succ': 'GOTO_PLACE_SHELF',       
                                                                                          'tries': 'GOTO_SHELF'})        
-        smach.StateMachine.add("PICKUP",    Pickup(),       transitions={'failed': 'PICKUP',    
-                                                                                         'succ': 'GRASP_GOAL',       
-                                                                                         'tries': 'GOTO_PICKUP'})
-        smach.StateMachine.add("CHECK_GRASP",    Check_grasp(),       transitions={'failed': 'PICKUP',    
+        smach.StateMachine.add("PICKUP",    Pickup(),                   transitions={'failed': 'PICKUP',    
+                                                                                         'succ': 'GRASP_GOAL'})
+        smach.StateMachine.add("CHECK_GRASP",    Check_grasp(),         transitions={'failed': 'GOTO_PICKUP',    
                                                                                          'succ': 'GOTO_SHELF',
                                                                                          })
-        smach.StateMachine.add("PLACE",    Place(),       transitions={'failed': 'PLACE',    
+        smach.StateMachine.add("PLACE",    Place(),                     transitions={'failed': 'PLACE',    
                                                                                          'succ': 'PLACE_GOAL',
                                                                                          'tries': 'GOTO_PLACE_SHELF'})
         
