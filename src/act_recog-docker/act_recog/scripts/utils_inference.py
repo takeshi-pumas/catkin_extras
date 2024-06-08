@@ -167,6 +167,7 @@ class TF_MANAGER():
 
 
  #---------------------------------------------------
+
 #---------------------------------------------------
 def init_openPose(n_people=-1,net_res="-1x208",model="BODY_25",heatmap=False):
     try:
@@ -296,7 +297,6 @@ def get_extrapolation(mano,codo,z=0):
     
     return [x,y,z]
 
-
 #---------------------------------------------------
 def detect_drinking(data):
     """
@@ -363,7 +363,6 @@ def removeBackground(points_msg,distance = 2):
     return rgb_image, masked_image
 
 #------------------------------------------
-
 def detectWaving(dataout,im,points_msg):
     #print(dataout)
     # El primero que detecte lo retorna

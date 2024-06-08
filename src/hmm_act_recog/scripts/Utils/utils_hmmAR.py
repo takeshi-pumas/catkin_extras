@@ -28,13 +28,14 @@ def loadModels(classes):
         modelsPI.append(np.load(glob(path.join(route,'modelPI_'+cl+"*"))[0]))
 
     return modelsA,modelsB,modelsPI
+
 #---------------------------------------------------
 def create_vk(data,cb,centralized=False):
     # Se crean listas vacias para vk
     if centralized:
         dataN=centralizaMatriz(dataN)
     else:
-    	dataN=data
+        dataN=data
     tmp=dataN[:,:].ravel(order='F')
 
     # se obtienen las distancias euclidianas comparando con todos los vectores del codebook
@@ -63,7 +64,6 @@ def centralizaSecuencia(secuencia,codebook=False):
     return tmp
 
 #-------------------------------------------------------------
-
 def centralizaMatriz(data):
     
     nuevoSK=np.zeros(data.shape)
@@ -76,6 +76,7 @@ def centralizaMatriz(data):
         if data[i,0]!=0 and data[i,1]!=0:
             nuevoSK[i,:]=coordCentrada[:]-data[i,:]
     return nuevoSK
+
 #---------------------------------------------------
 def inf_Secuence(data,modelsA,modelsB,modelsPI):
     
@@ -99,3 +100,4 @@ def forward(V, a, b, initial_distribution):
     alpha = sum(probas[-1,:])
 
     return alpha
+

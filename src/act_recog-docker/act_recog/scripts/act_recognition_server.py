@@ -32,6 +32,10 @@ def callback(req):
 	n_people_max=-1
 	if req.in_ <= 3:
 		opWrapper,datum=init_openPose(n_people = 1)
+	
+	elif req.in_ == 5:
+		opWrapper,datum=init_openPose()
+		
 	else:
 		opWrapper,datum=init_openPose(n_people=n_people_max)
 
