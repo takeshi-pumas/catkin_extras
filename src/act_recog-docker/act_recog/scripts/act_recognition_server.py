@@ -21,7 +21,7 @@ from utils_extras import *
 
 #========================================
 def callback(req):
-
+	print("INICIANDO SERVICIO")
 	flo=Floats()
 	buf_size=35
 	ctrlz=True
@@ -34,7 +34,7 @@ def callback(req):
 		opWrapper,datum=init_openPose(n_people = 1)
 	
 	elif req.in_ == 5:
-		opWrapper,datum=init_openPose()
+		opWrapper,datum=init_openPose(n_people = 1)
 		
 	else:
 		opWrapper,datum=init_openPose(n_people=n_people_max)
@@ -282,6 +282,7 @@ def callback(req):
 	elif req.in_ ==5 :
 		#print("OPCION 5 PARA RESTAURANT")
 		counting=0
+		conteoTOT = 0
 		while True:
 
 			points_msg=rospy.wait_for_message("/hsrb/head_rgbd_sensor/depth_registered/rectified_points",PointCloud2,timeout=5)
@@ -321,11 +322,18 @@ def callback(req):
 					counting = 0
 				else:
 					counting += 1
-
+			
+			conteoTOT+=1
 			if counting == 15:
 				break
 
-		#----	
+			if conteoTOT ==40:
+				break
+
+		#----
+		if response.i_out == -1:
+			return response
+			
 		head_mean = np.concatenate((dataout[sk_idx,0:1,:],dataout[sk_idx,15:19,:]),axis=0)
 		head_mean = np.sum(head_mean,axis=0)/np. count_nonzero(head_mean,axis=0)[0] 
 		
@@ -400,8 +408,8 @@ def recognition_server():
 	rgbd= RGBD()
 	rgb= RGB()
 
-	rospy.loginfo("Action recognition service available")                    # initialize a ROS node
-	s = rospy.Service('recognize_act', Recognize, callback) 
+	rospy.loginfo("Action recognition service available (DOCKER)")                    # initialize a ROS node
+	s = rospy.Service('recognize_act_docker', Recognize, callback) 
 	print("Reconition service available")
 
 	rospy.spin()
