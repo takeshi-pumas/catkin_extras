@@ -10,7 +10,7 @@
   <!--arg name="prohibition_map_file"  default="$(find config_files)/prohibition_maps/TMR_2023.yaml"/-->
   <!--arg name="prohibition_map_file"  default="$(find config_files)/prohibition_maps/Lab_arena_hor_blocked.yaml"/-->
   <!--arg name="prohibition_map_file"  default="$(find config_files)/prohibition_maps/map_lab_2023/map.yaml"/-->
-  <arg name="prohibition_map_file"  default="$(find config_files)/prohibition_maps/map_lab_2024/map.yaml"/>
+  <arg name="prohibition_map_file"  default="$(find config_files)/prohibition_maps/blank/map.yaml"/>
   <!--arg name="prohibition_map_file"  default="$(find config_files)/prohibition_maps/TMR_2024/map.yaml"/-->
   
   <arg name="initial_pose_x" default="-5.7"/>

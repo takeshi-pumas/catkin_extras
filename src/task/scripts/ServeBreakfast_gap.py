@@ -25,18 +25,23 @@ class Initial(smach.State):
         #userdata.target_object='milk'
         userdata.target_object='bowl'
         hand_rgb = HAND_RGB()        
-        #######################################
-        #x,y,z= 5.8 , 1.3, 0.47   #SIM TMR  table plane
-        #quat=[0.0,0.0,0.0,1.0]
-        ##########################################
-        #####################################
-        x,y,z= -0.522 , -2.84, 0.8   #REAL LAB
-        quat=[0.0,0.0,0.707,-0.707]
         rospack = rospkg.RosPack()        
         file_path = rospack.get_path('config_files')+'/regions'         
+        
+        
+        #######################################
+        x,y,z= 5.8 , 1.3, 0.47   #SIM TMR  table plane
+        quat=[0.0,0.0,0.0,1.0]
+        o=read_yaml('/regions/regions_sim.yaml')#SIM (TMR WORLD)
+        ##########################################
+                
+        #####################################
+        #x,y,z= -0.522 , -2.84, 0.8   #REAL LAB
+        #quat=[0.0,0.0,0.707,-0.707]
         #o=read_yaml('/regions/regions.yaml')#REAL
         ###############################################
-        o=read_yaml('/regions/regions_sim.yaml')#SIM (TMR WORLD)
+
+
         regions_df=pd.DataFrame.from_dict(o)
 
         userdata.placing_area=[x,y,z]
