@@ -13,7 +13,7 @@
   <!-- <node pkg="smach_viewer"  name="smach_viewer" type="smach_viewer.py"/>   -->
   <!-- <node pkg="segmentation"  name="segmentator_node" type="segment_floor.py"/>   -->
 
-<include file="$(find speech_recog)/launch/ros_vosk.launch"/>
+<!--include file="$(find speech_recog)/launch/ros_vosk.launch"/-->
 
   
 <!-- </include> -->

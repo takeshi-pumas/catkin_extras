@@ -74,7 +74,7 @@ def recognition_server():
 	#broadcaster= tf.TransformBroadcaster()
 	#tf_static_broadcaster= tf2.StaticTransformBroadcaster()
 	rospy.loginfo("Action recognition service available (NO DOCKER)")                    # initialize a ROS node
-	s = rospy.Service('hmm_recognize_act', RecognizeOP, callback) 
+	s = rospy.Service('recognize_act', RecognizeOP, callback) 
 	print("Reconition service available")
 
 	rospy.spin()

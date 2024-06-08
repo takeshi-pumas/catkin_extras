@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from cv_bridge import CvBridge
 from sensor_msgs.msg import Image ,PointCloud2
-from geometry_msgs.msg import TransformStamped
+from geometry_msgs.msg import TransformStamped,Point, Quaternion
 from tf2_sensor_msgs.tf2_sensor_msgs import do_transform_cloud
 import rospy
 import ros_numpy
@@ -21,8 +21,8 @@ try:
     usr_url=path.expanduser( '~' )
     # CHANGE THIS PATH TO WHERE OPENPOSE DIR WAS INSTALLED,
     #       'openpose/build/python' <-- do not change it, just the first part
-    sys.path.append(usr_url+'/openpose/build/python');
-    #sys.path.append(usr_url+'/Documentos/openpose/build/python');
+    #sys.path.append(usr_url+'/openpose/build/python');
+    sys.path.append(usr_url+'/Documentos/openpose/build/python');
     from openpose import pyopenpose as op
     
 except ImportError as e:
@@ -259,8 +259,9 @@ def detectDrinkingPoseWithOP(datum,opWrapper,response,n_people_max = 2):
 def detectWavingRestaurant(datum,opWrapper,response):
     #print("OPCION 5 PARA RESTAURANT")
     counting=0
+    conteoTOTAL=0
     while True:
-
+        print("CONTEO",counting)
         points_msg=rospy.wait_for_message("/hsrb/head_rgbd_sensor/depth_registered/rectified_points",PointCloud2,timeout=5)
         points_data = ros_numpy.numpify(points_msg)
         image,maskedImage = removeBackground(points_msg,distance = 10)
@@ -298,34 +299,39 @@ def detectWavingRestaurant(datum,opWrapper,response):
                 counting = 0
             else:
                 counting += 1
-
+        conteoTOTAL += 1
         if counting == 15:
             break
 
-        #----	
-        head_mean = np.concatenate((dataout[sk_idx,0:1,:],dataout[sk_idx,15:19,:]),axis=0)
-        head_mean = np.sum(head_mean,axis=0)/np. count_nonzero(head_mean,axis=0)[0] 
-        
-
-        head_xyz =[points_data['x'][int(head_mean[1]), int(head_mean[0])],
-                    points_data['y'][int(head_mean[1]), int(head_mean[0])],
-                    points_data['z'][int(head_mean[1]), int(head_mean[0])]]
-        print("HEAD XYZ of waving person", head_xyz)
-
-        if head_xyz[0] is not None:
-            print("PUBLICANDO....")
-            tf_man.pub_static_tf(pos=head_xyz,point_name='person_waving',ref='head_rgbd_sensor_link')
-            rospy.sleep(0.8)
-            print("CAMBIANDO REF")
-            tf_man.change_ref_frame_tf(point_name='person_waving',new_frame='map')
-            rospy.sleep(0.8)
-            response.i_out = 1
-        else:
-            print("No se pudo publicar")
-            response.i_out = 2
+        if conteoTOTAL ==40:
+            response.i_out = -1
+            break
     
-        img_msg2=bridge.cv2_to_imgmsg(dataout)
-        response.im_out.image_msgs.append(img_msg2)
+    if response.i_out == -1: return response 
+    #----	
+    head_mean = np.concatenate((dataout[sk_idx,0:1,:],dataout[sk_idx,15:19,:]),axis=0)
+    head_mean = np.sum(head_mean,axis=0)/np. count_nonzero(head_mean,axis=0)[0] 
+    
+
+    head_xyz =[points_data['x'][int(head_mean[1]), int(head_mean[0])],
+                points_data['y'][int(head_mean[1]), int(head_mean[0])],
+                points_data['z'][int(head_mean[1]), int(head_mean[0])]]
+    print("HEAD XYZ of waving person", head_xyz)
+
+    if head_xyz[0] is not None:
+        print("PUBLICANDO....")
+        tf_man.pub_static_tf(pos=head_xyz,point_name='person_waving',ref='head_rgbd_sensor_link')
+        rospy.sleep(0.8)
+        print("CAMBIANDO REF")
+        tf_man.change_ref_frame_tf(point_name='person_waving',new_frame='map')
+        rospy.sleep(0.8)
+        response.i_out = 1
+    else:
+        print("No se pudo publicar")
+        response.i_out = 2
+
+    img_msg2=bridge.cv2_to_imgmsg(dataout)
+    response.im_out.image_msgs.append(img_msg2)
 
     return response
 
