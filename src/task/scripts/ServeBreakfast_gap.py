@@ -19,19 +19,26 @@ class Initial(smach.State):
         if self.tries == 3:
             return 'tries'        
              
-        global arm ,  hand_rgb         
+        global arm ,  hand_rgb     ,regions_df    
+        #userdata.target_object='spoon'
         #userdata.target_object='cereal_box'   #Strategy. pickup bowl first
+        #userdata.target_object='milk'
         userdata.target_object='bowl'
         hand_rgb = HAND_RGB()        
         #######################################
-        ##x,y,z= 5.8 , 1.3, 0.47   #SIM TMR  table plane
-        ##quat=[0.0,0.0,0.0,1.0]
+        #x,y,z= 5.8 , 1.3, 0.47   #SIM TMR  table plane
+        #quat=[0.0,0.0,0.0,1.0]
         ##########################################
         #####################################
         x,y,z= -0.522 , -2.84, 0.8   #REAL LAB
         quat=[0.0,0.0,0.707,-0.707]
-        #########################################
-        #quat=[0.0,0.0,0.707,0.707]
+        rospack = rospkg.RosPack()        
+        file_path = rospack.get_path('config_files')+'/regions'         
+        #o=read_yaml('/regions/regions.yaml')#REAL
+        ###############################################
+        o=read_yaml('/regions/regions_sim.yaml')#SIM (TMR WORLD)
+        regions_df=pd.DataFrame.from_dict(o)
+
         userdata.placing_area=[x,y,z]
         userdata.placing_area_quat=quat
         tf_man.pub_static_tf(pos=[x,y,z], rot=quat,point_name='placing_area') ### Ideal  coordinates to place Bowl
@@ -101,25 +108,33 @@ class Scan_table(smach.State):
         rospy.loginfo('State : Scanning_table')
         print (f'target object is {userdata.target_object}')
         self.tries += 1
-        if self.tries >= 4:
-            self.tries = 0            
-            print ( "I could not find more objects ")
-            return 'tries'
-        if self.tries==1:
+     
+        if self.tries==1 and userdata.target_object != 'spoon':
             head.set_joint_values([ 0.0, -0.5])
             talk(f'Scanning Table , looking for {userdata.target_object}')
             print(f'Scanning Table , looking for {userdata.target_object}')
-        if self.tries==2:
-            head.set_joint_values([ -0.3, -0.5])
+        if self.tries==2 and userdata.target_object != 'spoon':
+            head.set_joint_values([ -0.13, -0.5])
             talk('Scanning Table')
-        if self.tries==2:
-            head.set_joint_values([ 0.3, -0.5])
+            print(f'Scanning Table , looking for {userdata.target_object}')
+
+        if self.tries==3 and userdata.target_object != 'spoon':
+            head.set_joint_values([ 0.13, -0.5])
+
+            print(f'Scanning Table , looking for {userdata.target_object}')
             talk('Scanning Table')
-        
+            self.tries=0
+        if  userdata.target_object == 'spoon':
+            #av=arm.get_current_joint_values() 
+            #av[0]=0.05
+            #arm.set_joint_value_target(av)
+            #arm.go()
+            rospy.sleep(1.0)
+            head.set_joint_values([0.0, -0.5])
         
         print ('scanNING TABLE')
 
-        head.set_named_target('neutral')
+        
         rospy.sleep(3.0)                        
         img_msg  = bridge.cv2_to_imgmsg( cv2.cvtColor(rgbd.get_image(), cv2.COLOR_RGB2BGR))### Using Yolo to find [bowl,milk,cereal , spoon]
         req      = classify_client.request_class()
@@ -131,13 +146,30 @@ class Scan_table(smach.State):
         if userdata.target_object== 'bowl': common_misids.append('plate')
         elif userdata.target_object== 'cereal_box':
             common_misids.append('master_chef_can')
+            common_misids.append('potted_meat_can')
             common_misids.append('pudding_box')
         elif userdata.target_object== 'milk':
             common_misids.append('bleach_cleanser')
-            
+            common_misids.append('sugar_box')
+            #common_misids.append('master_chef_can')
+        
+        elif userdata.target_object== 'spoon':
+            common_misids.append('fork')
+            common_misids.append('knife')
+            common_misids.append('large_marker')
+        
+        #####################
+        area_bo_x=regions_df['pickup'][['x_min','x_max']].values
+        area_bo_y=regions_df['pickup'][['y_min','y_max']].values
+        pickup_plane_z=regions_df['pickup']['z']
+
+        area_box=np.concatenate((area_bo_x,area_bo_y)).reshape((2,2)).T
+        print (area_box)
+        #####################
+        def is_inside(x,y,z):return ((area_box[:,1].max() > y) and (area_box[:,1].min() < y)) and ((area_box[:,0].max() > x) and (area_box[0,0].min() < x)) #and (pickup_plane_z<z)  
         if len (objects)!=0 :
             _,quat_base= tf_man.getTF('base_link')  #  For grasping purposes object is orientated in front of base link.
-
+            
             for i in range(len(res.poses)):
                     if res.names[i].data[4:]== userdata.target_object or  res.names[i].data[4:] in  common_misids:
                         #tf_man.getTF("head_rgbd_sensor_rgb_frame")
@@ -150,11 +182,12 @@ class Scan_table(smach.State):
                         object_point.point.y = position[1]
                         object_point.point.z = position[2]
                         position_map = tfBuffer.transform(object_point, "map", timeout=rospy.Duration(1))
-                        #print ('position_map',position_map)
-                        tf_man.pub_static_tf(pos= [position_map.point.x,position_map.point.y,position_map.point.z], rot=quat_base, ref="map", point_name=userdata.target_object)#res.names[i].data[4:] )
-                        self.tries=0
-                        talk(f'{userdata.target_object} found , grasping')
-                        return 'succ'
+                        print ('position_map',position_map,'name' ,res.names[i].data[4:],is_inside(position_map.point.x,position_map.point.y,position_map.point.z))
+                        if is_inside(position_map.point.x,position_map.point.y,position_map.point.z): 
+                            tf_man.pub_static_tf(pos= [position_map.point.x,position_map.point.y,position_map.point.z], rot=quat_base, ref="map", point_name=userdata.target_object)#res.names[i].data[4:] )
+                            self.tries=0
+                            talk(f'{userdata.target_object} found , grasping')
+                            return 'succ'
                         ###########################################################                
         print(f'Couldnt find {userdata.target_object}, will retry.')
         talk(f'Couldnt find {userdata.target_object}, will retry.')
@@ -188,7 +221,10 @@ class Place(smach.State):
             print ('STATE : PLACE BOWL')                       
             offset_point=[0.04,-0.05,-0.031]          # Offset relative to object tf#                       
             string_msg.data='frontal'       
-             
+        elif current_target== 'spoon':
+            string_msg.data='pour'               # Offset relative to object tf            
+
+
         ######################################################################
         else:                           #if current_target== 'cereal_box' or current_target== 'milk'  :
             string_msg.data='pour'               # Offset relative to object tf            
@@ -202,7 +238,6 @@ class Place(smach.State):
                 rospy.loginfo('STATE : POUR MILK')            
                 print ('STATE : POUR MILK')
                 talk( 'pouring cereal')    
-            #else: SPOON
             head.set_named_target('neutral')
             rospy.sleep(0.5)       
             common_misids.append('plate')           #grasp_type 
@@ -270,7 +305,7 @@ class Pickup(smach.State):
     def execute(self, userdata):
         target_object= userdata.target_object
         line_up_TF(target_object)
-        print ( 'linning up') #TODO DIctionary
+        print ( 'linning up')
         if target_object=='bowl' :           
             
             string_msg= String()
@@ -280,40 +315,15 @@ class Pickup(smach.State):
             pos, quat = tf_man.getTF(target_frame = target_object, ref_frame = 'odom')
             target_pose = Float32MultiArray()
             print (f'target_object {target_object}')        
-            print ( 'Applying Bowl Offset') #TODO DIctionary
+            print ( 'Applying Bowl Offset') 
             offset_point=[0.03,-0.05,+0.08]   # Offset relative to object tf
-
-            #translated_point = np.array(tf.transformations.quaternion_multiply(quat, offset_point + [0]))[:3] + np.array(pos)
-            #pose_goal=np.concatenate((translated_point,quat))
-            #print (f'target_object {target_object}, mode {string_msg.data}')
-            #print (f'transalted_point-<{pose_goal}')
-            
-            
-            
-            #pos[0] +=-0.05              #pos[0] +=-0.04 ##  REAL WORLD
-            #pos[1] += -0.02                #pos[1] += 0.04 ## BOWL OFFSET
-            #pos[2] += 0.066                #pos[2] += 0.03
-
-            #print (f'transalted_point-<{pose_goal}')    
-            #target_pose = Float32MultiArray()
-            #target_pose.data = pose_goal#pos
-            #tf_man.pub_static_tf(pos= translated_point, rot=tf.transformations.quaternion_multiply(quat, [0,0,1,0]), ref="odom", point_name='goal_for_grasp' )   
-            #rospy.sleep(0.5)
-            #userdata.target_pose = target_pose
-            #print (f'transalted_point-<{target_pose.data}')    
-            ####################
-            #head.set_named_target('neutral')
-            #rospy.sleep(0.5)       
-            #clear_octo_client()     
-            #self.tries+=1  
-            #return 'succ'
-    
-          
+        ######################################################################
         if target_object=='cereal_box'or target_object=='milk':
             
             string_msg= String()
-            if target_object=='cereal_box': string_msg.data='pour'
-            if target_object=='milk': string_msg.data='frontal'
+            string_msg.data='pour'
+            #if target_object=='cereal_box': string_msg.data='pour'
+            #if target_object=='milk': string_msg.data='frontal'
             userdata.mode=string_msg 
             rospy.loginfo('STATE : PICKUP CEREAL')            
             print ('STATE : PICKUP CEREAL')            
@@ -327,11 +337,16 @@ class Pickup(smach.State):
             pos, quat = tf_man.getTF(target_frame = target_object, ref_frame = 'map')
             print (f'target_object {target_object}, mode {string_msg.data}')
             ####################
-            #inv_quat= tf.transformations.quaternion_inverse(quat)
-            print ('pose quat',pos,quat)
-                #offset_point=[-0.1,-0.03,0.031]          # Offset relative to object tf
-            offset_point=[-0.13,0.0,0.01]          # Offset relative to object tf
-        
+            offset_point=[-0.09,0.0,0.01]          # Offset relative to object tf
+            ####################                        
+        if target_object=='spoon':
+            pos, quat = tf_man.getTF(target_frame = target_object, ref_frame = 'map')
+            string_msg= String()
+            string_msg.data='above'                
+            userdata.mode=string_msg 
+            offset_point=[-0.1,0.0,+0.09]  
+            rospy.loginfo('STATE : PICKUP SPOON')            
+            print ('STATE : PICKUP SPOON')
         
         
         #####################APPLY OFFSET
@@ -444,8 +459,9 @@ class Place_post_pour(smach.State):
         string_msg= String()  #mode mesge new instance
         rospy.loginfo('STATE : PLACE AFTER POUR')            
         print ('STATE : PLACE AFTER POUR')                       
-        if userdata.target_object=='cereal_box':offset_point=[-0.1,-0.25,-0.031]          # Offset relative to object tf#
-        else:offset_point=[-0.1,-0.35,-0.031]
+        if userdata.target_object=='cereal_box':offset_point=[0.0,-0.45,-0.031]          # Offset relative to object tf#
+        else:offset_point=[0.0,-0.25,-0.04 ]
+        omni_base.tiny_move(velY =-0.2, std_time=4.2)
         string_msg.data='frontal'
         userdata.mode=string_msg             
         ###################
@@ -474,7 +490,6 @@ class Place_post_pour(smach.State):
         clear_octo_client()     
         if target_object=='cereal_box':
             userdata.target_object='milk'
-            talk('milk?')
             talk (f'Now going for {userdata.target_object } ')
         if target_object=='milk':
             userdata.target_object='spoon'

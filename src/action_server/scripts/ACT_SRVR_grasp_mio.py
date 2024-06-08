@@ -235,10 +235,10 @@ class PlacingStateMachine:
         position_constraint = PositionConstraint()
         position_constraint.header.frame_id = "base_link"
         position_constraint.link_name = "base_link"
-        position_constraint.target_point_offset.x = 1.0
+        position_constraint.target_point_offset.x = 1.4
         position_constraint.target_point_offset.y = 0.0
         position_constraint.target_point_offset.z = 0.0
-        position_constraint.constraint_region.primitives.append(SolidPrimitive(type=SolidPrimitive.BOX, dimensions=[3.0, 1.0, 2.0]))
+        position_constraint.constraint_region.primitives.append(SolidPrimitive(type=SolidPrimitive.BOX, dimensions=[3.0, 0.75, 2.0]))
         position_constraint.constraint_region.primitive_poses.append(Pose(position=Point(x=0.0, y=0.0, z=0.0), orientation=Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)))
         position_constraint.weight = 1.0
         # Add the position constraint to the spatial constraint
