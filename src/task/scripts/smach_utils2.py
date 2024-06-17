@@ -542,7 +542,7 @@ def detect_human_to_tf(dist = 6,remove_bkg = True):
         #print ("ASARRAY",np.asarray((humanpose.x,humanpose.y,humanpose.z)))
         return False
     else:
-        tf_man.pub_static_tf(np.asarray((humanpose.x,humanpose.x,humanpose.z)),point_name='human', ref='head_rgbd_sensor_link')
+        tf_man.pub_static_tf(np.asarray((humanpose.x,humanpose.y,humanpose.z)),point_name='human', ref='head_rgbd_sensor_link')
         rospy.sleep(0.5)
         succ=tf_man.change_ref_frame_tf('human')
         rospy.sleep(0.5)
@@ -774,3 +774,32 @@ def get_robot_person_coords(pose,fileName=''):
                                bedroom_px_region,
                                dining_room_px_region)
     return room_robot,room_human
+#------------------------------------------------------
+def detect_human_to_pt_st(dist = 6,remove_bkg = True):
+    req = Human_detectorRequest()
+    req.dist = dist
+    req.removeBKG = remove_bkg
+    humanpose=human_detect_server(req)
+    print ("humanpose",humanpose)
+    if np.all(np.array([humanpose.x, humanpose.y, humanpose.z]) == 0):
+        #print ("ASARRAY",np.asarray((humanpose.x,humanpose.y,humanpose.z)))
+        return False
+    else:
+        #tf_man.pub_static_tf(np.asarray((humanpose.x,humanpose.x,humanpose.z)),point_name='human', ref='head_rgbd_sensor_link')
+        rospy.sleep(0.5)
+        point_st= PointStamped()
+        point_st.header.stamp = rospy.Time.now()
+        point_st.header.frame_id = "head_rgbd_sensor_rgb_frame"#'odom'  # or whatever frame you're using
+        point_st.point.x = humanpose.x  # replace with your x coordinate
+        point_st.point.y = humanpose.y  # replace with your y coordinate
+        point_st.point.z =  0.0 ###FLOOR ### humanpose.z  # replace with your z coordinate
+        ##################################
+        point_odom = tfBuffer.transform(point_st, "odom", timeout=rospy.Duration(1))
+
+      
+        
+        
+        pt_pub.publish(point_odom)
+        return True
+
+       

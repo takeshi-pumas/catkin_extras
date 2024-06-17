@@ -36,121 +36,126 @@ def newOdom (msg):
     msg.pose.pose.orientation.z,
     msg.pose.pose.orientation.w)
     euler = euler_from_quaternion(quaternion)
-    th=euler[2]
+    th = euler[2]
+
 def readPoint(punto):
-    global xcl,ycl
-    xcl =punto.point.x
-    ycl =punto.point.y
+    global xcl, ycl
+    xcl = punto.point.x
+    ycl = punto.point.y
            
 def readSensor(data):
-     global cont, xcl,ycl
-     lec=np.asarray(data.ranges)
-     lec[np.isinf(lec)]=13.5
-     
-     Fx, Fy,Fth = 0.001,0.001,0
-     
-     deltaang=4.7124/len(data.ranges)
-      
-     laserdegs=  np.arange(-2.3562,2.3562,deltaang)
-     Fx=0
-     Fy = 0.001
-     for i,deg in enumerate(laserdegs):
+    global cont, xcl,ycl
+    lec=np.asarray(data.ranges)
+    lec[np.isinf(lec)]=13.5
+    
+    Fx, Fy,Fth = 0.001,0.001,0
+    
+    deltaang=4.7124/len(data.ranges)
+    
+    laserdegs=  np.arange(-2.3562,2.3562,deltaang)
+    Fx=0
+    Fy = 0.001
+    for i,deg in enumerate(laserdegs):
         if  (lec[i]<1.5)  :
             
             Fx = Fx + (1/lec[i])**2 * np.cos(deg)
             Fy = Fy + (1/lec[i])**2 * np.sin(deg)
-             
-     Fth= np.arctan2(Fy,(Fx+.000000000001))+np.pi
-     Fmag= np.linalg.norm((Fx,Fy))
-     pose,quat=  listener.lookupTransform('map','base_footprint',rospy.Time(0))
-     x_map,y_map = pose[0], pose [1]                                                                                           
-     euler = euler_from_quaternion(quat)
-     th=euler[2]
-     xy,xycl=np.array((x,y)) ,   np.array((xcl,ycl))
-     euclD=np.linalg.norm(xy-xycl)
-
-
-
-     
-     Fatrx =( -x + xcl)/euclD
-     Fatry =( -y + ycl)/euclD      
-     Fatrth=np.arctan2(Fatry, Fatrx) 
-     Fatrth=Fatrth-th
-     Fmagat= np.linalg.norm((Fatrx,Fatry))
-     Ftotx= Fmag*np.cos(Fth)*.0015   +    Fmagat*np.cos(Fatrth)
-     #Ftotx= Fmag*np.cos(Fth) *600  +    Fmagat*np.cos(Fatrth)
-     Ftoty= Fmag*np.sin(Fth)*.0015    +    Fmagat*np.sin(Fatrth)
-     #Ftoty= Fmag*np.sin(Fth)  *600   +    Fmagat*np.sin(Fatrth)
-     Ftotth=np.arctan2(Ftoty,Ftotx)
-     
-     if ( Ftotth> np.pi ):
-         Ftotth=       -np.pi-    (Ftotth-np.pi)
-    
-     if (Ftotth < -np.pi):
-         Ftotth= (Ftotth     +2 *np.pi)
-     
-             
-     
-
-     if (xcl!=0 and ycl!=0):
-         print('FxFyFth',Fx,Fy,Fth*180/np.pi)
-         print("xrob,yrob, throbot",x,y,th*180/3.1416)
-         print("xclick,yclick",xcl,ycl,"euclD",euclD)
-         print ('Fatx, Fatry, Fatrth',Fatrx,Fatry,(Fatrth)*180/np.pi )
-         print('Ftotxy',Ftotx,Ftoty,Ftotth*180/np.pi)
-         print (f'x map y map {x_map,y_map}')
-         print ('x,y,th Odom No map',x,y,th)
-         vel=0.07
-         if (euclD < 0.5) :
-            speed.linear.x=0
-            speed.linear.y=0
-            speed.angular.z=0
-            xcl,ycl=0.0 , 0.0
-
-         else:
-             if( abs(Ftotth) < .7) :#or (np.linalg.norm((Fx,Fy)) < 100):
-                 speed.linear.x=  min (current_speed.linear.x+0.0015, 0.5)#1.9
-                 speed.angular.z=0
-                 print('lin')
-             else:
-                if Ftotth > -np.pi/2  and Ftotth <0:
-                    print('Vang-')
-                    speed.linear.x  = max(current_speed.linear.x -0.0003, 0.04)
-                    speed.angular.z = max(current_speed.angular.z-0.0005, -0.2)
                 
-                if Ftotth < np.pi/2  and Ftotth > 0:
-                    print('Vang+')
-                    speed.linear.x  = max(current_speed.linear.x-0.0003, 0.04)
-                    speed.angular.z = min(current_speed.angular.z+0.0005,0.2)
+    Fth= np.arctan2(Fy,(Fx+.000000000001))+np.pi
+    Fmag= np.linalg.norm((Fx,Fy))
+     
+     
+    try:
+        pose, quat = listener.lookupTransform('map', 'base_footprint', rospy.Time(0))
+        x_map,y_map = pose[0], pose [1]                                                                                           
+        euler = euler_from_quaternion(quat)
+        th=euler[2]
+        xy,xycl=np.array((x,y)) ,   np.array((xcl,ycl))
+        euclD=np.linalg.norm(xy-xycl)
+        
+        Fatrx =( -x + xcl)/euclD
+        Fatry =( -y + ycl)/euclD      
+        Fatrth=np.arctan2(Fatry, Fatrx) 
+        Fatrth=Fatrth-th
+        Fmagat= np.linalg.norm((Fatrx,Fatry))
+        Ftotx= Fmag*np.cos(Fth)*.0015   +    Fmagat*np.cos(Fatrth)
+        #Ftotx= Fmag*np.cos(Fth) *600  +    Fmagat*np.cos(Fatrth)
+        Ftoty= Fmag*np.sin(Fth)*.0015    +    Fmagat*np.sin(Fatrth)
+        #Ftoty= Fmag*np.sin(Fth)  *600   +    Fmagat*np.sin(Fatrth)
+        Ftotth=np.arctan2(Ftoty,Ftotx)
+        
+        if ( Ftotth> np.pi ):
+            Ftotth=       -np.pi-    (Ftotth-np.pi)
+        
+        if (Ftotth < -np.pi):
+            Ftotth= (Ftotth     +2 *np.pi)
+        
                 
-                
-                if Ftotth < -np.pi/2:
+        
+
+        if (xcl!=0 and ycl!=0):
+            print('FxFyFth',Fx,Fy,Fth*180/np.pi)
+            print("xrob,yrob, throbot",x,y,th*180/3.1416)
+            print("xclick,yclick",xcl,ycl,"euclD",euclD)
+            print ('Fatx, Fatry, Fatrth',Fatrx,Fatry,(Fatrth)*180/np.pi )
+            print('Ftotxy',Ftotx,Ftoty,Ftotth*180/np.pi)
+            print (f'x map y map {x_map,y_map}')
+            print ('x,y,th Odom No map',x,y,th)
+            vel=0.07
+            if (euclD < 1.5) :
+                speed.linear.x=0
+                speed.linear.y=0
+                speed.angular.z=0
+                xcl,ycl=0.0 , 0.0
+
+            else:
+                if( abs(Ftotth) < .7) :#or (np.linalg.norm((Fx,Fy)) < 100):
+                    speed.linear.x=  min (current_speed.linear.x+0.0015, 0.5)#1.9
+                    speed.angular.z=0
+                    print('lin')
+                else:
+                    if Ftotth > -np.pi/2  and Ftotth <0:
+                        print('Vang-')
+                        speed.linear.x  = max(current_speed.linear.x -0.0003, 0.04)
+                        speed.angular.z = max(current_speed.angular.z-0.0005, -0.2)
                     
-                    print('Vang---')
-                    speed.linear.x  = max(current_speed.linear.x-0.0025, 0.001)
-                    speed.angular.z = max(current_speed.angular.z-0.003,-0.5)
-                
-
-                if Ftotth > np.pi/2:
+                    if Ftotth < np.pi/2  and Ftotth > 0:
+                        print('Vang+')
+                        speed.linear.x  = max(current_speed.linear.x-0.0003, 0.04)
+                        speed.angular.z = min(current_speed.angular.z+0.0005,0.2)
                     
+                    
+                    if Ftotth < -np.pi/2:
+                        
+                        print('Vang---')
+                        speed.linear.x  = max(current_speed.linear.x-0.0025, 0.001)
+                        speed.angular.z = max(current_speed.angular.z-0.003,-0.5)
+                    
+
+                    if Ftotth > np.pi/2:
+                        
+                    
+                        print('Vang+++')
+                        speed.linear.x  = max(current_speed.linear.x-0.0025, 0.001)
+                        speed.angular.z = min(current_speed.angular.z+0.003, 0.5)
+        else:
                 
-                    print('Vang+++')
-                    speed.linear.x  = max(current_speed.linear.x-0.0025, 0.001)
-                    speed.angular.z = min(current_speed.angular.z+0.003, 0.5)
-     else:
-             
-         cont+=1
-         if cont ==200:
-            print('Waiting for goal clicked point')
-            cont=0
-    
+            cont+=1
+            if cont ==200:
+                print('Waiting for goal clicked point')
+                cont=0
+    except Exception as e:
+        print("An error occurred while looking up the transform: wait for buffer to fill", str(e))
      
 
 speed=Twist()
 speed.angular.z=0
 def inoutinout():
-    sub= rospy.Subscriber("/hsrb/odom",Odometry,newOdom)
+    
+    #rospy.Subscriber("/hsrb/odom",Odometry,newOdom)
+    rospy.Subscriber("/hsrb/wheel_odom",Odometry,newOdom)
     global listener,xcl,ycl,current_speed,cont
+    
     rospy.init_node('talker_cmdvel', anonymous=True)
     sub2=rospy.Subscriber("/hsrb/base_scan",LaserScan,readSensor)
     sub3=rospy.Subscriber("/clicked_point",PointStamped,readPoint)
@@ -165,6 +170,7 @@ def inoutinout():
             rospy.sleep(0.15)
             current_speed=speed
         else:
+            print ('Waiting for goal clicked point')
             current_speed=Twist()
 
 if __name__ == '__main__':
@@ -173,3 +179,7 @@ if __name__ == '__main__':
 
     except rospy.ROSInterruptException:
         pass
+if ( Ftotth> np.pi ):
+    Ftotth=       -np.pi-    (Ftotth-np.pi)
+if (Ftotth < -np.pi):
+    Ftotth= (Ftotth     +2 *np.pi)
