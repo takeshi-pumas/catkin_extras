@@ -8,6 +8,8 @@
 
   <node pkg="face_recog"  name="analyze_face_backgnd" type="analyze_face_backgnd_node"/>
   <node pkg="head"  name="mic_node" type="mic_node"/>
+  
+  <node pkg="hmm_navigation"  name="hmm_navigation" type="potfields_NOMAP.py"/>
   <!-- <node pkg="task"        name="write_analyze_result" type="write_analyze_result.py"/> -->
 
   <!-- <node pkg="smach_viewer"  name="smach_viewer" type="smach_viewer.py"/>   -->

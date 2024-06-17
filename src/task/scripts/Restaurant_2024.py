@@ -1,14 +1,8 @@
 #!/usr/bin/env python3
-from smach_utils2 import *
-from act_recog.srv import Recognize,RecognizeResponse,RecognizeRequest
-from hmm_act_recog.srv import RecognizeOP,RecognizeOPResponse,RecognizeOPRequest
-# Initial STATE: task setup (grammar, knowledge, robot position, ...)
-
-recognize_action_docker = rospy.ServiceProxy('recognize_act_docker', Recognize) 
-recognize_action = rospy.ServiceProxy('recognize_act', RecognizeOP) 
+from restaurant_utils import *
 
 
-
+#--------------------------------------------------
 class Initial(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed'])
@@ -45,7 +39,7 @@ class Initial(smach.State):
             return 'succ'
         elif self.tries == 3:
             return 'failed'
-
+#--------------------------------------------------
 # Wait push hand STATE: Trigger for task to start
 class Wait_push_hand(smach.State):
     def __init__(self):
@@ -68,7 +62,7 @@ class Wait_push_hand(smach.State):
         else:
             return 'failed'
 
-
+#--------------------------------------------------
 # Wait for someone to start waving
 class Wait_for_waving(smach.State):
     def __init__(self):
@@ -115,11 +109,14 @@ class Wait_for_waving(smach.State):
             print("[WAITFORWAVING] I did not found someone waving")
             return 'failed' if self.tries < 6 else 'tries'
         
+        
+
         talk('Aproaching to the waving person')
         print('[WAITFORWAVING] Aproaching to the waving person')
 
         return 'succ'
 
+#--------------------------------------------------
 class Goto_waving_person(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed','tries'])
@@ -133,14 +130,17 @@ class Goto_waving_person(smach.State):
         if self.tries == 3:
             return 'tries'
         
-        if self.tries == 1: 
-            print('[GOTOWAVINGPERSON] Navigating ')
-            talk('Navigating')
-            rospy.sleep(0.5)
-        res = omni_base.move_base(known_location='person_waving')
+        human_xyz,_=tf_man.getTF('person_waving',ref_frame='base_link')
+        print(f'[GOTOWAVINGPERSON] coords {human_xyz}')
+
+        # publica pointStamp para que se mueva con potFields o lo que se vaya a usar
+        res = human_xyz_to_pt_st(human_xyz)
+
         print("[GOTOWAVINGPERSON]",res)
 
         if res:
+            # move_base() # with no map
+            rospy.sleep(10)
             return 'succ'
         else:
             print('[GOTOWAVINGPERSON] Navigation Failed, retrying')
@@ -175,6 +175,7 @@ if __name__ == '__main__':
         smach.StateMachine.add("GOTO_WAVING_PERSON", Goto_waving_person(),    
                                transitions={'failed': 'GOTO_WAVING_PERSON', 'succ': 'END','tries':'END'})
         
+
 
 
     outcome = sm.execute()
