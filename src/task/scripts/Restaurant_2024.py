@@ -72,7 +72,7 @@ class Wait_for_waving(smach.State):
     def execute(self, userdata):
         req = RecognizeRequest()    # DOCKER
         #req = RecognizeOPRequest() # NORMAL
-        rospy.loginfo('STATE : Wait for Wait_push_hand')
+        rospy.loginfo('STATE : Wait for a person waving')
         self.tries += 1
         print(f'[WAITFORWAVING]Try {self.tries} of N attempts')
         
@@ -169,7 +169,7 @@ if __name__ == '__main__':
                                transitions={'failed': 'WAIT_PUSH_HAND', 'succ': 'WAITING_WAVING'})
 
         smach.StateMachine.add("WAITING_WAVING", Wait_for_waving(),            
-                               transitions={'failed': 'WAITING_WAVING', 'succ': 'END', 'tries':'END'})
+                               transitions={'failed': 'WAITING_WAVING', 'succ': 'GOTO_WAVING_PERSON', 'tries':'END'})
         
         
         smach.StateMachine.add("GOTO_WAVING_PERSON", Goto_waving_person(),    
