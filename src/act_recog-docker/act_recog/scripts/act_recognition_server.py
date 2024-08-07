@@ -295,7 +295,7 @@ def callback(req):
 			if datum.poseKeypoints is None:
 				
 				print("No se encontro esqueleto/persona")
-				response.i_out=-1
+				response.i_out=-2
 				img_msg=bridge.cv2_to_imgmsg(maskedImage)
 				if len(response.im_out.image_msgs)==0:
 					response.im_out.image_msgs.append(img_msg)
@@ -325,15 +325,17 @@ def callback(req):
 			
 			conteoTOT+=1
 			if counting == 15:
+				print("<<<<<<< TERMINA ENCONTRANDO PERSONA >>>>>>>>>\n")
 				break
 
-			if conteoTOT ==40:
+			if conteoTOT == 40: # no human waving detected
+				print("<<<<<<< TERMINA POR CONTEO GLOBAL >>>>>>>>>\n")
 				break
 
 		#----
-		if response.i_out == -1:
-			return response
-			
+		#if response.i_out == -1 or response.i_out == -2:
+		#	return response
+		print("AQUI CAMBIA")	
 		head_mean = np.concatenate((dataout[sk_idx,0:1,:],dataout[sk_idx,15:19,:]),axis=0)
 		head_mean = np.sum(head_mean,axis=0)/np. count_nonzero(head_mean,axis=0)[0] 
 		
