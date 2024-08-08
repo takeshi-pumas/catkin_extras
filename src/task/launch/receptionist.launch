@@ -4,7 +4,7 @@
   <!-- <include file="$(find nav_pumas)/config_files/launch/navigation_real.launch"/> -->
   <node pkg="human_detector"  name="human_detector" type="pointing_detector_server.py"/>  
   <node pkg="face_recog"  name="face_recog" type="face_recog_server.py"/>
-  <node pkg="face_recog"  name="face_recog_deep" type="face_recog_server_deep.py"/>
+  <!--node pkg="face_recog"  name="face_recog_deep" type="face_recog_server_deep.py"/-->
 
   <node pkg="face_recog"  name="analyze_face_backgnd" type="analyze_face_backgnd_node"/>
   <node pkg="head"  name="mic_node" type="mic_node"/>

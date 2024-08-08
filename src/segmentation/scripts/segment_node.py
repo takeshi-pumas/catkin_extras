@@ -107,7 +107,7 @@ def trigger_response(request):
                     e_ER=tf.transformations.euler_from_matrix(E_R)
                     quat= tf. transformations.quaternion_from_euler(e_ER[0],e_ER[1],e_ER[2])
                     quats_pca.append(quat)
-                    print(np.rad2deg(tf.transformations.euler_from_matrix(E_R)))
+                    print("ANGLE:",tf.transformations.euler_from_matrix(E_R)," Degrees:",np.rad2deg(tf.transformations.euler_from_matrix(E_R)))
                     #######FOR DEBUG IMAGE
                     cv2.drawContours(image_with_contours, contour, -1, (0, 255, 0), 2)  # -1 draws all contours
                     rgb_image=cv2.rectangle(image_with_contours,(boundRect[0], boundRect[1]),(boundRect[0]+boundRect[2], boundRect[1]+boundRect[3]), (255,255,0), 2)

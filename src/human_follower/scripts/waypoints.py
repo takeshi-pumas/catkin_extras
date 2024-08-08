@@ -50,7 +50,7 @@ class WaypointsNode:
 
     def is_far_enough(self, last_point, new_point):
         distance = math.sqrt((last_point.x - new_point.x)**2 + (last_point.y - new_point.y)**2)
-        return distance >= 0.25
+        return distance >= 0.8
 
     def add_waypoint(self, event):
         if not self.waypoints or self.is_far_enough(self.waypoints[-1].point, self.current_position.point):
