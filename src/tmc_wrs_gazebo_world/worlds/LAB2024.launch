@@ -19,7 +19,11 @@
   <arg name="robot_name" default="$(optenv ROBOT_NAME hsrb)" />
 	  <!--arg name="map" value="$(find config_files)/prohibition_maps/robocup_2023/map.yaml" /-->
     
-    <arg name="map"  default="$(find config_files)/prohibition_maps/map_lab_2024/map.yaml"/>
+    <!--arg name="map"  default="$(find config_files)/prohibition_maps/map_lab_2024/map.yaml"/-->
+    <arg name="map"  default="$(find config_files)/prohibition_maps/blank/map.yaml"/>
+
+
+
     <arg name="world_name" value="$(find tmc_wrs_gazebo_worlds)/worlds/bio_robotics_lab.world"/>
 	  <arg name="robot_pos" value="-x 0.0 -y 0.0 -z 0.0 -Y 0.0" />
 
