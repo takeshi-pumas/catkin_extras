@@ -13,6 +13,8 @@ from tf.transformations import euler_from_quaternion
 from sensor_msgs.msg import LaserScan,PointCloud, PointCloud2
 import tf2_ros
 from tf2_geometry_msgs import PointStamped
+import tf2_geometry_msgs
+
 import ros_numpy
 import numpy as np
 import tf as tf
@@ -163,43 +165,30 @@ def readSensor(msg):
     y = np.nansum(points_data['y'])
     z = np.nansum(points_data['z'])
     Fxyz=np.asarray((x,y,z))
-    print ('xyz',Fxyz/np.linalg.norm(Fxyz))
-    #print ( f'Frep = {}')
-    # Combine into a list of points
-    points_list = np.column_stack((x, y, z)).tolist()
-    # Now points_list is a list of [x, y, z] for each point
-    
-    
-    """# Get point cloud data
-                data = msg.data
-                point_step = msg.point_step
-                # Find the indices for XYZ fields
-                field_names = [field.name for field in msg.fields]
-                x_index = field_names.index('x')
-                y_index = field_names.index('y')
-                z_index = field_names.index('z')
-                # Get field offsets
-                x_offset = msg.fields[x_index].offset
-                y_offset = msg.fields[y_index].offset
-                z_offset = msg.fields[z_index].offset
-                # Determine the number of points
-                num_points = len(data) // point_step
-                # Parse the data into XYZ lists
-                xyz_list = []
-                for i in range(num_points):
-                    # Calculate the start index for the point
-                    start = i * point_step
-                    # Extract x, y, z values (assuming 4-byte floats)
-                    x = struct.unpack_from('f', data, start + x_offset)[0]
-                    y = struct.unpack_from('f', data, start + y_offset)[0]
-                    z = struct.unpack_from('f', data, start + z_offset)[0]
-                    # Append to the list
-                    xyz_list.append((x, y, z))
-            
-                print ( f'xyz  parsed = {len(xyz_list)}')    
-            """
+    F_rep_xyz=Fxyz/np.linalg.norm(Fxyz)
+    print ('xyz',F_rep_xyz)
+
+
+
+     # Define a point in head_rgbd_sensor_rgb_frame
+    point_in_head = PointStamped()
+    point_in_head.header.frame_id = "head_rgbd_sensor_rgb_frame"
+    point_in_head.point.x = F_rep_xyz[0]
+    point_in_head.point.y = F_rep_xyz[1]
+    point_in_head.point.z = F_rep_xyz[2]
+
+     
+    try:
+        inverted_transform = tfBuffer.lookup_transform("base_link", "head_rgbd_sensor_rgb_frame", rospy.Time(0), rospy.Duration(1.0))
+
+    except:
+        print('No tf, error') 
+        inverted_transform = np.asarray((0,0,0,1))
     ###
-    
+
+    point_in_base = tf2_geometry_msgs.do_transform_point(point_in_head, inverted_transform)
+    print (point_in_base,'F REP BASE')
+
     if 'x' not in globals():
         print ('waiting for odom')
     else:
