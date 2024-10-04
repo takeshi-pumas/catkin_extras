@@ -1,140 +1,88 @@
 #include <ros/ros.h>
-#include <std_msgs/Float32MultiArray.h>
-#include <std_msgs/String.h>
-#include <geometry_msgs/TransformStamped.h>
-#include <geometry_msgs/PointStamped.h>
 #include <tf2_ros/transform_listener.h>
+#include <geometry_msgs/PointStamped.h>
+#include <geometry_msgs/TransformStamped.h>
+#include <std_msgs/Float32MultiArray.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
-#include <tf2/LinearMath/Matrix3x3.h>
-#include <cmath>
 
 class GazeController {
 public:
-    GazeController() : nh_("~"), tf_listener_(tf_buffer_) {
+    GazeController() : tfListener(tfBuffer) {
+        nh.param<std::string>("head_frame", head_frame, "head_rgbd_sensor_link");
+        nh.param<std::string>("reference_frame", reference_frame, "base_link"); // Frame de referencia
 
-        // Suscribirse al tópico "/gaze/absolute"
-        sub_gaze_absolute_ = nh_.subscribe("/gaze/absolute", 1, &GazeController::absoluteGazeCallback, this);
+        // Posicion de la cabeza con respecto a base_link
+        head_offset_z = getHeadOffsetZ();
 
-        // Suscribirse al tópico "/gaze/relative"
-        sub_gaze_relative_ = nh_.subscribe("/gaze/relative", 1, &GazeController::relativeGazeCallback, this);
-
-        // Suscribirse al tópico "/gaze/relative"
-        sub_gaze_tf_ = nh_.subscribe("/gaze/tf", 1, &GazeController::TFGazeCallback, this);
-
-        // Publicar los ángulos de PAN y TILT en el tópico "/hardware/head/goal_pose"
-        pub_head_control_ = nh_.advertise<std_msgs::Float32MultiArray>("/hardware/head/goal_pose", 10);
+        pub_head_controller = nh.advertise<std_msgs::Float32MultiArray>("/hardware/head/goal_pose", 10);
+        sub_gaze_position = nh.subscribe(sub_gaze_position_topic, 1, &GazeController::gazeCallback, this);
     }
 
-    void absoluteGazeCallback(const std_msgs::Float32MultiArray::ConstPtr& gaze_msg) {
-        // Calcular ángulos PAN y TILT con respecto a MAP
-        ROS_INFO("Map absolute gaze");
-        std::vector<float> joint_values = gazePoint(gaze_msg->data, map);
-        pub_joint_values(joint_values);
+    void gazeCallback(const geometry_msgs::PointStamped::ConstPtr& gaze_msg) {
+        lookAt(*gaze_msg);
     }
 
-    void relativeGazeCallback(const std_msgs::Float32MultiArray::ConstPtr& gaze_msg) {
-        // Calcular ángulos PAN y TILT con respecto a base_link
-        ROS_INFO("Base link relative gaze");
-        // std::vector<float> joint_values = calculatePanTiltAngles(gaze_msg->data, base);
-        // pub_joint_values(joint_values);
-    }
+    void lookAt(const geometry_msgs::PointStamped& target_point) {
+        try {
+            // Transformar el punto objetivo al frame de referencia (base_link o map)
+            geometry_msgs::PointStamped point_in_reference_frame;
+            tfBuffer.transform(target_point, point_in_reference_frame, reference_frame, ros::Duration(1.0));
 
-    void TFGazeCallback(const std_msgs::String::ConstPtr& tf_name_msg){
-        ROS_INFO("Gaze to a published tf");
-        geometry_msgs::TransformStamped tf_position;
-        tf_position = tf_buffer_.lookupTransform(map, tf_name_msg->data, ros::Time(0), ros::Duration(0.3));
-        std::vector<float> target;
-        target.push_back(tf_position.transform.translation.x);
-        target.push_back(tf_position.transform.translation.y);
-        target.push_back(tf_position.transform.translation.z);
-        std::vector<float> joint_values = gazePoint(target, map);
-        pub_joint_values(joint_values);
-    }
+            // Ajustar la posición del punto considerando el offset de la cabeza en Z
+            point_in_reference_frame.point.z -= head_offset_z;
 
-    std::vector<float> gazePoint(const std::vector<float>& target_position, const std::string& ref_frame){
-        try{
-            geometry_msgs::TransformStamped trans;
-            geometry_msgs::TransformStamped rot;
-            double yaw = 0.0;
+            // Calcular los ángulos de pan y tilt en función de la referencia (no de la cabeza actual)
+            double pan_angle = atan2(point_in_reference_frame.point.y, point_in_reference_frame.point.x);
+            double distance = sqrt(pow(point_in_reference_frame.point.x, 2) + pow(point_in_reference_frame.point.y, 2));
+            double tilt_angle = atan2(point_in_reference_frame.point.z, distance);
 
-            trans = tf_buffer_.lookupTransform(ref_frame, cam, ros::Time(0), ros::Duration(0.3));
+            // Publicar los comandos de pan y tilt
+            std_msgs::Float32MultiArray head_msg;
+            head_msg.data.resize(2);
+            head_msg.data[0] = pan_angle;  // Pan
+            head_msg.data[1] = tilt_angle; // Tilt
+            pub_head_controller.publish(head_msg);
 
-            if (ref_frame == map){
-                rot = tf_buffer_.lookupTransform(ref_frame, base, ros::Time(0), ros::Duration(0.3));
-                tf2::Quaternion quat(rot.transform.rotation.x, rot.transform.rotation.y, rot.transform.rotation.z, rot.transform.rotation.w);
-                double roll, pitch;
-                tf2::Matrix3x3(quat).getRPY(roll, pitch, yaw);
-            }
-            
-            // Angles calculation
-            double x_rob = trans.transform.translation.x;
-            double y_rob = trans.transform.translation.y;
-            double z_rob = trans.transform.translation.z;
+            ROS_INFO("Head moving to Pan: %.2f, Tilt: %.2f", pan_angle, tilt_angle);
 
-            double D_x = x_rob - target_position[0];
-            double D_y = y_rob - target_position[1];
-            double D_z = z_rob - target_position[2];
-            double D_th = atan2(D_y, D_x);
-
-            double pan = fmod((-yaw + D_th + M_PI), (2*M_PI));
-            double tilt = -atan2(D_z, sqrt(D_x * D_x + D_y * D_y));
-
-            // Angles correction
-            if(pan > M_PI){ 
-                pan -= 2 * M_PI;
-            } else if(pan < M_PI){
-                pan += 2* M_PI;
-            }
-            if(abs(pan) > M_PI_2){
-                ROS_WARN("Exorcist alert");
-                pan = 0;
-            }
-
-
-            // Return values
-            std::vector<float> joint_values;
-            joint_values.push_back(pan);
-            joint_values.push_back(tilt);
-            return joint_values;
-
-        } catch (tf2::TransformException& ex) {
-            ROS_ERROR("Error al transformar la posicion objetivo: %s", ex.what());
+        } catch (tf2::TransformException &ex) {
+            ROS_WARN("Transform error: %s", ex.what());
         }
     }
+    
+    double getHeadOffsetZ() {
 
-    // std::vector<float> calculatePanTiltAngles(const std::vector<float>& target_point, const std::string& ref_frame){
-    //     std::vector<float> targetTransform = tf_buffer_.transform(target_point, cam,ros::Duration(0.3));
-    //     ROS_INFO("Vector transformed: %f", targetTransform);
-    //     return targetTransform;
-    // }
-
-    void pub_joint_values(const std::vector<float>& joint_values){
-            std_msgs::Float32MultiArray head_control_msg;
-            // head_control_msg.data.push_back(joint_values[0]);
-            // head_control_msg.data.push_back(joint_values[1]);
-            head_control_msg.data = joint_values;
-            ROS_INFO("Publishing head angles: %f, %f", joint_values[0], joint_values[1]);
-            pub_head_control_.publish(head_control_msg);
+        for(int attempts = 0; attempts <= 5; ++attempts ){
+            try {
+                // Obtener la transformación de base a cabeza
+                geometry_msgs::TransformStamped transform = tfBuffer.lookupTransform(reference_frame, head_frame, ros::Time(0), ros::Duration(5.0));
+                ROS_INFO("Initialization completed, ready to use. \n Topic: %s", sub_gaze_position_topic.c_str());
+                return transform.transform.translation.z;
+            } catch (tf2::TransformException &ex) {
+                ROS_WARN("Transform error during initialization: %s \n Retriyng (%d / 5)", ex.what(), attempts);
+            }
+        }
+        // return 0.0; // Valor por defecto en caso de error
+        ROS_ERROR("Failed to get initial transform, please restart node.");
+        ros::shutdown();
     }
 
 private:
-    ros::NodeHandle nh_;
-    tf2_ros::Buffer tf_buffer_;
-    tf2_ros::TransformListener tf_listener_;
-    ros::Subscriber sub_gaze_absolute_;
-    ros::Subscriber sub_gaze_relative_;
-    ros::Subscriber sub_gaze_tf_;
-    ros::Publisher pub_head_control_;
-    const std::string map = "map";
-    const std::string cam = "head_rgbd_sensor_link";
-    const std::string base = "base_link";
+    ros::NodeHandle nh;
+    tf2_ros::Buffer tfBuffer;
+    tf2_ros::TransformListener tfListener;
+    ros::Publisher pub_head_controller;
+    ros::Subscriber sub_gaze_position;
+    std::string head_frame;
+    std::string reference_frame;
+    double head_offset_z;
+    std::string sub_gaze_position_topic = "/hardware/head/gaze";
 };
 
 int main(int argc, char** argv) {
-    ros::init(argc, argv, "gaze_controller_node");
-    ROS_INFO("Gaze controller node initialized");
+    ros::init(argc, argv, "gaze_controller");
 
-    GazeController gaze_controller;
+    GazeController gazeController;
 
     ros::spin();
 

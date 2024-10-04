@@ -10,6 +10,7 @@ find_package(catkin REQUIRED COMPONENTS
   controller_manager_msgs
   trajectory_msgs
   tf2_sensor_msgs
+  tf2_geometry_msgs
   tf2 REQUIRED
   tf2_ros REQUIRED
   pcl_ros
@@ -47,7 +48,7 @@ find_package(catkin REQUIRED COMPONENTS
 
 
 catkin_package(
-  CATKIN_DEPENDS roscpp sensor_msgs tf2_ros tf2_sensor_msgs
+  CATKIN_DEPENDS roscpp sensor_msgs tf2_ros tf2_sensor_msgs tf2_geometry_msgs
 #  INCLUDE_DIRS include
 #  LIBRARIES head
 #  CATKIN_DEPENDS geometry_msgs roscpp rospy std_msgs
@@ -97,6 +98,10 @@ add_executable(mic_node
 ## same as for the library above
 add_dependencies(head_node
   ${${PROJECT_NAME}_EXPORTED_TARGETS}
+  ${catkin_EXPORTED_TARGETS})
+
+  add_dependencies(gaze_node 
+  ${${PROJECT_NAME}_EXPORTED_TARGETS} 
   ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
