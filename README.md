@@ -32,16 +32,19 @@ $  roslaunch hsrb_wrs_gazebo_launch
 
 then hit tab for autocomplete you should be able to launch 
 
-or just
-$ roslaunch hsrb_wrs_gazebo_launch wrs_practice0_easy_tmc.launch
+$ roslaunch hsrb_wrs_gazebo_launch roslaunch tmc_wrs_gazebo_worlds TMR2024.launch
 
 Gazebo (paused) is launched, hit play  and open a new terminal ( remeber sourcing )
 
-MOVEIT IS NOW INLCUDED IN LAUNCH;
 
-$ python3 /src/smaches/ANY SMACH.py
+#####FOR REAL ROBOT
+TO try in robot ( no catkin_extras used yet)
+Make sure ROS MASTER is sourced (either WIreless or ethernet)
+$rosrun rviz rviz  -d `rospack find hsrb_common_launch`/config/hsrb_display_full_hsrb.rviz
 
-PUMAS NAVIGATION IS NOW AVAILABLE
+
+
+PUMAS NAVIGATION IS NOW AVAILABLE  Not that anyone has checked since the Revolution.
 
 Check https://www.youtube.com/watch?v=oE1UKBc-sz4
 
