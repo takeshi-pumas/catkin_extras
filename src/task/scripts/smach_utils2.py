@@ -28,6 +28,7 @@ from object_classification.srv import *
 from segmentation.srv import *
 from human_detector.srv import Human_detector  ,Human_detectorRequest 
 from human_detector.srv import Point_detector ,Point_detectorRequest
+from hmm_act_recog.srv import *
 from ros_whisper_vosk.srv import GetSpeech
 from object_classification.srv import *
 from face_recog.msg import *
@@ -81,10 +82,9 @@ set_grammar = rospy.ServiceProxy('set_grammar_vosk', SetGrammarVosk)            
 recognize_face = rospy.ServiceProxy('recognize_face', RecognizeFace)                    #FACE RECOG
 train_new_face = rospy.ServiceProxy('new_face', RecognizeFace)                          #FACE RECOG
 analyze_face = rospy.ServiceProxy('analyze_face', RecognizeFace)    ###DEEP FACE ONLY
-#recognize_action = rospy.ServiceProxy('recognize_act', Recognize) 
 classify_client = rospy.ServiceProxy('/classify', Classify)
 classify_clnt_stickler = rospy.ServiceProxy('/classifystick', Classify)
-
+recognize_action = rospy.ServiceProxy('recognize_act',RecognizeOP)
 
 
 ####################################################################

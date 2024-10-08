@@ -7,12 +7,14 @@ import smach_ros
 import rospkg
 import actionlib
 import tf
-
+import math
 from glob import glob
 from os import path
 import numpy as np
 import cv2
-
+from face_recog.msg import *
+from face_recog.srv import *
+from std_msgs.msg import String
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 from geometry_msgs.msg import Point, Quaternion
 from tf2_geometry_msgs import PointStamped , PoseStamped  
@@ -22,12 +24,12 @@ from human_detector.srv import Human_detector  ,Human_detectorRequest
 from cv_bridge import CvBridge, CvBridgeError
 from hmm_navigation.msg import NavigateActionGoal , NavigateActionResult
 
-from utils.grasp_utils import GAZE,ARM
-from utils.misc_utils import talk, TF_MANAGER
-#from utils.nav_utils import *
+from utils.grasp_utils import GAZE,ARM,WRIST_SENSOR
+from utils.misc_utils import talk, TF_MANAGER, RGBD
+from utils.nav_utils import OMNIBASE
 
 global listener, broadcaster, tfBuffer, tf_static_broadcaster,recognize_action_docker,recognize_action,human_detect_server,bridge,pt_pub
-global head, brazo ,tf_man
+global head, brazo ,tf_man,wrist,omni_base
 
 rospy.init_node('smach', anonymous=True)
 
@@ -39,7 +41,7 @@ tf_static_broadcaster = tf2_ros.StaticTransformBroadcaster()
 recognize_action_docker = rospy.ServiceProxy('recognize_act_docker', Recognize) 
 recognize_action = rospy.ServiceProxy('recognize_act', RecognizeOP) 
 human_detect_server = rospy.ServiceProxy('/detect_human' , Human_detector)  ####HUMAN FINDER OPPOSEBASED
-
+recognize_face = rospy.ServiceProxy('recognize_face', RecognizeFace)  
 pt_pub = rospy.Publisher('/clicked_point', PointStamped, queue_size=1)  
 navclient = actionlib.SimpleActionClient('/move_base/move', MoveBaseAction)
 
@@ -47,7 +49,9 @@ head = GAZE()
 brazo = ARM()
 tf_man = TF_MANAGER()
 bridge = CvBridge()
-
+omni_base=OMNIBASE() 
+wrist= WRIST_SENSOR()
+rgbd= RGBD()
 #-------------------------------------------
 def wait_for_push_hand(time=10):
 
@@ -141,3 +145,82 @@ def save_image(img,name='',dirName=''):
     else:
         #print(file_path+"/src"+"tmp"+".jpg")
         cv2.imwrite(file_path+"/src"+"image"+".jpg",img)
+
+#------------------------------------------------------
+def wait_for_face(timeout=10 , name=''):
+    
+    rospy.sleep(0.3)
+    
+    start_time = rospy.get_time()
+    strings=Strings()
+    string_msg= String()
+    string_msg.data='Anyone'
+    while rospy.get_time() - start_time < timeout:
+        img=rgbd.get_image()  
+        req=RecognizeFaceRequest()
+        print ('Got  image with shape',img.shape)
+        req.Ids.ids.append(string_msg)
+        img_msg=bridge.cv2_to_imgmsg(img)
+        req.in_.image_msgs.append(img_msg)
+
+        res= recognize_face(req)
+
+
+        #NO FACE FOUND
+        if res.Ids.ids[0].data == 'NO_FACE':
+            print ('No face FOund Keep scanning')
+            
+            return None, None
+        #AT LEAST ONE FACE FOUND
+        else:
+            print('at least one face found')
+            ds_to_faces=[]
+            for i , idface in enumerate(res.Ids.ids):
+                print (i,idface.data)
+                ds_to_faces.append(res.Ds.data[i])    ##
+                if (idface.data)==name :
+                    new_res= RecognizeFaceResponse()
+                    new_res.Ds.data= res.Ds.data[i]
+                    new_res.Angs.data= res.Angs.data[i:i+4]
+                    new_res.Ids.ids=res.Ids.ids[i].data
+                    print('return res,img',new_res)
+                    print ('hit',idface.data, 'at' , res.Ds.data[i]  , 'meters')
+                    ds_to_faces=[]
+                    return new_res , img
+
+            if len (ds_to_faces)!=0:
+                i=np.argmin(ds_to_faces)
+                new_res= RecognizeFaceResponse()
+                new_res.Ds.data= res.Ds.data[i]
+                new_res.Angs.data= res.Angs.data[i:i+4]
+                new_res.Ids.ids=res.Ids.ids[i].data
+                print('return res,img',new_res)
+                ds_to_faces=[]
+                return new_res , img
+
+#------------------------------------------------------
+def new_move_D_to(tf_name='placing_area',d_x=15 , timeout=30.0):
+
+    timeout = rospy.Time.now().to_sec() + timeout
+    succ = False            
+    i=0
+    while (timeout >= rospy.Time.now().to_sec()) and not succ and not rospy.is_shutdown():
+        
+        _,rot=tf_man.getTF('base_link')    
+        robot_yaw=tf.transformations.euler_from_quaternion(rot)[2]
+        pose,_= tf_man.getTF("base_link",ref_frame=tf_name)
+        target_yaw = math.atan2(pose[1], pose[0])+np.pi
+        delta_th=   target_yaw-robot_yaw
+        delta_th = (delta_th + np.pi) % (2 * np.pi) - np.pi
+        i+=1                
+        eX = np.linalg.norm((pose[0:2]))
+        eX+= -d_x  #x offest
+        velX= eX 
+        if abs(delta_th)>=0.1:velX=0
+        succ =  eX <= 0.1  and abs(delta_th)<=0.1
+        corr_velX = max(min(velX, 0.051), -0.051)
+        if i >=10:
+            print("error_D: {:.2f}, , delta_th {:.2f}, target obj frame {}".format(eX,  delta_th,tf_name))
+            i=0
+        omni_base.tiny_move( velX=corr_velX,velY=0, velT=delta_th,std_time=0.2, MAX_VEL=0.3) 
+    return succ

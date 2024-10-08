@@ -13,32 +13,13 @@ class Initial(smach.State):
         rospy.loginfo('STATE : INITIAL')
         rospy.loginfo(f'[INITIAL] Try {self.tries} of 5 attempts')
 
-        #party.clean_knowledge(host_name = "john", host_location = "Place_3")
-        #party.clean_knowledge()
-        #places_2_tf()
-        #party.publish_tf_seats()
-        #places_2_tf()
-
-        ###-----INIT GRAMMAR FOR VOSK
-        ###-----Use with get_keywords_speech()
-        ###-----------SPEECH REC
-        #drinks=['coke','juice','beer', 'water', 'soda', 'wine', 'i want a', 'i would like a']
-        #drinks = ['coke','juice','milk', 'water', 'soda', 'wine', 
-        #          'i want a', 'i would like a', 'tea', 'icedtea', 'cola', 'redwine', 'orangejuice', 'tropicaljuice']
-        #drinks = ['water', 'soda', 'coke', 'juice', 'iced tea', 'i want a', 'i would like a']
-        #names=['rebeca','ana','jack', 'michael', ' my name is' , 'i am','george','mary','ruben','oscar','yolo','mitzi']
-        #names = [' my name is' , 'i am','adel', 'angel', 'axel', 
-        #         'charlie', 'jane', 'john', 'jules', 'morgan', 'paris', 'robin', 'simone', 'jack']
-        #names = ['my name is', 'i am','john', 'jack', 'paris', 'charlie', 'simone', 'robin', 'jane', 'jules']
-        #confirmation = ['yes','no', 'robot yes', 'robot no','not','now','nope','yeah']                     
-        #gram = drinks + names + confirmation                                                                                
-        
         if self.tries == 1:
             #set_grammar(gram)  ##PRESET DRINKS
             rospy.sleep(0.2)
             return 'succ'
         elif self.tries == 3:
             return 'failed'
+        
 #--------------------------------------------------
 # Wait push hand STATE: Trigger for task to start
 class Wait_push_hand(smach.State):
@@ -68,18 +49,24 @@ class Wait_for_waving(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed','tries'])
         self.tries = 0
-        self.gaze = [[ 0.0, 0.0],[ 0.0, 0.0],[ 0.0, 0.1],[ 0.2, 0.0],[ 0.2, 0.1],[ -0.2, 0.1]]
+        self.gaze = [[ 0.0, 0.0],[ 0.0, 0.0],[ -0.5, 0.1],[ 0.5, 0.1],[ 0.3, 0.3],[ -0.3, 0.3]]
     def execute(self, userdata):
-        req = RecognizeRequest()    # DOCKER
-        #req = RecognizeOPRequest() # NORMAL
+        #req = RecognizeRequest()    # DOCKER
+        req = RecognizeOPRequest() # NORMAL
+
+        # Guardo posicion para retornar
+        trans, quat=tf_man.getTF('base_link')
+        tf_man.pub_static_tf(pos=trans, rot =[0,0,0,1], point_name='INITIAL_PLACE')
         rospy.loginfo('STATE : Wait for a person waving')
         self.tries += 1
         print(f'[WAITFORWAVING]Try {self.tries} of N attempts')
         
-        talk('Waiting for someone waving')
-        print('[WAITFORWAVING] Waiting for someone waving')
-        head.set_joint_values(self.gaze[self.tries-1])
-        rospy.sleep(1.5)
+        talk('Looking for a person waving')
+        print('[WAITFORWAVING] Looking for a waving person')
+        print(f"[WAITFORWAVING] gaze:{self.gaze[self.tries]}")
+        head.set_joint_values(self.gaze[self.tries])
+
+        rospy.sleep(1)
         req.visual=0
         # reqAct.in_ --> 5  para detectar Waving en Restaurant
         req.in_ = 5
@@ -93,8 +80,8 @@ class Wait_for_waving(smach.State):
         print("[WAITFORWAVING] 1")
         #rospy.sleep(1.0)
 
-        resAct=recognize_action_docker(req) # DOCKER
-        #resAct=recognize_action(req)       # NORMAL
+        #resAct=recognize_action_docker(req) # DOCKER
+        resAct=recognize_action(req)       # NORMAL
         
         print("[WAITFORWAVING] RES OF SERVICE:",resAct.i_out)
 
@@ -134,8 +121,10 @@ class Goto_waving_person(smach.State):
         print(f'[GOTOWAVINGPERSON] coords {human_xyz}')
 
         # publica pointStamp para que se mueva con potFields o lo que se vaya a usar
-        res = human_xyz_to_pt_st(human_xyz)
+        #res = human_xyz_to_pt_st(human_xyz)
+        res = omni_base.move_d_to(0.5,'person_waving')
 
+        #res = new_move_D_to(tf_name='person_waving',d_x=5 , timeout=20.0)
         print("[GOTOWAVINGPERSON]",res)
 
         if res:
@@ -146,6 +135,57 @@ class Goto_waving_person(smach.State):
             print('[GOTOWAVINGPERSON] Navigation Failed, retrying')
             return 'failed'
 
+#--------------------------------------------------
+class Demo_logic(smach.State):
+    def __init__(self):
+        smach.State.__init__(self, outcomes=['succ', 'failed','tries'])
+        self.tries = 0
+
+    def execute(self, userdata):
+        rospy.loginfo('STATE : Logic for the demo ')
+
+        print(f'[DEMOLOGIC] Try {self.tries} of 3 attempts')
+        self.tries += 1
+        if self.tries == 3:
+            return 'tries'
+        
+        head.set_joint_values([0.0, 0.4])
+        print(f'[DEMOLOGIC] Talking....')
+
+        talk('Hello, I saw that you were waving')
+        rospy.sleep(0.5)
+        talk('My name is Takeshi, I will lead you to my lab stand, please follow me')
+        rospy.sleep(0.9)
+        return 'succ'
+        
+        
+#--------------------------------------------------
+class Return_to_Initial(smach.State):
+    def __init__(self):
+        smach.State.__init__(self, outcomes=['succ', 'failed','tries'])
+        self.tries = 0
+
+    def execute(self, userdata):
+        rospy.loginfo('STATE : Returning to initial point')
+
+        print(f'[RETURNTOINITIAL] Try {self.tries} of 3 attempts')
+        self.tries += 1
+        if self.tries == 3:
+            return 'tries'
+        
+        #res = new_move_D_to(tf_name='INITIAL_PLACE',d_x=10 , timeout=20.0)
+        res = omni_base.move_d_to(0.1,'INITIAL_PLACE')
+
+        print("[RETURNTOINITIAL]",res)
+
+        if res:
+            # move_base() # with no map
+            talk('Arrived..')
+            rospy.sleep(10)
+            return 'succ'
+        else:
+            print('[RETURNTOINITIAL] Navigation Failed, retrying')
+            return 'failed'
 
 # --------------------------------------------------
 # Entry point
@@ -164,7 +204,7 @@ if __name__ == '__main__':
 
         # Initial states routine
         smach.StateMachine.add("INITIAL", Initial(),              
-                               transitions={'failed': 'INITIAL', 'succ': 'WAITING_WAVING'})
+                               transitions={'failed': 'INITIAL', 'succ': 'WAIT_PUSH_HAND'})
         smach.StateMachine.add("WAIT_PUSH_HAND", Wait_push_hand(),       
                                transitions={'failed': 'WAIT_PUSH_HAND', 'succ': 'WAITING_WAVING'})
 
@@ -173,9 +213,14 @@ if __name__ == '__main__':
         
         
         smach.StateMachine.add("GOTO_WAVING_PERSON", Goto_waving_person(),    
-                               transitions={'failed': 'GOTO_WAVING_PERSON', 'succ': 'END','tries':'END'})
+                               transitions={'failed': 'GOTO_WAVING_PERSON', 'succ': 'DEMO_LOGIC','tries':'END'})
         
-
+        smach.StateMachine.add("DEMO_LOGIC", Demo_logic(),    
+                               transitions={'failed': 'DEMO_LOGIC', 'succ': 'RETURN_TO_INITIAL','tries':'END'})
+        
+        smach.StateMachine.add("RETURN_TO_INITIAL", Return_to_Initial(),    
+                               transitions={'failed': 'RETURN_TO_INITIAL', 'succ': 'END','tries':'END'})
+        
 
 
     outcome = sm.execute()

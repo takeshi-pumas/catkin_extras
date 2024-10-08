@@ -22,7 +22,7 @@ try:
     # CHANGE THIS PATH TO WHERE OPENPOSE DIR WAS INSTALLED,
     #       'openpose/build/python' <-- do not change it, just the first part
     #sys.path.append(usr_url+'/openpose/build/python');
-    sys.path.append(usr_url+'/Documentos/openpose/build/python');
+    sys.path.append(usr_url+'/openpose/build/python');
     from openpose import pyopenpose as op
     
 except ImportError as e:
@@ -262,6 +262,7 @@ def detectWavingRestaurant(datum,opWrapper,response):
     conteoTOTAL=0
     while True:
         print("CONTEO",counting)
+        print(f"Conteo GLOBAL:{conteoTOTAL}")
         points_msg=rospy.wait_for_message("/hsrb/head_rgbd_sensor/depth_registered/rectified_points",PointCloud2,timeout=5)
         points_data = ros_numpy.numpify(points_msg)
         image,maskedImage = removeBackground(points_msg,distance = 10)
@@ -278,6 +279,8 @@ def detectWavingRestaurant(datum,opWrapper,response):
                 response.im_out.image_msgs.append(img_msg)
             else:
                 response.im_out.image_msgs[0]=img_msg
+            
+            conteoTOTAL+=1
         
         else:
             #print("datum shape",datum.poseKeypoints.shape)
@@ -294,19 +297,21 @@ def detectWavingRestaurant(datum,opWrapper,response):
                 response.im_out.image_msgs[0]=img_msg
             sk_idx = detectWaving(dataout,maskedImage,points_msg)
             if sk_idx == -1:
-                print("NO PERSON WAVING")
+                #print("NO PERSON WAVING")
                 response.i_out=-1
                 counting = 0
             else:
                 counting += 1
+                response.i_out=1
+        
         conteoTOTAL += 1
-        if counting == 15:
+        if counting >= 4:
             break
 
-        if conteoTOTAL ==40:
+        if conteoTOTAL > 5:
             response.i_out = -1
             break
-    
+    print("RESPUESTA,",response.i_out)
     if response.i_out == -1: return response 
     #----	
     head_mean = np.concatenate((dataout[sk_idx,0:1,:],dataout[sk_idx,15:19,:]),axis=0)
@@ -321,6 +326,7 @@ def detectWavingRestaurant(datum,opWrapper,response):
     if head_xyz[0] is not None:
         print("PUBLICANDO....")
         tf_man.pub_static_tf(pos=head_xyz,point_name='person_waving',ref='head_rgbd_sensor_link')
+        #tf_man.pub_static_tf(pos=[head_xyz[0],head_xyz[1],0],point_name='person_waving',ref='head_rgbd_sensor_link') # to z=0
         rospy.sleep(0.8)
         print("CAMBIANDO REF")
         tf_man.change_ref_frame_tf(point_name='person_waving',new_frame='map')
