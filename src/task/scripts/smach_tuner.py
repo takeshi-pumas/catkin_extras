@@ -80,12 +80,12 @@ classify_client = rospy.ServiceProxy('/classify', Classify)
 
 
 
-map_msg= rospy.wait_for_message('/augmented_map', OccupancyGrid , 20)####WAIT for nav pumas map .. 
-inflated_map= np.asarray(map_msg.data)
-img_map=inflated_map.reshape((map_msg.info.width,map_msg.info.height))
-pix_per_m=map_msg.info.resolution
-contours, hierarchy = cv2.findContours(img_map.astype('uint8'),cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
-contoured=cv2.drawContours(img_map.astype('uint8'), contours, 1, (255,255,255), 1)
+#map_msg= rospy.wait_for_message('/augmented_map', OccupancyGrid , 20)####WAIT for nav pumas map .. 
+#inflated_map= np.asarray(map_msg.data)
+#img_map=inflated_map.reshape((map_msg.info.width,map_msg.info.height))
+#pix_per_m=map_msg.info.resolution
+#contours, hierarchy = cv2.findContours(img_map.astype('uint8'),cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+#contoured=cv2.drawContours(img_map.astype('uint8'), contours, 1, (255,255,255), 1)
 
 rgbd= RGBD()
 hand_rgb = HAND_RGB()

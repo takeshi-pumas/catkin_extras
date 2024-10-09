@@ -28,6 +28,7 @@ from object_classification.srv import *
 from segmentation.srv import *
 from human_detector.srv import Human_detector  ,Human_detectorRequest 
 from human_detector.srv import Point_detector ,Point_detectorRequest
+from hmm_act_recog.srv import *
 from ros_whisper_vosk.srv import GetSpeech
 from object_classification.srv import *
 from face_recog.msg import *
@@ -81,19 +82,18 @@ set_grammar = rospy.ServiceProxy('set_grammar_vosk', SetGrammarVosk)            
 recognize_face = rospy.ServiceProxy('recognize_face', RecognizeFace)                    #FACE RECOG
 train_new_face = rospy.ServiceProxy('new_face', RecognizeFace)                          #FACE RECOG
 analyze_face = rospy.ServiceProxy('analyze_face', RecognizeFace)    ###DEEP FACE ONLY
-#recognize_action = rospy.ServiceProxy('recognize_act', Recognize) 
 classify_client = rospy.ServiceProxy('/classify', Classify)
 classify_clnt_stickler = rospy.ServiceProxy('/classifystick', Classify)
-
+recognize_action = rospy.ServiceProxy('recognize_act',RecognizeOP)
 
 
 ####################################################################
-map_msg= rospy.wait_for_message('/augmented_map', OccupancyGrid , 20)####WAIT for nav pumas map .. 
-inflated_map= np.asarray(map_msg.data)
-img_map=inflated_map.reshape((map_msg.info.width,map_msg.info.height))
-pix_per_m=map_msg.info.resolution
-contours, hierarchy = cv2.findContours(img_map.astype('uint8'),cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
-contoured=cv2.drawContours(img_map.astype('uint8'), contours, 1, (255,255,255), 1)
+#map_msg= rospy.wait_for_message('/augmented_map', OccupancyGrid , 20)####WAIT for nav pumas map .. 
+#inflated_map= np.asarray(map_msg.data)
+#img_map=inflated_map.reshape((map_msg.info.width,map_msg.info.height))
+#pix_per_m=map_msg.info.resolution
+#contours, hierarchy = cv2.findContours(img_map.astype('uint8'),cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+#contoured=cv2.drawContours(img_map.astype('uint8'), contours, 1, (255,255,255), 1)
 
 ####################################################################3
 
