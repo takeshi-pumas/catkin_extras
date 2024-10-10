@@ -61,9 +61,9 @@ def wait_for_push_hand(time=10):
     while rospy.get_time() - start_time < time:
         torque = wrist.get_torque()
         if np.abs(torque[1])>1.0:
-            print(' Hand Pused Ready TO start')
+            print(' Hand Pushed Ready TO start')
             #takeshi_talk_pub.publish(string_to_Voice())
-            talk('Im ready to start')
+            talk('Ready to start')
             return True
             break
 
@@ -224,3 +224,11 @@ def new_move_D_to(tf_name='placing_area',d_x=15 , timeout=30.0):
             i=0
         omni_base.tiny_move( velX=corr_velX,velY=0, velT=delta_th,std_time=0.2, MAX_VEL=0.3) 
     return succ
+
+
+#------------------------------------------------------
+def check_dist_INITIAL(userdata):
+    res, userdata.face_img = wait_for_face()
+    return True
+
+

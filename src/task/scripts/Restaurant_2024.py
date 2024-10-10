@@ -36,7 +36,7 @@ class Wait_push_hand(smach.State):
         #head.set_named_target('neutral')
         #brazo.set_named_target('go')
         talk('Gently... push my hand to begin')
-        succ = wait_for_push_hand(100)
+        succ = wait_for_push_hand(50)
 
         if succ:
             return 'succ'
@@ -49,7 +49,7 @@ class Wait_for_waving(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed','tries'])
         self.tries = 0
-        self.gaze = [[ 0.0, 0.0],[ 0.0, 0.0],[ -0.5, 0.1],[ 0.5, 0.1],[ 0.3, 0.3],[ -0.3, 0.3]]
+        self.gaze = [[ 0.0, 0.05],[ 0.0, 0.05],[ -0.5, 0.15],[ 0.5, 0.15],[ 0.85, 0.2],[ -0.85, 0.2]]
     def execute(self, userdata):
         #req = RecognizeRequest()    # DOCKER
         req = RecognizeOPRequest() # NORMAL
@@ -57,8 +57,10 @@ class Wait_for_waving(smach.State):
         # Guardo posicion para retornar
         trans, quat=tf_man.getTF('base_link')
         tf_man.pub_static_tf(pos=trans, rot =[0,0,0,1], point_name='INITIAL_PLACE')
-        rospy.loginfo('STATE : Wait for a person waving')
-        self.tries += 1
+        rospy.loginfo('STATE : Wait for a person waving') 
+        if self.tries < 6:self.tries += 1
+        else: self.tries=0
+        
         print(f'[WAITFORWAVING]Try {self.tries} of N attempts')
         
         talk('Looking for a person waving')
@@ -100,7 +102,7 @@ class Wait_for_waving(smach.State):
 
         talk('Aproaching to the waving person')
         print('[WAITFORWAVING] Aproaching to the waving person')
-
+        self.tries=0
         return 'succ'
 
 #--------------------------------------------------
@@ -120,16 +122,16 @@ class Goto_waving_person(smach.State):
         human_xyz,_=tf_man.getTF('person_waving',ref_frame='base_link')
         print(f'[GOTOWAVINGPERSON] coords {human_xyz}')
 
-        # publica pointStamp para que se mueva con potFields o lo que se vaya a usar
-        #res = human_xyz_to_pt_st(human_xyz)
         res = omni_base.move_d_to(0.5,'person_waving')
-
-        #res = new_move_D_to(tf_name='person_waving',d_x=5 , timeout=20.0)
+        # publica pointStamp para que se mueva con potFields o lo que se vaya a usar
+        #res = new_move_D_to(tf_name='person_waving',d_x=1 , timeout=20.0)
         print("[GOTOWAVINGPERSON]",res)
 
         if res:
             # move_base() # with no map
-            rospy.sleep(10)
+            
+            talk('Arrrived to person')
+            rospy.sleep(1)
             return 'succ'
         else:
             print('[GOTOWAVINGPERSON] Navigation Failed, retrying')
@@ -167,25 +169,67 @@ class Return_to_Initial(smach.State):
 
     def execute(self, userdata):
         rospy.loginfo('STATE : Returning to initial point')
+        req = RecognizeOPRequest() # NORMAL
+        req.visual=0
+        # reqAct.in_ --> 5  para detectar Waving en Restaurant
+        req.in_ = 5
 
         print(f'[RETURNTOINITIAL] Try {self.tries} of 3 attempts')
         self.tries += 1
-        if self.tries == 3:
+        if self.tries == 5:
             return 'tries'
+        print("[RETURNTOINITIAL] head to tf...")
         
-        #res = new_move_D_to(tf_name='INITIAL_PLACE',d_x=10 , timeout=20.0)
-        res = omni_base.move_d_to(0.1,'INITIAL_PLACE')
+        res = head.to_tf('INITIAL_PLACE')
+    
+        head.set_joint_values([0.0,0.0])
+        rospy.sleep(3.8)
+        talk("Checking...")
+        resAct=recognize_action(req)       
+        print(f"[RETURNTOINITIAL] RES DE CHECKING {resAct.i_out}")
+        if resAct.i_out!=1:
+            talk("Retrying")
+            return 'failed'
+        talk("ok")
 
-        print("[RETURNTOINITIAL]",res)
+
+        res = omni_base.move_d_to(0.5,'person_waving')
+        rospy.sleep(1)
+
+        #res = omni_base.move_base(known_location='INITIAL_PLACE')
 
         if res:
             # move_base() # with no map
+            rospy.sleep(1)
             talk('Arrived..')
-            rospy.sleep(10)
+            rospy.sleep(1)
             return 'succ'
         else:
             print('[RETURNTOINITIAL] Navigation Failed, retrying')
             return 'failed'
+
+#--------------------------------------------------
+class Final_part_demo(smach.State):
+    def __init__(self):
+        smach.State.__init__(self, outcomes=['succ', 'failed','tries'])
+        self.tries = 0
+
+    def execute(self, userdata):
+        rospy.loginfo('STATE : Logic for the demo ')
+
+        print(f'[FINALPARTDEMO] Try {self.tries} of 3 attempts')
+        self.tries += 1
+        if self.tries == 3:
+            return 'tries'
+        
+        head.set_joint_values([0.0, 0.4])
+        print(f'[FINALPARTDEMO] Talking....')
+
+        talk('Done. Feel free to ask anything about me or my research lab to them, thank you.')
+        rospy.sleep(0.5)
+        return 'succ'
+      
+
 
 # --------------------------------------------------
 # Entry point
@@ -219,8 +263,10 @@ if __name__ == '__main__':
                                transitions={'failed': 'DEMO_LOGIC', 'succ': 'RETURN_TO_INITIAL','tries':'END'})
         
         smach.StateMachine.add("RETURN_TO_INITIAL", Return_to_Initial(),    
-                               transitions={'failed': 'RETURN_TO_INITIAL', 'succ': 'END','tries':'END'})
+                               transitions={'failed': 'RETURN_TO_INITIAL', 'succ': 'FINAL_PART_DEMO','tries':'END'})
         
-
+        smach.StateMachine.add("FINAL_PART_DEMO", Final_part_demo(),    
+                               transitions={'failed': 'END', 'succ': 'WAIT_PUSH_HAND','tries':'END'})
+        
 
     outcome = sm.execute()
