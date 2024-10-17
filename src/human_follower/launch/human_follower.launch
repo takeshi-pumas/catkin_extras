@@ -8,6 +8,7 @@
         <param name="legs_pose_topic" value="/hri/leg_finder/leg_pose"/>
         <param name="cmd_vel_topic" value="/hsrb/command_velocity"/>
         <param name="head_topic" value="/hardware/head/goal_pose"/>
+        <param name="enable_potfields" value="true"/>
     </node>
     <node name="leg_finder_node" pkg="leg_finder" type="leg_finder_node" output="screen"></node>
 </launch>

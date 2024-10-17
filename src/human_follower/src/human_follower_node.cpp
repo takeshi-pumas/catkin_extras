@@ -121,6 +121,8 @@ int main(int argc, char** argv)
         ros::param::get("~dist_to_human", dist_to_human);
     if(ros::param::has("~move_backwards"))
         ros::param::get("~move_backwards", move_backwards);
+    if(ros::param::has("~enable_potfields"))
+        ros::param::get("~enable_potfields", usePotFields);
     if(ros::param::has("~legs_pose_topic"))
         ros::param::get("~legs_pose_topic", legs_pose_topic);
     if(ros::param::has("~cmd_vel_topic"))
