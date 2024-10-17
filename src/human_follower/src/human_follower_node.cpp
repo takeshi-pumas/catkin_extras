@@ -53,7 +53,7 @@ geometry_msgs::Twist calculate_speeds(float goal_x, float goal_y)
         result.linear.y  = 0;
         if(pot_fields)
             result.linear.x -= KInfRep * repulsiveForceX;
-            result.linear.y -= KInfRep * repulsiveForceY;
+            // result.linear.y -= KInfRep * repulsiveForceY;
         //std::cout << result.linear.y << std::endl;
         result.angular.z = max_angular * (2 / (1 + exp(-angle_error / control_beta)) - 1);
     }
