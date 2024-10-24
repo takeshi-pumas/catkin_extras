@@ -16,7 +16,8 @@ from sensor_msgs.msg import LaserScan
 import numpy as np
 
 
-file_path = rospkg.RosPack().get_path('create_dataset') + '/HMM/'
+file_path = rospkg.RosPack().get_path('hmm_navigation') + '/scripts/hmm_nav/'
+print (file_path)
 centroids = np.load(file_path + 'ccvk.npy')
 ccxyth = np.load(file_path + 'ccxyth.npy')
 matrix_A = np.load(file_path + 'A.npy')
@@ -113,15 +114,15 @@ def callback(laser):
         marker.lifetime.nsecs = 1
         marker_array.markers.append(marker)
 
-        text_marker = get_text_marker(n, 0.2)
-        text_marker.pose.orientation.x = quaternion[0]
-        text_marker.pose.orientation.y = quaternion[1]
-        text_marker.pose.orientation.z = quaternion[2]
-        text_marker.pose.orientation.w = quaternion[3]
-        text_marker.pose.position.x = ccxyth[n][0]
-        text_marker.pose.position.y = ccxyth[n][1]
-        text_marker.pose.position.z = 0.2
-        marker_array.markers.append(text_marker)
+        """text_marker = get_text_marker(n, 0.2)
+                                text_marker.pose.orientation.x = quaternion[0]
+                                text_marker.pose.orientation.y = quaternion[1]
+                                text_marker.pose.orientation.z = quaternion[2]
+                                text_marker.pose.orientation.w = quaternion[3]
+                                text_marker.pose.position.x = ccxyth[n][0]
+                                text_marker.pose.position.y = ccxyth[n][1]
+                                text_marker.pose.position.z = 0.2
+                                marker_array.markers.append(text_marker)"""
 
     pub_marker.publish(marker_array)
 
@@ -129,7 +130,7 @@ def callback(laser):
     lec = np.asarray(laser.ranges)
     lec[np.isinf(lec)] = 13.5
     lec = np.clip(lec, 0, 5)
-    symbol = np.power(lec.T - centroids, 2).sum(axis=1, keepdims=True).argmin()
+    symbol = np.power(lec.T - centroids[:,:721], 2).sum(axis=1, keepdims=True).argmin()
     print('Quantized Reading ', symbol)
     pub_symbol.publish(symbol)
 
