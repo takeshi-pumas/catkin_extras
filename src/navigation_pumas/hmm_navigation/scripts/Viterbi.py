@@ -45,8 +45,8 @@ marker=Marker()
 markerarray=MarkerArray()
 first_adjust_2=True
 last_states_trans=[0,0]
-centroides = np.load('ccvk.npy')
-ccxyth= np.load('ccxyth.npy')
+centroides = np.load('hmm_nav/ccvk.npy')
+ccxyth= np.load('hmm_nav/ccxyth.npy')
 
 
 
@@ -59,9 +59,9 @@ class HMM (object):
                  self.PI=PI  
 
 #############
-A, B, PI= np.load('A.npy') , np.load('B.npy') , np.load('PI.npy')
+A, B, PI= np.load('hmm_nav/A.npy') , np.load('hmm_nav/B.npy') , np.load('hmm_nav/PI.npy')
 Modelo1= HMM(A,B,PI)
-A2, B2, PI2= np.load('A.npy') , np.load('B2.npy') , np.load('PI2.npy')## SAME MATRIX A BUT COULD NOT BE
+A2, B2, PI2= np.load('hmm_nav/A.npy') , np.load('hmm_nav/B.npy') , np.load('hmm_nav/PI.npy')## SAME MATRIX A BUT COULD NOT BE
 Modelo2= HMM(A,B2,PI2)
 
 
@@ -219,7 +219,8 @@ def callback(laser,pose,odom):
         
 
 
-        Vk_aff= (int)( clf.predict(lec.reshape(1,-1)))
+        #Vk_aff= (int)( clf.predict(lec.reshape(1,-1)))
+        Vk_aff = 10
         
        
         

@@ -16,7 +16,7 @@ from sensor_msgs.msg import LaserScan
 from visualization_msgs.msg import Marker , MarkerArray
 import numpy as np
 import pandas as pd
-
+import rospkg
 
 
 def list_2_markers_array(path, ccxyth, deleteall=False):
@@ -152,10 +152,12 @@ def newOdom (msg):
 def readPoint(punto):
      
      global xcl,ycl,path,thetacl,nxt_pnt
-     
+     graphe= Markov_A_2_grafo(A,ccxyth)
      thetacl=0
      nxt_pnt= punto
      succ=False     
+     print (f'x{x},y{y}')
+     xyth= np.asarray((x,y,th)) 
      xcl =punto.point.x
      ycl =punto.point.y
      xyth_cl=np.array((xcl,ycl,0))##### ORIENTATION IGNORED
@@ -185,7 +187,7 @@ def readPoint(punto):
 def readSensor(data):
     
      global graphe , markerstopub
-     global x,y,th,A,ccxyth,xyth,xythcuant,path
+     global x,y,th,xyth,xythcuant,path
 
 
      if (xcl==0) and ycl==0: 
@@ -200,8 +202,10 @@ def readSensor(data):
          #markerstopub= MarkerArray()
          lec=np.asarray(data.ranges)
          lec[np.isinf(lec)]=13.5
-         ccxyth=np.load('/home/roboworks/catkin_extras/src/hmm_navigation/scripts/hmm_nav/ccxyth.npy')
-         A=np.load('/home/roboworks/catkin_extras/src/hmm_navigation/scripts/hmm_nav/A.npy')
+
+         
+         
+         print (f' A{A.shape}, ccxyth{ccxyth.shape},centroids{centroids.shape}')
          graphe= Markov_A_2_grafo(A,ccxyth)        
          xyth= np.asarray((x,y,th)) 
          _,xythcuant= quantized(xyth,ccxyth)
@@ -282,11 +286,11 @@ def readSensor(data):
          Fatrth=Fatrth-th
          Fmagat= np.linalg.norm((Fatrx,Fatry))
          #print ('Fatx, Fatry, Fatrth',Fatrx,Fatry,(Fatrth)*180/np.pi )
-         Ftotx= Fmag*np.cos(Fth)*.013   +  20 * Fmagat*np.cos(Fatrth)
-         Ftoty= Fmag*np.sin(Fth)*.013    + 20 * Fmagat*np.sin(Fatrth)
+         Ftotx= Fmag*np.cos(Fth)*.0013   +  20 * Fmagat*np.cos(Fatrth)
+         Ftoty= Fmag*np.sin(Fth)*.0013    + 20 * Fmagat*np.sin(Fatrth)
          Ftotth=np.arctan2(Ftoty,Ftotx)
          
-         print ('Ftotx,Ftoty,Ftotth',Ftotx,Ftoty,Ftotth*180/3.141)
+         print ('Ftotx,Ftoty,Ftotth, path, xyth',Ftotx,Ftoty,Ftotth*180/3.141,path,xyth)
          
          if ( Ftotth> np.pi ):
              Ftotth=       -np.pi-    (Ftotth-np.pi)
@@ -396,7 +400,7 @@ speed=Twist()
 nxt_pnt=PointStamped()
 speed.angular.z=0
 def inoutinout():
-    global pub3 
+    global pub3 , A,centroids,ccxyth
     sub= rospy.Subscriber("/hsrb/odom",Odometry,newOdom)#/hsrb/odom
     #sub= rospy.Subscriber("/hsrb/wheel_odom",Odometry,newOdom)#/hsrb/odom
     sub2=rospy.Subscriber("/hsrb/base_scan",LaserScan,readSensor)
@@ -406,6 +410,11 @@ def inoutinout():
     pub3= rospy.Publisher('aa/Markov_route',MarkerArray,queue_size=1)
     rospy.init_node('talker_cmdvel', anonymous=True)
     rate = rospy.Rate(15) # 10hz
+    file_path = rospkg.RosPack().get_path('hmm_navigation') + '/scripts/hmm_nav/'
+    print (file_path)
+    centroids = np.load(file_path + 'ccvk.npy')
+    ccxyth = np.load(file_path + 'ccxyth.npy')
+    A = np.load(file_path + 'A.npy')
     
     
     while not rospy.is_shutdown():
