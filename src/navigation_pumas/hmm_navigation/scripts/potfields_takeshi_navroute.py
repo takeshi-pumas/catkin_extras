@@ -218,7 +218,7 @@ def readSensor(data):
      
      
          
-         Fx, Fy,Fth = 0.001,0.001,0
+         """Fx, Fy,Fth = 0.001,0.001,0
          deltaang=4.7124/len(data.ranges)
          laserdegs=  np.arange(-2.3562,2.3562,deltaang)
          Fx=0
@@ -228,7 +228,7 @@ def readSensor(data):
                  Fx = Fx + (1/lec[i])**2 * np.cos(deg)
                  Fy = Fy + (1/lec[i])**2 * np.sin(deg)
          Fth= np.arctan2(Fy,(Fx+.000000000001))+np.pi
-         Fmag= np.linalg.norm((Fx,Fy))
+         Fmag= np.linalg.norm((Fx,Fy))"""
          
       
          xyth_nxt=np.asarray((xcl,ycl,0))
@@ -237,14 +237,14 @@ def readSensor(data):
          
          if (len (path)>0):
             
-           
+            ##################################################
             markerstopub= list_2_markers_array(path,ccxyth) 
-           
             pub3.publish(markerstopub)
             x_nxt,y_nxt,th_nxt= ccxyth[path[0]]
             xyth_nxt=np.array((x_nxt,y_nxt,th_nxt))
             _,xyth_nxt_cuant= quantized(xyth_nxt,ccxyth)
             euclD=np.linalg.norm(xyth[:2]-xyth_nxt[:2])
+            #######################################################
             print ("path",path)
             print('im in ' ,xyth ,xythcuant)
             print('nx to',x_nxt,y_nxt, xyth_nxt_cuant)

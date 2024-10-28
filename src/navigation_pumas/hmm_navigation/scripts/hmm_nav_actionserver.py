@@ -38,6 +38,7 @@ class HMM_navServer():
         goal_pnt.header.frame_id='map'
         goal_pnt.point.x , goal_pnt.point.y  =x,y
         pub_goal.publish(goal_pnt)
+        pub2.publish(goal_pnt)
         print (goal_pnt)
         _,xythcuant= quantized(xyth,ccxyth)
         _,xythclcuant= quantized(np.asarray((x,y,th)),ccxyth)
@@ -45,7 +46,9 @@ class HMM_navServer():
         path=[]
         if (xythcuant!=xythclcuant):path=dijkstra(xythcuant,xythclcuant,Markov_A_2_grafo(A,ccxyth))
         
-        print ('path',path) 
+        print ('path',path)         
+        markerstopub= list_2_markers_array(path,ccxyth) 
+        pub3.publish(markerstopub)
 
 
                     
@@ -77,7 +80,11 @@ class HMM_navServer():
             if euclD<=0.4:
                 print ('Close Enough')  
                 print ('xyth,euclD',xyth,euclD,np.asarray((x,y)))
-
+                goal_pnt= PointStamped()
+                goal_pnt.header.stamp=rospy.Time.now()
+                goal_pnt.header.frame_id='map'
+                goal_pnt.point.x , goal_pnt.point.y  =0.0,0.0
+                pub_goal.publish(goal_pnt)
                 result.result.success=1
                 break
 
@@ -86,24 +93,32 @@ class HMM_navServer():
             if len (path)!=0:x_nxt,y_nxt,th_nxt= ccxyth[path[0]]
             else:x_nxt,y_nxt,th_nxt = x,y,0.0
             xyth_nxt=np.array((x_nxt,y_nxt,th_nxt))
-            _,xyth_nxt_cuant= quantized(xyth_nxt,ccxyth)
-
-            
+            _,xyth_nxt_cuant= quantized(xyth_nxt,ccxyth)            
 
             if (xythcuant in path[1:]):
                 killix= path.index(xythcuant)
                 print ('SHortuct DETECTED',killix)
+                markerstopub= list_2_markers_array(path,ccxyth,True) 
+                pub3.publish(markerstopub)
+                rospy.sleep(0.3)
                 del path[:path.index(xythcuant)]
-
+                markerstopub= list_2_markers_array(path,ccxyth) 
+                pub3.publish(markerstopub)
 
             if ((  xythcuant==xyth_nxt_cuant  or np.linalg.norm(ccxyth[xythcuant][:2]- ccxyth[xyth_nxt_cuant][:2])<.4  )  ):
-
-                #print ('check node. Activate next')
                 if (len (path)==1):
                     #print('PATH LEN 0 WTF ******* ')
                     x,y,th=goal.x ,goal.y,goal.yaw
                 else:
+                    markerstopub= list_2_markers_array(path,ccxyth,True) 
+                    pub3.publish(markerstopub)
+                    print ('path',path)
+                    rospy.sleep(0.3)
                     path.pop(0)
+                    markerstopub= list_2_markers_array(path,ccxyth) 
+                    pub3.publish(markerstopub)
+                    rospy.sleep(0.3)
+                    print ('path',path)
                     x,y,th= ccxyth[path[0]]
                 goal_pnt= PointStamped()
                 goal_pnt.header.stamp=rospy.Time.now()
@@ -129,7 +144,14 @@ class HMM_navServer():
             
         goal_pnt.point.x , goal_pnt.point.y  =0,0
         pub_goal.publish(goal_pnt)
-        if result.result.success!=1:print('timed out')
+        if result.result.success!=1:
+            #markerstopub= list_2_markers_array(path,ccxyth,True) 
+            #pub3.publish(markerstopub)
+            markerstopub= list_2_markers_array(path,ccxyth,True) 
+            pub3.publish(markerstopub)
+            path=[]
+            path.append(0)
+            print('timed out')
                 
         
         self.hmm_nav_server.set_succeeded(result.result)

@@ -1,4 +1,10 @@
+"""
+Created on Wed Dec 17 02:14:10 2022
+
+@author: oscar
+"""
 import tf
+import tf.transformations
 import tf2_ros
 import numpy as np
 import rospy
@@ -82,6 +88,42 @@ def pose2feedback(pose_robot,quat_robot,timeleft,euclD):
     feed.feedback.euclD= euclD
 
     return feed  
+def list_2_markers_array(path, ccxyth, deleteall=False):
+        
+    xythpath=[]
+    marker=Marker() 
+    markerarray=MarkerArray()    
+    for n in path:
+        quaternion = tf.transformations.quaternion_from_euler(0, 0, ccxyth[(int)(n)][2])
+       
+        marker.header.frame_id="map"
+        marker.header.stamp = rospy.Time.now()
+        marker.id=n
+        marker.type = marker.ARROW
+        marker.action = marker.ADD
+        if deleteall:
+            marker.action= marker.DELETE
+        marker.scale.x = 0.2
+        marker.scale.y = 0.2
+        marker.scale.z = 0.2
+        marker.color.a = 1.0
+        marker.color.r = 1.0
+        marker.color.g = 1.0
+        marker.color.b = 0
+        marker.pose.orientation.x = quaternion[0]
+        marker.pose.orientation.y = quaternion[1]
+        marker.pose.orientation.z = quaternion[2]        
+        marker.pose.orientation.w = quaternion[3]
+        marker.pose.position.x = ccxyth[(int)(n)][0]
+        marker.pose.position.y = ccxyth[(int)(n)][1]  
+        marker.pose.position.z = 0
+        marker.lifetime.nsecs=1
+        markerarray.markers.append(marker)
+        marker=Marker() 
+        
+        
+        
+    return markerarray
 
 
 
@@ -94,15 +136,15 @@ rospy.init_node('hmm_navigation_actionlib_server')
 pub = rospy.Publisher('/hsrb/command_velocity', Twist, queue_size=1)
 pub2 = rospy.Publisher('/aa/Markov_NXT/', PointStamped, queue_size=1)  
 pub3= rospy.Publisher('aa/Markov_route',MarkerArray,queue_size=1)
-pub_goal= rospy.Publisher('/clicked_point',PointStamped,queue_size=1)
+pub_goal= rospy.Publisher('/clicked_point',PointStamped,queue_size=10)
 
 rospack = rospkg.RosPack()
 listener = tf.TransformListener()
 
-file_path_A = rospack.get_path('hmm_navigation')  + '/scripts/hmm_nav_lab/A.npy'   # Transition Matrix for HMM ( or any other 2D pose centroids (x,y,theta))
+file_path_A = rospack.get_path('hmm_navigation')  + '/scripts/hmm_nav/A.npy'   # Transition Matrix for HMM ( or any other 2D pose centroids (x,y,theta))
 A=np.load(file_path_A)
 
-file_path_ccxyth = rospack.get_path('hmm_navigation')  + '/scripts/hmm_nav_lab/ccxyth.npy'  #Observation Symbols centroids ##
+file_path_ccxyth = rospack.get_path('hmm_navigation')  + '/scripts/hmm_nav/ccxyth.npy'  #Observation Symbols centroids ##
 ccxyth=np.load(file_path_ccxyth)
 
 

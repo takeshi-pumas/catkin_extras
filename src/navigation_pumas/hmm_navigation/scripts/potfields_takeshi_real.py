@@ -43,106 +43,111 @@ def readPoint(punto):
     ycl =punto.point.y
            
 def readSensor(data):
-     global cont, xcl,ycl
-     lec=np.asarray(data.ranges)
-     lec[np.isinf(lec)]=13.5
+    global cont, xcl,ycl
+    lec=np.asarray(data.ranges)
+    lec[np.isinf(lec)]=13.5
+    
+    Fx, Fy,Fth = 0.001,0.001,0
+    
+    deltaang=4.7124/len(data.ranges)
      
-     Fx, Fy,Fth = 0.001,0.001,0
-     
-     deltaang=4.7124/len(data.ranges)
-      
-     laserdegs=  np.arange(-2.3562,2.3562,deltaang)
-     Fx=0
-     Fy = 0.001
-     for i,deg in enumerate(laserdegs):
-        if  (lec[i]<1.5)  and ( i < 467 ) or ( i >500 ):
+    laserdegs=  np.arange(-2.3562,2.3562,deltaang)
+    Fx=0
+    Fy = 0.001
+    for i,deg in enumerate(laserdegs):
+       if  (lec[i]<1.5)  and ( i < 467 ) or ( i >500 ):
+           
+           Fx = Fx + (1/lec[i])**2 * np.cos(deg)
+           Fy = Fy + (1/lec[i])**2 * np.sin(deg)
             
-            Fx = Fx + (1/lec[i])**2 * np.cos(deg)
-            Fy = Fy + (1/lec[i])**2 * np.sin(deg)
-             
-     Fth= np.arctan2(Fy,(Fx+.000000000001))+np.pi
-     Fmag= np.linalg.norm((Fx,Fy))
-     pose,quat=  listener.lookupTransform('map','base_footprint',rospy.Time(0))
-     x,y = pose[0], pose [1]
-     euler = euler_from_quaternion(quat)
-     th=euler[2]
-     xy,xycl=np.array((x,y)) ,   np.array((xcl,ycl))
-     euclD=np.linalg.norm(xy-xycl)
+    Fth= np.arctan2(Fy,(Fx+.000000000001))+np.pi
+    Fmag= np.linalg.norm((Fx,Fy))
+    try:
+        # Attempt to get the transform between 'map' and 'base_footprint' frames
+        pose, quat = listener.lookupTransform('map', 'base_footprint', rospy.Time(0))
+        x,y = pose[0], pose [1]
+        euler = euler_from_quaternion(quat)
+        th=euler[2]
+        xy,xycl=np.array((x,y)) ,   np.array((xcl,ycl))
+        euclD=np.linalg.norm(xy-xycl)
 
 
 
-     
-     Fatrx =( -x + xcl)/euclD
-     Fatry =( -y + ycl)/euclD      
-     Fatrth=np.arctan2(Fatry, Fatrx) 
-     Fatrth=Fatrth-th
-     Fmagat= np.linalg.norm((Fatrx,Fatry))
-     Ftotx= Fmag*np.cos(Fth)*.0015   +    Fmagat*np.cos(Fatrth)
-     #Ftotx= Fmag*np.cos(Fth) *600  +    Fmagat*np.cos(Fatrth)
-     Ftoty= Fmag*np.sin(Fth)*.0015    +    Fmagat*np.sin(Fatrth)
-     #Ftoty= Fmag*np.sin(Fth)  *600   +    Fmagat*np.sin(Fatrth)
-     Ftotth=np.arctan2(Ftoty,Ftotx)
-     
-     if ( Ftotth> np.pi ):
-         Ftotth=       -np.pi-    (Ftotth-np.pi)
-    
-     if (Ftotth < -np.pi):
-         Ftotth= (Ftotth     +2 *np.pi)
-     
-             
-     
-
-     if (xcl!=0 and ycl!=0):
-         print('FxFyFth',Fx,Fy,Fth*180/np.pi)
-         print("xrob,yrob, throbot",x,y,th*180/3.1416)
-         print("xclick,yclick",xcl,ycl,"euclD",euclD)
-         print ('Fatx, Fatry, Fatrth',Fatrx,Fatry,(Fatrth)*180/np.pi )
-         print('Ftotxy',Ftotx,Ftoty,Ftotth*180/np.pi)
-    
-         vel=0.07
-         if (euclD < 0.5) :
-            speed.linear.x=0
-            speed.linear.y=0
-            speed.angular.z=0
-            xcl,ycl=0.0 , 0.0
-
-         else:
-             if( abs(Ftotth) < .7) :#or (np.linalg.norm((Fx,Fy)) < 100):
-                 speed.linear.x=  min (current_speed.linear.x+0.0015, 0.5)#1.9
-                 speed.angular.z=0
-                 print('lin')
-             else:
-                if Ftotth > -np.pi/2  and Ftotth <0:
-                    print('Vang-')
-                    speed.linear.x  = max(current_speed.linear.x -0.0003, 0.04)
-                    speed.angular.z = max(current_speed.angular.z-0.0005, -0.2)
+        
+        Fatrx =( -x + xcl)/euclD
+        Fatry =( -y + ycl)/euclD      
+        Fatrth=np.arctan2(Fatry, Fatrx) 
+        Fatrth=Fatrth-th
+        Fmagat= np.linalg.norm((Fatrx,Fatry))
+        Ftotx= Fmag*np.cos(Fth)*.0015   +    Fmagat*np.cos(Fatrth)
+        #Ftotx= Fmag*np.cos(Fth) *600  +    Fmagat*np.cos(Fatrth)
+        Ftoty= Fmag*np.sin(Fth)*.0015    +    Fmagat*np.sin(Fatrth)
+        #Ftoty= Fmag*np.sin(Fth)  *600   +    Fmagat*np.sin(Fatrth)
+        Ftotth=np.arctan2(Ftoty,Ftotx)
+        
+        if ( Ftotth> np.pi ):
+            Ftotth=       -np.pi-    (Ftotth-np.pi)
+        
+        if (Ftotth < -np.pi):
+            Ftotth= (Ftotth     +2 *np.pi)
+        
                 
-                if Ftotth < np.pi/2  and Ftotth > 0:
-                    print('Vang+')
-                    speed.linear.x  = max(current_speed.linear.x-0.0003, 0.04)
-                    speed.angular.z = min(current_speed.angular.z+0.0005,0.2)
-                
-                
-                if Ftotth < -np.pi/2:
+        
+
+        if (xcl!=0 and ycl!=0):
+            #print('FxFyFth',Fx,Fy,Fth*180/np.pi)
+            print("xrob,yrob, throbot",x,y,th*180/3.1416)
+            print("xclick,yclick",xcl,ycl,"euclD",euclD)
+            print ('Fatx, Fatry, Fatrth',Fatrx,Fatry,(Fatrth)*180/np.pi )
+            print('Ftotxy',Ftotx,Ftoty,Ftotth*180/np.pi)
+        
+            vel=0.07
+            #if (euclD < 0.5) :
+            if (euclD < 0.15) :
+                speed.linear.x=0
+                speed.linear.y=0
+                speed.angular.z=0
+                xcl,ycl=0.0 , 0.0
+
+            else:
+                if( abs(Ftotth) < .7) :#or (np.linalg.norm((Fx,Fy)) < 100):
+                    speed.linear.x=  min (current_speed.linear.x+0.0015, 0.5)#1.9
+                    speed.angular.z=0
+                    print('lin')
+                else:
+                    if Ftotth > -np.pi/2  and Ftotth <0:
+                        print('Vang-')
+                        speed.linear.x  = max(current_speed.linear.x -0.0003, 0.04)
+                        speed.angular.z = max(current_speed.angular.z-0.0005, -0.2)
                     
-                    print('Vang---')
-                    speed.linear.x  = max(current_speed.linear.x-0.0025, 0.001)
-                    speed.angular.z = max(current_speed.angular.z-0.003,-0.5)
-                
-
-                if Ftotth > np.pi/2:
+                    if Ftotth < np.pi/2  and Ftotth > 0:
+                        print('Vang+')
+                        speed.linear.x  = max(current_speed.linear.x-0.0003, 0.04)
+                        speed.angular.z = min(current_speed.angular.z+0.0005,0.2)
                     
+                    
+                    if Ftotth < -np.pi/2:
+                        
+                        print('Vang---')
+                        speed.linear.x  = max(current_speed.linear.x-0.0025, 0.001)
+                        speed.angular.z = max(current_speed.angular.z-0.003,-0.5)
+                    
+
+                    if Ftotth > np.pi/2:
+                        
+                    
+                        print('Vang+++')
+                        speed.linear.x  = max(current_speed.linear.x-0.0025, 0.001)
+                        speed.angular.z = min(current_speed.angular.z+0.003, 0.5)
+        else:
                 
-                    print('Vang+++')
-                    speed.linear.x  = max(current_speed.linear.x-0.0025, 0.001)
-                    speed.angular.z = min(current_speed.angular.z+0.003, 0.5)
-     else:
-             
-         cont+=1
-         if cont ==200:
-            print('Waiting for goal clicked point')
-            cont=0
-    
+            cont+=1
+            if cont ==200:
+                print('Waiting for goal clicked point')
+                cont=0
+        
+    except (tf.ExtrapolationException, tf.LookupException, tf.ConnectivityException) as e:
+        print(f'waitng for tf e{e}e')
      
 
 speed=Twist()
