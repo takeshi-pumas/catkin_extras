@@ -1,10 +1,13 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 Created on Wed Apr 17 22:54:18 2019
 
 @author: oscar
 """
+import sys
+print("Python path:", sys.executable)
+
 from geometry_msgs.msg import Quaternion , Point
 import numpy as np
 import rospy
@@ -26,6 +29,7 @@ from utils_hmm import backw_alg
 from joblib import dump, load
 import matplotlib.pyplot as plt
 import math
+import rospkg
 
 odom_adjust,odom_adjust_aff=np.zeros(3),np.zeros(3)
 first_adjust= np.zeros(3)
@@ -45,9 +49,12 @@ marker=Marker()
 markerarray=MarkerArray()
 first_adjust_2=True
 last_states_trans=[0,0]
-centroides = np.load('hmm_nav/ccvk.npy')
-ccxyth= np.load('hmm_nav/ccxyth.npy')
 
+
+file_path = rospkg.RosPack().get_path('hmm_navigation') + '/scripts/hmm_nav/'
+centroides = np.load(file_path + 'ccvk.npy')
+ccxyth = np.load(file_path + 'ccxyth.npy')
+print (f'centroids symb {centroides.shape}, states {ccxyth.shape}  ')
 
 
 
@@ -59,9 +66,9 @@ class HMM (object):
                  self.PI=PI  
 
 #############
-A, B, PI= np.load('hmm_nav/A.npy') , np.load('hmm_nav/B.npy') , np.load('hmm_nav/PI.npy')
+A, B, PI=    np.load(file_path +'A.npy') , np.load(file_path +'B.npy') , np.load(file_path +'PI.npy')
 Modelo1= HMM(A,B,PI)
-A2, B2, PI2= np.load('hmm_nav/A.npy') , np.load('hmm_nav/B.npy') , np.load('hmm_nav/PI.npy')## SAME MATRIX A BUT COULD NOT BE
+A2, B2, PI2= np.load(file_path +'A.npy') , np.load(file_path +'B.npy') , np.load(file_path +'PI.npy')## SAME MATRIX A BUT COULD NOT BE
 Modelo2= HMM(A,B2,PI2)
 
 
@@ -303,18 +310,8 @@ def callback(laser,pose,odom):
                 hmm12real[0]=last_states[-1]
                 hmm12real[1]=last_states_2[-1]
                 hmm12real[2]=xyth_odomcuant
-                with  open('dataset_candidatura_wr/odometry_dual.txt' , 'a') as out:
-                    text_line=""
-                    for value in xyth_odom:
-                        text_line+=str(value)+','
-                    for value in xyth_hmms:
-                        text_line+=str(value)+','
-                    for value in hmm12real:   
-                        text_line+=str(value)+','
-                    for value in xyth:
-                        text_line+=str(value)+','
-                    text_line+='\n'
-                    out.write(text_line)
+                #with  open('dataset_candidatura_wr/odometry_dual.txt' , 'a') as out:
+                
                 
                     
 
