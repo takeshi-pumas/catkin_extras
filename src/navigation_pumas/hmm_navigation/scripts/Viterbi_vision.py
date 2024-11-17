@@ -14,7 +14,7 @@ import rospy
 import message_filters
 import cv2
 from std_msgs.msg import String ,ColorRGBA
-from sensor_msgs.msg import LaserScan
+from sensor_msgs.msg import LaserScan , Image
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Twist
 from geometry_msgs.msg import PoseWithCovarianceStamped 
@@ -30,6 +30,15 @@ from joblib import dump, load
 import matplotlib.pyplot as plt
 import math
 import rospkg
+#################
+import cv2
+import tensorflow
+from tensorflow.keras.applications.inception_resnet_v2 import InceptionResNetV2, preprocess_input
+from cv_bridge import CvBridge, CvBridgeError
+bridge = CvBridge()
+img_width,img_height=600,600
+model=InceptionResNetV2(weights='imagenet',include_top=False, input_shape=(img_width, img_height, 3))
+#########################################
 
 odom_adjust,odom_adjust_aff=np.zeros(3),np.zeros(3)
 first_adjust= np.zeros(3)
@@ -51,13 +60,6 @@ first_adjust_2=True
 last_states_trans=[0,0]
 
 
-file_path = rospkg.RosPack().get_path('hmm_navigation') + '/scripts/hmm_nav/'
-centroides = np.load(file_path + 'ccvk.npy')
-ccxyth = np.load(file_path + 'ccxyth.npy')
-print (f'centroids symb {centroides.shape}, states {ccxyth.shape}  ')
-
-
-
 
 class HMM (object):
              def __init__(self,A,B,PI):
@@ -65,18 +67,29 @@ class HMM (object):
                  self.B=B
                  self.PI=PI  
 
+### LOAD MODEL A QUANTIZERS 
+file_path = rospkg.RosPack().get_path('hmm_navigation') + '/scripts/hmm_nav/'
+ccvk = np.load(file_path + 'ccvk.npy')
+ccvk_v = np.load(file_path + 'ccvk_v.npy')
+ccxyth = np.load(file_path + 'ccxyth.npy')
+print (f'centroids symb {ccvk.shape}, states {ccxyth.shape}  ')
+#########################################################################
+
+
+
 #############
 A, B, PI=    np.load(file_path +'A.npy') , np.load(file_path +'B.npy') , np.load(file_path +'PI.npy')
 Modelo1= HMM(A,B,PI)
 A2, B2, PI2= np.load(file_path +'A2.npy') , np.load(file_path +'B2.npy') , np.load(file_path +'PI2.npy')## SAME MATRIX A BUT COULD NOT BE
 Modelo2= HMM(A,B2,PI2)
-
+###################################################
+print (f'Models B Shape for sanity check Lidar->{B.shape},Vision-> {B2.shape} ')
 
 
     
 
-def callback(laser,pose,odom):
-        global xyth , xyth_odom , xyth_hmms, hmm12real , xyth_odom_prueba , ccxyth , centroides , A
+def callback(laser,pose,odom , img_msg):
+        global xyth , xyth_odom , xyth_hmms, hmm12real , xyth_odom_prueba , ccxyth , ccvk , A
         global first , last_states_trans
         global odom_adjust,odom_adjust_aff,first_adjust , first_adjust_2
         n= len(ccxyth)
@@ -241,13 +254,32 @@ def callback(laser,pose,odom):
         #roll = euler[0]
         #pitch = euler[1]
         #yaw = euler[2]
-        symbol= np.power(lec.T-centroides,2).sum(axis=1,keepdims=True).argmin()
-        symbol2= Vk_aff
+        
+
+        cv2_img = bridge.imgmsg_to_cv2(img_msg, "bgr8")
+
+        img_resized=cv2.resize(cv2_img,(img_width,img_height))
+        inp_img= np.expand_dims(img_resized ,axis=0)
+        feature_vec = model.predict(inp_img)[0,0,0,:]
+        symbol2= np.power(feature_vec-ccvk_v,2).sum(axis=1,keepdims=True).argmin()
+        
+        
+        
+        
+        
+        
+        symbol= np.power(lec.T-ccvk,2).sum(axis=1,keepdims=True).argmin()
+        
+        
+        
+        
+        
+        
         if len(o_k) >=buf_vit:
             o_k.pop(0)
-        o_k.append(symbol)
         if len(o_k2) >=buf_vit:
             o_k2.pop(0)
+        o_k.append(symbol)
         o_k2.append(symbol2)
         xyth= np.asarray((pose.pose.position.x,pose.pose.position.y,euler[2]))
         xyth_odom=np.asarray((x_odom, y_odom,th_odom))
@@ -274,9 +306,8 @@ def callback(laser,pose,odom):
 
         
 
-        if (len(o_k)< buf_vit):
-            
-            print ( "FILLING BUFFER HMM1")
+        if (len(o_k2)< buf_vit):print ( "FILLING BUFFER HMM2")
+        if (len(o_k )< buf_vit):print ( "FILLING BUFFER HMM1")
         
         if (len(o_k)>= buf_vit) and (len(o_k2)>= buf_vit):
         
@@ -418,13 +449,14 @@ def listener():
     rospy.init_node('listener', anonymous=True)
     #twist = message_filters.Subscriber('cmd_vel',Twist)
     symbol= message_filters.Subscriber('/hsrb/base_scan',LaserScan)
+    image= message_filters.Subscriber("/hsrb/head_rgbd_sensor/rgb/image_rect_color",Image)
     pub= rospy.Publisher('aa/Viterbi',MarkerArray,queue_size=1)
     pub2 = rospy.Publisher('/aa/HMM_topo/', MarkerArray, queue_size=1)  
     #pose  = message_filters.Subscriber('/navigation/localization/amcl_pose',PoseWithCovarianceStamped)#TAKESHI REAL
     pose  = message_filters.Subscriber('/hsrb/base_pose',PoseStamped)#TAKESHI GAZEBO
     odom= message_filters.Subscriber("/hsrb/wheel_odom",Odometry)
     #ats= message_filters.ApproximateTimeSynchronizer([symbol,odom,twist],queue_size=5,slop=.1,allow_headerless=True)
-    ats= message_filters.ApproximateTimeSynchronizer([symbol,pose,odom],queue_size=5,slop=.1,allow_headerless=True)
+    ats= message_filters.ApproximateTimeSynchronizer([symbol,pose,odom, image],queue_size=5,slop=.1,allow_headerless=True)
     ats.registerCallback(callback)
     # spin() simply keeps python from exiting until this node is stopped
     rospy.spin()
