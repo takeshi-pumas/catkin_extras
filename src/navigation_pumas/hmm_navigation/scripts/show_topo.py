@@ -118,24 +118,22 @@ def callback(laser):
             marker.lifetime.nsecs = 1
             marker_array.markers.append(marker)
 
-            """text_marker = get_text_marker(n, 0.2)
-                                    text_marker.pose.orientation.x = quaternion[0]
-                                    text_marker.pose.orientation.y = quaternion[1]
-                                    text_marker.pose.orientation.z = quaternion[2]
-                                    text_marker.pose.orientation.w = quaternion[3]
-                                    text_marker.pose.position.x = ccxyth[n][0]
-                                    text_marker.pose.position.y = ccxyth[n][1]
-                                    text_marker.pose.position.z = 0.2
-                                    marker_array.markers.append(text_marker)"""
+            text_marker = get_text_marker(n, 0.2)
+            text_marker.pose.orientation.x = quaternion[0]
+            text_marker.pose.orientation.y = quaternion[1]
+            text_marker.pose.orientation.z = quaternion[2]
+            text_marker.pose.orientation.w = quaternion[3]
+            text_marker.pose.position.x = ccxyth[n][0]
+            text_marker.pose.position.y = ccxyth[n][1]
+            text_marker.pose.position.z = 0.2
+            marker_array.markers.append(text_marker)
 
     pub_marker.publish(marker_array)
 
     # GET symbol
     lec = np.asarray(laser.ranges)
     lec[np.isinf(lec)] = 13.5
-    lec = np.clip(lec, 0, 5)
     symbol = np.power(lec.T - centroids[:,:721], 2).sum(axis=1, keepdims=True).argmin()
-    print('Quantized Reading ', symbol)
     pub_symbol.publish(symbol)
 
 
@@ -146,8 +144,8 @@ if __name__ == '__main__':
     rospy.loginfo("node show_topo_path started")
     rospy.Subscriber("/hsrb/base_scan", LaserScan, callback, queue_size=2)
     pub_marker = rospy.Publisher(
-        '/hmm_nav2/HMM_topo/', MarkerArray, queue_size=1)
+        '/hmm_nav/HMM_topo/', MarkerArray, queue_size=1)
     pub_symbol = rospy.Publisher(
-        '/hmm_nav2/Quantized_Symbol/', Int16, queue_size=1)
+        '/hmm_nav/Quantized_Symbol/', Int16, queue_size=1)
 
     rospy.spin()

@@ -25,7 +25,7 @@ from tf.msg import tfMessage
 from tf.transformations import euler_from_quaternion
 from utils_hmm import  viterbi
 from utils_hmm import forw_alg
-from utils_hmm import backw_alg
+from utils_hmm import backw_alg , save_viterbi_results
 from joblib import dump, load
 import matplotlib.pyplot as plt
 import math
@@ -46,13 +46,14 @@ xyth_hmms=np.zeros(3)
 hmm12real=np.zeros(3)
 xyth_odom_prueba=np.zeros(3)
 first=True
+real_state=[]
 last_states=[]
 last_states_2=[]
 delta_xyth=[]
 o_k=[]
 o_k2=[]
 #transitions= np.load('trans.npy')
-buf_vit=30
+buf_vit=150
 #clf=load('aff_prop_class.joblib_2')
 marker=Marker()   
 markerarray=MarkerArray()
@@ -92,118 +93,7 @@ def callback(laser,pose,odom , img_msg):
         global xyth , xyth_odom , xyth_hmms, hmm12real , xyth_odom_prueba , ccxyth , ccvk , A
         global first , last_states_trans
         global odom_adjust,odom_adjust_aff,first_adjust , first_adjust_2
-        n= len(ccxyth)
-        markerarray=MarkerArray()
-        ###PUB HMM
-        ##EDGES
-        ss= np.arange(len(A))
-        start_point = Point()   
-        mid_point=Point()     #start point
-        end_mid_point=Point()
-        end_point = Point()        #end point
-        markerarray=MarkerArray()
-        line_color = ColorRGBA()       # a nice color for my line (royalblue)
-        line_color.r = 0.254902
-        line_color.g = 0.411765
-        line_color.b = 0.882353
-        line_color.a = 1.0
-        num_markers=0
-        """for s1 in ss:
-            for s2 in ss:
-                    if (s1!=s2)and (A[s1,s2]!=0):# and (np.linalg.norm(ccxyth[s1,:2]-ccxyth[s2,:2])<1)   :#and(s1==s or s2==s)
-                        num_markers+=1
-                        start_point.x = ccxyth[s1,0]
-                        start_point.y = ccxyth[s1,1]
-                        start_point.z = 0.2
-                        
-        
-                        end_point.x = ccxyth[s2,0]
-                        end_point.y = ccxyth[s2,1]
-                        end_point.z = 0.2
-                        marker3 = Marker()
-                        marker3.id = num_markers
-                        marker3.header.frame_id = '/map'
-                        marker3.type = Marker.LINE_LIST
-                        marker3.ns = 'Testline'
-                        marker3.action = Marker.ADD
-                        marker3.scale.x = 0.015
-                        marker3.points.append(start_point)
-                        marker3.points.append(end_point)
-                        marker3.colors.append(line_color)
-                        marker3.colors.append(line_color)
-                        markerarray.markers.append(marker3)"""
 
-        ss= np.arange(len(A))
-        start_point = Point()   
-        end_point = Point()     
-        markerarray=MarkerArray()
-
-        line_color = ColorRGBA()       # a nice color for my line (royalblue)
-        line_color.r = 0.254902
-        line_color.g = 0.411765
-        line_color.b = 0.882353
-        line_color.a = 1.0
-
-
-        marker3 = Marker()
-        marker3.id = 0
-        marker3.header.frame_id = '/map'
-        marker3.type = Marker.LINE_LIST#STRIP
-        marker3.ns = 'edges'
-        marker3.action = Marker.ADD
-        marker3.scale.x = 0.015
-
-        for s1 in ss:
-            for s2 in ss:
-                if (s1!=s2)and (A[s1,s2]!=0):# and (np.linalg.norm(ccxyth[s1,:2]-ccxyth[s2,:2])<1)   :#and(s1==s or s2==s)
-                    
-                    start_point.x = ccxyth[s1,0]
-                    start_point.y = ccxyth[s1,1]
-                    start_point.z = 0.2
-                    end_point.x = ccxyth[s2,0]
-                    end_point.y = ccxyth[s2,1]
-                    end_point.z = 0.2
-                    marker3.colors.append(line_color)
-                    marker3.colors.append(line_color)
-                    marker3.points.append(start_point)
-                    marker3.points.append(end_point)
-                    markerarray.markers.append(marker3)
-                    start_point,end_point = Point(),Point()
-
-                                
-       
-
-        
-        ############NODES
-        for n in range(len(ccxyth)):
-           
-            quaternion = quaternion_from_euler(0, 0, ccxyth[(int)(n)][2])
-            marker=Marker()
-            marker.header.frame_id="/map"
-            marker.header.stamp = rospy.Time.now()
-            marker.id=n
-            marker.type = marker.ARROW
-            marker.action = marker.ADD
-            marker.scale.x = 0.1
-            marker.scale.y = 0.01
-            marker.scale.z = 0.1
-            marker.color.a = 1.0
-            marker.color.r = 1.0
-            marker.color.g = 1.0
-            marker.color.b = 0
-            marker.pose.orientation.x = quaternion[0]
-            marker.pose.orientation.y = quaternion[1]
-            marker.pose.orientation.z = quaternion[2]        
-            marker.pose.orientation.w = quaternion[3]
-            marker.pose.position.x = ccxyth[(int)(n)][0]
-            marker.pose.position.y = ccxyth[(int)(n)][1]  
-            marker.pose.position.z = 0
-            marker.lifetime.nsecs=1
-            markerarray.markers.append(marker)
-
-        pub2.publish(markerarray)
- 
-       
         
         #GET REAL ROBOT POSE 
         text_to_rviz=""
@@ -216,17 +106,10 @@ def callback(laser,pose,odom , img_msg):
         odom.pose.pose.orientation.w)
         euler = euler_from_quaternion(quaternion)
         th_odom=euler[2]
-    
-       
-        
         
         
         
         lec=np.asarray(laser.ranges)
-        
-        
-        #GET BOTH O_K 's
-        #print (lec.shape)
         lec[np.isinf(lec)]=13.5
         lec=np.clip(lec,0,5)
         lec_str=str(lec[0])+','
@@ -234,17 +117,7 @@ def callback(laser,pose,odom , img_msg):
             lec_str=lec_str+str(lec[i])+',' 
             #print (lec_str)
         lec.reshape(len(laser.ranges),1 )
-        lec=np.clip(lec,0,5    )
-        
-        
 
-
-        #Vk_aff= (int)( clf.predict(lec.reshape(1,-1)))
-        Vk_aff = 10
-        
-       
-        
-#        
         quaternion = (
         pose.pose.orientation.x,
         pose.pose.orientation.y,
@@ -261,15 +134,10 @@ def callback(laser,pose,odom , img_msg):
         img_resized=cv2.resize(cv2_img,(img_width,img_height))
         inp_img= np.expand_dims(img_resized ,axis=0)
         feature_vec = model.predict(inp_img)[0,0,0,:]
-        symbol2= np.power(feature_vec-ccvk_v,2).sum(axis=1,keepdims=True).argmin()
         
-        
-        
-        
-        
-        
-        symbol= np.power(lec.T-ccvk,2).sum(axis=1,keepdims=True).argmin()
-        
+
+        symbol2= np.power(feature_vec-ccvk_v,2).sum(axis=1,keepdims=True).argmin()   ### VISION RESNET
+        symbol= np.power(lec.T-ccvk,2).sum(axis=1,keepdims=True).argmin()            ### lIDAR
         
         
         
@@ -313,76 +181,26 @@ def callback(laser,pose,odom , img_msg):
         
             
             vit_est= viterbi(o_k,Modelo1,Modelo1.PI)
-            last_states.append((int)(vit_est[-1]))
             vit_est_2= viterbi(o_k2,Modelo2,Modelo2.PI)
-            last_states_2.append((int)(vit_est_2[-1]))
-
+                
             
-
-            if first:
-            #if (len (last_states)<10 and first and len (last_states_2)<10)  :
-                if (last_states[-1]==xyth_odomcuant) and (last_states_2[-1]==xyth_odomcuant):
-                    print ("READJUST ODOM BOTH, first adjust to centroid ",xyth_odom,"to",ccxyth[last_states[-1]]  )
-                    xyth_hmms= ccxyth[last_states[-1]]
-                    xyth_hmms[2]=xyth[2]# BRUJULA
-                    #last_states_trans[1]=last_states[-1]
-                    first= False
-                    #rospy.sleep(1)
-                else:
-                    odom_adjust=first_adjust
-
-               
-
-                
-            if (len (last_states)>=10 ) and (len (last_states_2)>=10)  :
-                last_states.pop(0)
-                last_states_2.pop(0)
-                
-                hmm12real[0]=last_states[-1]
-                hmm12real[1]=last_states_2[-1]
-                hmm12real[2]=xyth_odomcuant
-                #with  open('dataset_candidatura_wr/odometry_dual.txt' , 'a') as out:
-                
-                
-                    
-
-                   
-
-                if (last_states[-1]!=last_states[-2]):
-                    last_states_trans=last_states[-2:]
-                    first_adjust_2=True
+            print ('Most likely state seq given O',vit_est)#[-5:])
+            print ('Most likely states given O Modelo RESNET (',vit_est_2)#[-5:])
+            print (f'Real last states{real_state}')
+            save_viterbi_results(real_state, vit_est, vit_est_2)
 
 
-                if(last_states[-1]==xyth_odomcuant)  and (last_states_2[-1]==xyth_odomcuant and last_states_trans[-1]!=last_states_trans[-2]) and (xyth_odomcuant in [22,13,9,20,10,24,11,7,28]) :#and (last_states_2[-1]!=last_states_2[-2])
 
-                    #print('last states',last_states)
-                    if  first_adjust_2 :
-                        
-                        print(' Correct TRANSITION FIRST TIME STATE  DETECTED BOTH  TRUSTED STATE  \n \n \n \n  ' )
-                        print ("TRANSITION FROM",last_states_trans )
-                        print ("Origin set to ",transitions[last_states_trans[0],last_states_trans[1]])
-                        print ('xyth_hmms',xyth_hmms)
-                        first_adjust_2=False
-                        if np.sum(transitions[last_states_trans[0],last_states_trans[1]])==0:
-                            print ("trans empty DONT ADJUST")
-                            
-                            
-                        else: 
-                            xyth_hmms= transitions[last_states_trans[0],last_states_trans[1]]
-                            xyth_hmms[2]=xyth[2]
-                        rospy.sleep(1)
-                    
-                    
-                    
-                else :
-                    odom_adjust=first_adjust
-            
-            
-            print ('Most likely state seq given O',vit_est[-5:])
-            print ('Most likely states given O Modelo RESNET (',vit_est_2[-5:])
-           
-        
-        print('lec vk_aff'+str(Vk_aff)+'lec vk'+str(symbol)  +') , ccxyth[ '+str(xythcuant)+']='+str(ccxyth[xythcuant]) + '\n')
+        #xythcuant=np.argmin(np.linalg.norm(xyth-ccxyth,axis=1))
+        #print ('Pose',xyth)
+        #print (f"ccxyth[ {xythcuant}]={ccxyth[xythcuant]}")
+        xyth[2]=0.1*xyth[2]   
+        xythcuant=np.argmin(np.linalg.norm(xyth-ccxyth,axis=1))
+        real_state.append(xythcuant)
+        if len(real_state)==buf_vit:real_state.pop(0)
+
+        print (f"ccxyth[ {xythcuant}]={ccxyth[xythcuant]}")
+        #print('lec vk_aff'+str(Vk_aff)+'lec vk'+str(symbol)  +') , ccxyth[ '+str(xythcuant)+']='+str(ccxyth[xythcuant]) + '\n')
         print ('Pose',xyth)
         print('Wheel ' ,xyth_odom)
         print('Dual HMM' ,xyth_hmms)

@@ -14,6 +14,33 @@ from visualization_msgs.msg import Marker , MarkerArray
 import numpy as np
 import pandas as pd
 
+def save_viterbi_results(real_state, vit_est, vit_est_2, filename='viterbi_results.txt'):
+    """
+    Save Viterbi results to a text file in the format:
+    real_state, vit_est, vit_est_2
+
+    Args:
+        real_state (list or array): The real states.
+        vit_est (list or array): The most likely state sequence for the first model.
+        vit_est_2 (list or array): The most likely state sequence for the second model.
+        filename (str): The name of the text file to write to.
+    """
+    try:
+        with open(filename, 'a') as f:
+            # Convert all inputs to strings and join with commas for a single line
+            real_state_str = ','.join(map(str, real_state))
+            vit_est_str = ','.join(map(str, vit_est))
+            vit_est_2_str = ','.join(map(str, vit_est_2))
+            
+            # Concatenate in the desired order: real_state, vit_est, vit_est_2
+            line = f"{real_state_str},{vit_est_str},{vit_est_2_str}\n"
+            
+            # Write to file
+            f.write(line)
+        print(f"Results saved to {filename}")
+    except Exception as e:
+        print(f"Error while saving results: {e}")
+
 
 def list_2_markers_array(path, ccxyth):
     xythpath=[]
