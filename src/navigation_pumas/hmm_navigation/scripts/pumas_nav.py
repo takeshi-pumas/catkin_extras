@@ -90,6 +90,7 @@ class PumasNavServer():
         # Matching known location if given
         x, y, yaw = goal.x, goal.y, goal.yaw
         known_loc = goal.known_location.casefold()
+        print (known_loc,goal.known_location)
         if known_loc != 'None':
             succ, loc = match_location(file_name, known_loc)
             if succ:

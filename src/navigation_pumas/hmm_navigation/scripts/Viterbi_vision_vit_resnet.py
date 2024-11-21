@@ -42,9 +42,10 @@ from torchvision.transforms import transforms
 
 bridge = CvBridge()
 img_width, img_height = 224, 224  # Adjust for DeiT input
-kill_node = False
 obs = []
+#####################
 
+###################
 # Load DeiT-Tiny model
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model = create_model('deit_tiny_patch16_224', pretrained=True)
@@ -60,8 +61,8 @@ preprocess = transforms.Compose([
 ])
 
 
-#img_width,img_height=600,600
-#model=InceptionResNetV2(weights='imagenet',include_top=False, input_shape=(img_width, img_height, 3))
+img_width_resnet,img_height_resnet=600,600
+model_r=InceptionResNetV2(weights='imagenet',include_top=False, input_shape=(img_width_resnet, img_height_resnet, 3))
 #########################################
 
 odom_adjust,odom_adjust_aff=np.zeros(3),np.zeros(3)
@@ -76,6 +77,7 @@ last_states_2=[]
 delta_xyth=[]
 o_k=[]
 o_k2=[]
+o_k3=[]
 #transitions= np.load('trans.npy')
 buf_vit=150
 #clf=load('aff_prop_class.joblib_2')
@@ -94,10 +96,12 @@ class HMM (object):
 
 ### LOAD MODEL A QUANTIZERS 
 file_path = rospkg.RosPack().get_path('hmm_navigation') + '/scripts/hmm_nav/'
-ccvk = np.load(file_path + 'ccvk.npy')
-ccvk_v = np.load(file_path + 'ccvk_v.npy')
-ccxyth = np.load(file_path + 'ccxyth.npy')
+ccvk = np.load(file_path + 'ccvk.npy')          #LiDar
+ccvk_v = np.load(file_path + 'ccvk_v.npy')      #viT    
+ccvk_r = np.load(file_path + 'ccvk_r.npy')      #ResNet    
+ccxyth = np.load(file_path + 'ccxyth.npy')      #odom
 print (f'centroids symb {ccvk.shape}, states {ccxyth.shape}  ')
+print (f'centroids symb viT {ccvk_v.shape}, resnet  {ccvk_r.shape}')
 #########################################################################
 
 
@@ -105,10 +109,12 @@ print (f'centroids symb {ccvk.shape}, states {ccxyth.shape}  ')
 #############
 A, B, PI=    np.load(file_path +'A.npy') , np.load(file_path +'B.npy') , np.load(file_path +'PI.npy')
 Modelo1= HMM(A,B,PI)
-A2, B2, PI2= np.load(file_path +'A2.npy') , np.load(file_path +'B2.npy') , np.load(file_path +'PI2.npy')## SAME MATRIX A BUT COULD NOT BE
-Modelo2= HMM(A,B2,PI2)
+A2r, B2r, PI2r= np.load(file_path +'A2-r.npy') , np.load(file_path +'B2-r.npy') , np.load(file_path +'PI2-r.npy')## SAME MATRIX A BUT COULD NOT BE
+Modelo2r= HMM(A2r,B2r,PI2r)
+A2v, B2v, PI2v= np.load(file_path +'A2-v.npy') , np.load(file_path +'B2-v.npy') , np.load(file_path +'PI2-v.npy')## SAME MATRIX A BUT COULD NOT BE
+Modelo2v= HMM(A2v,B2v,PI2v)
 ###################################################
-print (f'Models B Shape for sanity check Lidar->{B.shape},Vision-> {B2.shape} ')
+print (f'Models B Shape for sanity check Lidar->{B.shape},Vision Transformer-> {B2v.shape}, Resnet->{B2r.shape} ')
 
 
     
@@ -131,32 +137,19 @@ def callback(laser,pose,odom , img_msg):
         euler = euler_from_quaternion(quaternion)
         th_odom=euler[2]
         
-        
+        ########READ LiDar
         
         lec=np.asarray(laser.ranges)
         lec[np.isinf(lec)]=13.5
-        lec=np.clip(lec,0,5)
         lec_str=str(lec[0])+','
         for i in range (1,len(lec)):
             lec_str=lec_str+str(lec[i])+',' 
             #print (lec_str)
         lec.reshape(len(laser.ranges),1 )
+        symbol= np.power(lec.T-ccvk,2).sum(axis=1,keepdims=True).argmin()            ### lIDAR
 
-        quaternion = (
-        pose.pose.orientation.x,
-        pose.pose.orientation.y,
-        pose.pose.orientation.z,
-        pose.pose.orientation.w)
-        euler = euler_from_quaternion(quaternion)
-        #roll = euler[0]
-        #pitch = euler[1]
-        #yaw = euler[2]
-        
+        #########################Read Visual Transformer
 
-        #cv2_img = bridge.imgmsg_to_cv2(img_msg, "bgr8")
-        #img_resized=cv2.resize(cv2_img,(img_width,img_height))
-        #inp_img= np.expand_dims(img_resized ,axis=0)
-        #feature_vec = model.predict(inp_img)[0,0,0,:]
 
         cv2_img = bridge.imgmsg_to_cv2(img_msg, "bgr8")
         img_tensor = preprocess(cv2_img).unsqueeze(0).to(device)
@@ -164,21 +157,23 @@ def callback(laser,pose,odom , img_msg):
         # Feature extraction
         with torch.no_grad():
             feature_vec = model(img_tensor).cpu().numpy().flatten()
-        print(f"Features shape: {feature_vec.shape}")        
+        print(f"Features viT De iT shape: {feature_vec.shape}")        
 
-        symbol2= np.power(feature_vec-ccvk_v,2).sum(axis=1,keepdims=True).argmin()   ### VISION RESNET
-        symbol= np.power(lec.T-ccvk,2).sum(axis=1,keepdims=True).argmin()            ### lIDAR
+        symbol2= np.power(feature_vec-ccvk_v,2).sum(axis=1,keepdims=True).argmin()   ### VISION Transformer DeIt
         
+        #cv2_img = bridge.imgmsg_to_cv2(img_msg, "bgr8")   #Img msg hasnt changed
+        img_resized=cv2.resize(cv2_img,(img_width_resnet,img_height_resnet))
+        inp_img= np.expand_dims(img_resized ,axis=0)
+        feature_vec_resnet = model_r.predict(inp_img)[0,0,0,:]
+        symbol3= np.power(feature_vec_resnet-ccvk_r,2).sum(axis=1,keepdims=True).argmin()   ### Resnet Quantizer
+        print(f"Features ResNet shape: {feature_vec_resnet.shape}")        
         
-        
-        
-        
-        if len(o_k) >=buf_vit:
-            o_k.pop(0)
-        if len(o_k2) >=buf_vit:
-            o_k2.pop(0)
+        if len(o_k) >=buf_vit:o_k.pop(0)
+        if len(o_k2) >=buf_vit:o_k2.pop(0)
+        if len(o_k3) >=buf_vit:o_k3.pop(0)
         o_k.append(symbol)
         o_k2.append(symbol2)
+        o_k3.append(symbol3)
         xyth= np.asarray((pose.pose.position.x,pose.pose.position.y,euler[2]))
         xyth_odom=np.asarray((x_odom, y_odom,th_odom))
         #delta_xyth.append(xyth)
@@ -203,21 +198,23 @@ def callback(laser,pose,odom , img_msg):
         xyth_odomcuant=np.argmin(np.linalg.norm(xyth-ccxyth,axis=1))
 
         
-
-        if (len(o_k2)< buf_vit):print ( "FILLING BUFFER HMM2")
-        if (len(o_k )< buf_vit):print ( "FILLING BUFFER HMM1")
+        if (len(o_k3)< buf_vit):print ( "FILLING BUFFER HMM3 Resnet")
+        if (len(o_k2)< buf_vit):print ( "FILLING BUFFER HMM2 DeIt")
+        if (len(o_k )< buf_vit):print ( "FILLING BUFFER HMM1 LiDar ")
         
         if (len(o_k)>= buf_vit) and (len(o_k2)>= buf_vit):
         
             
             vit_est= viterbi(o_k,Modelo1,Modelo1.PI)
-            vit_est_2= viterbi(o_k2,Modelo2,Modelo2.PI)
+            vit_est_2= viterbi(o_k2,Modelo2v,Modelo2v.PI)
+            vit_est_3= viterbi(o_k3,Modelo2r,Modelo2r.PI)
                 
             
-            print (f'Most likely state seq given O{vit_est} , {len(vit_est)}')#,vit_est)[-5:])
-            print (f'Most likely states given O Modelo DeiT-Tiny ({vit_est_2}, {len(vit_est_2)})') #[-5:])
-            print (f'Real last states{real_state}, {len(real_state)}')
-            save_viterbi_results(xyth,real_state, vit_est, vit_est_2,'viterbi_results_viT.txt')
+            print (f'Most likely state seq given O{vit_est} , ')#,vit_est)[-5:])
+            print (f'Most likely states given O Modelo DeiT-Tiny ({vit_est_2})') #[-5:])
+            print (f'Most likely states given O Modelo ResNet ({vit_est_3})') #[-5:])
+            print (f'Real last states{real_state} ')
+            save_viterbi_results(xyth,real_state, vit_est, vit_est_2,vit_est_3,'viterbi150_results_viT_resnet.txt')
 
 
 

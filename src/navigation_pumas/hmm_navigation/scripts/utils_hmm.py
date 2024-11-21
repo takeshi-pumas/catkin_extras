@@ -14,7 +14,7 @@ from visualization_msgs.msg import Marker , MarkerArray
 import numpy as np
 import pandas as pd
 
-def save_viterbi_results(xyth,real_state, vit_est, vit_est_2, filename='viterbi_results.txt'):
+def save_viterbi_results(xyth,real_state, vit_est, vit_est_2,vit_est_3, filename='viterbi_results.txt'):
     """
     Save Viterbi results to a text file in the format:
     real_state, vit_est, vit_est_2
@@ -26,15 +26,16 @@ def save_viterbi_results(xyth,real_state, vit_est, vit_est_2, filename='viterbi_
         filename (str): The name of the text file to write to.
     """
     try:
-        with open(filename, 'a') as f:
+        with open(filename, 'w') as f:
             # Convert all inputs to strings and join with commas for a single line
             odom_str = ','.join(map(str, xyth))
             real_state_str = ','.join(map(str, real_state))
             vit_est_str = ','.join(map(str, vit_est))
             vit_est_2_str = ','.join(map(str, vit_est_2))
+            vit_est_3_str = ','.join(map(str, vit_est_3))
             
             # Concatenate in the desired order: real_state, vit_est, vit_est_2
-            line = f"{odom_str},{real_state_str},{vit_est_str},{vit_est_2_str}\n"
+            line = f"{odom_str},{real_state_str},{vit_est_str},{vit_est_3_str}\n"
             
             # Write to file
             f.write(line)
