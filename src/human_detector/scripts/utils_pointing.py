@@ -188,11 +188,12 @@ def detect_pointing(points_msg,dist = 6, remove_bkg= True):
     """
     pts= ros_numpy.numpify(points_msg)  
     #---
-    human, _ =getTF(target_frame='human',ref_frame='head_rgbd_sensor_rgb_frame') 
+    #human, _ =getTF(target_frame='human',ref_frame='head_rgbd_sensor_rgb_frame') 
     
-    distToTF = np.linalg.norm(human) if human[0] else 2
+    #print(human)
+    #distToTF = np.linalg.norm(human) if human[0] else 2
 
-    print("DISTANCIA AL HUMANO ",distToTF)
+    #print("DISTANCIA AL HUMANO ",distToTF)
 
     # <<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     # HARDCODEADA LA DISTANCIA A 2 METROS (+ 0.3 m) 
@@ -367,13 +368,18 @@ def detect_pointing(points_msg,dist = 6, remove_bkg= True):
     return res
 
 #-----------------------------------------------------------------
-def detect_pointing2(points_msg,dist = 6):
+def detect_pointing2(points_msg,dist = 6,remove_bkg= True):
     #tf_man = TF_MANAGER()
     res=Point_detectorResponse()
     points_data = ros_numpy.numpify(points_msg)
-    
-    image, masked_image = removeBackground(points_msg,distance = dist)
-    save_image(masked_image,name="maskedImage")
+    if remove_bkg:
+        image, masked_image = removeBackground(points_msg,distance = dist)
+        save_image(masked_image,name="maskedImage")
+    else:
+        
+        image_data = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]   
+        frame=cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
+        save_image(frame,name="noMaskedImage")
     #image_data = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]   
     #image=cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
     #pts= points_data

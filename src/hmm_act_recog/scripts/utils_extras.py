@@ -5,9 +5,10 @@ import ros_numpy
 import tf
 import tf2_ros as tf2
 from sensor_msgs.msg import Image ,PointCloud2
-
+import rospkg
 import cv2
-
+from glob import glob
+from os import path
 #---------------------------------------------------
 # Para escribir texto en imagen con fondo negro
 def draw_text_bkgn(img, text,

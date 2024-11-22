@@ -100,7 +100,7 @@ class Find_human(smach.State):
             self, outcomes=['succ', 'failed', 'tries'])
         self.tries = 0
         self.point_img_pub = rospy.Publisher("/image_topic_name", String, queue_size=1)
-        self.dist=3
+        self.dist=2.5
     def execute(self, userdata):
         rospy.loginfo('State : Find_human')
         rospy.sleep(1.5)

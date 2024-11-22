@@ -278,7 +278,7 @@ class PlacingStateMachine:
         object_pose.pose.orientation.y = rotation[1]
         object_pose.pose.orientation.z = rotation[2]
         object_pose.pose.orientation.w = rotation[3]
-        self.scene.add_box('table_storing', object_pose, size = (dimensions[0], dimensions[1], dimensions[2]))
+        #self.scene.add_box('table_storing', object_pose, size = (dimensions[0], dimensions[1], dimensions[2]))
 
     def add_collision_object(self, name = 'objeto', position = [0, 0, 0], rotation = [0,0,0,1], dimensions = [0.3 ,0.3, 0.3], frame = 'base_link'):
         object_pose = PoseStamped()

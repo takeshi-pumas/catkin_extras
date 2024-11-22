@@ -84,4 +84,3 @@ def recognition_server():
 if __name__ == "__main__":
 	#rospy.init_node('recognize_action_server')	
     recognition_server()
-hmm_act_recog

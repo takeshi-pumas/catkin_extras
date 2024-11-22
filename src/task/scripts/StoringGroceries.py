@@ -273,6 +273,8 @@ class Pickup(smach.State):
         pos, quat = tf_man.getTF(target_frame=target_object, ref_frame='map')
         print(f'target_object {target_object}, mode {string_msg.data}')
         offset_point = grasping_dict[grasping_dict['name'] == target_object][['offset_x', 'offset_y', 'offset_z']].values[0]
+        print (f'offset point for {name} is {offset_point }')
+        ##################################
         #####################APPLY OFFSET
         object_point = PointStamped()
         object_point.header.frame_id = target_object              #"base_link"
@@ -364,7 +366,7 @@ class Goto_shelf(smach.State):
             'low': low_shelf_height
             }
             print('here',objs_shelves[corresponding_key + '_shelf'])
-            objs_shelves.to_csv('/home/roboworks/Documents/objs.csv') 
+            #objs_shelves.to_csv('/home/roboworks/Documents/objs.csv') 
             z_place = shelf_heights.get(corresponding_key, 0) + 0.1
             
             ################ PLACING AREA ESTIMATION FROM KNOWLEDGE DATA BASE
@@ -508,7 +510,7 @@ class Place_shelf(smach.State):
            'category': cat}
 
         objs_shelves.loc[len(objs_shelves)+1]=new_row
-        objs_shelves.to_csv('/home/roboworks/Documents/objs.csv') 
+        #objs_shelves.to_csv('/home/roboworks/Documents/objs.csv') 
 
         print( "############",new_row,objs_shelves )
         
@@ -732,7 +734,7 @@ class Scan_shelf(smach.State):
                         if (is_inside_top(x,y,z)    or                is_inside_mid(x,y,z)  or               is_inside_low(x,y,z)):  tf_man.pub_static_tf(pos=[x,y,z],rot=shelf_quat
                                                                                                                                         ,point_name=res.names[i].data[4:]) ### IF a real placing area is found this tf will be updated
                         new_row = {'x': position_map.point.x, 'y': position_map.point.y, 'z': position_map.point.z, 'obj_name': res.names[i].data[4:]}
-                        print (new_row)
+                        print (objs_shelves,new_row, top_shelf_height)
                         objs_shelves.loc[len(objs_shelves)] = new_row
                 else:
                     print ('no objs')
@@ -791,7 +793,7 @@ class Scan_shelf(smach.State):
         }
         print('here',objs_shelves[corresponding_key + '_shelf'])
         talk ( f' I will place object in {corresponding_key} shelf')
-        objs_shelves.to_csv('/home/roboworks/Documents/objs.csv') 
+        #objs_shelves.to_csv('/home/roboworks/Documents/objs.csv') 
         z_place = shelf_heights.get(corresponding_key, 0) + 0.1
         ################ PLACING AREA ESTIMATION FROM KNOWLEDGE DATA BASE
         print (area_box)

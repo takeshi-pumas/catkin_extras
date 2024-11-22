@@ -125,7 +125,7 @@ def correct_points(points_msg):
     except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
         print ( 'No head TF FOUND')
 
-    #trans,rot=tf_listener.lookupTransform('/map', '/head_rgbd_sensor_rgb_frame', rospy.Time(0))
+    trans,rot=tf_listener.lookupTransform('/map', '/head_rgbd_sensor_rgb_frame', rospy.Time(0))
     #print ("############TF1",trans,rot)
     eu=np.asarray(tf.transformations.euler_from_quaternion(rot))
     t=TransformStamped()

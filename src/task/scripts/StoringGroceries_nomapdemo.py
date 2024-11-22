@@ -89,11 +89,13 @@ class Wait_push_hand(smach.State):
         print(f'Try {self.tries} of 4 attempts')
         if self.tries == 4:
             return 'tries'
-        talk('Gently... push my hand to begin')    
+        talk('Gently... push my hand to take the object')    
         
         succ = wait_for_push_hand(100) # NOT GAZEBABLE
         if succ:
-            talk('Starting Grasp Action NO MAP demo')    
+            gripper.open()
+            rospy.sleep(1.0)
+            talk('Thanks for taking object, I will continue with demo')    
             return 'succ'
         else:
             return 'failed'
@@ -879,7 +881,7 @@ if __name__ == '__main__':
         smach.StateMachine.add("PICKUP",    Pickup(),                   transitions={'failed': 'PICKUP',    
                                                                                          'succ': 'GRASP_GOAL'})
         smach.StateMachine.add("CHECK_GRASP",    Check_grasp(),         transitions={'failed': 'GOTO_PICKUP',    
-                                                                                         'succ': 'GOTO_SHELF',
+                                                                                         'succ': 'WAIT_PUSH_HAND',
                                                                                          })
         smach.StateMachine.add("PLACE",    Place(),                     transitions={'failed': 'PLACE',    
                                                                                          'succ': 'PLACE_GOAL',

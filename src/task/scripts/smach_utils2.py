@@ -88,12 +88,12 @@ recognize_action = rospy.ServiceProxy('recognize_act',RecognizeOP)
 
 
 ####################################################################
-#map_msg= rospy.wait_for_message('/augmented_map', OccupancyGrid , 20)####WAIT for nav pumas map .. 
-#inflated_map= np.asarray(map_msg.data)
-#img_map=inflated_map.reshape((map_msg.info.width,map_msg.info.height))
-#pix_per_m=map_msg.info.resolution
-#contours, hierarchy = cv2.findContours(img_map.astype('uint8'),cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
-#contoured=cv2.drawContours(img_map.astype('uint8'), contours, 1, (255,255,255), 1)
+map_msg= rospy.wait_for_message('/augmented_map', OccupancyGrid , 20)####WAIT for nav pumas map .. 
+inflated_map= np.asarray(map_msg.data)
+img_map=inflated_map.reshape((map_msg.info.width,map_msg.info.height))
+pix_per_m=map_msg.info.resolution
+contours, hierarchy = cv2.findContours(img_map.astype('uint8'),cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+contoured=cv2.drawContours(img_map.astype('uint8'), contours, 1, (255,255,255), 1)
 
 ####################################################################3
 
@@ -220,13 +220,13 @@ def seg_res_tf_pointing(res):
         succ=tf_man.pub_static_tf(pos=poses[objIndex], rot =rotation_quaternion, point_name=point_name, ref='map')## which object to choose   #TODO
         rospy.sleep(0.5)                                                                        
         pose,_= tf_man.getTF(point_name)
-        print (f'Occupancy map at point object {i}-> pixels ',origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(poses[objIndex][0]/pix_per_m), img_map[origin_map_img[1]+ round(poses[objIndex][1]/pix_per_m),origin_map_img[0]+ round(poses[objIndex][0]/pix_per_m)])
-        ## Pixels from augmented image map server published map image
-        if img_map[origin_map_img[1]+ round(poses[objIndex][1]/pix_per_m),origin_map_img[0]+ round(poses[objIndex][0]/pix_per_m)]!=0:#### Yes axes seem to be "flipped" !=0:
-            print ('reject point suggested ( for floor), most likely part of arena, occupied inflated map')
-            #tf_man.pub_static_tf(pos=[0,0,0], point_name=point_name, ref='head_rgbd_sensor_rgb_frame')
-            #num_objs-=1
-        print (f"object found at map coords.{pose} ")
+        #print (f'Occupancy map at point object {i}-> pixels ',origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(poses[objIndex][0]/pix_per_m), img_map[origin_map_img[1]+ round(poses[objIndex][1]/pix_per_m),origin_map_img[0]+ round(poses[objIndex][0]/pix_per_m)])
+        ### Pixels from augmented image map server published map image
+        #if img_map[origin_map_img[1]+ round(poses[objIndex][1]/pix_per_m),origin_map_img[0]+ round(poses[objIndex][0]/pix_per_m)]!=0:#### Yes axes seem to be "flipped" !=0:
+        #    print ('reject point suggested ( for floor), most likely part of arena, occupied inflated map')
+        #    #tf_man.pub_static_tf(pos=[0,0,0], point_name=point_name, ref='head_rgbd_sensor_rgb_frame')
+        #    #num_objs-=1
+        print (f"object {point_name} found at map coords.{pose} ")
         
     return succ
 
@@ -434,7 +434,7 @@ def wait_for_push_hand(time=10):
         if np.abs(torque[1])>1.0:
             print(' Hand Pused Ready TO start')
             #takeshi_talk_pub.publish(string_to_Voice())
-            talk('Im ready to start')
+            talk('OK')
             return True
             break
 

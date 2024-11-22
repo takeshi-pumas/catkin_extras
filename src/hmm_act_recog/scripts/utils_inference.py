@@ -305,10 +305,10 @@ def detectWavingRestaurant(datum,opWrapper,response):
                 response.i_out=1
         
         conteoTOTAL += 1
-        if counting >= 4:
+        if counting >= 2:
             break
 
-        if conteoTOTAL > 5:
+        if conteoTOTAL > 3:
             response.i_out = -1
             break
     print("RESPUESTA,",response.i_out)

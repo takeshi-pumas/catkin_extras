@@ -21,24 +21,24 @@ class Initial(smach.State):
              
         global arm ,  hand_rgb     ,regions_df    
         #userdata.target_object='spoon'
-        #userdata.target_object='cereal_box'   #Strategy. pickup bowl first
+        userdata.target_object='cereal_box'   #Strategy. pickup bowl first
         #userdata.target_object='milk'
-        userdata.target_object='bowl'
+        #userdata.target_object='bowl'
         hand_rgb = HAND_RGB()        
         rospack = rospkg.RosPack()        
         file_path = rospack.get_path('config_files')+'/regions'         
         
         
         #######################################
-        x,y,z= 5.8 , 1.3, 0.47   #SIM TMR  table plane
-        quat=[0.0,0.0,0.0,1.0]
-        o=read_yaml('/regions/regions_sim.yaml')#SIM (TMR WORLD)
+        #x,y,z= 5.8 , 1.3, 0.47   #SIM TMR  table plane
+        #quat=[0.0,0.0,0.0,1.0]
+        #o=read_yaml('/regions/regions_sim.yaml')#SIM (TMR WORLD)
         ##########################################
                 
         #####################################
-        #x,y,z= -0.522 , -2.84, 0.8   #REAL LAB
-        #quat=[0.0,0.0,0.707,-0.707]
-        #o=read_yaml('/regions/regions.yaml')#REAL
+        x,y,z= -0.5 , -2.9, 0.8   #REAL LAB
+        quat=[0.0,0.0,0.707,-0.707]
+        o=read_yaml('/regions/regions.yaml')#REAL
         ###############################################
 
 
@@ -327,8 +327,6 @@ class Pickup(smach.State):
             
             string_msg= String()
             string_msg.data='pour'
-            #if target_object=='cereal_box': string_msg.data='pour'
-            #if target_object=='milk': string_msg.data='frontal'
             userdata.mode=string_msg 
             rospy.loginfo('STATE : PICKUP CEREAL')            
             print ('STATE : PICKUP CEREAL')            
@@ -336,8 +334,7 @@ class Pickup(smach.State):
             print (f'target_object {target_object}, mode {string_msg.data}')
             ####################                        
             line_up_TF(target_object)####################
-            print ( 'linning up') #TODO DIctionary ( grasping dict)        
-            #string_msg.data='frontal'    
+            print ( 'linning up') 
             userdata.mode=string_msg 
             pos, quat = tf_man.getTF(target_frame = target_object, ref_frame = 'map')
             print (f'target_object {target_object}, mode {string_msg.data}')
@@ -520,7 +517,7 @@ class Wait_door_opened(smach.State):
 
         # if self.tries == 100:
         #     return 'tries'
-        if self.tries == 1 : talk('I am ready for Storing Groceries task.')
+        if self.tries == 1 : talk('I am ready for Serve Breakfast task.')
         rospy.sleep(0.8)
         talk('I am waiting for the door to be opened')
         isDoor = line_detector.line_found()
@@ -577,8 +574,11 @@ class Place_breakfast(smach.State):
         if userdata.target_object=='cereal_box':place_pose[3]=-0.532
         arm.set_joint_value_target(place_pose)
         arm.go()
+
+        print ('av',arm.get_current_joint_values())
         pos, quat = tf_man.getTF(target_frame = 'placing_area', ref_frame = 'odom')      
         i=0
+
         while( pos==False and i<10):
             i+=1
             if i>1:print ('why tf fails!?!??!', i)
@@ -591,8 +591,14 @@ class Place_breakfast(smach.State):
         if userdata.target_object=='bowl':
             clear_octo_client()
             av=arm.get_current_joint_values()
-            av[1]=-1.59        
-            succ=arm.go(av)
+            print (av)
+
+            av[1]=-1.6       
+            arm.set_joint_value_target(av)
+ 
+            succ=arm.go()
+            print (av)
+
             if not succ:                
                 av[1]=-1.57        ## ARM FELX JOINT TO PLACE
                 sec_chance=arm.go(av)
@@ -600,6 +606,7 @@ class Place_breakfast(smach.State):
                         
                         brazo.set_joint_values([0.6808629824410867,-1.57, 0.04852065465630595, -1.8, 0.07179310822381613])
                         rospy.sleep(1)
+            
 
         bowl_pose,_= tf_man.getTF('hand_palm_link')
         _,quat_base= tf_man.getTF('base_link')  

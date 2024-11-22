@@ -30,15 +30,15 @@ class Initial(smach.State):
         
         
         #######################################
-        x,y,z= 5.8 , 1.3, 0.47   #SIM TMR  table plane
-        quat=[0.0,0.0,0.0,1.0]
-        o=read_yaml('/regions/regions_sim.yaml')#SIM (TMR WORLD)
+        #x,y,z= 5.8 , 1.3, 0.47   #SIM TMR  table plane
+        #quat=[0.0,0.0,0.0,1.0]
+        #o=read_yaml('/regions/regions_sim.yaml')#SIM (TMR WORLD)
         ##########################################
                 
         #####################################
-        #x,y,z= -0.522 , -2.84, 0.8   #REAL LAB
-        #quat=[0.0,0.0,0.707,-0.707]
-        #o=read_yaml('/regions/regions.yaml')#REAL
+        x,y,z= -0.522 , -2.84, 0.8   #REAL LAB
+        quat=[0.0,0.0,0.707,-0.707]
+        o=read_yaml('/regions/regions.yaml')#REAL
         ###############################################
 
 
@@ -593,6 +593,11 @@ class Place_breakfast(smach.State):
             av=arm.get_current_joint_values()
             av[1]=-1.59        
             succ=arm.go(av)
+            return 0
+            
+
+
+
             if not succ:                
                 av[1]=-1.57        ## ARM FELX JOINT TO PLACE
                 sec_chance=arm.go(av)
