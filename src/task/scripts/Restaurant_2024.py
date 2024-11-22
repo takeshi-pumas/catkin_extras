@@ -122,14 +122,14 @@ class Goto_waving_person(smach.State):
         human_xyz,_=tf_man.getTF('person_waving',ref_frame='base_link')
         print(f'[GOTOWAVINGPERSON] coords {human_xyz}')
 
-        res = omni_base.move_d_to(0.5,'person_waving')
+        res = omni_base.move_d_to(0.7,'person_waving')
         # publica pointStamp para que se mueva con potFields o lo que se vaya a usar
         #res = new_move_D_to(tf_name='person_waving',d_x=1 , timeout=20.0)
         print("[GOTOWAVINGPERSON]",res)
 
         if res:
             # move_base() # with no map
-            
+            self.tries = 0
             talk('Arrrived to person')
             rospy.sleep(1)
             return 'succ'
@@ -182,7 +182,7 @@ class Return_to_Initial(smach.State):
         
         res = head.to_tf('INITIAL_PLACE')
     
-        head.set_joint_values([0.0,0.0])
+        head.set_joint_values([0.0,0.1])
         rospy.sleep(3.8)
         talk("Checking...")
         resAct=recognize_action(req)       
@@ -194,9 +194,11 @@ class Return_to_Initial(smach.State):
 
 
         res = omni_base.move_d_to(0.5,'person_waving')
-        rospy.sleep(1)
-
         #res = omni_base.move_base(known_location='INITIAL_PLACE')
+        rospy.sleep(1)
+        omni_base.tiny_move(velT = 1.0, std_time = 3.5, MAX_VEL_THETA= 1.0 )
+
+        
 
         if res:
             # move_base() # with no map
@@ -226,7 +228,7 @@ class Final_part_demo(smach.State):
         print(f'[FINALPARTDEMO] Talking....')
 
         talk('Done. Feel free to ask anything about me or my research lab to them, thank you.')
-        rospy.sleep(0.5)
+        rospy.sleep(2.5)
         return 'succ'
       
 

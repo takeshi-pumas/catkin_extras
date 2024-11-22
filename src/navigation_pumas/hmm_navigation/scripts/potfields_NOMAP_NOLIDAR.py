@@ -38,7 +38,7 @@ def write_Point_Stamped(xy=[0,0]):
         PointStamped: The created PointStamped object.
     """
     point_st = PointStamped()
-    point_st.header.frame_id = "base_range_sensor_link"
+    point_st.header.frame_id = "odom"#"base_range_sensor_link"
     point_st.point.x = xy[0]
     point_st.point.y = xy[1]  # replace with your y coordinate
     point_st.point.z =  0.0 ###FLOOR ### humanpose.z  # replace with your z coordinate
@@ -125,6 +125,7 @@ def get_rep_force(msg):
 
 def get_attr_force():
     #F_atr= np.asarray ((xcl-x,ycl-y)) 
+    print (x,y,xcl,ycl,'atrracted to')
     Fatrx =( -x + xcl)
     Fatry =( -y + ycl)
     Fatrmag=np.linalg.norm((Fatrx,Fatry))
@@ -166,7 +167,7 @@ def readSensor(msg):
     z = np.nansum(points_data['z'])
     Fxyz=np.asarray((x,y,z))
     F_rep_xyz=Fxyz/np.linalg.norm(Fxyz)
-    print ('xyz',F_rep_xyz)
+    print ('F HEAd',F_rep_xyz)
 
 
 
@@ -329,8 +330,8 @@ def inoutinout():
     tfBuffer = tf2_ros.Buffer() 
     listener = tf2_ros.TransformListener(tfBuffer)    
 ########################################################
-    #rospy.Subscriber("/hsrb/wheel_odom",Odometry,newOdom)
-    rospy.Subscriber("/hsrb/odom",Odometry,newOdom)
+    rospy.Subscriber("/hsrb/wheel_odom",Odometry,newOdom)
+    #rospy.Subscriber("/hsrb/odom",Odometry,newOdom)
     #rospy.Subscriber("/hsrb/base_scan",LaserScan,readSensor)
     rospy.Subscriber("/hsrb/head_rgbd_sensor/depth_registered/rectified_points",PointCloud2, readSensor)
     rospy.Subscriber("/clicked_point",PointStamped,readPoint)
