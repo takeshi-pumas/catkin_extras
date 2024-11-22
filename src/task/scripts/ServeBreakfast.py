@@ -21,9 +21,9 @@ class Initial(smach.State):
              
         global arm ,  hand_rgb     ,regions_df    
         #userdata.target_object='spoon'
-        userdata.target_object='cereal_box'   #Strategy. pickup bowl first
+        #userdata.target_object='cereal_box'   #Strategy. pickup bowl first
         #userdata.target_object='milk'
-        #userdata.target_object='bowl'
+        userdata.target_object='bowl'
         hand_rgb = HAND_RGB()        
         rospack = rospkg.RosPack()        
         file_path = rospack.get_path('config_files')+'/regions'         
@@ -310,7 +310,7 @@ class Pickup(smach.State):
     def execute(self, userdata):
         target_object= userdata.target_object
         line_up_TF(target_object)
-        print ( 'linning up')
+        #print ( 'linning up')
         if target_object=='bowl' :           
             
             string_msg= String()
