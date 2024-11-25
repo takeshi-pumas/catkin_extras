@@ -26,7 +26,7 @@ def save_viterbi_results(xyth,real_state, vit_est, vit_est_2,vit_est_3, filename
         filename (str): The name of the text file to write to.
     """
     try:
-        with open(filename, 'w') as f:
+        with open(filename, 'a') as f:
             # Convert all inputs to strings and join with commas for a single line
             odom_str = ','.join(map(str, xyth))
             real_state_str = ','.join(map(str, real_state))
@@ -35,7 +35,7 @@ def save_viterbi_results(xyth,real_state, vit_est, vit_est_2,vit_est_3, filename
             vit_est_3_str = ','.join(map(str, vit_est_3))
             
             # Concatenate in the desired order: real_state, vit_est, vit_est_2
-            line = f"{odom_str},{real_state_str},{vit_est_str},{vit_est_3_str}\n"
+            line = f"{odom_str},{real_state_str},{vit_est_str},{vit_est_2_str},{vit_est_3_str}\n"
             
             # Write to file
             f.write(line)

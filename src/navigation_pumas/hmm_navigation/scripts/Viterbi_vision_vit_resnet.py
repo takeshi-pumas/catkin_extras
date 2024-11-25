@@ -109,7 +109,7 @@ print (f'centroids symb viT {ccvk_v.shape}, resnet  {ccvk_r.shape}')
 #############
 A, B, PI=    np.load(file_path +'A.npy') , np.load(file_path +'B.npy') , np.load(file_path +'PI.npy')
 Modelo1= HMM(A,B,PI)
-A2r, B2r, PI2r= np.load(file_path +'A2-r.npy') , np.load(file_path +'B2-r.npy') , np.load(file_path +'PI2-r.npy')## SAME MATRIX A BUT COULD NOT BE
+A2r, B2r, PI2r= np.load(file_path +'A-r.npy') , np.load(file_path +'B-r.npy') , np.load(file_path +'PI-r.npy')## SAME MATRIX A BUT COULD NOT BE
 Modelo2r= HMM(A2r,B2r,PI2r)
 A2v, B2v, PI2v= np.load(file_path +'A2-v.npy') , np.load(file_path +'B2-v.npy') , np.load(file_path +'PI2-v.npy')## SAME MATRIX A BUT COULD NOT BE
 Modelo2v= HMM(A2v,B2v,PI2v)

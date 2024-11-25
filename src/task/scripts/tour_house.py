@@ -4,6 +4,40 @@ from smach_ros import SimpleActionState
 from action_server.msg import GraspAction
 from std_msgs.msg import Float32MultiArray
 from std_msgs.msg import String
+from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
+
+
+navclient = actionlib.SimpleActionClient('/move_base/move', MoveBaseAction)  #TOYOTA NAV
+
+def move_base_toyota(goal_x,goal_y,goal_yaw,time_out=10):
+
+    
+    
+    
+    #using nav client and toyota navigation go to x,y,yaw
+    #To Do: PUMAS NAVIGATION
+    pose = PoseStamped()
+    pose.header.stamp = rospy.Time(0)
+    pose.header.frame_id = "map"
+    pose.pose.position = Point(goal_x, goal_y, 0)
+    quat = tf.transformations.quaternion_from_euler(0, 0, goal_yaw)
+    pose.pose.orientation = Quaternion(*quat)
+
+
+    # create a MOVE BASE GOAL
+    goal = MoveBaseGoal()
+    goal.target_pose = pose
+
+    # send message to the action server
+    navclient.send_goal(goal)
+
+    # wait for the action server to complete the order
+    navclient.wait_for_result(timeout=rospy.Duration(time_out))
+
+    # print result of navigation
+    action_state = navclient.get_state()
+    return navclient.get_state()
+
 
 
 
@@ -25,21 +59,18 @@ class Choose_room(smach.State):
         self.tries = 0
     def execute(self, userdata):       
         self.tries+=1 
-        rospy.loginfo('STATE : CHOOSE_ROOM')
+        print(f'STATE : CHOOSE_ROOM {self.tries}')
+      
+        global known_locs
         
         known_locs=yaml_to_df("/known_locations_storingTMR.yaml")
-        print('known_locs')
-        print(known_locs)
 
         random_choice = np.random.choice(known_locs['child_id_frame'])
+        
         print (f'random destination is {random_choice}')
         userdata.room=random_choice
         return 'succ'
         
-        if self.tries == 5:
-            userdata.room='home'
-
-            return 'succ'        
 #####################################
 class Goto_room(smach.State):
     def __init__(self):
@@ -47,11 +78,11 @@ class Goto_room(smach.State):
     def execute(self, userdata):        
         rospy.loginfo('STATE : GOTO_ROOM')
         print (f'userdata.room{userdata.room}')
-        res = omni_base.move_base(known_location=userdata.room, time_out=40)
-        print (f'res{res}')
+        goal=known_locs[known_locs['child_id_frame'] == userdata.room][['x', 'y', 'th']].values[0]
+        move_base_toyota(goal[0],goal[1],goal[2], 60)
+        #res = omni_base.move_base(known_location=userdata.room, time_out=40)
+        #print (f'res{res}')
         return 'succ'
-        if userdata.room == 'home':
-            return 'end'        
              
               
 

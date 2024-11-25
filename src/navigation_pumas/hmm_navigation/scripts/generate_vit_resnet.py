@@ -166,7 +166,8 @@ def listener():
     pub2 = rospy.Publisher('/aa/HMM_topo/', MarkerArray, queue_size=1)  
     #pose  = message_filters.Subscriber('/navigation/localization/amcl_pose',PoseWithCovarianceStamped)#TAKESHI REAL
     pose  = message_filters.Subscriber('/hsrb/base_pose',PoseStamped)#TAKESHI GAZEBO
-    odom= message_filters.Subscriber("/hsrb/wheel_odom",Odometry)
+    #odom= message_filters.Subscriber("/hsrb/wheel_odom",Odometry)
+    odom= message_filters.Subscriber("/hsrb/odom",Odometry)
     #ats= message_filters.ApproximateTimeSynchronizer([symbol,odom,twist],queue_size=5,slop=.1,allow_headerless=True)
     ats= message_filters.ApproximateTimeSynchronizer([symbol,pose,odom, image],queue_size=5,slop=.1,allow_headerless=True)
     ats.registerCallback(callback)
