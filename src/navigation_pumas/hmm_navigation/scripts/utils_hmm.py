@@ -98,22 +98,48 @@ class HMM (object):
                  self.A=A
                  self.B=B
                  self.PI=PI   
-def forw_alg(o_k,Modelo):
-    #MATRIX NOTATION
-    PI=Modelo.PI
-    K= len(o_k)   #Secuencia Observaciones
-    N= len(Modelo.A)  #número de estados
-    alpha=np.zeros((N,K))
-    c_k= np.zeros(K)
-    alpha[:,0]= PI
-    c_k[0]=1
-    for k in range(1,K):
-        alpha_k= alpha[:,k-1]
-        a= Modelo.A[:,:]
-        b= Modelo.B[:,o_k[k]]
-        alpha[:,k]=(b*np.dot(alpha_k,a))#* c_k[k-1]
-        #c_k[k]=1/alpha[:,k].sum()
-    return alpha #,c_k
+import numpy as np
+
+def forw_alg(o_k, Modelo, epsilon=1e-12):
+    """
+    Forward algorithm with log-space trick and handling of zero probabilities.
+    
+    Parameters:
+    - o_k: Sequence of observations (indices).
+    - Modelo: Model object containing:
+        - A: Transition probabilities (NxN matrix).
+        - B: Emission probabilities (NxM matrix, where M is the number of observations).
+        - PI: Initial state probabilities (length N).
+    - epsilon: Small value to avoid log(0).
+    
+    Returns:
+    - log_alpha: Log of the alpha values (NxK matrix).
+    """
+    PI = Modelo.PI
+    A = Modelo.A
+    B = Modelo.B
+    K = len(o_k)  # Length of observation sequence
+    N = len(A)    # Number of states
+
+    # Add epsilon to avoid log(0)
+    A = np.clip(A, epsilon, 1)
+    B = np.clip(B, epsilon, 1)
+    PI = np.clip(PI, epsilon, 1)
+
+    # Initialize alpha matrix in log-space
+    log_alpha = np.zeros((N, K))
+
+    # Initialization (log-space)
+    log_alpha[:, 0] = np.log(PI) + np.log(B[:, o_k[0]])
+
+    # Recursion (log-space)
+    for k in range(1, K):
+        for j in range(N):
+            # Compute log-sum-exp for stability
+            log_alpha[j, k] = np.log(B[j, o_k[k]]) + np.logaddexp.reduce(log_alpha[:, k-1] + np.log(A[:, j]))
+
+    return log_alpha
+
 def  backw_alg(o_k,Modelo):
     #MATRIX NOTATION
 

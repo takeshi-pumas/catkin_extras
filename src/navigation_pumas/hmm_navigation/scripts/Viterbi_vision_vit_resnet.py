@@ -6,8 +6,7 @@ Created on Wed Apr 17 22:54:18 2019
 @author: oscar
 """
 import sys
-print("Python path:", sys.executable)
-
+import tf
 from geometry_msgs.msg import Quaternion , Point
 import numpy as np
 import rospy
@@ -39,7 +38,7 @@ from cv_bridge import CvBridge, CvBridgeError
 import torch
 from timm import create_model
 from torchvision.transforms import transforms
-
+first=True
 bridge = CvBridge()
 img_width, img_height = 224, 224  # Adjust for DeiT input
 obs = []
@@ -51,7 +50,24 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model = create_model('deit_tiny_patch16_224', pretrained=True)
 model.head = torch.nn.Identity()  # Remove the classification head
 model.eval().to(device)
-
+#############################################
+def process_viterbi(xyth,vit_est,ccxyth):
+    xyth_odom=xyth.copy()
+    if len (np.unique(vit_est)>1):
+            print ("YOOOOOOOOOOOOOO  \n")
+            unique_in_order = np.unique(vit_est, return_index=True)
+            unique_in_order = vit_est[np.sort(unique_in_order[1])]
+            last_state = ccxyth[int(unique_in_order[-1])]
+            second_last_state = ccxyth[int(unique_in_order[-2])]
+            print(f'last state  {last_state},{int(unique_in_order[-1])},one to last state{second_last_state},{int(unique_in_order[-2])} ')
+            xyth_odom[:2] = (np.array(last_state)[:2] + np.array(second_last_state)[:2]) / 2
+            print (f"YOOOOOOOOOOOOOO {xyth_odom}, or { ccxyth[int(np.unique(vit_est)[-1])]    } \n")
+            
+            return xyth_odom
+    print ( 'No lenth. Give centroid ( higher quantization error)')
+    #return xyth_odom    
+    print ("YOOOOOOOOOOOOOO  NOID  \n \n \n \n\n ")
+    return ccxyth[int(np.unique(vit_est)[-1])]    
 # Preprocessing pipeline
 preprocess = transforms.Compose([
     transforms.ToPILImage(),
@@ -69,7 +85,10 @@ odom_adjust,odom_adjust_aff=np.zeros(3),np.zeros(3)
 first_adjust= np.zeros(3)
 xyth_hmms=np.zeros(3)
 hmm12real=np.zeros(3)
-xyth_odom_prueba=np.zeros(3)
+xyth_odom_lidar=np.zeros(3)
+xyth_odom_vit=np.zeros(3)
+xyth_odom_res=np.zeros(3)
+xyth_odom_wheel=np.zeros(3)
 first=True
 real_state=[]
 last_states=[]
@@ -86,6 +105,9 @@ markerarray=MarkerArray()
 first_adjust_2=True
 last_states_trans=[0,0]
 
+last_vit_state_1 = None
+last_vit_state_2 = None
+last_vit_state_3 = None  
 
 
 class HMM (object):
@@ -117,15 +139,16 @@ Modelo2v= HMM(A2v,B2v,PI2v)
 print (f'Models B Shape for sanity check Lidar->{B.shape},Vision Transformer-> {B2v.shape}, Resnet->{B2r.shape} ')
 
 
-    
-
+ 
 def callback(laser,pose,odom , img_msg):
-        global xyth , xyth_odom , xyth_hmms, hmm12real , xyth_odom_prueba , ccxyth , ccvk , A
-        global first , last_states_trans
-        global odom_adjust,odom_adjust_aff,first_adjust , first_adjust_2
+        global xyth , xyth_odom , xyth_odom_wheel, hmm12real , xyth_odom_lidar ,xyth_odom_vit ,xyth_odom_res , ccxyth , ccvk , A
+        global first , last_states_trans 
+        global odom_adjust,odom_adjust_aff,first_adjust , first_adjust_2 , last_vit_state_1 ,last_vit_state_2 ,last_vit_state_3
 
-        
+       
         #GET REAL ROBOT POSE 
+        
+        
         text_to_rviz=""
         x_odom=odom.pose.pose.position.x
         y_odom=odom.pose.pose.position.y
@@ -148,25 +171,20 @@ def callback(laser,pose,odom , img_msg):
         lec.reshape(len(laser.ranges),1 )
         symbol= np.power(lec.T-ccvk,2).sum(axis=1,keepdims=True).argmin()            ### lIDAR
 
-        #########################Read Visual Transformer
-
-
+        #########################Read Visual Transformer and Resnet
         cv2_img = bridge.imgmsg_to_cv2(img_msg, "bgr8")
         img_tensor = preprocess(cv2_img).unsqueeze(0).to(device)
 
         # Feature extraction
         with torch.no_grad():
             feature_vec = model(img_tensor).cpu().numpy().flatten()
-        print(f"Features viT De iT shape: {feature_vec.shape}")        
-
+        #print(f"Features viT De iT shape: {feature_vec.shape}")        
         symbol2= np.power(feature_vec-ccvk_v,2).sum(axis=1,keepdims=True).argmin()   ### VISION Transformer DeIt
-        
-        #cv2_img = bridge.imgmsg_to_cv2(img_msg, "bgr8")   #Img msg hasnt changed
         img_resized=cv2.resize(cv2_img,(img_width_resnet,img_height_resnet))
         inp_img= np.expand_dims(img_resized ,axis=0)
         feature_vec_resnet = model_r.predict(inp_img)[0,0,0,:]
         symbol3= np.power(feature_vec_resnet-ccvk_r,2).sum(axis=1,keepdims=True).argmin()   ### Resnet Quantizer
-        print(f"Features ResNet shape: {feature_vec_resnet.shape}")        
+        #print(f"Features ResNet shape: {feature_vec_resnet.shape}")        
         
         if len(o_k) >=buf_vit:o_k.pop(0)
         if len(o_k2) >=buf_vit:o_k2.pop(0)
@@ -174,28 +192,59 @@ def callback(laser,pose,odom , img_msg):
         o_k.append(symbol)
         o_k2.append(symbol2)
         o_k3.append(symbol3)
-        xyth= np.asarray((pose.pose.position.x,pose.pose.position.y,euler[2]))
+        ###########################################################  
+        pose_tf,quat=  tf_listener.lookupTransform('map','base_footprint',rospy.Time(0))
+        print (pose_tf, quat)
+        euler = euler_from_quaternion(quat)
+        xyth= np.asarray((pose_tf[0],pose_tf[1],euler[2]))
         xyth_odom=np.asarray((x_odom, y_odom,th_odom))
-        #delta_xyth.append(xyth)
-        delta_xyth.append(xyth_odom)
+        #delta_xyth.append(xyth.copy())
+        delta_xyth.append(xyth_odom.copy())
+
         if (len(delta_xyth)>2):
+            if first :
+                xyth_odom_lidar=xyth_odom.copy()
+                xyth_odom_vit=  xyth_odom.copy() 
+                xyth_odom_res=  xyth_odom.copy() 
+                xyth_odom_wheel=xyth_odom.copy() 
+                first = False
             delta_xyth.pop(0)
             delta= delta_xyth[1]-delta_xyth[0]
-            delta_phase=math.atan2(delta[0],delta[1])
+            delta_phase=np.arctan2 (delta[1],delta[0])
             delta_mag=np.linalg.norm(delta[:2])
-            print('xyth[-1]-xyth_odom[-1]',xyth[-1]-xyth_odom[-1])
-            delta_phase_rotated=delta_phase  - (xyth_hmms[-1]-xyth_odom[-1])
-            deltarotated=np.asarray( (delta_mag*math.sin(delta_phase_rotated),delta_mag*math.cos(delta_phase_rotated) , delta[2]   ) )
-            xyth_hmms+=deltarotated
 
-            xyth_odom_prueba+=delta 
+
+            #delta_xyth[0]+delta_mag*np.cos(delta_phase)
+            #delta_xyth[1]+delta_mag*np.sin(delta_phase)
+            #delta_xyth[2]+delta[2]
+            deltarotated_w=np.asarray( (delta_mag*np.cos(delta_phase),delta_mag*np.sin(delta_phase), delta[2]))
+            deltarotated=np.asarray( (delta_mag*np.cos(delta_phase-xyth_odom[2]+xyth[2]),delta_mag*np.sin(delta_phase-xyth_odom[2]+xyth[2]), delta[2]))                                            
+
+            #pose_2,print(f' x {pose_1[0]+delta_mag*np.cos(delta_phase-wheel_odom_1[2]+pose_1[2])} ,y {pose_1[1]+delta_mag*np.sin(delta_phase-wheel_odom_1[2]+pose_1[2])}, th {pose_1[2]+delta[2]}')
+            #delta_phase_rotated=delta_phase  + (-xyth_odom[-1])
+
+            #print (f'\n \ndelta_phase {delta_phase}, delta mag{delta_mag}, delta {delta}, delta_xyth{delta_xyth}  , robot orientation{xyth_odom[-1]} \n \n')
             
-
-
+            #deltarotated=np.asarray( (delta_mag*math.sin(delta_phase_rotated),delta_mag*math.cos(delta_phase_rotated) , delta_phase_rotated   ) )
+            #deltarotated= delta_phase + 
+            
+            xyth_odom_lidar+=deltarotated
+            xyth_odom_vit+=deltarotated
+            xyth_odom_res+=deltarotated
+            xyth_odom_wheel+=deltarotated_w
         #QUANTIZING READS (CLASIFIYNG ok2)
        
-        xythcuant=np.argmin(np.linalg.norm(xyth-ccxyth,axis=1))
-        xyth_odomcuant=np.argmin(np.linalg.norm(xyth-ccxyth,axis=1))
+                
+        
+        adjusted_xyth=xyth.copy()
+        adjusted_xyth[2]=0.1*adjusted_xyth[2]   
+        xythcuant=np.argmin(np.linalg.norm(adjusted_xyth[:2]-ccxyth[:,:2],axis=1))
+        print(f"Odom{adjusted_xyth},ccxyth[{xythcuant}]=ccxyth{ccxyth[xythcuant]}",)
+        real_state.append(xythcuant)
+        if len(real_state)>buf_vit:real_state.pop(0)
+
+
+        #xyth_odomcuant=np.argmin(np.linalg.norm(xyth-ccxyth,axis=1))
 
         
         if (len(o_k3)< buf_vit):print ( "FILLING BUFFER HMM3 Resnet")
@@ -208,30 +257,60 @@ def callback(laser,pose,odom , img_msg):
             vit_est= viterbi(o_k,Modelo1,Modelo1.PI)
             vit_est_2= viterbi(o_k2,Modelo2v,Modelo2v.PI)
             vit_est_3= viterbi(o_k3,Modelo2r,Modelo2r.PI)
-                
+              
+            alpha_r=forw_alg(o_k3,Modelo2r)
+            alpha_l=forw_alg(o_k,Modelo1)
+            alpha_v=forw_alg(o_k2,Modelo2v)
             
-            print (f'Most likely state seq given O{vit_est} , ')#,vit_est)[-5:])
-            print (f'Most likely states given O Modelo DeiT-Tiny ({vit_est_2})') #[-5:])
-            print (f'Most likely states given O Modelo ResNet ({vit_est_3})') #[-5:])
-            print (f'Real last states{real_state} ')
+
+            if vit_est[-1] == real_state[-1]:
+                if last_vit_state_1 != vit_est[-1]:
+
+                    xyth_odom_lidar = process_viterbi(xyth, vit_est[1:], ccxyth)
+                    last_vit_state_1 = vit_est[-1]  # Update the tracking variable
+
+            if vit_est_2[-1] == real_state[-1]:
+                if last_vit_state_2 != vit_est_2[-1]:
+                    xyth_odom_vit = process_viterbi(xyth, vit_est_2[1:], ccxyth)
+                    last_vit_state_2 = vit_est_2[-1]
+
+            if vit_est_3[-1] == real_state[-1]:
+                if last_vit_state_3 != vit_est_3[-1]:
+                    xyth_odom_res = process_viterbi(xyth, vit_est_3[1:], ccxyth)
+                    last_vit_state_3 = vit_est_3[-1]
+
+
+
+
+            print (f'Most likely state seq given O                {vit_est   [-10:]} ,  likelihood{alpha_l[:,-1].sum()}')#,vit_est)[-5:])
+            print (f'Most likely states given O Modelo DeiT-Tiny ({vit_est_2 [-10:]}, likelihood{alpha_v[:,-1].sum()})') #[-5:])
+            print (f'Most likely states given O Modelo ResNet (   {vit_est_3 [-10:]}, likelihood{alpha_r[:,-1].sum()})') #[-5:])
+            print (f'Real last states                             {real_state[-10:]} ')
             save_viterbi_results(xyth,real_state, vit_est, vit_est_2,vit_est_3,'viterbi150_results_viT_resnet.txt')
-
-
-
-        #xythcuant=np.argmin(np.linalg.norm(xyth-ccxyth,axis=1))
-        #print ('Pose',xyth)
-        #print (f"ccxyth[ {xythcuant}]={ccxyth[xythcuant]}")
-        xyth[2]=0.1*xyth[2]   
-        xythcuant=np.argmin(np.linalg.norm(xyth-ccxyth,axis=1))
-        real_state.append(xythcuant)
-        if len(real_state)>buf_vit:real_state.pop(0)
-
-        print (f"ccxyth[ {xythcuant}]={ccxyth[xythcuant]}")
-        #print('lec vk_aff'+str(Vk_aff)+'lec vk'+str(symbol)  +') , ccxyth[ '+str(xythcuant)+']='+str(ccxyth[xythcuant]) + '\n')
-        print ('Pose',xyth)
+            with open('viterbi150_results_likelihoods_real_wheel_lid_vit_res.txt', 'a') as f:
+                real_str = ','.join(map(str, xyth))
+                odom_str    = ','.join(map(str, xyth_odom))
+                likel_str= str( alpha_l[:,-1].sum())
+                likev_str= str( alpha_v[:,-1].sum())
+                liker_str= str( alpha_r[:,-1].sum())
+                line = f"{real_str},{odom_str},{likel_str},{likev_str},{liker_str}\n"
+                f.write(line)            
         print('Wheel ' ,xyth_odom)
-        print('Dual HMM' ,xyth_hmms)
-        print('xyth_odom_prueba',xyth_odom_prueba)
+        print ('Pose_tf',xyth)
+        print ('Pose',pose)
+        print('xyth_odom_lidar',xyth_odom_lidar)
+        print('xyth_odom_vit',xyth_odom_vit)
+        print('xyth_odom_res',xyth_odom_res)
+        print('xyth_odom_wheel',xyth_odom_wheel)
+        save_viterbi_results(xyth_odom,xyth, xyth_odom_lidar,xyth_odom_vit ,xyth_odom_res,'viterbi150_results_odoms_wheel_real_lid_vit_res.txt')
+
+
+
+
+
+
+
+
 
 
         text_to_rviz+= 'REAL Pose'+ str(xyth)+'\n'+'Wheel odom  '+ str(xyth_odom)+'\n'+'Dual HMMS'+ str(xyth_hmms)+'\n'
@@ -245,7 +324,7 @@ def callback(laser,pose,odom , img_msg):
 
         markerarray=MarkerArray()
         marker= Marker()
-        marker.header.frame_id="/map"
+        marker.header.frame_id="/odom"
         marker.header.stamp = rospy.Time.now()
         marker.id=1
 
@@ -290,13 +369,13 @@ def listener():
     # name for our 'listener' node so that multiple listeners can
     # run simultaneously.
     #clf=load('aff_prop_class.joblib')
-    global pub , pub2
+    global pub , pub2,tf_listener
     rospy.init_node('listener', anonymous=True)
     #twist = message_filters.Subscriber('cmd_vel',Twist)
     symbol= message_filters.Subscriber('/hsrb/base_scan',LaserScan)
     image= message_filters.Subscriber("/hsrb/head_rgbd_sensor/rgb/image_rect_color",Image)
-    pub= rospy.Publisher('aa/Viterbi',MarkerArray,queue_size=1)
-    pub2 = rospy.Publisher('/aa/HMM_topo/', MarkerArray, queue_size=1)  
+    pub= rospy.Publisher('Viterbi_odom',MarkerArray,queue_size=1)
+    tf_listener = tf.TransformListener()
     #pose  = message_filters.Subscriber('/navigation/localization/amcl_pose',PoseWithCovarianceStamped)#TAKESHI REAL
     pose  = message_filters.Subscriber('/hsrb/base_pose',PoseStamped)#TAKESHI GAZEBO
     odom= message_filters.Subscriber("/hsrb/wheel_odom",Odometry)

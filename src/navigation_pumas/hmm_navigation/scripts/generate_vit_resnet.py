@@ -6,8 +6,7 @@ Created on Wed Apr 17 22:54:18 2019
 @author: oscar
 """
 import sys
-print("Python path:", sys.executable)
-
+import tf
 from geometry_msgs.msg import Quaternion , Point
 import numpy as np
 import rospy
@@ -103,16 +102,21 @@ def callback(laser,pose,odom , img_msg):
         
         #GET REAL ROBOT POSE 
         
-        xyth = np.asarray((odom.pose.pose.position.x,
+        xyth_odom = np.asarray((odom.pose.pose.position.x,
                        odom.pose.pose.position.y,
                        euler_from_quaternion([
                            odom.pose.pose.orientation.x,
                            odom.pose.pose.orientation.y,
                            odom.pose.pose.orientation.z,
                            odom.pose.pose.orientation.w])[2]))
-        rospy.loginfo(f"Odometry: {xyth}")
-        ########READ LiDar
         
+        pose_tf,quat=  tf_listener.lookupTransform('map','base_footprint',rospy.Time(0))
+        euler = euler_from_quaternion(quat)
+        xyth= np.asarray((pose_tf[0],pose_tf[1],euler[2]))
+        print (f'map{xyth},odom{xyth_odom}')
+        rospy.loginfo(f'map{xyth},odom{xyth_odom}')
+
+        ########READ LiDar
         lec=np.asarray(laser.ranges)
         lec[np.isinf(lec)]=13.5
         lec_str = ','.join(map(str, lec))
@@ -120,7 +124,7 @@ def callback(laser,pose,odom , img_msg):
 
         #########################Read Visual Transformer
 
-
+        ###########################################################  
         cv2_img = bridge.imgmsg_to_cv2(img_msg, "bgr8")
         img_tensor = preprocess(cv2_img).unsqueeze(0).to(device)
 
@@ -156,14 +160,17 @@ def listener():
     # anonymous=True flag means that rospy will choose a unique
     # name for our 'listener' node so that multiple listeners can
     # run simultaneously.
-    #clf=load('aff_prop_class.joblib')
-    global pub , pub2
+    global pub , pub2,tf_listener
     rospy.init_node('listener', anonymous=True)
+
     #twist = message_filters.Subscriber('cmd_vel',Twist)
     symbol= message_filters.Subscriber('/hsrb/base_scan',LaserScan)
     image= message_filters.Subscriber("/hsrb/head_rgbd_sensor/rgb/image_rect_color",Image)
-    pub= rospy.Publisher('aa/Viterbi',MarkerArray,queue_size=1)
-    pub2 = rospy.Publisher('/aa/HMM_topo/', MarkerArray, queue_size=1)  
+    pub= rospy.Publisher('Viterbi_odom',MarkerArray,queue_size=1)
+    tf_listener = tf.TransformListener()
+    rospy.sleep(1.0)  # Allow buffer to fill
+    rospy.sleep(1.0)  # Allow buffer to fill
+    #twist = message_filters.Subscriber('cmd_vel',Twist)
     #pose  = message_filters.Subscriber('/navigation/localization/amcl_pose',PoseWithCovarianceStamped)#TAKESHI REAL
     pose  = message_filters.Subscriber('/hsrb/base_pose',PoseStamped)#TAKESHI GAZEBO
     #odom= message_filters.Subscriber("/hsrb/wheel_odom",Odometry)
