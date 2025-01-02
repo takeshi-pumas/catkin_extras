@@ -1,0 +1,10 @@
+# Goal
+string command  # "start" to begin the identification process
+---
+# Result
+string result  # "identified", "new_person_registered", or "failed"
+string name    # Identified or registered name
+string face_img_path  # Path to the face image (if saved)
+---
+#Feedback
+string status  # Current status of the action

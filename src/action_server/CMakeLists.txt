@@ -69,6 +69,7 @@ find_package(catkin REQUIRED COMPONENTS
    DIRECTORY action FILES PickUp.action
    Follow.action
    Grasp.action
+   IdentifyPerson.action
  )
 
 ## Generate added messages and services with any dependencies listed here

@@ -16,7 +16,7 @@ from sensor_msgs.msg import LaserScan
 import numpy as np
 
 
-file_path = rospkg.RosPack().get_path('hmm_navigation') + '/scripts/hmm_nav_lab/'
+file_path = rospkg.RosPack().get_path('hmm_navigation') + '/scripts/hmm_nav/'
 print (file_path)
 centroids = np.load(file_path + 'ccvk.npy')
 ccxyth = np.load(file_path + 'ccxyth.npy')
@@ -133,7 +133,7 @@ def callback(laser):
     # GET symbol
     lec = np.asarray(laser.ranges)
     lec[np.isinf(lec)] = 13.5
-    symbol = np.power(lec.T - centroids, 2).sum(axis=1, keepdims=True).argmin()
+    symbol = np.power(lec.T - centroids[:,:721], 2).sum(axis=1, keepdims=True).argmin()
     pub_symbol.publish(symbol)
 
 

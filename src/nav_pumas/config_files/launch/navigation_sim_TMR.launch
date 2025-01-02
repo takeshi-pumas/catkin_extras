@@ -83,7 +83,7 @@
   
 <!--##########################################################################################################-->
 
-  <param name="file_name" value="/known_locations_storingTMR.yaml"/>
+  <!--param name="file_name" value="/known_locations_storingTMR.yaml"/>
   <node pkg="hmm_navigation"  name="pumas_nav" type="pumas_nav.py" output="screen" />
   <node pkg="known_locations_tf_server"  name="known_locs" type="known_locs_node.py" output="screen" />
   <node pkg="object_classification"  name="objs_reco" type="classification_server.py"  />  
@@ -100,7 +100,7 @@
 
   <include file="$(find hsrb_moveit_config)/launch/hsrb_demo_with_controller.launch"> 
   <arg name="use_gui" value="true"/> 
-</include>
+</include-->
 <!--##########################################################################################################-->
 
 

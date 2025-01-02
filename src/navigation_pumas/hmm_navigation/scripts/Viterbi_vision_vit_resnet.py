@@ -89,6 +89,7 @@ xyth_odom_lidar=np.zeros(3)
 xyth_odom_vit=np.zeros(3)
 xyth_odom_res=np.zeros(3)
 xyth_odom_wheel=np.zeros(3)
+xyth_odom_fused=np.zeros(3)
 first=True
 real_state=[]
 last_states=[]
@@ -117,7 +118,9 @@ class HMM (object):
                  self.PI=PI  
 
 ### LOAD MODEL A QUANTIZERS 
-file_path = rospkg.RosPack().get_path('hmm_navigation') + '/scripts/hmm_nav/'
+file_path = rospkg.RosPack().get_path('hmm_navigation') + '/scripts/hmm_nav_lab/'
+
+#file_path = rospkg.RosPack().get_path('hmm_navigation') + '/scripts/hmm_nav/'
 ccvk = np.load(file_path + 'ccvk.npy')          #LiDar
 ccvk_v = np.load(file_path + 'ccvk_v.npy')      #viT    
 ccvk_r = np.load(file_path + 'ccvk_r.npy')      #ResNet    
@@ -142,7 +145,7 @@ print (f'Models B Shape for sanity check Lidar->{B.shape},Vision Transformer-> {
  
 def callback(laser,pose,odom , img_msg):
         global xyth , xyth_odom , xyth_odom_wheel, hmm12real , xyth_odom_lidar ,xyth_odom_vit ,xyth_odom_res , ccxyth , ccvk , A
-        global first , last_states_trans 
+        global first , last_states_trans ,xyth_odom_fused
         global odom_adjust,odom_adjust_aff,first_adjust , first_adjust_2 , last_vit_state_1 ,last_vit_state_2 ,last_vit_state_3
 
        
@@ -207,6 +210,7 @@ def callback(laser,pose,odom , img_msg):
                 xyth_odom_vit=  xyth_odom.copy() 
                 xyth_odom_res=  xyth_odom.copy() 
                 xyth_odom_wheel=xyth_odom.copy() 
+                xyth_odom_fused=xyth_odom.copy() 
                 first = False
             delta_xyth.pop(0)
             delta= delta_xyth[1]-delta_xyth[0]
@@ -231,6 +235,7 @@ def callback(laser,pose,odom , img_msg):
             xyth_odom_lidar+=deltarotated
             xyth_odom_vit+=deltarotated
             xyth_odom_res+=deltarotated
+            xyth_odom_fused+=deltarotated
             xyth_odom_wheel+=deltarotated_w
         #QUANTIZING READS (CLASIFIYNG ok2)
        
@@ -267,16 +272,19 @@ def callback(laser,pose,odom , img_msg):
                 if last_vit_state_1 != vit_est[-1]:
 
                     xyth_odom_lidar = process_viterbi(xyth, vit_est[1:], ccxyth)
+                    xyth_odom_fused = xyth
                     last_vit_state_1 = vit_est[-1]  # Update the tracking variable
 
             if vit_est_2[-1] == real_state[-1]:
                 if last_vit_state_2 != vit_est_2[-1]:
                     xyth_odom_vit = process_viterbi(xyth, vit_est_2[1:], ccxyth)
+                    xyth_odom_fused = xyth
                     last_vit_state_2 = vit_est_2[-1]
 
             if vit_est_3[-1] == real_state[-1]:
                 if last_vit_state_3 != vit_est_3[-1]:
                     xyth_odom_res = process_viterbi(xyth, vit_est_3[1:], ccxyth)
+                    xyth_odom_fused = xyth
                     last_vit_state_3 = vit_est_3[-1]
 
 
@@ -286,7 +294,11 @@ def callback(laser,pose,odom , img_msg):
             print (f'Most likely states given O Modelo DeiT-Tiny ({vit_est_2 [-10:]}, likelihood{alpha_v[:,-1].sum()})') #[-5:])
             print (f'Most likely states given O Modelo ResNet (   {vit_est_3 [-10:]}, likelihood{alpha_r[:,-1].sum()})') #[-5:])
             print (f'Real last states                             {real_state[-10:]} ')
+            print (f'xyth                                         {xyth} ')
+
             save_viterbi_results(xyth,real_state, vit_est, vit_est_2,vit_est_3,'viterbi150_results_viT_resnet.txt')
+            
+            
             with open('viterbi150_results_likelihoods_real_wheel_lid_vit_res.txt', 'a') as f:
                 real_str = ','.join(map(str, xyth))
                 odom_str    = ','.join(map(str, xyth_odom))
@@ -295,14 +307,25 @@ def callback(laser,pose,odom , img_msg):
                 liker_str= str( alpha_r[:,-1].sum())
                 line = f"{real_str},{odom_str},{likel_str},{likev_str},{liker_str}\n"
                 f.write(line)            
+        
+        
         print('Wheel ' ,xyth_odom)
         print ('Pose_tf',xyth)
-        print ('Pose',pose)
         print('xyth_odom_lidar',xyth_odom_lidar)
-        print('xyth_odom_vit',xyth_odom_vit)
-        print('xyth_odom_res',xyth_odom_res)
-        print('xyth_odom_wheel',xyth_odom_wheel)
-        save_viterbi_results(xyth_odom,xyth, xyth_odom_lidar,xyth_odom_vit ,xyth_odom_res,'viterbi150_results_odoms_wheel_real_lid_vit_res.txt')
+        print('xyth_odom_vit'  ,xyth_odom_vit)
+        print('xyth_odom_res'  ,xyth_odom_res)
+        print('xyth_odom_fused',xyth_odom_fused)
+        with open('viterbi150_results_odoms_wheel_real_lid_vit_res.txt', 'a') as f:
+            odom_str = ','.join(map(str, xyth_odom))
+            real_str = ','.join(map(str, xyth))
+            lidar_str= ','.join(map(str, xyth_odom_lidar))
+            vit_str  = ','.join(map(str,   xyth_odom_vit))
+            res_str  = ','.join(map(str,   xyth_odom_res))
+            fused_str= ','.join(map(str,   xyth_odom_fused))
+
+            line = f"{odom_str},{real_str},{lidar_str},{vit_str},{res_str},{fused_str}\n"
+            f.write(line)            
+        #save_viterbi_results(xyth_odom,xyth, xyth_odom_lidar,xyth_odom_vit ,xyth_odom_res,'viterbi150_results_odoms_wheel_real_lid_vit_res.txt')
 
 
 

@@ -93,7 +93,8 @@ class HMM (object):
                  self.PI=PI  
 
 ### LOAD MODEL A QUANTIZERS 
-file_path = rospkg.RosPack().get_path('hmm_navigation') + '/scripts/hmm_nav/'
+file_path = rospkg.RosPack().get_path('hmm_navigation') + '/scripts/hmm_nav_lab/'
+#file_path = rospkg.RosPack().get_path('hmm_navigation') + '/scripts/hmm_nav/'
 ccvk = np.load(file_path + 'ccvk.npy')
 ccvk_v = np.load(file_path + 'ccvk_v.npy')
 ccxyth = np.load(file_path + 'ccxyth.npy')

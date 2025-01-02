@@ -54,7 +54,7 @@ class PlacingStateMachine:
         self.scene.remove_attached_object(self.eef_link, name="objeto")
         self.whole_body.allow_replanning(False)
         self.whole_body.set_num_planning_attempts(3)
-        self.whole_body.set_planning_time(10.0)
+        self.whole_body.set_planning_time(1.0)
         self.planning_frame = self.whole_body.get_planning_frame()
         
         # Crear la máquina de estados SMACH
@@ -66,7 +66,7 @@ class PlacingStateMachine:
             smach.StateMachine.add('CREATE_BOUND', smach.CBState(self.create_bound, outcomes=['success', 'failed']),
                                    transitions={'success':'APPROACH', 'failed':'CREATE_BOUND'})
             smach.StateMachine.add('APPROACH', smach.CBState(self.approach, outcomes=['success', 'failed', 'cancel','poured']),
-                                   transitions={'success':'RETREAT', 'failed':'failure', 'cancel':'failure','poured':'succeeded' })
+                                   transitions={'success':'RETREAT', 'failed':'APPROACH', 'cancel':'failure','poured':'succeeded' })
             
             smach.StateMachine.add('RETREAT', smach.CBState(self.retreat, outcomes=['success', 'failed']),
                                    transitions={'success':'succeeded', 'failed': 'RETREAT'})
@@ -91,7 +91,7 @@ class PlacingStateMachine:
         #self.add_collision_object('bound_right', position=[0.0, - 1.0, 0.3], dimensions=[2.0, 0.05, 0.05])
         #self.add_collision_object('bound_behind', position=[-0.4, 0.0, 0.3], dimensions=[0.05, 2.0, 0.05])
         self.publish_known_areas()# Add Table
-        #clear_octo_client()        
+        clear_octo_client()        
         self.safe_pose = self.whole_body.get_current_joint_values()
         return 'success'
 
@@ -99,14 +99,15 @@ class PlacingStateMachine:
     def approach(self, userdata):
         #Add primitive objets to planning scene
 
-        
-        # Maybe create a safe area to plan... COnstraints .. maybe create positional constraint ( see pick service)
-        
+        # TODO: Check planning 10 times, if failed exit or something...
+        # Maybe create a safe area to plan
+        #rospy.loginfo()
         self.approach_count += 1
         if self.approach_limit == self.approach_count:
             return 'cancel'
         goal = self.sm.userdata.goal.target_pose.data
         pos = [goal[0], goal[1], goal[2]]
+      
         self.add_collision_object(position = [0,0,0.15], dimensions = [0.1, 0.1, 0.051], frame='hand_palm_link')
         self.attach_object()
         
@@ -117,7 +118,7 @@ class PlacingStateMachine:
         pose_goal = [goal[0], goal[1], goal[2], goal[3], goal[4], goal[5], goal[6]]
         if self.grasp_approach == "above":
             self.target_pose, gaze_dir = self.calculate_above_approach(target_position=pose_goal)
-            print(f"Mode Above {self.target_pose}")
+            print(self.target_pose)
         else: #if self.grasp_approach == "frontal":
             self.target_pose = self.calculate_frontal_approach(target_position=pose_goal)
             print(self.target_pose)
@@ -128,25 +129,28 @@ class PlacingStateMachine:
             transform = self.tf2_buffer.lookup_transform("odom", "base_link", rospy.Time(0), timeout=rospy.Duration(1))
             rotation = transform.transform.rotation
             fixed_quat = [rotation.x, rotation.y, rotation.z, rotation.w]
-            self.set_orientation_constraint(fixed_quat=fixed_quat)
             # Set orientation constraint based on the current orientation of base_link
-            #self.set_combined_constraints(fixed_quat=fixed_quat)
+            self.set_combined_constraints(fixed_quat=fixed_quat   )
             
         except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
             rospy.logwarn("Could not get transform from 'odom' to 'base_link'. Using default quaternion.")
             
-        # Calculate the target pose based on the grasp approach
+        # Move the robot to the target pose with orientation constraint    
+        succ = self.move_to_pose(self.whole_body, self.target_pose)
 
+        # Calculate the target pose based on the grasp approach
         if self.grasp_approach == "above":
             self.target_pose, gaze_dir = self.calculate_above_approach(target_position=pose_goal)
         else:
             self.target_pose = self.calculate_frontal_approach(target_position=pose_goal)
+
         # Print the target pose for debugging
         print("Target Pose:", self.target_pose)
+
         # Wait for a short duration
         rospy.sleep(0.5)
 
-        ## ADD constraints for pouring ( Placing may not need them) #FOR POURING
+        ## ADD constraints for pouring ( Placing may not need them)
         if self.sm.userdata.goal.mode.data== 'pour':
             try:
                 transform = self.tf2_buffer.lookup_transform("odom", "base_link", rospy.Time(0), timeout=rospy.Duration(1))
@@ -154,24 +158,25 @@ class PlacingStateMachine:
                 fixed_quat = [rotation.x, rotation.y, rotation.z, rotation.w]
                 # Set orientation constraint based on the current orientation of base_link
                 self.set_orientation_constraint(fixed_quat=fixed_quat)
-            
             except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
                 rospy.logwarn("Could not get transform from 'odom' to 'base_link'. Using default quaternion.")
                 # Use a default quaternion if unable to retrieve the current orientation
                 #fixed_quat = [0, 0, 0, 1]
                 #self.set_orientation_constraint(fixed_quat=fixed_quat)
+
         # Move the robot to the target pose with orientation constraint
         succ = self.move_to_pose(self.whole_body, self.target_pose)
-        print (succ)
-        rospy.sleep(3)
+
         # Clear the orientation constraint after the movement
         self.clear_orientation_constraint()
-       
+
+        
+        
         ##ASK FOR POUR
         if succ:
-            if self.grasp_approach== 'pour':                                                                                #POURING
+            if self.grasp_approach== 'pour':
                 joint_values = self.brazo.get_joint_values()
-                #safe_jv=joint_values
+                safe_jv=joint_values
                 joint_values[0] += -0.05
                 joint_values[2] = 0.0
                 joint_values[3] = 0.0
@@ -185,34 +190,26 @@ class PlacingStateMachine:
                 rospy.sleep(0.5)    
                 self.scene.remove_attached_object(self.eef_link, name="objeto") 
                 return 'poured' 
-            else:
-                
-                return 'success'
+            else:return 'success'
         else:
             return 'failed'
 
     
 
     def retreat(self, userdata):
-        
+        # pose_goal = self.target_pose
+        #pose_goal.position.x -= 0.13
+        # pose_goal.position.z += 0.13
+        # position_goal = [pose_goal.position.x, pose_goal.position.y, pose_goal.position.z]
+        # succ = self.move_to_position(self.whole_body, position_goal)  # Retirarse a una posición segura
 
-        
-        
-        # first place then retreat.
-            
-        pose_eef = self.whole_body.get_current_pose()
-        height_eef=pose_eef.pose.position.z
-        goal = self.sm.userdata.goal.target_pose.data
-        print (f"correction{goal[2]-height_eef+0.081} as opossed to -0.1")
+        # TODO: Retreat base safely
         joint_values = self.brazo.get_joint_values()
-        joint_values[0] +=  (goal[2]-height_eef)         #-0.1
+        joint_values[0] += -0.1
         self.brazo.set_joint_values(joint_values)
         self.gripper.open()
         rospy.sleep(1.0)
         self.scene.remove_attached_object(self.eef_link, name="objeto")
-        
-        
-        
         ### 
         ###TODO CREATE A SAFE RETREAT POSE!
         joint_values = self.brazo.get_joint_values()
