@@ -1,0 +1,4 @@
+std_msgs/String  command
+float32 timeout
+---
+std_msgs/String  plan

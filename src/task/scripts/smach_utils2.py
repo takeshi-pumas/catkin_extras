@@ -17,10 +17,11 @@ import tf2_ros
 import logging 
 from os import path
 from glob import glob
+from pyzbar import pyzbar
 import ros_numpy
 from geometry_msgs.msg import PoseStamped, Point  , Quaternion , TransformStamped , Twist
 from tf2_geometry_msgs import PointStamped
-from std_msgs.msg import String
+from std_msgs.msg import String,Float32MultiArray
 from std_srvs.srv import Trigger, TriggerResponse 
 from sensor_msgs.msg import Image , LaserScan  , PointCloud2
 from tf2_sensor_msgs.tf2_sensor_msgs import do_transform_cloud
@@ -44,9 +45,7 @@ from rospy.exceptions import ROSException
 from vision_msgs.srv import *
 #from act_recog.srv import Recognize,RecognizeResponse,RecognizeRequest
 from ros_whisper_vosk.srv import SetGrammarVosk
-
 from action_server.msg import FollowActionGoal ,  FollowAction
-
 from utils.grasp_utils import *
 from utils.misc_utils import *
 from utils.nav_utils import *
@@ -65,7 +64,6 @@ logger.setLevel(logging.ERROR)
 #broadcaster = tf.TransformBroadcaster()
 #arm =  moveit_commander.MoveGroupCommander('arm')
 tfBuffer = tf2_ros.Buffer()
-
 listener = tf2_ros.TransformListener(tfBuffer)
 broadcaster = tf2_ros.TransformBroadcaster()
 tf_static_broadcaster = tf2_ros.StaticTransformBroadcaster()
@@ -110,6 +108,22 @@ head = GAZE()
 brazo = ARM()
 line_detector = LineDetector()
 # arm =  moveit_commander.MoveGroupCommander('arm')
+
+#------------------------------------------------------
+
+def wait_for_qr(timeout=10):
+    decoded_objects=[]
+    start_time = rospy.get_time()
+    while (rospy.get_time() - start_time < timeout) :
+        decoded_objects = pyzbar.decode(rgbd.get_image())
+        print ('waiting for qr')
+        if len(decoded_objects)!=0:
+            print (f"Command read {decoded_objects[0].data.decode('utf-8')}")
+            return decoded_objects[0].data.decode('utf-8')
+
+    return 'time out' 
+        
+        
 #------------------------------------------------------
 
 def call_yolo_service(height = -1):
@@ -133,11 +147,11 @@ def detect_object_yolo(object_name,res):
         if res.poses[i].position.x is not np.nan :
             objs.append(name.data[4:])
             poses.append(res.poses[i])
-        if name.data[4:]==object_name:return res.poses[i]
+        if name.data[4:]==object_name:return name.data[4:], res.poses[i]
     if object_name=='all':
         print (objs, poses)
         return objs , poses
-    return []
+    return [],[]
 
 #------------------------------------------------------
 def seg_res_tf(res):
@@ -242,7 +256,8 @@ def find_placing_area (plane_height=-1):
         #succ=seg_res_tf(res)
         print (f'Placing Area at {res.poses.data}')    
         if len(res.poses.data)!=0:
-            tf_man.pub_static_tf(pos=[res.poses.data[0], res.poses.data[1],res.poses.data[2]], rot =[0,0,0,1], point_name='placing_area')
+            _ , rot=tf_man.getTF('base_link')
+            tf_man.pub_static_tf(pos=[res.poses.data[0], res.poses.data[1],res.poses.data[2]], rot =rot, point_name='placing_area')
             return True    
     return False    
 

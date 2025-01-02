@@ -13,6 +13,7 @@ Panels:
         - /TF1
         - /TF1/Frames1
         - /MarkerArray3
+        - /PointStamped6
       Splitter Ratio: 0.7425600290298462
     Tree Height: 248
   - Class: rviz/Help
@@ -50,6 +51,7 @@ Visualization Manager:
     - Acceleration_Scaling_Factor: 1
       Class: moveit_rviz_plugin/MotionPlanning
       Enabled: true
+      JointsTab_Use_Radians: true
       Move Group Namespace: ""
       MoveIt_Allow_Approximate_IK: true
       MoveIt_Allow_External_Program: false
@@ -569,111 +571,13 @@ Visualization Manager:
       Filter (whitelist): ""
       Frame Timeout: 15
       Frames:
-        002_master_chef_can:
-          Value: true
-        004_sugar_box:
-          Value: true
-        005_tomato_soup_can:
-          Value: true
-        006_mustard_bottle:
-          Value: true
-        007_tuna_fish_can:
-          Value: true
-        008_pudding_box:
-          Value: true
-        009_gelatin_box:
-          Value: true
-        010_potted_meat_can:
-          Value: true
-        011_banana:
-          Value: true
-        012_strawberry:
-          Value: true
-        015_peach:
-          Value: true
-        016_pear:
-          Value: true
-        018_plum:
-          Value: true
-        019-a_pitcher_base:
-          Value: true
-        019-b_pitcher_base_v2:
-          Value: true
-        020_pitcher_lid:
-          Value: true
-        022_windex_bottle:
-          Value: true
-        025_mug:
-          Value: true
-        029_plate:
-          Value: true
-        030_fork:
-          Value: true
-        033_spatula:
-          Value: true
-        040_large_marker:
-          Value: true
-        050_medium_clamp:
-          Value: true
-        052_extra_large_clamp:
-          Value: true
-        053-a_mini_soccer_ball:
-          Value: true
-        053-b_mini_soccer_ball_v2:
-          Value: true
-        054_softball:
-          Value: true
-        055_baseball:
-          Value: true
-        056_tennis_ball:
-          Value: true
-        058_golf_ball:
-          Value: true
-        062_dice:
-          Value: true
-        063-a_marbles:
-          Value: true
-        063-b_marbles:
-          Value: true
-        065-a_cups:
-          Value: true
-        070-a_colored_wood_blocks:
-          Value: true
-        070-b_colored_wood_blocks:
-          Value: true
-        071_nine_hole_peg_test:
-          Value: true
-        072-a_toy_airplane:
-          Value: true
-        073-b_lego_duplo:
-          Value: true
-        073-e_lego_duplo:
-          Value: true
         All Enabled: false
-        KNOWNOBJECT/refrigerator_center_drawer_235:
-          Value: true
-        a_colored_wood_blocks:
-          Value: true
-        a_marbles:
-          Value: true
-        a_mini_soccer_ball:
-          Value: true
-        a_pitcher_base:
-          Value: true
-        ar_marker/1799:
-          Value: true
-        ar_marker/7:
-          Value: true
         arm_flex_link:
           Value: false
         arm_lift_link:
           Value: false
         arm_roll_link:
           Value: false
-        b_pitcher_base_v2:
-          Value: true
-        banana:
-          Value: true
         base_b_bumper_link:
           Value: false
         base_f_bumper_link:
@@ -706,21 +610,33 @@ Visualization Manager:
           Value: false
         base_roll_link:
           Value: false
-        baseball:
+        bed:
           Value: true
-        dice:
+        bedroom:
+          Value: true
+        book_shelf:
+          Value: true
+        coach:
+          Value: true
+        counter:
+          Value: true
+        cupboard:
+          Value: true
+        desk:
           Value: true
         dining_room:
           Value: true
-        door_lab:
+        dining_table:
           Value: true
-        e_lego_duplo:
+        dish_washer:
           Value: true
-        fork:
+        end_table:
           Value: true
-        gelatin_box:
+        entrance:
           Value: true
-        goal_for_grasp:
+        exit:
+          Value: true
+        goal_for_place:
           Value: true
         hand_camera_frame:
           Value: false
@@ -764,10 +680,14 @@ Visualization Manager:
           Value: false
         head_pan_link:
           Value: false
+        head_r_stereo_camera_frame:
+          Value: true
         head_r_stereo_camera_gazebo_frame:
           Value: false
         head_r_stereo_camera_link:
           Value: false
+        head_rgbd_sensor_depth_frame:
+          Value: true
         head_rgbd_sensor_gazebo_frame:
           Value: false
         head_rgbd_sensor_link:
@@ -778,52 +698,28 @@ Visualization Manager:
           Value: false
         kitchen:
           Value: false
-        large_marker:
-          Value: true
         living_room:
           Value: false
         map:
           Value: true
-        master_chef_can:
-          Value: true
-        mustard_bottle:
-          Value: true
-        nine_hole_peg_test:
-          Value: true
         odom:
-          Value: true
-        peach:
-          Value: true
-        pear:
-          Value: true
-        pickup:
-          Value: false
-        place_shelf:
           Value: true
         placing_area:
           Value: true
-        potted_meat_can:
-          Value: true
-        recognized_object/refrigerator_center_drawer/235:
+        rear_door:
           Value: true
         shelf:
           Value: true
-        softball:
+        side_table:
           Value: true
-        strawberry:
+        sink:
           Value: true
-        sugar_box:
+        start:
           Value: true
-        tennis_ball:
-          Value: true
-        tomato_soup_can:
+        storage_table:
           Value: true
         torso_lift_link:
           Value: false
-        tuna_fish_can:
-          Value: true
-        windex_bottle:
-          Value: true
         wrist_flex_link:
           Value: false
         wrist_ft_sensor_frame:
@@ -840,47 +736,37 @@ Visualization Manager:
       Show Names: true
       Tree:
         map:
-          KNOWNOBJECT/refrigerator_center_drawer_235:
+          bed:
             {}
-          a_colored_wood_blocks:
+          bedroom:
             {}
-          a_marbles:
+          book_shelf:
             {}
-          a_mini_soccer_ball:
+          coach:
             {}
-          a_pitcher_base:
+          counter:
             {}
-          b_pitcher_base_v2:
+          cupboard:
             {}
-          banana:
-            {}
-          baseball:
-            {}
-          dice:
+          desk:
             {}
           dining_room:
             {}
-          door_lab:
+          dining_table:
             {}
-          e_lego_duplo:
+          dish_washer:
             {}
-          fork:
+          end_table:
             {}
-          gelatin_box:
+          entrance:
             {}
-          goal_for_grasp:
+          exit:
+            {}
+          goal_for_place:
             {}
           kitchen:
             {}
-          large_marker:
-            {}
           living_room:
-            {}
-          master_chef_can:
-            {}
-          mustard_bottle:
-            {}
-          nine_hole_peg_test:
             {}
           odom:
             base_footprint:
@@ -941,130 +827,36 @@ Visualization Manager:
                           {}
                       head_l_stereo_camera_link:
                         head_l_stereo_camera_frame:
-                          ar_marker/1799:
-                            {}
-                          ar_marker/7:
-                            {}
-                          head_rgbd_sensor_rgb_frame:
-                            002_master_chef_can:
-                              {}
-                            004_sugar_box:
-                              {}
-                            005_tomato_soup_can:
-                              {}
-                            006_mustard_bottle:
-                              {}
-                            007_tuna_fish_can:
-                              {}
-                            008_pudding_box:
-                              {}
-                            009_gelatin_box:
-                              {}
-                            010_potted_meat_can:
-                              {}
-                            011_banana:
-                              {}
-                            012_strawberry:
-                              {}
-                            015_peach:
-                              {}
-                            016_pear:
-                              {}
-                            018_plum:
-                              {}
-                            019-a_pitcher_base:
-                              {}
-                            019-b_pitcher_base_v2:
-                              {}
-                            020_pitcher_lid:
-                              {}
-                            022_windex_bottle:
-                              {}
-                            025_mug:
-                              {}
-                            029_plate:
-                              {}
-                            030_fork:
-                              {}
-                            033_spatula:
-                              {}
-                            040_large_marker:
-                              {}
-                            050_medium_clamp:
-                              {}
-                            052_extra_large_clamp:
-                              {}
-                            053-a_mini_soccer_ball:
-                              {}
-                            053-b_mini_soccer_ball_v2:
-                              {}
-                            054_softball:
-                              {}
-                            055_baseball:
-                              {}
-                            056_tennis_ball:
-                              {}
-                            058_golf_ball:
-                              {}
-                            062_dice:
-                              {}
-                            063-a_marbles:
-                              {}
-                            063-b_marbles:
-                              {}
-                            065-a_cups:
-                              {}
-                            070-a_colored_wood_blocks:
-                              {}
-                            070-b_colored_wood_blocks:
-                              {}
-                            071_nine_hole_peg_test:
-                              {}
-                            072-a_toy_airplane:
-                              {}
-                            073-b_lego_duplo:
-                              {}
-                            073-e_lego_duplo:
-                              {}
-                          recognized_object/refrigerator_center_drawer/235:
-                            {}
+                          {}
                         head_l_stereo_camera_gazebo_frame:
                           {}
                       head_r_stereo_camera_link:
+                        head_r_stereo_camera_frame:
+                          {}
                         head_r_stereo_camera_gazebo_frame:
                           {}
                       head_rgbd_sensor_link:
+                        head_rgbd_sensor_depth_frame:
+                          {}
                         head_rgbd_sensor_gazebo_frame:
+                          {}
+                        head_rgbd_sensor_rgb_frame:
                           {}
             base_footprint_wheel:
               {}
-          peach:
-            {}
-          pear:
-            {}
-          pickup:
-            {}
-          place_shelf:
-            {}
           placing_area:
             {}
-          potted_meat_can:
+          rear_door:
             {}
           shelf:
             {}
-          softball:
+          side_table:
             {}
-          strawberry:
+          sink:
             {}
-          sugar_box:
+          start:
             {}
-          tennis_ball:
-            {}
-          tomato_soup_can:
-            {}
-          tuna_fish_can:
-            {}
-          windex_bottle:
+          storage_table:
             {}
       Update Interval: 0
       Value: true
@@ -1181,6 +973,28 @@ Visualization Manager:
       Show Visual Aids: false
       Update Topic: /simple_marker/update
       Value: false
+    - Alpha: 1
+      Class: rviz/PointStamped
+      Color: 204; 41; 204
+      Enabled: true
+      History Length: 1
+      Name: PointStamped
+      Queue Size: 10
+      Radius: 0.20000000298023224
+      Topic: /hri/leg_finder/leg_pose
+      Unreliable: false
+      Value: true
+    - Alpha: 1
+      Class: rviz/PointStamped
+      Color: 0; 200; 0
+      Enabled: true
+      History Length: 1
+      Name: PointStamped
+      Queue Size: 10
+      Radius: 0.20000000298023224
+      Topic: /clicked_point
+      Unreliable: true
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -1200,7 +1014,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 4.454522132873535
+      Distance: 2.1871578693389893
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -1208,17 +1022,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 0.29466432332992554
-        Y: 0.048873528838157654
-        Z: -2.3229913495015353e-06
+        X: -0.14512288570404053
+        Y: -0.687065064907074
+        Z: -2.3527936718892306e-06
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.9047970771789551
+      Pitch: 0.019797571003437042
       Target Frame: base_footprint
-      Yaw: 4.647689342498779
+      Yaw: 3.0845115184783936
     Saved: ~
 Window Geometry:
   Displays:

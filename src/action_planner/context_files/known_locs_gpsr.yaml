@@ -1,0 +1,44 @@
+KnownLocations:
+  - Name: Couch
+    Description: A seating area typically in a living room or lounge.
+  - Name: DiningRoom
+    Description: A room where meals are served and eaten.
+  - Name: DiningTable
+    Description: A table in the dining room used for serving meals.
+  - Name: Dishwasher
+    Description: An appliance typically found in the kitchen for cleaning dishes.
+  - Name: Sink
+    Description: A basin in the kitchen or bathroom for washing objects or hands.
+  - Name: Counter
+    Description: A flat surface in the kitchen used for food preparation or placing objects.
+  - Name: StorageTable
+    Description: A table used for keeping items, often in the kitchen or pantry area.
+  - Name: Bedroom
+    Description: A room used for sleeping and resting.
+  - Name: Bed
+    Description: A piece of furniture for sleeping.
+  - Name: Desk
+    Description: A table used for writing, working, or placing objects like computers.
+  - Name: Corridor
+    Description: A hallway connecting different rooms or areas.
+  - Name: Entrance
+    Description: The main entry point to the house or arena.
+  - Name: Exit
+    Description: The primary point for leaving the house or arena.
+  - Name: Bookcase
+    Description: A shelf for storing books and other items.
+  - Name: SideTable
+    Description: A small table often placed beside furniture like couches or beds.
+  - Name: EndTable
+    Description: A small table typically placed at the end of a couch or next to a chair.
+  - Name: Kitchen
+    Description: A room used for cooking and food preparation.
+  - Name: LivingRoom
+    Description: A common area for relaxation or entertaining guests.
+  - Name: Corridor
+    Description: A hallway connecting rooms within the environment.
+  - Name: RearDoor
+    Description: The back door of the house or arena.
+  - Name: UberPickup
+    Description: A designated location for a person to meet their taxi.
+

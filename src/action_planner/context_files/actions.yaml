@@ -1,0 +1,54 @@
+actions:
+  - category: Navigation
+    name: Navigate
+    purpose: Move the robot to a target location.
+    type: Atomic
+  - category: Navigation
+    name: FollowPerson
+    purpose: Follow a specific person as they move.
+    type: Atomic
+  - category: Object Manipulation
+    name: PickObject
+    purpose: Pick up a specified object from a location.
+    type: Atomic
+  - category: Object Manipulation
+    name: PlaceObject
+    purpose: Place an object at a specified location.
+    type: Atomic
+  - category: Human Interaction
+    name: GreetPerson
+    purpose: Greet a person verbally or visually.
+    type: Atomic
+  - category: Human Interaction
+    name: AnswerQuestion
+    purpose: Respond to a question from a person.
+    type: Atomic
+  - category: Human Interaction
+    name: IdentifyPerson
+    purpose: Provide information about a person (e.g., gender, pose).
+    type: Atomic
+  - category: Human Interaction
+    name: TellJoke
+    purpose: Tell a joke to entertain or engage a person.
+    type: Atomic
+  - category: Human Interaction
+    name: StateInfo
+    purpose: State contextual information (e.g., time, day).
+    type: Atomic
+  - category: Environmental Awareness
+    name: FindObject
+    purpose: Locate a specific object in the environment.
+    type: Atomic
+  - category: Environmental Awareness
+    name: CountObjects
+    purpose: Count the number of objects of a specific type in a location.
+    type: Atomic
+  - category: Environmental Awareness
+    name: ReportObjectAttribute
+    purpose: Identify attributes of an object (e.g., weight, size).
+    type: Atomic
+  - category: Environmental Awareness
+    name: LocatePerson
+    purpose: Identify the location of a specific person.
+    type: Atomic
+

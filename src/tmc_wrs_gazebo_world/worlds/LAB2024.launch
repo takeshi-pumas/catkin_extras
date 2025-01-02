@@ -19,8 +19,8 @@
   <arg name="robot_name" default="$(optenv ROBOT_NAME hsrb)" />
 	  <!--arg name="map" value="$(find config_files)/prohibition_maps/robocup_2023/map.yaml" /-->
     
-    <!--arg name="map"  default="$(find config_files)/prohibition_maps/map_lab_2024/map.yaml"/-->
-    <arg name="map"  default="$(find config_files)/prohibition_maps/blank/map.yaml"/>
+    <arg name="map"  default="$(find config_files)/prohibition_maps/map_lab_2024/map.yaml"/>
+    <!--arg name="map"  default="$(find config_files)/prohibition_maps/blank/map.yaml"/-->
 
 
 
