@@ -15,6 +15,7 @@ import moveit_commander
 import moveit_msgs.msg
 import tf2_ros
 import logging 
+import re
 from os import path
 from glob import glob
 from pyzbar import pyzbar
@@ -34,6 +35,7 @@ from ros_whisper_vosk.srv import GetSpeech
 from object_classification.srv import *
 from face_recog.msg import *
 from face_recog.srv import *
+from action_planner.srv import ActionPlanner,ActionPlannerRequest
 #import face_recognition 
 from hmm_navigation.msg import NavigateActionGoal, NavigateAction
 from cv_bridge import CvBridge, CvBridgeError
@@ -45,7 +47,7 @@ from rospy.exceptions import ROSException
 from vision_msgs.srv import *
 #from act_recog.srv import Recognize,RecognizeResponse,RecognizeRequest
 from ros_whisper_vosk.srv import SetGrammarVosk
-from action_server.msg import FollowActionGoal ,  FollowAction
+from action_server.msg import FollowActionGoal ,  FollowAction , IdentifyPersonAction , IdentifyPersonActionGoal
 from utils.grasp_utils import *
 from utils.misc_utils import *
 from utils.nav_utils import *
@@ -53,7 +55,7 @@ from utils.nav_utils import *
 
 global listener, broadcaster, tfBuffer, tf_static_broadcaster, scene, rgbd, head,train_new_face, wrist, human_detect_server, line_detector, clothes_color , head_mvit
 global clear_octo_client, goal,navclient,segmentation_server  , tf_man , omni_base, brazo, speech_recog_server, bridge, map_msg, pix_per_m, analyze_face , arm , set_grammar
-global recognize_action , classify_client,pointing_detect_server ,placing_finder_server
+global recognize_action , classify_client,pointing_detect_server ,placing_finder_server,action_planner_server
 rospy.init_node('smach', anonymous=True)
 logger = logging.getLogger('rosout')
 logger.setLevel(logging.ERROR)
@@ -73,14 +75,17 @@ pointing_detect_server = rospy.ServiceProxy('/detect_pointing' , Point_detector)
 segmentation_server = rospy.ServiceProxy('/segment' , Segmentation)    ##### PLANE SEGMENTATION (PARALEL TO FLOOR)
 placing_finder_server = rospy.ServiceProxy('/placing_finder' , Segmentation)### WHERE TO PLACE THINGS IN SHELVES
 navclient=actionlib.SimpleActionClient('/navigate', NavigateAction)   ### PUMAS NAV ACTION LIB
-
+action_planner_server = rospy.ServiceProxy('/action_planner', ActionPlanner)  # Replace PlanAction with the appropriate service or action definition
 # scene = moveit_commander.PlanningSceneInterface()
 speech_recog_server = rospy.ServiceProxy('/speech_recognition/vosk_service' ,GetSpeech)##############SPEECH VOSK RECOG FULL DICT
 set_grammar = rospy.ServiceProxy('set_grammar_vosk', SetGrammarVosk)                   ###### Get speech vosk keywords from grammar (function get_keywords)         
 recognize_face = rospy.ServiceProxy('recognize_face', RecognizeFace)                    #FACE RECOG
 train_new_face = rospy.ServiceProxy('new_face', RecognizeFace)                          #FACE RECOG
 analyze_face = rospy.ServiceProxy('analyze_face', RecognizeFace)    ###DEEP FACE ONLY
-classify_client = rospy.ServiceProxy('/classify', Classify)
+classify_client = rospy.ServiceProxy('/classify', Classify)             #YOLO OBJ RECOG
+
+
+
 classify_clnt_stickler = rospy.ServiceProxy('/classifystick', Classify)
 recognize_action = rospy.ServiceProxy('recognize_act',RecognizeOP)
 
@@ -110,21 +115,12 @@ line_detector = LineDetector()
 # arm =  moveit_commander.MoveGroupCommander('arm')
 
 #------------------------------------------------------
+def camel_to_snake(name):
+    # Converts camelCase or PascalCase to snake_case
+    return re.sub('([a-z0-9])([A-Z])', r'\1_\2', name).lower()
 
-def wait_for_qr(timeout=10):
-    decoded_objects=[]
-    start_time = rospy.get_time()
-    while (rospy.get_time() - start_time < timeout) :
-        decoded_objects = pyzbar.decode(rgbd.get_image())
-        print ('waiting for qr')
-        if len(decoded_objects)!=0:
-            print (f"Command read {decoded_objects[0].data.decode('utf-8')}")
-            return decoded_objects[0].data.decode('utf-8')
-
-    return 'time out' 
-        
-        
 #------------------------------------------------------
+
 
 def call_yolo_service(height = -1):
     request = segmentation_server.request_class() 

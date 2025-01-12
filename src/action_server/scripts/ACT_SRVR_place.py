@@ -137,13 +137,11 @@ class PlacingStateMachine:
             
         # Calculate the target pose based on the grasp approach
 
-        if self.grasp_approach == "above":
-            self.target_pose, gaze_dir = self.calculate_above_approach(target_position=pose_goal)
-        else:
-            self.target_pose = self.calculate_frontal_approach(target_position=pose_goal)
-        # Print the target pose for debugging
-        print("Target Pose:", self.target_pose)
-        # Wait for a short duration
+        #if self.grasp_approach == "above":
+        #    self.target_pose, gaze_dir = self.calculate_above_approach(target_position=pose_goal)
+        #else:
+        #    self.target_pose = self.calculate_frontal_approach(target_position=pose_goal)
+        
         rospy.sleep(0.5)
 
         ## ADD constraints for pouring ( Placing may not need them) #FOR POURING
@@ -203,7 +201,6 @@ class PlacingStateMachine:
         pose_eef = self.whole_body.get_current_pose()
         height_eef=pose_eef.pose.position.z
         goal = self.sm.userdata.goal.target_pose.data
-        print (f"correction{goal[2]-height_eef+0.081} as opossed to -0.1")
         joint_values = self.brazo.get_joint_values()
         joint_values[0] +=  (goal[2]-height_eef)         #-0.1
         self.brazo.set_joint_values(joint_values)

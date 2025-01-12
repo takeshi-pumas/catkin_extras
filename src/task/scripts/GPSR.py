@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Author: Oscar
+# ofc1227@tec.mx
 from smach_utils2 import *
 from smach_ros import SimpleActionState
 from action_server.msg import GraspAction
@@ -75,7 +77,7 @@ class Plan(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed', 'navigate','pick','place'
                                             ,'find_objects','follow','answer'],
-                                            output_keys=['actions','params'],input_keys=['actions','params'])
+                                            output_keys=['actions','params','command_id'],input_keys=['actions','params'])
         self.tries = 0
 
     def execute(self, userdata):
@@ -86,15 +88,21 @@ class Plan(smach.State):
         if len(actions)==0:
             print("I believe I have suceeded. Go back to initial and wait for command" )
             return 0
-        
-        if actions[0]==  'Navigate':return'navigate'
-        elif actions[0]=='PickObject':return'pick'
-        elif actions[0]=='PlaceObject':return'place'
-        elif actions[0]=='FindObject':return'find_objects'
-        elif actions[0]=='FollowPerson':return'follow'
-        elif actions[0]=='AnswerQuestion':return'answer'
+        else:
+            current_action=camel_to_snake(actions[0]).lower()   ### LLMS Still do wierd things sometims
+            
+            if   current_action == 'navigate':return'navigate'
+            elif current_action =='pick_object':return'pick'
+            elif current_action =='place_object':return'place'
+            elif current_action =='find_object':return'find_objects'
+            elif current_action =='follow_person':return'follow'
+            elif current_action =='answer_question':return'answer'
+            elif current_action == 'identify_person': 
+                userdata.command_id = userdata.params[0]  # Set the command_id parameter who to follow
+                return 'id_person'  # This triggers the ID_PERSON state
 
-        print(f'actions{actions[0]}wtf?')
+
+        print(f'current action {current_action} wtf?')
         return 'succ'
         
 #########################################################################################################
@@ -107,26 +115,30 @@ class Wait_command(smach.State):
         #############################################################################################
         #return 'succ'## REMOVE  THIS IS ONLY FOR GAZEBO TESTING (no push hand simulated just skip)
         #############################################################################################  
-        rospy.loginfo('STATE : Wait for Wait_push_hand')
+        rospy.loginfo('STATE : Wait for Wait_command ')
         print('Waiting for Command')
-
         self.tries += 1
         print(f'Try {self.tries} of 4 attempts')
         if self.tries == 4:
             return 'tries'
         talk('Ready for GPSR, waiting for comand using QR')    
         #plan="plan=['FindObject(EndTable)', 'Navigate(EndTable)', 'IdentifyObject(largest_object)', 'ReportObjectAttribute(size)']"
-                   
         #succ = wait_for_qr(100) # TO DO
         succ=True
-        command_msg= String()
+        req = ActionPlannerRequest()
+        req.timeout=10
+        command=action_planner_server(req)
+        print(f'command.plan.data{command.plan.data}.')
+        if command.plan.data== 'timed out':return 'failed'
+        
         #plan="plan = [ Navigate(Desk),FollowPerson(Skyler),Navigate(dining_room)]"
         #plan= "plan = [ Navigate(end_table),FindObject(bowl),PickObject(bowl),Navigate(cupboard),PlaceObject(cupboard)]"
-        plan="plan = [ Navigate(cupboard),PlaceObject(cupboard)]"
-        command_msg.data=plan.split("=")[1].strip("[ ]")
+        #plan="plan = [ Navigate(cupboard),PlaceObject(cupboard)]"
+        #command_msg= String()
+        #command_msg.data=plan.split("=")[1].strip("[ ]")
         actions=[]
         params=[]
-        for command in command_msg.data.split(','):
+        for command in ("Navigate(cupboard),PlaceObject(cupboard)"):#command.plan.data.split(','):   ### TODO THIS IS SUPER BAD
             print (command)
             action = command.split('(')[0]  # Get the part before '('
             param = command.split('(')[1][:-1]  # Get the part inside '()'
@@ -135,12 +147,6 @@ class Wait_command(smach.State):
             params.append(param)
         userdata.actions=actions
         userdata.params=params
-        
-
-        
-       
-
-
         if succ:
             return 'succ'
         else:
@@ -436,15 +442,10 @@ class Place(smach.State):
         head.set_joint_values([ 0.0, -0.5])
         rospy.sleep(1.0)                
         find_placing_area()
-
         pos, quat = tf_man.getTF(target_frame = 'placing_area', ref_frame = 'odom')
         target_pose = Float32MultiArray()
         target_pose.data = pos
         offset_point=[0.0,0.1,0.1 ]
-        string_msg = String()
-        string_msg.data='above'                
-        #string_msg.data='frontal'
-        userdata.mode=string_msg             
         ###################
         #####################APPLY OFFSET
         object_point = PointStamped()
@@ -457,6 +458,7 @@ class Place(smach.State):
         ##################################################################3
         rospy.sleep(0.5)
         pos, quat = tf_man.getTF(target_frame = 'goal_for_place', ref_frame = 'odom')
+        print (f"pos{pos}transformed_object_point.point.z{transformed_object_point.point.z}")
         pose_goal=np.concatenate((pos,quat))
         print (f'transalted_point-<{pose_goal}')    
         target_pose = Float32MultiArray()
@@ -465,6 +467,18 @@ class Place(smach.State):
 
         ###################
         head.set_named_target('neutral')
+        string_msg = String()
+        string_msg.data='above'                
+        if transformed_object_point.point.z>=0.6:
+            #av=arm.get_current_joint_values()
+            #av[0]=+0.3
+            #av[1]=-0.74
+            #av[2]=0.0
+            #arm.go(av) 
+            string_msg.data='frontal'    
+            #string_msg.data='pour'
+        userdata.mode=string_msg             
+        ###################################
         rospy.sleep(0.5)
         #clear octo client is recommended
         #clear_octo_client()               
@@ -1028,9 +1042,15 @@ if __name__ == '__main__':
         smach.StateMachine.add("PLACE_GOAL", SimpleActionState('place_server', GraspAction, goal_slots={'target_pose': 'target_pose', 'mode': 'mode'}),                    
                                 transitions={'preempted': 'PLACE', 'succeeded': 'POST_PLACE', 'aborted': 'PLACE'})
         
+        smach.StateMachine.add("ID_PERSON", SimpleActionState('id_server', IdentifyPersonAction, goal_slots={'command_id': 'command_id'}),
+                               transitions={'aborted': 'ID_PERSON','succeeded': 'PLAN' ,'preempted': 'PLAN' })
+        
+        
         smach.StateMachine.add("FOLLOW_PERSON", SimpleActionState('follow_server', FollowAction), transitions={'aborted': 'FOLLOW_PERSON',        
                                                                                                             'succeeded': 'PLAN' ,   
                                                                                                             'preempted': 'PLAN' })
+        
+        
                         
         smach.StateMachine.add("WAIT_PUSH_HAND",    Wait_push_hand(),   transitions={'failed': 'WAIT_PUSH_HAND',    
                                                                                          'succ': 'WAIT_COMMAND',       

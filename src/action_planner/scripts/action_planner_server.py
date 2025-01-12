@@ -15,7 +15,7 @@ from ollama import chat
 class RGB:
     def __init__(self):
         # Get the topic name from the parameter server
-        self.image_topic = rospy.get_param('~image_topic', '/hsrb/head_rgbd_sensor/rgb/image_rect_color')  # Default to /hsrb/head_rgbd_sensor/rgb/image_rect_color
+        self.image_topic = rospy.get_param('/image_topic', '/usb_cam/image_raw')  # Default to /hsrb/head_rgbd_sensor/rgb/image_rect_color
         self.bridge = CvBridge()
 
     def get_image(self):
@@ -40,6 +40,7 @@ def wait_for_qr(img,timeout=10):
     
     while rospy.get_time() - start_time < timeout:
         print ("waiting for qr")
+        img=rgb.get_image()
         if img is not None:
             decoded_objects = pyzbar.decode(img)
             rospy.loginfo(f"Decoded objects count: {len(decoded_objects)}")
@@ -85,7 +86,7 @@ def plan_command(command):
     messages = [
     {
           "role": "tool",
-           "content": f"You are a robot with a limited action set described here{actions}. Here are some examples of sequence of actions to solve commands{examples}. User requests {command}. Using ONLY the provided action set and known locations{known_locs}, generate a structured action plan that follows the sequence of tasks required to accomplish the goal, you should not try to find patterns in it, just use it for fomrat, plan for the command using your own reasoning. in the current command. Ensure the output is in YAML format and includes specific actions from the available action set (e.g., Navigate, LocateObject, BringObject)"
+           "content": f"You are a robot with a limited action set described here: {actions}. Here are some examples of sequences of actions to solve commands: {examples}. User requests: {command}. Using ONLY the provided action set and known locations {known_locs}, generate a structured action plan that follows the sequence of tasks required to accomplish the goal. Ensure the output is in YAML format and includes specific actions from the available action set (e.g., navigate, locate_object, bring_object). All actions and parameters must be formatted in snake_case."
         },
     ]
     response = chat('mistral', messages=messages)
@@ -105,7 +106,7 @@ def check_format(plan):
     messages = [
     {
           "role": "tool",
-           "content": f"Help inforce the syntax of this {plan}, Notice there are actions(parameters)  all parameters must follow snake_case convention"
+           "content": f" Inforce the syntax of this {plan}, Notice there are actions and parameters in this form  name_of_action(parameters)  all parameters must follow snake_case convention"
         },
     ]
 
@@ -124,8 +125,7 @@ def action_planner(req):
             answer=answer_question(req.command.data)
             response.data=answer
     else:
-        img=rgb.get_image()
-        qr_text=wait_for_qr(img,30)
+        qr_text=wait_for_qr(req.timeout)
         print(qr_text)
         if qr_text != "time out":
             command=qr_text
@@ -145,7 +145,9 @@ def action_planner(req):
             out_plan
             response.data = out_plan
             print(response.data)
-        else:print (' Qr Timed OuT')
+        else:
+            print (' Qr Timed OuT')
+            response.data ='timed out'
     return ActionPlannerResponse(response)
 
 if __name__ == "__main__":

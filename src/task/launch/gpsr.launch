@@ -1,17 +1,9 @@
-
-
 <launch>  
-  
   <include file="$(find hsrb_moveit_config)/launch/hsrb_demo_with_controller.launch"> 
   <arg name="use_gui" value="true"/> 
   </include>
-  
   <param name="image_topic" value="/usb_cam/image_raw"/>
   <node pkg="action_planner"  name="action_planner" type="action_planner_server.py" output="screen" /> 
-
-
-
-
   <param name="file_name" value="/known_locations_gpsr.yaml"/>
   <node pkg="hmm_navigation"  name="pumas_nav" type="pumas_nav.py" output="screen" />
   <node pkg="known_locations_tf_server"  name="known_locs" type="known_locs_node.py" output="screen" />
@@ -25,7 +17,7 @@
   <node pkg="head" name="mic_enable" type="mic_node"/>
   <!-- ##############################################################################-->
   <node pkg="action_server"  name="grasp_action_server"  type="ACT_SRVR_grasp_mio.py"/>  
-  <!--node pkg="action_server"  name="place_action_server"  type="ACT_SRVR_place.py"/-->   
+  <node pkg="action_server"  name="place_action_server"  type="ACT_SRVR_place.py"/>   
   <node pkg="action_server"  name="follow_action_server" type="ACT_SRVR_Follow.py"/>   
   <node pkg="action_server"  name="identify_person_action_server" type="ACT_SRVR_Identify_person.py"/>   
       <node pkg="human_detector"  name="human_detector"       type="pointing_detector_server.py"/>  

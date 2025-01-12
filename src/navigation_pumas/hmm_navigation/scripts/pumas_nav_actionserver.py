@@ -1,4 +1,6 @@
 #! /usr/bin/env python3
+# Author: Oscar
+# ofc1227@tec.mx
 
 import tf
 import tf2_ros

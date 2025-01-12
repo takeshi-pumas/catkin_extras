@@ -1,44 +1,56 @@
-KnownLocations:
-  - Name: Couch
-    Description: A seating area typically in a living room or lounge.
-  - Name: DiningRoom
-    Description: A room where meals are served and eaten.
-  - Name: DiningTable
-    Description: A table in the dining room used for serving meals.
-  - Name: Dishwasher
-    Description: An appliance typically found in the kitchen for cleaning dishes.
-  - Name: Sink
-    Description: A basin in the kitchen or bathroom for washing objects or hands.
-  - Name: Counter
-    Description: A flat surface in the kitchen used for food preparation or placing objects.
-  - Name: StorageTable
-    Description: A table used for keeping items, often in the kitchen or pantry area.
-  - Name: Bedroom
-    Description: A room used for sleeping and resting.
-  - Name: Bed
-    Description: A piece of furniture for sleeping.
-  - Name: Desk
-    Description: A table used for writing, working, or placing objects like computers.
-  - Name: Corridor
-    Description: A hallway connecting different rooms or areas.
-  - Name: Entrance
-    Description: The main entry point to the house or arena.
-  - Name: Exit
-    Description: The primary point for leaving the house or arena.
-  - Name: Bookcase
-    Description: A shelf for storing books and other items.
-  - Name: SideTable
-    Description: A small table often placed beside furniture like couches or beds.
-  - Name: EndTable
-    Description: A small table typically placed at the end of a couch or next to a chair.
-  - Name: Kitchen
-    Description: A room used for cooking and food preparation.
-  - Name: LivingRoom
-    Description: A common area for relaxation or entertaining guests.
-  - Name: Corridor
-    Description: A hallway connecting rooms within the environment.
-  - Name: RearDoor
-    Description: The back door of the house or arena.
-  - Name: UberPickup
-    Description: A designated location for a person to meet their taxi.
-
+- name: Navigate
+  purpose: Move the robot to a target location.
+  parameters:
+    - target_location: The location to navigate to.
+- name: FollowPerson
+  purpose: Follow a specific person as they move.
+  parameters:
+    - person_name: The name of the person to follow.
+- name: PickObject
+  purpose: Pick an object.
+  parameters:
+    - object_name: The name of the object to pick.
+- name: PlaceObject
+  purpose: Place an object at a target location.
+  parameters:
+    - object_name: The name of the object to place.
+    - target_location: The location where the object should be placed.
+- name: GreetPerson
+  purpose: Greet a person verbally or visually.
+  parameters:
+    - person_name: The name of the person to greet.
+- name: AnswerQuestion
+  purpose: Respond to a question from a person.
+  parameters:
+    - question: The question to answer.
+- name: IdentifyPerson
+  purpose: Provide information about a person (e.g., gender, pose).
+  parameters:
+    - person_name: The name of the person to identify.
+- name: TellJoke
+  purpose: Tell a joke to entertain or engage a person.
+  parameters:
+    - person_name: The name of the person to tell a joke to.
+- name: StateInfo
+  purpose: State contextual information (e.g., time, day).
+  parameters:
+    - info_item: The information to state (e.g., time, date).
+- name: FindObject
+  purpose: Locate a specific object in the environment or by type.
+  parameters:
+    - object_name: (optional) The name of the specific object to locate.
+    - object_type: (optional) The type of object to locate (e.g., "fruits").
+- name: CountObjects
+  purpose: Count the number of objects of a specific type in a location.
+  parameters:
+    - type_object: The type of object to count (e.g., "fruits").
+    - location: (optional) The location where the objects are found.
+- name: ReportObjectAttribute
+  purpose: Identify attributes of an object (e.g., weight, size).
+  parameters:
+    - attribute: The attribute to report (e.g., "weight").
+    - object_name: (optional) The object whose attribute is being reported.
+- name: LocatePerson
+  purpose: Identify the location of a specific person.
+  parameters:
+    - person_name: The name of the person to locate.
