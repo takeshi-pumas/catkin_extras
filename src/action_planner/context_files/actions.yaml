@@ -31,14 +31,20 @@ actions:
       - question: The question to answer.
 
   - name: IdentifyPerson
-    purpose: Provide information about a person (e.g., gender, pose).
+    purpose: Provide information about a person, information can be pose, clothing, gender.
     parameters:
       - person_name: The name of the person to identify.
+      
 
   - name: TellJoke
     purpose: Tell a joke to entertain or engage a person.
     parameters:
       - person_name: The name of the person to tell a joke to.
+
+  - name: TellStatement
+    purpose: Inform something to someone, assumes robot already navigated to person to whon he is stating the information ("please leave", "there are 4 fruits in the table", "I found 5 people wearing red").
+    parameters:
+      - info_item: The information to state (e.g., time, date, isntructions for humans , information gathered).
 
   - name: StateInfo
     purpose: State contextual information (e.g., time, day).
