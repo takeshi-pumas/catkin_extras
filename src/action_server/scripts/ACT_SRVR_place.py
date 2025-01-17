@@ -52,7 +52,7 @@ class PlacingStateMachine:
 
         # Moveit setup
         self.scene.remove_attached_object(self.eef_link, name="objeto")
-        self.whole_body.allow_replanning(False)
+        self.whole_body.allow_replanning(True)
         self.whole_body.set_num_planning_attempts(3)
         self.whole_body.set_planning_time(10.0)
         self.planning_frame = self.whole_body.get_planning_frame()
@@ -175,7 +175,7 @@ class PlacingStateMachine:
                 joint_values[3] = 0.0
                 joint_values[4] = np.pi
                 self.brazo.set_joint_values(joint_values)     
-                rospy.sleep(3.0)     
+                rospy.sleep(6.0)     
                 joint_values[0] += 0.1
                 joint_values[4] = 0.0
                 self.brazo.set_joint_values(joint_values)     

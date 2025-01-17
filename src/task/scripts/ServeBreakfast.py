@@ -233,7 +233,7 @@ class Place(smach.State):
         ######################################################################
         else:                           #if current_target== 'cereal_box' or current_target== 'milk'  :
             string_msg.data='pour'               # Offset relative to object tf            
-            offset_point=[-0.025,0.066,0.20]           # Offset relative to object tf#
+            offset_point=[-0.04,-0.05,0.40]           # Offset relative to object tf#
             # LOOK FOR OBJECT current target
             if current_target== 'cereal_box':
                 rospy.loginfo('STATE : POUR CEREAL')            
@@ -461,7 +461,7 @@ class Place_post_pour(smach.State):
         string_msg= String()  #mode mesge new instance
         rospy.loginfo('STATE : PLACE AFTER POUR')            
         print ('STATE : PLACE AFTER POUR')                       
-        if userdata.target_object=='cereal_box':offset_point=[0.0,-0.45,-0.031]          # Offset relative to object tf#
+        if userdata.target_object=='cereal_box':offset_point=[0.0,-0.45,-0.00]          # Offset relative to object tf#
         else:offset_point=[0.0,-0.25,-0.04 ]
         omni_base.tiny_move(velY =-0.2, std_time=4.2)
         string_msg.data='frontal'
@@ -490,12 +490,7 @@ class Place_post_pour(smach.State):
         head.set_named_target('neutral')
         rospy.sleep(0.5)       
         clear_octo_client()     
-        if target_object=='cereal_box':
-            userdata.target_object='milk'
-            talk (f'Now going for {userdata.target_object } ')
-        if target_object=='milk':
-            userdata.target_object='spoon'
-            talk (f'Now going for {userdata.target_object } ')
+        
         return 'succ'
         
 
