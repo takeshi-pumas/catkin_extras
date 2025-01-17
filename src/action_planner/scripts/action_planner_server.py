@@ -15,7 +15,9 @@ import re #regex
 class RGB:
     def __init__(self):
         # Get the topic name from the parameter server
-        self.image_topic = rospy.get_param('/image_topic', '/usb_cam/image_raw')  # Default to /hsrb/head_rgbd_sensor/rgb/image_rect_color
+        #self.image_topic = rospy.get_param('/image_topic', '/usb_cam/image_raw')  # Default to /hsrb/head_rgbd_sensor/rgb/image_rect_color
+        self.image_topic = rospy.get_param('/image_topic', "/hsrb/head_r_stereo_camera/image_raw")  # Default to /hsrb/head_rgbd_sensor/rgb/image_rect_color
+
         self.bridge = CvBridge()
 
     def get_image(self):
@@ -143,8 +145,8 @@ def fact_check(plan):
             )
         },
     ]
-    response = chat('mistral', messages=messages)
-    #response = chat('bespoke-minicheck', messages=messages)
+    #response = chat('mistral', messages=messages)
+    response = chat('bespoke-minicheck', messages=messages)
     print(response['message']['content'].lower())
     response_content=response['message']['content']
      
@@ -229,7 +231,7 @@ if __name__ == "__main__":
     if rospy.has_param('/image_topic'):
         rospy.loginfo(f"Using image topic: {rospy.get_param('/image_topic')}")
     else:
-        rospy.logwarn("Parameter 'image_topic' not found. Using default '/usb_cam/image_raw'.")
+        rospy.logwarn("Parameter 'image_topic' not found. Using default 'right eye takeshi'.")
 
     service = rospy.Service('action_planner', ActionPlanner, action_planner)
     rgb = RGB()

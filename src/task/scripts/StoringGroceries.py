@@ -465,16 +465,14 @@ class Place_shelf(smach.State):
         smach.State.__init__(self, outcomes=['succ', 'failed'])
         self.tries = 0
     def execute(self, userdata):
-        
         head.set_joint_values([0,0])
         rospy.loginfo('STATE : Placing in shelf')
-        
         self.tries += 1
         print(f'shelves_cats{shelves_cats}, object picked up cat {cat}')
         ###########################################
         high_shelf_place=[0.669, -1.44, 0.292,  -0.01729,-0.338, 0.0]
         mid_shelf_place= [0.276, -1.581, 0.15, 0.0621, -0.1234, 0.0]
-        low_shelf_place= [0.01, -2.09, 0.0, 0.455, -0.004, 0.0]
+        low_shelf_place= [0.05, -2.09, 0.0, 0.455, -0.004, 0.0]
         low_shelf,mid_shelf,top_shelf,=False,False,False
         ###########################################
         string_list=regions_df['shelves']['z'].split(',')

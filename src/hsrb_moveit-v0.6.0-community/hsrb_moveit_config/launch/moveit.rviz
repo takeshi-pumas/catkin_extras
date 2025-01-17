@@ -15,7 +15,7 @@ Panels:
         - /MarkerArray3
         - /PointStamped6
       Splitter Ratio: 0.7425600290298462
-    Tree Height: 248
+    Tree Height: 251
   - Class: rviz/Help
     Name: Help
   - Class: rviz/Views
@@ -320,7 +320,7 @@ Visualization Manager:
         Goal State Color: 250; 128; 0
         Interactive Marker Size: 0
         Joint Violation Color: 255; 0; 255
-        Planning Group: arm
+        Planning Group: head
         Query Goal State: false
         Query Start State: false
         Show Workspace: false
@@ -571,13 +571,49 @@ Visualization Manager:
       Filter (whitelist): ""
       Frame Timeout: 15
       Frames:
+        002_master_chef_can:
+          Value: true
+        004_sugar_box:
+          Value: true
+        007_tuna_fish_can:
+          Value: true
+        008_pudding_box:
+          Value: true
+        013_apple:
+          Value: true
+        019-a_pitcher_base:
+          Value: true
+        019-b_pitcher_base_v2:
+          Value: true
+        022_windex_bottle:
+          Value: true
+        025_mug:
+          Value: true
+        031_spoon:
+          Value: true
+        033_spatula:
+          Value: true
+        040_large_marker:
+          Value: true
+        062_dice:
+          Value: true
+        063-a_marbles:
+          Value: true
+        071_nine_hole_peg_test:
+          Value: true
+        073-b_lego_duplo:
+          Value: true
         All Enabled: false
+        apple:
+          Value: true
         arm_flex_link:
           Value: false
         arm_lift_link:
           Value: false
         arm_roll_link:
           Value: false
+        b_lego_duplo:
+          Value: true
         base_b_bumper_link:
           Value: false
         base_f_bumper_link:
@@ -610,31 +646,19 @@ Visualization Manager:
           Value: false
         base_roll_link:
           Value: false
-        bed:
-          Value: true
-        bedroom:
-          Value: true
-        book_shelf:
-          Value: true
-        coach:
-          Value: true
-        counter:
-          Value: true
-        cupboard:
-          Value: true
-        desk:
+        dice:
           Value: true
         dining_room:
           Value: true
-        dining_table:
-          Value: true
-        dish_washer:
-          Value: true
-        end_table:
+        door_lab:
           Value: true
         entrance:
           Value: true
-        exit:
+        goal_for_grasp:
+          Value: true
+        hallway_1:
+          Value: true
+        hallway_2:
           Value: true
         hand_camera_frame:
           Value: false
@@ -678,14 +702,10 @@ Visualization Manager:
           Value: false
         head_pan_link:
           Value: false
-        head_r_stereo_camera_frame:
-          Value: true
         head_r_stereo_camera_gazebo_frame:
           Value: false
         head_r_stereo_camera_link:
           Value: false
-        head_rgbd_sensor_depth_frame:
-          Value: true
         head_rgbd_sensor_gazebo_frame:
           Value: false
         head_rgbd_sensor_link:
@@ -696,28 +716,48 @@ Visualization Manager:
           Value: false
         kitchen:
           Value: false
+        large_marker:
+          Value: true
         living_room:
           Value: false
         map:
           Value: true
+        master_chef_can:
+          Value: true
+        nine_hole_peg_test:
+          Value: true
+        object_0:
+          Value: true
+        object_0_norot:
+          Value: true
+        object_1:
+          Value: true
+        object_1_norot:
+          Value: true
+        object_2:
+          Value: true
+        object_2_norot:
+          Value: true
         odom:
+          Value: true
+        pickup:
+          Value: true
+        place_shelf:
           Value: true
         placing_area:
           Value: true
-        rear_door:
+        prueba:
+          Value: true
+        pudding_box:
           Value: true
         shelf:
           Value: true
-        side_table:
-          Value: true
-        sink:
-          Value: true
-        start:
-          Value: true
-        storage_table:
+        spoon:
           Value: true
         torso_lift_link:
           Value: false
+        windex_bottle:
+          Value: true
         wrist_flex_link:
           Value: false
         wrist_ft_sensor_frame:
@@ -734,35 +774,45 @@ Visualization Manager:
       Show Names: true
       Tree:
         map:
-          bed:
+          apple:
             {}
-          bedroom:
+          b_lego_duplo:
             {}
-          book_shelf:
-            {}
-          coach:
-            {}
-          counter:
-            {}
-          cupboard:
-            {}
-          desk:
+          dice:
             {}
           dining_room:
             {}
-          dining_table:
-            {}
-          dish_washer:
-            {}
-          end_table:
+          door_lab:
             {}
           entrance:
             {}
-          exit:
+          goal_for_grasp:
+            {}
+          hallway_1:
+            {}
+          hallway_2:
             {}
           kitchen:
             {}
+          large_marker:
+            {}
           living_room:
+            {}
+          master_chef_can:
+            {}
+          nine_hole_peg_test:
+            {}
+          object_0:
+            {}
+          object_0_norot:
+            {}
+          object_1:
+            {}
+          object_1_norot:
+            {}
+          object_2:
+            {}
+          object_2_norot:
             {}
           odom:
             base_footprint:
@@ -823,36 +873,64 @@ Visualization Manager:
                           {}
                       head_l_stereo_camera_link:
                         head_l_stereo_camera_frame:
-                          {}
+                          head_rgbd_sensor_rgb_frame:
+                            002_master_chef_can:
+                              {}
+                            004_sugar_box:
+                              {}
+                            007_tuna_fish_can:
+                              {}
+                            008_pudding_box:
+                              {}
+                            013_apple:
+                              {}
+                            019-a_pitcher_base:
+                              {}
+                            019-b_pitcher_base_v2:
+                              {}
+                            022_windex_bottle:
+                              {}
+                            025_mug:
+                              {}
+                            031_spoon:
+                              {}
+                            033_spatula:
+                              {}
+                            040_large_marker:
+                              {}
+                            062_dice:
+                              {}
+                            063-a_marbles:
+                              {}
+                            071_nine_hole_peg_test:
+                              {}
+                            073-b_lego_duplo:
+                              {}
                         head_l_stereo_camera_gazebo_frame:
                           {}
                       head_r_stereo_camera_link:
-                        head_r_stereo_camera_frame:
-                          {}
                         head_r_stereo_camera_gazebo_frame:
                           {}
                       head_rgbd_sensor_link:
-                        head_rgbd_sensor_depth_frame:
-                          {}
                         head_rgbd_sensor_gazebo_frame:
                           {}
-                        head_rgbd_sensor_rgb_frame:
+                        prueba:
                           {}
             base_footprint_wheel:
               {}
+          pickup:
+            {}
+          place_shelf:
+            {}
           placing_area:
             {}
-          rear_door:
+          pudding_box:
             {}
           shelf:
             {}
-          side_table:
+          spoon:
             {}
-          sink:
-            {}
-          start:
-            {}
-          storage_table:
+          windex_bottle:
             {}
       Update Interval: 0
       Value: true
@@ -991,6 +1069,18 @@ Visualization Manager:
       Topic: /clicked_point
       Unreliable: true
       Value: true
+    - Class: rviz/Image
+      Enabled: false
+      Image Topic: /depthcloud_encoded
+      Max Value: 1
+      Median window: 5
+      Min Value: 0
+      Name: Image
+      Normalize Range: true
+      Queue Size: 2
+      Transport Hint: raw
+      Unreliable: false
+      Value: false
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -1010,7 +1100,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 2.1871578693389893
+      Distance: 4.9675493240356445
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -1018,17 +1108,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: -0.14512288570404053
-        Y: -0.687065064907074
-        Z: -2.3527936718892306e-06
+        X: 1.4394667148590088
+        Y: 0.3782203793525696
+        Z: -4.140933015150949e-06
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.2197973728179932
+      Pitch: 0.6497963666915894
       Target Frame: base_footprint
-      Yaw: 3.4645140171051025
+      Yaw: 1.6695154905319214
     Saved: ~
 Window Geometry:
   Displays:
@@ -1038,11 +1128,13 @@ Window Geometry:
     collapsed: false
   Hide Left Dock: false
   Hide Right Dock: true
+  Image:
+    collapsed: false
   MotionPlanning:
     collapsed: false
   MotionPlanning - Trajectory Slider:
     collapsed: false
-  QMainWindow State: 000000ff00000000fd0000000100000000000001f30000039efc0200000007fb000000100044006900730070006c006100790073010000003d00000135000000c900fffffffb0000000800480065006c00700000000342000000bb0000006e00fffffffb0000000a0056006900650077007300000003b0000000b0000000a400fffffffb0000000c00430061006d00650072006100000002ff000001610000000000000000fb0000001e004d006f00740069006f006e00200050006c0061006e006e0069006e00670100000374000001890000000000000000fb00000044004d006f00740069006f006e0050006c0061006e006e0069006e00670020002d0020005400720061006a006500630074006f0072007900200053006c00690064006500720000000000ffffffff0000001600000016fb0000001c004d006f00740069006f006e0050006c0061006e006e0069006e00670100000178000002630000017d00ffffff0000053f0000039e00000001000000020000000100000002fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd0000000100000000000001f30000039efc0200000008fb000000100044006900730070006c006100790073010000003d00000138000000c900fffffffb0000000800480065006c00700000000342000000bb0000006e00fffffffb0000000a0056006900650077007300000003b0000000b0000000a400fffffffb0000000c00430061006d00650072006100000002ff000001610000000000000000fb0000001e004d006f00740069006f006e00200050006c0061006e006e0069006e00670100000374000001890000000000000000fb00000044004d006f00740069006f006e0050006c0061006e006e0069006e00670020002d0020005400720061006a006500630074006f0072007900200053006c00690064006500720000000000ffffffff0000001600000016fb0000001c004d006f00740069006f006e0050006c0061006e006e0069006e0067010000017b000002600000017d00fffffffb0000000a0049006d006100670065000000029a000001410000001600ffffff0000053f0000039e00000001000000020000000100000002fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Views:
     collapsed: false
   Width: 1848

@@ -91,12 +91,12 @@ recognize_action = rospy.ServiceProxy('recognize_act',RecognizeOP)
 
 
 ####################################################################
-#map_msg= rospy.wait_for_message('/augmented_map', OccupancyGrid , 20)####WAIT for nav pumas map .. 
-#inflated_map= np.asarray(map_msg.data)
-#img_map=inflated_map.reshape((map_msg.info.width,map_msg.info.height))
-#pix_per_m=map_msg.info.resolution
-#contours, hierarchy = cv2.findContours(img_map.astype('uint8'),cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
-#contoured=cv2.drawContours(img_map.astype('uint8'), contours, 1, (255,255,255), 1)
+map_msg= rospy.wait_for_message('/augmented_map', OccupancyGrid , 20)####WAIT for nav pumas map .. 
+inflated_map= np.asarray(map_msg.data)
+img_map=inflated_map.reshape((map_msg.info.width,map_msg.info.height))
+pix_per_m=map_msg.info.resolution
+contours, hierarchy = cv2.findContours(img_map.astype('uint8'),cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+contoured=cv2.drawContours(img_map.astype('uint8'), contours, 1, (255,255,255), 1)
 
 ####################################################################3
 
@@ -197,20 +197,17 @@ def seg_res_tf_pointing(res):
     # No rot is tf with pose relating to map  zero angles (robot facing)
     # the object_number tf is the PCA axis  orientation
     origin_map_img=[round(img_map.shape[0]*0.5) ,round(img_map.shape[1]*0.5)]   
-    
     #brazo.set_named_target('go')
     if len(res.poses.data)==0:
         print('no objs')
         return False
     else:
-        
         poses=np.asarray(res.poses.data)
         quats=np.asarray(res.quats.data)
         poses=poses.reshape((int(len(poses)/3) ,3     )      )  
         quats=quats.reshape((int(len(quats)/4) ,4     )      )  
         num_objs=len(poses)
         print(f'{num_objs} found')
-
         pointPose,_= tf_man.getTF('pointing_')
         rospy.sleep(0.8)
         print(f'Point pose head: {pointPose}')

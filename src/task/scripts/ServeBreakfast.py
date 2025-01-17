@@ -21,9 +21,9 @@ class Initial(smach.State):
              
         global arm ,  hand_rgb     ,regions_df    
         #userdata.target_object='spoon'
-        #userdata.target_object='cereal_box'   #Strategy. pickup bowl first
+        userdata.target_object='cereal_box'   #Strategy. pickup bowl first
         #userdata.target_object='milk'
-        userdata.target_object='bowl'
+        #userdata.target_object='bowl'
         hand_rgb = HAND_RGB()        
         rospack = rospkg.RosPack()        
         file_path = rospack.get_path('config_files')+'/regions'         
@@ -233,7 +233,7 @@ class Place(smach.State):
         ######################################################################
         else:                           #if current_target== 'cereal_box' or current_target== 'milk'  :
             string_msg.data='pour'               # Offset relative to object tf            
-            offset_point=[-0.025,0.066,0.1]           # Offset relative to object tf#
+            offset_point=[-0.025,0.066,0.20]           # Offset relative to object tf#
             # LOOK FOR OBJECT current target
             if current_target== 'cereal_box':
                 rospy.loginfo('STATE : POUR CEREAL')            
