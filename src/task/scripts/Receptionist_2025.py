@@ -15,8 +15,6 @@ class Initial(smach.State):
         rospy.loginfo(f'Try {self.tries} of 5 attempts')
 
         party.clean_knowledge(host_name = "john", host_location = "Place_3")
-        #party.clean_knowledge()
-        #places_2_tf()
         #party.publish_tf_seats()
         places_2_tf()
 
@@ -429,57 +427,51 @@ class Find_sitting_place(smach.State):
             voice.talk(f'I am sorry, here is {occupant_name}, I will find another place for you.')
             return 'failed'
 
+class Check_party(smach.State):
+    def __init__(self):
+        smach.State.__init__(self, outcomes= ['failed', 'guest_done', 'party_done'])
+        self.tries = 0
+    def execute(self, userdata):
+        self.tries += 1
+        rospy.loginfo("State: Check party status")
+
+        if party.guest_assigned == 1:
+            return 'guest_done'
+        elif party.guest_assigned == 2:
+            return 'party_done'
+        else:
+            return 'failed'
+
+
+
 # Find guest STATE: Look for both guests to introduce each other
 
-class Find_guest(smach.State):
+class Find_guests(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes= ['succ', 'failed'],
                              output_keys=['name_like_host'])
         self.tries = 0
     def execute(self, userdata):
         self.tries += 1
-        rospy.loginfo("STATE: Find guest alternative")
-        
-        host_name = ""
-        host_loc = ""
-        dont_compare = False
+        rospy.loginfo("STATE: Find guests to introduces each other")
 
-        # First try: looks for the real host
-        # Next tries: looks for anyone
+        # First try: find first guest
+        # Second try: find second guest
 
-        if self.tries == 1:
-            host_name, host_loc = party.get_host_info()
-            if host_loc == 'None':
-                return 'failed'
-        else:
-            places = party.get_places()
-            isActive, seat = party.get_active_seat()
-            places.remove('Place_0')
-            if isActive:
-                places.remove(seat)
+        guest_loc = party.people[f'Guest_{self.tries}'].location
+        guest_name = party.people[f'Guest_{self.tries}'].name
 
-            print('#####', places)
-
-            host_loc = places[self.tries - 2] #places[0]
-
-            
-            if self.tries - 1 >= len(places):
-                self.tries = 1 
-            #host_loc = seat
-            dont_compare = True
-        
-        #print("host location is: ", host_loc)
-        #print("host name is: ", host_name)
-        voice.talk(f'Looking for host on: {host_loc}')
-        tf_host = host_loc.replace('_', '_face')
+        voice.talk(f'Looking for guest {self.tries} on: {guest_loc}')
+        tf_host = guest_loc.replace('_', '_face')
         head.to_tf(tf_host)
-        voice.talk("look at me, please")
+
+        voice.talk("Look at me, please")
         rospy.sleep(0.7)
         res, _ = wait_for_face()
         if res is not None:
             person_name = res.Ids.ids
-            if (person_name == host_name) or dont_compare:
-                userdata.name_like_host = person_name
+            if (person_name == guest_name):
+                # userdata.name_like_host = person_name
                 return 'succ'
             else:
                 return 'failed'
@@ -506,13 +498,14 @@ class Introduce_guest(smach.State):
         active_guest = party.get_active_guest_name()
         takeshi_line = party.get_active_guest_description()                    
         drink = party.get_active_guest_drink()
+        interest = party.get_active_guest_interest()
 
         if drink == 'something':
             drink_line = ""
         else:
             drink_line = f'And likes {drink}'
 
-        if takeshi_line != 'None':
+        if takeshi_line:
             print("Description found")
             speech = f'{userdata.name_like_host}, {takeshi_line}, {drink_line}'
             timeout = 14.0
@@ -550,12 +543,10 @@ if __name__ == '__main__':
         smach.StateMachine.add("WAIT_PUSH_HAND", Wait_push_hand(),       
                                transitions={'failed': 'WAIT_PUSH_HAND', 'succ': 'GOTO_DOOR'})
         smach.StateMachine.add("WAIT_DOOR_OPENED", Wait_door_opened(),     
-                               transitions={'failed': 'WAIT_DOOR_OPENED', 'succ': 'GOTO_DOOR'})
-        smach.StateMachine.add("GOTO_DOOR", Goto_door(),            
-                               transitions={'failed': 'GOTO_DOOR', 'succ': 'SCAN_FACE'})
+                               transitions={'failed': 'WAIT_DOOR_OPENED', 'succ': 'SCAN_FACE'})
         
         # Guest recognition states
-        smach.StateMachine.add("SCAN_FACE", Scan_face(),    
+        smach.StateMachine.add("SCAN_FACE", Scan_face(),
                                transitions={'failed': 'SCAN_FACE', 'succ': 'DECIDE_FACE'})
         smach.StateMachine.add("DECIDE_FACE", Decide_face(),
                                transitions={'failed': 'SCAN_FACE', 'succ': 'GET_DRINK', 'unknown': 'NEW_FACE'})
@@ -574,13 +565,17 @@ if __name__ == '__main__':
         smach.StateMachine.add("LEAD_TO_LIVING_ROOM", Lead_to_living_room(),  
                                transitions={'failed': 'LEAD_TO_LIVING_ROOM', 'succ': 'FIND_SITTING_PLACE'})
         smach.StateMachine.add("FIND_SITTING_PLACE", Find_sitting_place(),
-                               transitions={'failed': 'FIND_SITTING_PLACE', 'succ': 'FIND_HOST'})
+                               transitions={'failed': 'FIND_SITTING_PLACE', 'succ': 'CHECK_PARTY'})
+        smach.StateMachine.add("CHECK_PARTY", Check_party(),
+                               transitions={'failed': 'CHECK_PARTY', 'guest_done': 'GOTO_DOOR', 'party_done': 'FIND_GUEST'})
+        smach.StateMachine.add("GOTO_DOOR", Goto_door(),            
+                               transitions={'failed': 'GOTO_DOOR', 'succ': 'WAIT_DOOR_OPENED'})
         
         # Introducing guests
-        smach.StateMachine.add("FIND_HOST", Find_host_alternative(),
-                               transitions={'failed': 'FIND_HOST', 'succ':'INTRODUCE_GUEST'})
+        smach.StateMachine.add("FIND_GUEST", Find_guests(),
+                               transitions={'failed': 'FIND_GUEST', 'succ':'INTRODUCE_GUEST'})
         smach.StateMachine.add("INTRODUCE_GUEST", Introduce_guest(),
-                               transitions={'failed': 'INTRODUCE_GUEST', 'succ':'WAIT_PUSH_HAND', 'tries':'END'})
+                               transitions={'failed': 'INTRODUCE_GUEST', 'succ':'END'})
 
 
     outcome = sm.execute()

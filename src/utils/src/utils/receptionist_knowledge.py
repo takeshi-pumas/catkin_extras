@@ -17,6 +17,7 @@ class RECEPTIONIST:
         #self.last_seat_assigned = 'None'  # Place_0, Place_1, Place_2
         self.active_guest = None  # Guest_0, Guest_1, Guest_2
         self.active_seat = None # Place_0, Place_1, Place_2
+        self.guest_assigned = 0
 
         # TF2_ROS publisher
         self.tf2_buffer = tf2_ros.Buffer()
@@ -127,7 +128,9 @@ class RECEPTIONIST:
     
     # Gets every place number on party context (unused)
     def get_places(self):
-        return list(self.informacion_fiesta['Places'].keys())
+        places = list(self.informacion_fiesta['Places'].keys())
+        places.remove('Place_0')
+        return places
     
     def get_guests_seat_assignments(self):
         seats = {}
@@ -146,6 +149,13 @@ class RECEPTIONIST:
     def get_active_guest_interest(self):
         if self.active_guest:
             return self.informacion_fiesta['People'][self.active_guest]['interest']
+        
+    
+    def get_guest_description(self, guest_num):
+        return self.informacion_fiesta['People'][guest_num]['description']
+    
+    def get_guest_interest(self, guest_num):
+        return self.informacion_fiesta['People'][guest_num]['interest']
 
     # Gets host name and location
     def get_host_info(self):
@@ -169,6 +179,7 @@ class RECEPTIONIST:
         #This means that there is no one on this seat and it is free to seat active guest here
         if not guest_found :
             self.assign_seat_to_guest(self.active_guest, self.active_seat)
+            self.guest_assigned += 1
         #This means that there is someone on this seat and a new assign is needed
         else:
             #Verify if the guest found is part of our party
