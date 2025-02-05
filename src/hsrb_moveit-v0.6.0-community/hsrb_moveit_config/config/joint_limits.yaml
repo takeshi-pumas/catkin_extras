@@ -6,17 +6,17 @@ joint_limits:
     has_velocity_limits: true
     max_velocity: 7.0
     has_acceleration_limits: true
-    max_acceleration: 4.0
+    max_acceleration: 7.0
   arm_lift_joint:
     has_velocity_limits: true
     max_velocity: 7.0
     has_acceleration_limits: true
-    max_acceleration: 4.0
+    max_acceleration: 7.0
   arm_roll_joint:
     has_velocity_limits: false
     max_velocity: 7.0
     has_acceleration_limits: true
-    max_acceleration: 4.0
+    max_acceleration: 7.0
   hand_motor_joint:
     has_velocity_limits: true
     max_velocity: 2.0
@@ -36,7 +36,7 @@ joint_limits:
     has_velocity_limits: true
     max_velocity: 7.0
     has_acceleration_limits: true
-    max_acceleration: 4.0
+    max_acceleration: 7.0
   wrist_roll_joint:
     has_velocity_limits: true
     max_velocity: 7.0
@@ -44,14 +44,14 @@ joint_limits:
     max_acceleration: 4.0
   world_joint/x:
     has_velocity_limits: true
-    max_velocity: 3.0
+    max_velocity: 2.0
     has_acceleration_limits: true
-    max_acceleration: 5.0
+    max_acceleration: 3.0
   world_joint/y:
     has_velocity_limits: true
-    max_velocity: 3.0
+    max_velocity: 2.0
     has_acceleration_limits: true
-    max_acceleration: 5.0
+    max_acceleration: 3.0
   world_joint/theta:
     has_velocity_limits: true
     max_velocity: 1.0
