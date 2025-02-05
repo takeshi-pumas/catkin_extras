@@ -46,12 +46,12 @@ joint_limits:
     has_velocity_limits: true
     max_velocity: 2.0
     has_acceleration_limits: true
-    max_acceleration: 3.0
+    max_acceleration: 2.5
   world_joint/y:
     has_velocity_limits: true
     max_velocity: 2.0
     has_acceleration_limits: true
-    max_acceleration: 3.0
+    max_acceleration: 2.5
   world_joint/theta:
     has_velocity_limits: true
     max_velocity: 1.0
