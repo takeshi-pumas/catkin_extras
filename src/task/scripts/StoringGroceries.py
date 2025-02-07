@@ -150,11 +150,8 @@ class Scan_table(smach.State):
             self, outcomes=['succ', 'failed','tries'])
         self.tries = 0
         self.scanned=False   
-        #self.pickup_plane_z  =0.65 ############REAL
+        #self.pickup_plane_z  =0.65 ############REAL    
         
-        
-        
-    
     def execute(self, userdata):
         rospy.loginfo('State : Scanning_table')
         
@@ -280,7 +277,7 @@ class Pickup(smach.State):
         object_point.header.frame_id = target_object              #"base_link"
         object_point.point.x = offset_point[0]
         object_point.point.y = offset_point[1]
-        object_point.point.z = offset_point[2]
+        object_point.point.z = offset_point[2]+0.01   ### Z OFFSET TO AVOID sweeping table
         transformed_object_point = tfBuffer.transform(object_point, "map", timeout=rospy.Duration(1))
         tf_man.pub_static_tf(pos=[transformed_object_point.point.x,transformed_object_point.point.y,transformed_object_point.point.z],rot=quat,point_name='goal_for_grasp')
         ##################################################################3
@@ -682,10 +679,10 @@ class Scan_shelf(smach.State):
                 head.set_joint_values([0.0 , 0.0])
                 av=arm.get_current_joint_values()
                 av[0]=0.67
-                av[1]=-0.74
+                av[1]=-0.4
                 arm.go(av)
-                head.set_joint_values([-np.pi/2 , -0.7])        
-                rospy.sleep(2.6)
+                head.set_joint_values([-np.pi/2 , -0.4])        
+                rospy.sleep(5)
             if self.tries==2:
                 head.set_joint_values([0.0 , 0.0])
                 av=arm.get_current_joint_values()
@@ -703,9 +700,9 @@ class Scan_shelf(smach.State):
             debug_image=   cv2.cvtColor(bridge.imgmsg_to_cv2(res.debug_image.image_msgs[0]), cv2.COLOR_RGB2BGR)
             objects=detect_object_yolo('all',res)  # list of objects detected objects
 
-            def is_inside_top(x,y,z):return ((area_box[1,1] +0.1 > y) and (area_box[0,1]-0.1 < y)) and ((area_box[1,0] +0.1  > x) and (area_box[0,0]-0.1  < x))    and (top_shelf_height < z )  
-            def is_inside_mid(x,y,z):return ((area_box[1,1] +0.1 > y) and (area_box[0,1]-0.1 < y)) and ((area_box[1,0] +0.1  > x) and (area_box[0,0]-0.1  < x))    and ((0.9*top_shelf_height > z) and (mid_shelf_height < z  )  )  
-            def is_inside_low(x,y,z):return ((area_box[1,1] +0.1 > y) and (area_box[0,1]-0.1 < y)) and ((area_box[1,0] +0.1  > x) and (area_box[0,0]-0.1  < x))    and ((0.9*mid_shelf_height > z  )  )
+            def is_inside_top(x,y,z):return ((area_box[1,1] > y) and (area_box[0,1] < y)) and ((area_box[1,0]  > x) and (area_box[0,0]  < x))    and (top_shelf_height < z )  
+            def is_inside_mid(x,y,z):return ((area_box[1,1] > y) and (area_box[0,1] < y)) and ((area_box[1,0]  > x) and (area_box[0,0]  < x))    and ((0.9*top_shelf_height > z) and (mid_shelf_height < z  )  )  
+            def is_inside_low(x,y,z):return ((area_box[1,1] > y) and (area_box[0,1] < y)) and ((area_box[1,0]  > x) and (area_box[0,0]  < x))    and ((0.9*mid_shelf_height > z  )  )
             #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
             for i in range (5):
                 image= cv2.cvtColor(rgbd.get_image(), cv2.COLOR_RGB2BGR)
@@ -719,6 +716,7 @@ class Scan_shelf(smach.State):
                     for i in range(len(res.poses)):                
                         position = [res.poses[i].position.x ,res.poses[i].position.y,res.poses[i].position.z]
                         print ('position,name',position,res.names[i].data[4:])
+                        print  (f'area box {area_box}')
                         ##########################################################
                         object_point = PointStamped()
                         object_point.header.frame_id = "head_rgbd_sensor_rgb_frame"

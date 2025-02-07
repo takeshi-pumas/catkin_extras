@@ -321,7 +321,7 @@ class Pickup(smach.State):
             target_pose = Float32MultiArray()
             print (f'target_object {target_object}')        
             print ( 'Applying Bowl Offset') 
-            offset_point=[0.03,-0.05,+0.08]   # Offset relative to object tf
+            offset_point=[0.03,-0.05,+0.04]   # Offset relative to object tf
         ######################################################################
         if target_object=='cereal_box'or target_object=='milk':
             
