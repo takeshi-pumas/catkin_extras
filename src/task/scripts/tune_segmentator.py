@@ -16,7 +16,13 @@ from tuner_utils import *
 from object_classification.srv import *
 #from utils_srv import RGBD
 from std_msgs.msg import String
-
+#to CLIP
+import torch
+import clip
+from PIL import Image
+global model , preprocess
+device = "cuda" if torch.cuda.is_available() else "cpu"
+model, preprocess = clip.load("ViT-B/32", device=device)
 
 first= True
 rospack = rospkg.RosPack()
@@ -185,6 +191,26 @@ def callback(points_msg):
             save_image(img,name="image",dirName="train")    # dirName requiere que la carpeta exista !!!
             #rospack.get_path("config_files")
             #cv2.imwrite("breakfast", rgbd.get_image())
+        elif key == 'c':        # Usar CLIP para tarea by prompt
+            ##### SHOES NO SHOES DETECTOR
+            img=rgbd.get_image()
+            #cv2.imwrite('img.png',img)
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            cv2.imshow('our of res'  , img)
+            print ('got image for CLIP analysis')
+            #keys=[ 'bedroom','diningroom','kitchen','bathroom','livingroom']
+            keys=[ 'table','shelf','human']
+            image = preprocess(Image.fromarray(img)).unsqueeze(0).to(device) #img array from grbd get image
+            text = clip.tokenize(keys).to(device)
+
+            with torch.no_grad():
+                image_features = model.encode_image(image)
+                text_features = model.encode_text(text)
+                
+                logits_per_image, logits_per_text = model(image, text)
+                probs = logits_per_image.softmax(dim=-1).cpu().numpy()
+
+            print("Label probs:", probs,keys[np.argmax(probs)] ,keys, probs[0][1] ) # prints: [[0.9927937  0.00421068 0.00299572]]
 
         elif key=='q':
             rospy.signal_shutdown("User hit q key to quit.")
