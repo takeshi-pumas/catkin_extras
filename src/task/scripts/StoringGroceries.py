@@ -46,10 +46,11 @@ class Initial(smach.State):
         print (pd.read_csv (file_path+'/GraspingDict.csv'))
         file_path = rospack.get_path('config_files')+'/regions'         
         
+        
         ###############################################
-        #o=read_yaml('/regions/regions.yaml')#REAL
+        o=read_yaml('/regions/regions.yaml')#REAL
         ############################################
-        o=read_yaml('/regions/regions_sim.yaml')#SIM
+        #o=read_yaml('/regions/regions_sim.yaml')#SIM
         ###############################################
         regions_df=pd.DataFrame.from_dict(o)
         ############################
