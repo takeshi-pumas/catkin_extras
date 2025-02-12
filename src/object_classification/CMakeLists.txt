@@ -13,6 +13,8 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   sensor_msgs
   message_generation
+  geometry_msgs
+  cv_bridge
 )
 
 
@@ -55,14 +57,13 @@ find_package(catkin REQUIRED COMPONENTS
    Floats.msg
    Ints.msg
    Image.msg
-   
-   
  )
 
 ## Generate services in the 'srv' folder
  add_service_files(
    FILES
    Classify.srv
+   Classify_dino.srv
  )
 
 ## Generate actions in the 'action' folder
@@ -77,6 +78,7 @@ find_package(catkin REQUIRED COMPONENTS
    DEPENDENCIES
    std_msgs
    sensor_msgs
+   geometry_msgs
  )
 
 ################################################
@@ -167,6 +169,7 @@ include_directories(
 ## in contrast to setup.py, you can choose the destination
 catkin_install_python(PROGRAMS
    src/image_tag.py
+   src/classification_server_dino.py
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
  )
 

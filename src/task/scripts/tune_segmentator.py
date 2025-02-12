@@ -192,13 +192,11 @@ def callback(points_msg):
             #rospack.get_path("config_files")
             #cv2.imwrite("breakfast", rgbd.get_image())
         elif key == 'c':        # Usar CLIP para tarea by prompt
-            ##### SHOES NO SHOES DETECTOR
             img=rgbd.get_image()
             #cv2.imwrite('img.png',img)
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             cv2.imshow('our of res'  , img)
             print ('got image for CLIP analysis')
-            #keys=[ 'bedroom','diningroom','kitchen','bathroom','livingroom']
             keys=[ 'table','shelf','human']
             image = preprocess(Image.fromarray(img)).unsqueeze(0).to(device) #img array from grbd get image
             text = clip.tokenize(keys).to(device)
@@ -211,6 +209,36 @@ def callback(points_msg):
                 probs = logits_per_image.softmax(dim=-1).cpu().numpy()
 
             print("Label probs:", probs,keys[np.argmax(probs)] ,keys, probs[0][1] ) # prints: [[0.9927937  0.00421068 0.00299572]]
+
+        elif key == 'd':        # Usar Dino para object classification by prompt
+            prompt = "drink"
+            img=rgbd.get_image()
+            #cv2.imwrite('img.png',img)
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            # Convert image to ROS format
+            ros_image = bridge.cv2_to_imgmsg(img, encoding="bgr8")
+
+            # Create a proper ROS String message
+            prompt_msg = String()
+            prompt_msg.data = prompt
+
+            rospy.wait_for_service('grounding_dino_detect')
+            try:
+                response = classify_client_dino(ros_image, prompt_msg)
+
+                if response.image is None or response.image.data == b'':
+                    print("Error: Received an empty image response!")
+                else:
+                    debug_image = bridge.imgmsg_to_cv2(response.image, desired_encoding="rgb8")
+                    cv2.imshow('our of res', debug_image)
+                    cv2.waitKey(1)  # Allow OpenCV to refresh window
+
+                print("Bounding Boxes:", len(response.bounding_boxes))
+
+            except rospy.ServiceException as e:
+                print(f"Service call failed: {e}")
+
+
 
         elif key=='q':
             rospy.signal_shutdown("User hit q key to quit.")
