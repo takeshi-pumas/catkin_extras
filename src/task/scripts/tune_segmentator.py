@@ -211,7 +211,7 @@ def callback(points_msg):
             print("Label probs:", probs,keys[np.argmax(probs)] ,keys, probs[0][1] ) # prints: [[0.9927937  0.00421068 0.00299572]]
 
         elif key == 'd':        # Usar Dino para object classification by prompt
-            prompt = "drink"
+            prompt = "coke"     #put here favorite drink
             img=rgbd.get_image()
             #cv2.imwrite('img.png',img)
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
