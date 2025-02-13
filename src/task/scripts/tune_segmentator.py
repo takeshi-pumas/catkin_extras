@@ -225,15 +225,13 @@ def callback(points_msg):
             rospy.wait_for_service('grounding_dino_detect')
             try:
                 response = classify_client_dino(ros_image, prompt_msg)
-
+                print("Result:", response.result.data,"for drink:",prompt)
                 if response.image is None or response.image.data == b'':
                     print("Error: Received an empty image response!")
                 else:
                     debug_image = bridge.imgmsg_to_cv2(response.image, desired_encoding="rgb8")
                     cv2.imshow('our of res', debug_image)
                     cv2.waitKey(1)  # Allow OpenCV to refresh window
-
-                print("Bounding Boxes:", len(response.bounding_boxes))
 
             except rospy.ServiceException as e:
                 print(f"Service call failed: {e}")

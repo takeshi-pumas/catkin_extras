@@ -7,7 +7,6 @@ import numpy as np
 from cv_bridge import CvBridge
 from sensor_msgs.msg import Image
 from std_msgs.msg import String
-from geometry_msgs.msg import Polygon, Point32
 from object_classification.srv import Classify_dino, Classify_dinoResponse
 from groundingdino.util.inference import load_model, predict, annotate
 import clip
@@ -35,15 +34,15 @@ rospy.loginfo("Loading GroundingDINO model...")
 model = load_model(CONFIG_PATH, WEIGHTS_PATH)
 rospy.loginfo("Model loaded successfully.")
 
-THRESHOLD = 0.3  # 🔹 Similarity threshold (adjust as needed)
+THRESHOLD = 0.3  # 🔹 CLIP Similarity threshold (adjust as needed)
+MAX_RETRIES = 10  # 🔹 Prevents infinite loops
+NUM_BOXES = 3  
 
-def preprocess_image(cv2_image, max_size=1333,   stride=32):
-    """
-    Convert an OpenCV image to the format expected by GroundingDINO.
-    """
+def preprocess_image(cv2_image, max_size=1333, stride=32):
+    """Convert an OpenCV image to the format expected by GroundingDINO."""
     image_rgb = cv2.cvtColor(cv2_image, cv2.COLOR_BGR2RGB)
     h, w = image_rgb.shape[:2]
-    scale_factor = min(max_size / max(h, w), 1.0)  
+    scale_factor = min(max_size / max(h, w), 1.0)
     new_h, new_w = int(h * scale_factor), int(w * scale_factor)
     new_h, new_w = int(round(new_h / stride) * stride), int(round(new_w / stride) * stride)
     image_resized = cv2.resize(image_rgb, (new_w, new_h), interpolation=cv2.INTER_LINEAR)
@@ -75,6 +74,44 @@ def classify_with_clip(image_crop, prompt):
     similarity_score = similarity[0].item()  # Extract the similarity for the first text prompt
     return similarity_score
 
+def get_three_bounding_boxes(model, image, max_retries=MAX_RETRIES):
+    """Ensures exactly 3 bounding boxes: selects top 3 if >3, dynamically adjusts if <3."""
+    box_threshold = 0.4  # Initial threshold
+    text_threshold = 0.2
+    retries = 0
+
+    while retries < max_retries:
+        boxes, logits, phrases = predict(
+            model=model,
+            image=image,
+            caption="drink",
+            box_threshold=box_threshold,
+            text_threshold=text_threshold
+        )
+
+        if len(boxes) > NUM_BOXES:
+            # Select the top 3 most confident detections (highest logits)
+            top_indices = torch.argsort(logits, descending=True)[:3]
+            boxes = boxes[top_indices]
+            logits = logits[top_indices]
+            phrases = [phrases[i] for i in top_indices]
+            return boxes, logits, phrases  # ✅ Success: 3 best boxes selected
+
+        if len(boxes) == NUM_BOXES:
+            return boxes, logits, phrases  # ✅ Success: Exactly 3 bounding boxes
+
+        # Adjust thresholds
+        if len(boxes) < NUM_BOXES:
+            box_threshold -= 0.05  # Decrease to detect more objects
+            text_threshold -= 0.05
+
+        box_threshold = max(0.2, min(box_threshold, 0.6))  # Keep within safe limits
+        text_threshold = max(0.1, min(text_threshold, 0.5))
+
+        retries += 1
+
+    rospy.logwarn("Max retries reached. Using available detections.")
+    return boxes, logits, phrases  # Return the best available detections
 
 def handle_detection(req):
     """Handles incoming ROS service requests."""
@@ -88,80 +125,62 @@ def handle_detection(req):
         prompt_text = req.prompt.data.strip()
         rospy.loginfo(f"Processing request with drink prompt: {prompt_text}")
 
-        # Run object detection
-        boxes, logits, phrases = predict(
-            model=model,
-            image=processed_image,
-            caption="drink",
-            box_threshold=0.5,
-            text_threshold=0.2
-        )
-        if len(boxes) == 0:
-            rospy.logwarn("No objects detected!")
-            return Classify_dinoResponse()
+        # Get exactly 3 bounding boxes
+        boxes, logits, phrases = get_three_bounding_boxes(model, processed_image)
 
-        # Annotate the image
-        annotated_frame = annotate(image_source, boxes=boxes, logits=logits, phrases=phrases)
         hi, we = image_source.shape[:2]
 
-        if annotated_frame is None or annotated_frame.size == 0:
-            rospy.logerr("Error: Annotated image is empty!")
-            return Classify_dinoResponse()
-
-        ros_annotated_image = bridge.cv2_to_imgmsg(annotated_frame, encoding="rgb8")
-        
-        detected_objects = []
+        # Convert bounding boxes from normalized values to absolute pixel values
+        abs_boxes = []
         for box in boxes:
             abs_box = box * torch.tensor([we, hi, we, hi])
             abs_box = abs_box.numpy().astype("int")
             cx, cy, wd, ht = abs_box
+            abs_boxes.append((cx, cy, wd, ht))
+
+        # Sort boxes by x_center (cx)
+        abs_boxes.sort(key=lambda b: b[0])
+
+        # Assign left, center, right based on sorted order
+        positions = ["left", "center", "right"]
+        labeled_boxes = [
+            {"position": positions[i], "box": abs_boxes[i]} for i in range(len(abs_boxes))
+        ]
+
+        best_match = None
+        best_similarity = 0.0
+
+        for entry in labeled_boxes:
+            pos = entry["position"]
+            cx, cy, wd, ht = entry["box"]
+
+            # Calculate bounding box coordinates
             x_min = cx - (wd // 2)
             x_max = cx + (wd // 2)
             y_min = cy - (ht // 2)
             y_max = cy + (ht // 2)
 
-            # Ensure bounding box is within image limits
-            x_min, x_max = max(0, x_min), min(we - 1, x_max)
-            y_min, y_max = max(0, y_min), min(hi - 1, y_max)
-
-            if x_min >= x_max or y_min >= y_max:
-                rospy.logwarn(f"Skipping invalid bounding box: [{x_min}, {y_min}, {x_max}, {y_max}]")
-                continue
-            
-            #cropped_image = cv2.cvtColor(image_source[y_min:y_max, x_min:x_max], cv2.COLOR_BGR2RGB)  
             cropped_image = image_source[y_min:y_max, x_min:x_max]  
-            
-            if cropped_image.size == 0:
-                rospy.logwarn("Empty cropped image, skipping...")
-                continue
-
-            debug_path = f"/tmp/cropped_img_{int(box[0] * we)}.jpg"
-            cv2.imwrite(debug_path, cropped_image)
-            rospy.loginfo(f"Saved debug cropped image: {debug_path}")
-
 
             similarity_score = classify_with_clip(cropped_image, prompt_text)
-            rospy.loginfo(f"Similarity score for {prompt_text}: {similarity_score:.2f}")
+            rospy.loginfo(f"Similarity score for {prompt_text} in {pos}: {similarity_score:.2f}")
 
-            if similarity_score >= THRESHOLD:
-                detected_objects.append(f"{prompt_text} detected at [{x_min}, {y_min}, {x_max}, {y_max}]")
+            if similarity_score > best_similarity and similarity_score >= THRESHOLD:
+                best_similarity = similarity_score
+                best_match = pos
 
-        if not detected_objects:
-            rospy.logwarn(f"No objects matched the prompt '{prompt_text}' above threshold {THRESHOLD}.")
+        annotated_frame = annotate(image_source, boxes=boxes, logits=logits, phrases=phrases)
+        ros_annotated_image = bridge.cv2_to_imgmsg(annotated_frame, encoding="rgb8")
 
-        rospy.loginfo(f"Detected objects: {detected_objects}")
-
-        return Classify_dinoResponse(image=ros_annotated_image, bounding_boxes=[])
+        return Classify_dinoResponse(image=ros_annotated_image, result=String(data=best_match or "not found"))
 
     except Exception as e:
         rospy.logerr(f"Error processing request: {e}")
-        return Classify_dinoResponse()
+        return Classify_dinoResponse(image=req.image, result=String(data="error"))
 
 def grounding_dino_server():
-    """Initializes the ROS service server."""
     rospy.init_node('grounding_dino_server')
-    service = rospy.Service('grounding_dino_detect', Classify_dino, handle_detection)
-    rospy.loginfo("GroundingDINO + CLIP classification service is running...")
+    rospy.Service('grounding_dino_detect', Classify_dino, handle_detection)
     rospy.spin()
 
 if __name__ == "__main__":

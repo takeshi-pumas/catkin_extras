@@ -30,17 +30,16 @@ def request_detection(image_path, prompt):
 
     rospy.wait_for_service('grounding_dino_detect')
     try:
-        detect_service = rospy.ServiceProxy('grounding_dino_detect', Classify_dino)
-        response = detect_service(ros_image, prompt_msg)
+        detect_drink = rospy.ServiceProxy('grounding_dino_detect', Classify_dino)
+        response = detect_drink(ros_image, prompt_msg)
 
-        print("Bounding Boxes:", response.bounding_boxes)
+        print("Result:", response.result.data,"for drink:",prompt)
         if response.image is None or response.image.data == b'':
                 print("Error: Received an empty image response!")
         else:
             debug_image = bridge.imgmsg_to_cv2(response.image, desired_encoding="rgb8")
             cv2.imwrite('debug_img.png', debug_image)
             #cv2.waitKey(1)  # Allow OpenCV to refresh window
-            print("Bounding Boxes:", len(response.bounding_boxes))
 
     except rospy.ServiceException as e:
         print(f"Service call failed: {e}")
@@ -49,4 +48,4 @@ def request_detection(image_path, prompt):
 
 if __name__ == "__main__":
     rospy.init_node('grounding_dino_client')
-    request_detection("drink_image.jpeg", "coke")
+    request_detection("drink_images/drink_image_6.jpeg", "coke")
