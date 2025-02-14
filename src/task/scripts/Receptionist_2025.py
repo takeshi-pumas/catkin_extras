@@ -286,7 +286,7 @@ class Get_drink(smach.State):
 
 class Get_interest(smach.State):
     def __init__(self):
-        smach.State.__init__(self, outcome=['succ', 'failed'])
+        smach.State.__init__(self, outcomes=['succ', 'failed'])
         self.tries = 0
     
     def execute(self, userdata):
@@ -319,6 +319,7 @@ class Lead_to_beverage_area(smach.State):
         res = omni_base.move_base(known_location='beverage_area')
         if res:
             self.tries = 0
+            voice.talk(f"I will check if there is {party.get_active_guest_drink()} here")
             return 'succ'
         else:
             voice.talk('Navigation Failed, retrying')
@@ -336,14 +337,14 @@ class Find_drink(smach.State):
         print('Try', self.tries, 'of 3 attempts')
 
         voice.talk('Scanning table')
-        res = False
+        head.set_joint_values([0.0, 0.3])
 
         #TODO: recognize drinks on table and give a match (if available) position (left, center, right)
+        res = True
         position = 'center'
 
         if res:
             self.tries = 0
-
             voice.talk(f"I found a {party.get_active_guest_drink()} on the {position}, take it please.")
             return 'succ'
         else:
@@ -458,8 +459,8 @@ class Find_guests(smach.State):
         # First try: find first guest
         # Second try: find second guest
 
-        guest_loc = party.people[f'Guest_{self.tries}'].location
-        guest_name = party.people[f'Guest_{self.tries}'].name
+        guest_loc = party.informacion_fiesta["People"][f'Guest_{self.tries}'].location
+        guest_name = party.informacion_fiesta["People"][f'Guest_{self.tries}'].name
 
         voice.talk(f'Looking for guest {self.tries} on: {guest_loc}')
         tf_host = guest_loc.replace('_', '_face')
@@ -482,7 +483,7 @@ class Find_guests(smach.State):
         
 class Introduce_guest(smach.State):
     def __init__(self):
-        smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'],
+        smach.State.__init__(self, outcomes=['succ', 'failed', ],
                              input_keys=['name_like_host'])
         self.tries = 0
 
@@ -520,7 +521,7 @@ class Introduce_guest(smach.State):
             return 'succ'
         else:
             voice.talk("Task completed, thanks for watching")
-            return 'tries'
+            #return 'tries'
 
 # --------------------------------------------------
 # Entry point
@@ -559,7 +560,7 @@ if __name__ == '__main__':
 
         # Guest treatment
         smach.StateMachine.add("LEAD_TO_BEVERAGE_AREA", Lead_to_beverage_area(),  
-                               transitions={'failed': 'LEAD_TO_BEVERAGE_AREA', 'succ': 'FIND_SITTING_PLACE'})
+                               transitions={'failed': 'LEAD_TO_BEVERAGE_AREA', 'succ': 'FIND_DRINK'})
         smach.StateMachine.add("FIND_DRINK", Find_drink(),
                                transitions={'failed': 'FIND_DRINK', 'succ': 'LEAD_TO_LIVING_ROOM'})
         smach.StateMachine.add("LEAD_TO_LIVING_ROOM", Lead_to_living_room(),  
