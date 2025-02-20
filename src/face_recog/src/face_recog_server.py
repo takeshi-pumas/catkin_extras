@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 
-
-
 from cv_bridge import CvBridge
 #from object_classification.srv import Classify,ClassifyResponse, ClassifyRequest
 from face_recog .msg import *
@@ -19,6 +17,7 @@ import os
 
 
 from rospkg import RosPack
+
 
 rp = RosPack()
 path_for_faces = rp.get_path('config_files')+'/faces_for_recognition/'
