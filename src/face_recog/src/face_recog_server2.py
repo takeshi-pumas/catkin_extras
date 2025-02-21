@@ -23,7 +23,7 @@ bridge = CvBridge()
 encodings = []
 ids = []
 
-### Preload de imágenes de referencia al iniciar ###
+### Carga de imágenes de referencia al iniciar ###
 def load_known_faces():
     global encodings, ids
     encodings.clear()
@@ -43,9 +43,9 @@ def load_known_faces():
                 encodings.append(face_enc[0])
                 ids.append(person)
 
-    ids = np.asarray(ids)  # Convertimos a array numpy para optimizar búsqueda
+    ids = np.asarray(ids)  # Conversion a array numpy para optimizar búsqueda
 
-load_known_faces()  # Llamamos a la carga de imágenes al inicio del nodo
+load_known_faces()
 
 
 ### Conversión de coordenadas ###
@@ -72,7 +72,8 @@ def new_face_callback(req):
     print(f'Got {len(req.Ids.ids)} names')
 
     for i, img_msg in enumerate(req.in_.image_msgs):
-        image = cv2.cvtColor(bridge.imgmsg_to_cv2(img_msg), cv2.COLOR_BGR2RGB)
+        # image = cv2.cvtColor(bridge.imgmsg_to_cv2(img_msg), cv2.COLOR_BGR2RGB)
+        image = bridge.imgmsg_to_cv2(img_msg)
         face_locations = face_recognition.face_locations(image)
 
         if len(face_locations) == 1:
@@ -87,7 +88,7 @@ def new_face_callback(req):
             cv2.imwrite(os.path.join(person_path, img_filename), image)
 
             message = f'Trained new ID: {person_name}'
-            load_known_faces()
+            load_known_faces() # Recargar los datos de caras conocidas
             print(message)
         else:
             message = f'Image rejected: {len(face_locations)} faces detected'
@@ -124,15 +125,18 @@ def recognize_callback(req):
 ### Inicialización del servidor ###
 def classify_server():
     rospy.init_node('face_recognition_server')
-    rospy.loginfo("Face Recognition service available")
 
-    rospy.Service('recognize_face', RecognizeFace, recognize_callback)
-    rospy.Service('new_face', RecognizeFace, new_face_callback)
-    rospy.loginfo("Service: /face_recog/recognize_face available")
-    rospy.loginfo("Service: /face_recog/new_face available")
+    recog_face_serv = "/recognize_face"
+    train_new_face_serv = "/new_face"
+
+    rospy.Service(recog_face_serv, RecognizeFace, recognize_callback)
+    rospy.Service(train_new_face_serv, RecognizeFace, new_face_callback)
+
+    rospy.loginfo("Face Recognition service available")
+    rospy.loginfo(f"Service: {recog_face_serv} available")
+    rospy.loginfo(f"Service: {train_new_face_serv} available")
 
     rospy.spin()
-
 
 if __name__ == "__main__":
     classify_server()

@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
   sensor_msgs
+  vision_msgs
   message_generation
 )
 
@@ -63,6 +64,7 @@ find_package(catkin REQUIRED COMPONENTS
  add_service_files(
    FILES
    RecognizeFace.srv
+   FaceRecognition.srv
  )
 
 ## Generate actions in the 'action' folder
@@ -77,6 +79,7 @@ find_package(catkin REQUIRED COMPONENTS
    DEPENDENCIES
    std_msgs
    sensor_msgs
+   vision_msgs
  )
 
 ################################################
@@ -111,7 +114,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES object_classification
-  CATKIN_DEPENDS roscpp rospy std_msgs sensor_msgs message_runtime
+  CATKIN_DEPENDS roscpp rospy std_msgs sensor_msgs vision_msgs message_runtime
 #  DEPENDS system_lib
 )
 

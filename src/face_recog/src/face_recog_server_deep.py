@@ -1,18 +1,16 @@
 #!/usr/bin/env python3
 
-
-
 from cv_bridge import CvBridge
 #from object_classification.srv import Classify,ClassifyResponse, ClassifyRequest
 from face_recog .msg import *
 from face_recog .srv import *
-from rospy.numpy_msg import numpy_msg
+# from rospy.numpy_msg import numpy_msg
 from std_msgs.msg import String
 import rospy
-import numpy as np
+# import numpy as np
 import tf
 import tf2_ros
-from tf2_sensor_msgs.tf2_sensor_msgs import do_transform_cloud
+# from tf2_sensor_msgs.tf2_sensor_msgs import do_transform_cloud
 #import face_recognition
 from deepface import DeepFace
 import cv2
