@@ -35,7 +35,7 @@ model = load_model(CONFIG_PATH, WEIGHTS_PATH)
 rospy.loginfo("Model loaded successfully.")
 
 THRESHOLD = 0.3  # 🔹 CLIP Similarity threshold (adjust as needed)
-MAX_RETRIES = 10  # 🔹 Prevents infinite loops
+MAX_RETRIES = 30  # 🔹 Prevents infinite loops
 NUM_BOXES = 3  
 
 def preprocess_image(cv2_image, max_size=1333, stride=32):
@@ -74,113 +74,90 @@ def classify_with_clip(image_crop, prompt):
     similarity_score = similarity[0].item()  # Extract the similarity for the first text prompt
     return similarity_score
 
-def get_three_bounding_boxes(model, image, max_retries=MAX_RETRIES):
-    """Ensures exactly 3 bounding boxes: selects top 3 if >3, dynamically adjusts if <3."""
-    box_threshold = 0.4  # Initial threshold
-    text_threshold = 0.2
-    retries = 0
-
-    while retries < max_retries:
-        boxes, logits, phrases = predict(
-            model=model,
-            image=image,
-            caption="drink",
-            box_threshold=box_threshold,
-            text_threshold=text_threshold
-        )
-
-        if len(boxes) > NUM_BOXES:
-            # Select the top 3 most confident detections (highest logits)
-            top_indices = torch.argsort(logits, descending=True)[:3]
-            boxes = boxes[top_indices]
-            logits = logits[top_indices]
-            phrases = [phrases[i] for i in top_indices]
-            return boxes, logits, phrases  # ✅ Success: 3 best boxes selected
-
-        if len(boxes) == NUM_BOXES:
-            return boxes, logits, phrases  # ✅ Success: Exactly 3 bounding boxes
-
-        # Adjust thresholds
-        if len(boxes) < NUM_BOXES:
-            box_threshold -= 0.05  # Decrease to detect more objects
-            text_threshold -= 0.05
-
-        box_threshold = max(0.2, min(box_threshold, 0.6))  # Keep within safe limits
-        text_threshold = max(0.1, min(text_threshold, 0.5))
-
-        retries += 1
-
-    rospy.logwarn("Max retries reached. Using available detections.")
-    return boxes, logits, phrases  # Return the best available detections
 
 def handle_detection(req):
     """Handles incoming ROS service requests."""
-    try:
-        # Convert ROS image message to OpenCV format
-        image = bridge.imgmsg_to_cv2(req.image, desired_encoding="bgr8")
-        image_source = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        processed_image = preprocess_image(image_source)
+    
+    # Convert ROS image message to OpenCV format
+    image = bridge.imgmsg_to_cv2(req.image, desired_encoding="bgr8")
+    image_source = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    processed_image = preprocess_image(image_source)
 
-        # Extract prompt text (drink name)
-        prompt_text = req.prompt.data.strip()
-        rospy.loginfo(f"Processing request with drink prompt: {prompt_text}")
+    # Extract prompt text (drink name)
+    prompt_text = req.prompt.data.strip()
+    rospy.loginfo(f"Processing request with drink prompt: {prompt_text}")
 
-        # Get exactly 3 bounding boxes
-        boxes, logits, phrases = get_three_bounding_boxes(model, processed_image)
+    # Get all bounding boxes (no limit)
+    boxes, logits, phrases = predict(
+        model=model,
+        image=processed_image,
+        caption="drink",
+        box_threshold=0.4,  # Adjustable confidence threshold
+        text_threshold=0.2
+    )
 
-        hi, we = image_source.shape[:2]
+    hi, we = image_source.shape[:2]
 
-        # Convert bounding boxes from normalized values to absolute pixel values
-        abs_boxes = []
-        for box in boxes:
-            abs_box = box * torch.tensor([we, hi, we, hi])
-            abs_box = abs_box.numpy().astype("int")
-            cx, cy, wd, ht = abs_box
-            abs_boxes.append((cx, cy, wd, ht))
+    # Convert bounding boxes from normalized values to absolute pixel values
+    abs_boxes = []
+    for box in boxes:
+        abs_box = box * torch.tensor([we, hi, we, hi])
+        abs_box = abs_box.numpy().astype("int")
+        cx, cy, wd, ht = abs_box
+        abs_boxes.append((cx, cy, wd, ht))
 
-        # Sort boxes by x_center (cx)
-        abs_boxes.sort(key=lambda b: b[0])
+    if not abs_boxes:
+        rospy.logwarn("No bounding boxes detected.")
+        return Classify_dinoResponse(image=bridge.cv2_to_imgmsg(image_source, encoding="rgb8"), result=String(data="not found"))
 
-        # Assign left, center, right based on sorted order
-        positions = ["left", "center", "right"]
-        labeled_boxes = [
-            {"position": positions[i], "box": abs_boxes[i]} for i in range(len(abs_boxes))
-        ]
+    # Sort boxes by x_center (cx)
+    abs_boxes.sort(key=lambda b: b[0])
 
-        best_match = None
-        best_similarity = 0.0
+    # Assign positions
+    labeled_boxes = []
+    for i, box in enumerate(abs_boxes):
+        pos = "center"  # Default to center
+        if i == 0:
+            pos = "left"  # Leftmost box
+        elif i == len(abs_boxes) - 1:
+            pos = "right"  # Rightmost box
+        
+        labeled_boxes.append({"position": pos, "box": box})
 
-        for entry in labeled_boxes:
-            pos = entry["position"]
-            cx, cy, wd, ht = entry["box"]
+    best_match = None
+    best_similarity = 0.0
 
-            # Calculate bounding box coordinates
-            x_min = cx - (wd // 2)
-            x_max = cx + (wd // 2)
-            y_min = cy - (ht // 2)
-            y_max = cy + (ht // 2)
+    for entry in labeled_boxes:
+        pos = entry["position"]
+        cx, cy, wd, ht = entry["box"]
 
-            cropped_image = image_source[y_min:y_max, x_min:x_max]  
+        # Calculate bounding box coordinates
+        x_min = cx - (wd // 2)
+        x_max = cx + (wd // 2)
+        y_min = cy - (ht // 2)
+        y_max = cy + (ht // 2)
 
-            similarity_score = classify_with_clip(cropped_image, prompt_text)
-            rospy.loginfo(f"Similarity score for {prompt_text} in {pos}: {similarity_score:.2f}")
+        cropped_image = image_source[y_min:y_max, x_min:x_max]  
 
-            if similarity_score > best_similarity and similarity_score >= THRESHOLD:
-                best_similarity = similarity_score
-                best_match = pos
+        similarity_score = classify_with_clip(cropped_image, prompt_text)
+        rospy.loginfo(f"Similarity score for {prompt_text} in {pos}: {similarity_score:.2f}")
 
-        annotated_frame = annotate(image_source, boxes=boxes, logits=logits, phrases=phrases)
-        ros_annotated_image = bridge.cv2_to_imgmsg(annotated_frame, encoding="rgb8")
+        if similarity_score > best_similarity and similarity_score >= THRESHOLD:
+            best_similarity = similarity_score
+            best_match = pos
 
-        return Classify_dinoResponse(image=ros_annotated_image, result=String(data=best_match or "not found"))
+    annotated_frame = annotate(image_source, boxes=boxes, logits=logits, phrases=phrases)
+    ros_annotated_image = bridge.cv2_to_imgmsg(annotated_frame, encoding="rgb8")
 
-    except Exception as e:
-        rospy.logerr(f"Error processing request: {e}")
-        return Classify_dinoResponse(image=req.image, result=String(data="error"))
+    return Classify_dinoResponse(image=ros_annotated_image, result=String(data=best_match or "not found"))
+
+
+    
 
 def grounding_dino_server():
     rospy.init_node('grounding_dino_server')
     rospy.Service('grounding_dino_detect', Classify_dino, handle_detection)
+    rospy.loginfo("GroundingDINO service is running...")
     rospy.spin()
 
 if __name__ == "__main__":
