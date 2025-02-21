@@ -35,7 +35,6 @@ model = load_model(CONFIG_PATH, WEIGHTS_PATH)
 rospy.loginfo("Model loaded successfully.")
 
 THRESHOLD = 0.3  # 🔹 CLIP Similarity threshold (adjust as needed)
-MAX_RETRIES = 30  # 🔹 Prevents infinite loops
 NUM_BOXES = 3  
 
 def preprocess_image(cv2_image, max_size=1333, stride=32):
