@@ -1,0 +1,6 @@
+sensor_msgs/Image input_img        # Imagen de entrada donde se buscan las caras
+std_msgs/String[] name_request     # Nombres opcionales de las caras a buscar en la imagen
+---
+std_msgs/String[] name_response    # Nombres de las caras que fueron reconocidas
+std_msgs/String[] features         # Caracteristicas obtenidas en el analyze face
+vision_msgs/Bounding_Box[] bounding_boxes  # Coordenadas de los cuadros delimitadores (bounding boxes)

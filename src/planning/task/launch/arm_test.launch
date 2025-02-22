@@ -1,0 +1,4 @@
+<launch>
+    <!-- Inicializar el nodo ROS -->
+    <node name="move_arm_node" pkg="task" type="arm_gui_test.py" output="screen"/>
+</launch>
