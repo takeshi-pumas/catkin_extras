@@ -337,18 +337,17 @@ class Find_drink(smach.State):
         print('Try', self.tries, 'of 3 attempts')
 
         voice.talk('Scanning table')
-        head.set_joint_values([0.0, 0.3])
+        head.set_joint_values([0.0, -0.1])
 
-        #TODO: recognize drinks on table and give a match (if available) position (left, center, right)
-        res = True
-        position = 'center'
+        favorite_drink = party.get_active_guest_drink()
+        res,position = get_favorite_drink_location(favorite_drink)
 
         if res:
             self.tries = 0
-            voice.talk(f"I found a {party.get_active_guest_drink()} on the {position}, take it please.")
+            voice.talk(f"I found a {favorite_drink} on the {position}, take it please.")
             return 'succ'
         else:
-            voice.talk(f'There is no {party.get_active_guest_drink()}, if you want to, take another one.')
+            voice.talk(f'There is no {favorite_drink}, if you want to, take another one.')
             return 'failed'
 
 # Lead to living room STATE: Ask guest to follow robot to living room

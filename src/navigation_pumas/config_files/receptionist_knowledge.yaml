@@ -3,12 +3,6 @@ People:
     drink: Coke
     location: Place_3
     name: john
-  Guest_1:
-    description: jack has arrived... he is a Man... I believe he is  around 24 years
-      old... I would say he is a bit sad. I might guess he is of white descent.
-    drink: tea
-    location: Place_1
-    name: jack
 Places:
   Place_0:
     location:
@@ -21,13 +15,13 @@ Places:
       theta: -0.05
       x: -0.33
       y: -1.7
-    occupied: Guest_1
+    occupied: null
   Place_2:
     location:
       theta: -1.51
       x: -0.82
       y: -1.61
-    occupied: None
+    occupied: null
   Place_3:
     location:
       theta: 3.1

@@ -7,7 +7,7 @@ import numpy as np
 from cv_bridge import CvBridge
 from sensor_msgs.msg import Image
 from std_msgs.msg import String
-from object_classification.srv import Classify_dino, Classify_dinoResponse
+from object_classification.srv import Classify_dino_receptionist, Classify_dino_receptionistResponse
 from groundingdino.util.inference import load_model, predict, annotate
 import clip
 from PIL import Image
@@ -25,7 +25,7 @@ clip_model, clip_preprocess = clip.load("ViT-B/32", device=device)
 rospy.loginfo("CLIP model loaded successfully.")
 
 # Set base directory
-BASE_DIR = os.path.expanduser("~/GroundingDINO")
+BASE_DIR = os.path.expanduser("~/Repositories/GroundingDINO")
 CONFIG_PATH = os.path.join(BASE_DIR, "groundingdino/config/GroundingDINO_SwinT_OGC.py")
 WEIGHTS_PATH = os.path.join(BASE_DIR, "weights", "groundingdino_swint_ogc.pth")
 
@@ -107,7 +107,7 @@ def handle_detection(req):
 
     if not abs_boxes:
         rospy.logwarn("No bounding boxes detected.")
-        return Classify_dinoResponse(image=bridge.cv2_to_imgmsg(image_source, encoding="rgb8"), result=String(data="not found"))
+        return Classify_dino_receptionistResponse(image=bridge.cv2_to_imgmsg(image_source, encoding="rgb8"), result=String(data="not found"))
 
     # Sort boxes by x_center (cx)
     abs_boxes.sort(key=lambda b: b[0])
@@ -145,17 +145,14 @@ def handle_detection(req):
             best_similarity = similarity_score
             best_match = pos
 
-    annotated_frame = annotate(image_source, boxes=boxes, logits=logits, phrases=phrases)
-    ros_annotated_image = bridge.cv2_to_imgmsg(annotated_frame, encoding="rgb8")
-
-    return Classify_dinoResponse(image=ros_annotated_image, result=String(data=best_match or "not found"))
+    return Classify_dino_receptionistResponse(result=String(data=best_match or "not found"))
 
 
     
 
 def grounding_dino_server():
     rospy.init_node('grounding_dino_server')
-    rospy.Service('grounding_dino_detect', Classify_dino, handle_detection)
+    rospy.Service('grounding_dino_detect', Classify_dino_receptionist, handle_detection)
     rospy.loginfo("GroundingDINO service is running...")
     rospy.spin()
 

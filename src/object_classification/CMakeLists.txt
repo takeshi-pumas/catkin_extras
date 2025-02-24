@@ -64,6 +64,7 @@ find_package(catkin REQUIRED COMPONENTS
    FILES
    Classify.srv
    Classify_dino.srv
+   Classify_dino_receptionist.srv
  )
 
 ## Generate actions in the 'action' folder

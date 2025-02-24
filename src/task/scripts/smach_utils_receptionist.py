@@ -54,6 +54,8 @@ set_grammar = rospy.ServiceProxy('set_grammar_vosk', SetGrammarVosk)            
 recognize_face = rospy.ServiceProxy('recognize_face', RecognizeFace)                    #FACE RECOG
 train_new_face = rospy.ServiceProxy('new_face', RecognizeFace)                          #FACE RECOG
 analyze_face = rospy.ServiceProxy('analyze_face', RecognizeFace)    ###DEEP FACE ONLY
+classify_client_dino = rospy.ServiceProxy('grounding_dino_detect', Classify_dino_receptionist)
+
 
 enable_mic_pub = rospy.Publisher('/talk_now', Bool, queue_size=10)
 
@@ -212,7 +214,29 @@ def analyze_face_background(img, name=" "):
     img_msg = bridge.cv2_to_imgmsg(img)
     img_pub.publish(img_msg)
 
+#------------------------------------------------------
+def get_favorite_drink_location(favorite_drink):
+    
+    # Convert image to ROS format
+    ros_image = rospy.wait_for_message('/hsrb/head_r_stereo_camera/image_raw', Image, timeout=5)
+    print("Message Received")
+    # Create a proper ROS String message
+    prompt_msg = String()
+    prompt_msg.data = favorite_drink
 
+    rospy.wait_for_service('grounding_dino_detect')
+    try:
+        response = classify_client_dino(ros_image, prompt_msg)
+        print("Result:", response.result.data,"for drink:",favorite_drink)
+        if response.result.data == "not found":
+            res = False
+        else: 
+            res = True
+        return res,response.result.data
+
+    except rospy.ServiceException as e:
+        print(f"Service call failed: {e}")
+        return False,"not found"
 #------------------------------------------------------
 def detect_human_to_tf():
     humanpose=human_detect_server.call()
