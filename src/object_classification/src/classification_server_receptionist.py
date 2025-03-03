@@ -25,7 +25,7 @@ clip_model, clip_preprocess = clip.load("ViT-B/32", device=device)
 rospy.loginfo("CLIP model loaded successfully.")
 
 # Set base directory
-BASE_DIR = os.path.expanduser("~/Repositories/GroundingDINO")
+BASE_DIR = os.path.expanduser("~/GroundingDINO")
 CONFIG_PATH = os.path.join(BASE_DIR, "groundingdino/config/GroundingDINO_SwinT_OGC.py")
 WEIGHTS_PATH = os.path.join(BASE_DIR, "weights", "groundingdino_swint_ogc.pth")
 
@@ -38,7 +38,7 @@ THRESHOLD = 0.3  # CLIP Similarity threshold (adjust as needed)
 
 # 🔹 Diccionario de descripciones personalizadas
 prompt_dict = {
-    "Coke": "A bottle of coke.",
+    "coke": "A bottle with red label.",
     "coffee": "A cup of hot coffee.",
     "water": "A bottle of bonafont water.",
     "juice": "A white bottle of mango juice.",
@@ -65,6 +65,7 @@ def classify_with_clip(image_crop, prompt_key):
     
     # Obtener la descripción del diccionario si existe
     prompt_text = prompt_dict.get(prompt_key, f"A photo of a {prompt_key}.")
+    print(prompt_text)
     
     # Crear prompts para contraste
     prompt_texts = [
@@ -93,11 +94,11 @@ def handle_detection(req):
     processed_image = preprocess_image(image_source)
 
     # Extraer texto del prompt y verificar en el diccionario
-    prompt_text = req.prompt.data.strip()
-    if prompt_text not in prompt_dict:
-        rospy.logwarn(f"Prompt '{prompt_text}' not found in dictionary. Using default.")
+    prompt = req.prompt.data.strip()
+    if prompt not in prompt_dict:
+        rospy.logwarn(f"Prompt '{prompt}' not found in dictionary. Using default.")
     
-    rospy.loginfo(f"Processing request with prompt: {prompt_text}")
+    rospy.loginfo(f"Processing request with prompt: {prompt}")
 
     # Obtener todas las bounding boxes
     boxes, logits, phrases = predict(
@@ -151,8 +152,8 @@ def handle_detection(req):
 
         cropped_image = image_source[y_min:y_max, x_min:x_max]  
 
-        similarity_score = classify_with_clip(cropped_image, prompt_text)
-        rospy.loginfo(f"Similarity score for {prompt_text} in {pos}: {similarity_score:.2f}")
+        similarity_score = classify_with_clip(cropped_image, prompt)
+        rospy.loginfo(f"Similarity score for {prompt} in {pos}: {similarity_score:.2f}")
 
         if similarity_score > best_similarity and similarity_score >= THRESHOLD:
             best_similarity = similarity_score
