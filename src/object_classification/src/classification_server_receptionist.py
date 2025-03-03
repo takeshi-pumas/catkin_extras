@@ -34,8 +34,16 @@ rospy.loginfo("Loading GroundingDINO model...")
 model = load_model(CONFIG_PATH, WEIGHTS_PATH)
 rospy.loginfo("Model loaded successfully.")
 
-THRESHOLD = 0.3  # 🔹 CLIP Similarity threshold (adjust as needed)
-NUM_BOXES = 3  
+THRESHOLD = 0.3  # CLIP Similarity threshold (adjust as needed)
+
+# 🔹 Diccionario de descripciones personalizadas
+prompt_dict = {
+    "Coke": "A bottle of coke.",
+    "coffee": "A cup of hot coffee.",
+    "water": "A bottle of bonafont water.",
+    "juice": "A white bottle of mango juice.",
+    "beer": "A bottle of beer."
+}
 
 def preprocess_image(cv2_image, max_size=1333, stride=32):
     """Convert an OpenCV image to the format expected by GroundingDINO."""
@@ -50,54 +58,59 @@ def preprocess_image(cv2_image, max_size=1333, stride=32):
     std = torch.tensor(STD).view(3, 1, 1).to(device)
     return (image_tensor - mean) / std
 
-def classify_with_clip(image_crop, prompt):
-    """Classifies a cropped bounding box using CLIP."""
+def classify_with_clip(image_crop, prompt_key):
+    """Classifies a cropped bounding box using CLIP with a prompt from prompt_dict."""
     pil_image = Image.fromarray(image_crop)
     image_clip = clip_preprocess(pil_image).unsqueeze(0).to(device)
     
-    # Create both positive and negative prompts for contrast
+    # Obtener la descripción del diccionario si existe
+    prompt_text = prompt_dict.get(prompt_key, f"A photo of a {prompt_key}.")
+    
+    # Crear prompts para contraste
     prompt_texts = [
-        f"A photo of a {prompt}.",  # Positive class
-        "A photo of something else."  # Negative class for contrast
+        prompt_text,  # Clase positiva
+        "A photo of something else."  # Clase negativa para contraste
     ]
     
     text_clip = clip.tokenize(prompt_texts).to(device)
 
     with torch.no_grad():
-        image_features = clip_model.encode_image(image_clip)  # Extract image embedding
-        text_features = clip_model.encode_text(text_clip)  # Extract text embeddings
+        image_features = clip_model.encode_image(image_clip)  # Extraer embedding de imagen
+        text_features = clip_model.encode_text(text_clip)  # Extraer embedding de texto
         
-        # Compute cosine similarity instead of softmax
+        # Calcular similitud coseno
         similarity = torch.nn.functional.cosine_similarity(image_features, text_features)
 
-    similarity_score = similarity[0].item()  # Extract the similarity for the first text prompt
+    similarity_score = similarity[0].item()  # Obtener la similitud para el primer prompt
     return similarity_score
-
 
 def handle_detection(req):
     """Handles incoming ROS service requests."""
     
-    # Convert ROS image message to OpenCV format
+    # Convertir mensaje ROS a imagen OpenCV
     image = bridge.imgmsg_to_cv2(req.image, desired_encoding="bgr8")
     image_source = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     processed_image = preprocess_image(image_source)
 
-    # Extract prompt text (drink name)
+    # Extraer texto del prompt y verificar en el diccionario
     prompt_text = req.prompt.data.strip()
-    rospy.loginfo(f"Processing request with drink prompt: {prompt_text}")
+    if prompt_text not in prompt_dict:
+        rospy.logwarn(f"Prompt '{prompt_text}' not found in dictionary. Using default.")
+    
+    rospy.loginfo(f"Processing request with prompt: {prompt_text}")
 
-    # Get all bounding boxes (no limit)
+    # Obtener todas las bounding boxes
     boxes, logits, phrases = predict(
         model=model,
         image=processed_image,
         caption="drink",
-        box_threshold=0.4,  # Adjustable confidence threshold
+        box_threshold=0.3,  # Umbral ajustable
         text_threshold=0.2
     )
 
     hi, we = image_source.shape[:2]
 
-    # Convert bounding boxes from normalized values to absolute pixel values
+    # Convertir bounding boxes a valores absolutos en píxeles
     abs_boxes = []
     for box in boxes:
         abs_box = box * torch.tensor([we, hi, we, hi])
@@ -109,17 +122,17 @@ def handle_detection(req):
         rospy.logwarn("No bounding boxes detected.")
         return Classify_dino_receptionistResponse(image=bridge.cv2_to_imgmsg(image_source, encoding="rgb8"), result=String(data="not found"))
 
-    # Sort boxes by x_center (cx)
+    # Ordenar bounding boxes por su centro x
     abs_boxes.sort(key=lambda b: b[0])
 
-    # Assign positions
+    # Asignar posiciones
     labeled_boxes = []
     for i, box in enumerate(abs_boxes):
-        pos = "center"  # Default to center
+        pos = "center"  # Por defecto "center"
         if i == 0:
-            pos = "left"  # Leftmost box
+            pos = "left"  # Más a la izquierda
         elif i == len(abs_boxes) - 1:
-            pos = "right"  # Rightmost box
+            pos = "right"  # Más a la derecha
         
         labeled_boxes.append({"position": pos, "box": box})
 
@@ -130,7 +143,7 @@ def handle_detection(req):
         pos = entry["position"]
         cx, cy, wd, ht = entry["box"]
 
-        # Calculate bounding box coordinates
+        # Calcular coordenadas del bounding box
         x_min = cx - (wd // 2)
         x_max = cx + (wd // 2)
         y_min = cy - (ht // 2)
@@ -147,8 +160,6 @@ def handle_detection(req):
 
     return Classify_dino_receptionistResponse(result=String(data=best_match or "not found"))
 
-
-    
 
 def grounding_dino_server():
     rospy.init_node('grounding_dino_server')
