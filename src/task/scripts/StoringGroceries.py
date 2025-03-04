@@ -613,10 +613,11 @@ class Scan_shelf(smach.State):
                 #arm.go()
                 #rospy.sleep(5)
             elif self.tries >= 3:
+                head.set_joint_values([0.0, 0.0])
+                rospy.sleep(2.5)
                 arm.set_named_target('go')
                 arm.go()
-                rospy.sleep(5)
-                #head.set_joint_values([-np.pi/2, -0.4])
+                head.set_joint_values([-np.pi/2, -0.4])
             rospy.sleep(3.0)
             image = cv2.cvtColor(rgbd.get_image(), cv2.COLOR_RGB2BGR)
             img_msg = bridge.cv2_to_imgmsg(image)
@@ -733,7 +734,8 @@ class Scan_shelf(smach.State):
 
         # Publish TF and move arm
         tf_man.pub_static_tf(pos=[xy_place[0], xy_place[1], z_place + 0.05], point_name='placing_area')
-        head.set_joint_values([-np.pi/2, -0.7])
+        head.set_joint_values([0, 0])
+        rospy.sleep(3)
         arm.set_named_target('go')
         arm.go()
 

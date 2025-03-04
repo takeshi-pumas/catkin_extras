@@ -63,7 +63,7 @@ def preprocess_image(cv2_image, max_size=1333, stride=32, device="cuda"):
 
 
 # Set base directory
-BASE_DIR = os.path.expanduser("~/Repositories/GroundingDINO")
+BASE_DIR = os.path.expanduser("~/GroundingDINO")
 CONFIG_PATH = os.path.join(BASE_DIR, "groundingdino/config/GroundingDINO_SwinT_OGC.py")
 WEIGHTS_PATH = os.path.join(BASE_DIR, "weights", "groundingdino_swint_ogc.pth")
 

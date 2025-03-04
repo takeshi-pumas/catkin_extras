@@ -84,6 +84,9 @@ class Plan(smach.State):
 
         rospy.loginfo('STATE : Execute PLAN')
         actions=userdata.actions
+        
+        actions.append('place_object')
+        talk (actions[0]) 
         print(f'Ollama plan to actions{actions} ')
         if len(actions)==0:
             print("I believe I have suceeded. Go back to initial and wait for command" )
@@ -121,7 +124,8 @@ class Wait_command(smach.State):
         print(f'Try {self.tries} of 4 attempts')
         if self.tries == 4:
             return 'tries'
-        talk('Ready for GPSR, waiting for comand using QR')    
+        talk('Ready for GPSR, waiting for comand using QR')   
+        return 'succ' 
         #plan="plan=['FindObject(EndTable)', 'Navigate(EndTable)', 'IdentifyObject(largest_object)', 'ReportObjectAttribute(size)']"
         #succ = wait_for_qr(100) # TO DO
         succ=True
@@ -441,11 +445,11 @@ class Place(smach.State):
         ##################################################
         head.set_joint_values([ 0.0, -0.5])
         rospy.sleep(1.0)                
-        find_placing_area()
+        find_placing_area(plane_height=.58)
         pos, quat = tf_man.getTF(target_frame = 'placing_area', ref_frame = 'odom')
         target_pose = Float32MultiArray()
         target_pose.data = pos
-        offset_point=[0.0,0.1,0.1 ]
+        offset_point=[0.0,0.0,0.15 ]
         ###################
         #####################APPLY OFFSET
         object_point = PointStamped()
@@ -475,7 +479,7 @@ class Place(smach.State):
             #av[1]=-0.74
             #av[2]=0.0
             #arm.go(av) 
-            string_msg.data='frontal'    
+            string_msg.data='above'    
             #string_msg.data='pour'
         userdata.mode=string_msg             
         ###################################
@@ -999,6 +1003,7 @@ if __name__ == '__main__':
     # State machine, final state "END"
     sm = smach.StateMachine(outcomes=['END'])
     sm.userdata.first = True
+    sm.userdata.actions=[]
     sis = smach_ros.IntrospectionServer('SMACH_VIEW_SERVER', sm, '/SM_STORING')
     sis.start()
     with sm:

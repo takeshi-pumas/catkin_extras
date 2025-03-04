@@ -3,7 +3,7 @@ chips_can,cylinder,above,0.02,0,0.06
 master_chef_can,box,above,0.02,0,0.06
 cracker_box,box,frontal,-0.1,0,0.01
 sugar_box,box,frontal,-0.1,0,0.01
-tomato_soup_can,cylinder,frontal,0,0,0.01
+tomato_soup_can,cylinder,frontal,-0.05,0,0.01
 mustard_bottle,other,frontal,-0.1,0,0.01
 tuna_fish_can,cylinder,above,0.02,0,0.06
 pudding_box,box,frontal,-0.1,0,0.01

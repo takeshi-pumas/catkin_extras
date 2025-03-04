@@ -571,49 +571,13 @@ Visualization Manager:
       Filter (whitelist): ""
       Frame Timeout: 15
       Frames:
-        002_master_chef_can:
-          Value: true
-        004_sugar_box:
-          Value: true
-        007_tuna_fish_can:
-          Value: true
-        008_pudding_box:
-          Value: true
-        013_apple:
-          Value: true
-        019-a_pitcher_base:
-          Value: true
-        019-b_pitcher_base_v2:
-          Value: true
-        022_windex_bottle:
-          Value: true
-        025_mug:
-          Value: true
-        031_spoon:
-          Value: true
-        033_spatula:
-          Value: true
-        040_large_marker:
-          Value: true
-        062_dice:
-          Value: true
-        063-a_marbles:
-          Value: true
-        071_nine_hole_peg_test:
-          Value: true
-        073-b_lego_duplo:
-          Value: true
         All Enabled: false
-        apple:
-          Value: true
         arm_flex_link:
           Value: false
         arm_lift_link:
           Value: false
         arm_roll_link:
           Value: false
-        b_lego_duplo:
-          Value: true
         base_b_bumper_link:
           Value: false
         base_f_bumper_link:
@@ -646,15 +610,7 @@ Visualization Manager:
           Value: false
         base_roll_link:
           Value: false
-        dice:
-          Value: true
-        dining_room:
-          Value: true
-        door_lab:
-          Value: true
-        entrance:
-          Value: true
-        goal_for_grasp:
+        goal_for_place:
           Value: true
         hallway_1:
           Value: true
@@ -716,15 +672,9 @@ Visualization Manager:
           Value: false
         kitchen:
           Value: false
-        large_marker:
-          Value: true
         living_room:
           Value: false
         map:
-          Value: true
-        master_chef_can:
-          Value: true
-        nine_hole_peg_test:
           Value: true
         object_0:
           Value: true
@@ -738,6 +688,14 @@ Visualization Manager:
           Value: true
         object_2_norot:
           Value: true
+        object_3:
+          Value: true
+        object_3_norot:
+          Value: true
+        object_4:
+          Value: true
+        object_4_norot:
+          Value: true
         odom:
           Value: true
         pickup:
@@ -746,18 +704,10 @@ Visualization Manager:
           Value: true
         placing_area:
           Value: true
-        prueba:
-          Value: true
-        pudding_box:
-          Value: true
         shelf:
-          Value: true
-        spoon:
           Value: true
         torso_lift_link:
           Value: false
-        windex_bottle:
-          Value: true
         wrist_flex_link:
           Value: false
         wrist_ft_sensor_frame:
@@ -774,19 +724,7 @@ Visualization Manager:
       Show Names: true
       Tree:
         map:
-          apple:
-            {}
-          b_lego_duplo:
-            {}
-          dice:
-            {}
-          dining_room:
-            {}
-          door_lab:
-            {}
-          entrance:
-            {}
-          goal_for_grasp:
+          goal_for_place:
             {}
           hallway_1:
             {}
@@ -794,13 +732,7 @@ Visualization Manager:
             {}
           kitchen:
             {}
-          large_marker:
-            {}
           living_room:
-            {}
-          master_chef_can:
-            {}
-          nine_hole_peg_test:
             {}
           object_0:
             {}
@@ -813,6 +745,14 @@ Visualization Manager:
           object_2:
             {}
           object_2_norot:
+            {}
+          object_3:
+            {}
+          object_3_norot:
+            {}
+          object_4:
+            {}
+          object_4_norot:
             {}
           odom:
             base_footprint:
@@ -874,38 +814,7 @@ Visualization Manager:
                       head_l_stereo_camera_link:
                         head_l_stereo_camera_frame:
                           head_rgbd_sensor_rgb_frame:
-                            002_master_chef_can:
-                              {}
-                            004_sugar_box:
-                              {}
-                            007_tuna_fish_can:
-                              {}
-                            008_pudding_box:
-                              {}
-                            013_apple:
-                              {}
-                            019-a_pitcher_base:
-                              {}
-                            019-b_pitcher_base_v2:
-                              {}
-                            022_windex_bottle:
-                              {}
-                            025_mug:
-                              {}
-                            031_spoon:
-                              {}
-                            033_spatula:
-                              {}
-                            040_large_marker:
-                              {}
-                            062_dice:
-                              {}
-                            063-a_marbles:
-                              {}
-                            071_nine_hole_peg_test:
-                              {}
-                            073-b_lego_duplo:
-                              {}
+                            {}
                         head_l_stereo_camera_gazebo_frame:
                           {}
                       head_r_stereo_camera_link:
@@ -913,8 +822,6 @@ Visualization Manager:
                           {}
                       head_rgbd_sensor_link:
                         head_rgbd_sensor_gazebo_frame:
-                          {}
-                        prueba:
                           {}
             base_footprint_wheel:
               {}
@@ -924,13 +831,7 @@ Visualization Manager:
             {}
           placing_area:
             {}
-          pudding_box:
-            {}
           shelf:
-            {}
-          spoon:
-            {}
-          windex_bottle:
             {}
       Update Interval: 0
       Value: true
@@ -1116,9 +1017,9 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.6497963666915894
+      Pitch: 0.45979630947113037
       Target Frame: base_footprint
-      Yaw: 1.6695154905319214
+      Yaw: 3.1645255088806152
     Saved: ~
 Window Geometry:
   Displays:
