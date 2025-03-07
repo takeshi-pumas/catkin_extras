@@ -94,6 +94,8 @@ class PlacingStateMachine:
         #clear_octo_client()    
         self.whole_body.set_start_state_to_current_state()
         self.safe_pose = self.whole_body.get_current_joint_values()
+        self.whole_body.set_start_state_to_current_state()
+
         return 'success'
 
 
@@ -203,7 +205,7 @@ class PlacingStateMachine:
         height_eef=pose_eef.pose.position.z
         goal = self.sm.userdata.goal.target_pose.data
         joint_values = self.brazo.get_joint_values()
-        joint_values[0] +=  (goal[2]-height_eef)         #-0.1
+        #joint_values[0] +=  (goal[2]-height_eef)         #-0.1
         self.brazo.set_joint_values(joint_values)
         self.gripper.open()
         rospy.sleep(1.0)
@@ -215,9 +217,9 @@ class PlacingStateMachine:
         ###TODO CREATE A SAFE RETREAT POSE!
         joint_values = self.brazo.get_joint_values()
         
-        joint_values[0] += 0.2
-        joint_values[1] += 0.2
-        self.brazo.set_joint_values(joint_values)     
+        #joint_values[0] += 0.2
+        #joint_values[1] += 0.2
+        #self.brazo.set_joint_values(joint_values)     
 
         rospy.sleep(1.0)
         return 'success'

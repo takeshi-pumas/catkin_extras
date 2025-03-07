@@ -334,6 +334,7 @@ class Find_drink(smach.State):
 
     def execute(self, userdata):
         rospy.loginfo('STATE : Scan table to find beverages')
+        self.tries += 1
         print('Try', self.tries, 'of 3 attempts')
 
         voice.talk('Scanning table')

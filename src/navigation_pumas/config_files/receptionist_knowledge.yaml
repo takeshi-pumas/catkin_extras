@@ -3,6 +3,13 @@ People:
     drink: Coke
     location: Place_3
     name: john
+  Guest_1:
+    description: john has arrived... he is a Man... I believe he is  around 21 years
+      old... I would say he is a bit sad. I might guess he is of white descent.
+    drink: coke
+    interest: null
+    location: null
+    name: john
 Places:
   Place_0:
     location:

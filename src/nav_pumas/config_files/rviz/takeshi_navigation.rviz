@@ -316,27 +316,7 @@ Visualization Manager:
       Filter (whitelist): ""
       Frame Timeout: 15
       Frames:
-        002_master_chef_can:
-          Value: true
-        018_plum:
-          Value: true
-        020_pitcher_lid:
-          Value: true
-        022_windex_bottle:
-          Value: true
-        040_large_marker:
-          Value: true
-        063-a_marbles:
-          Value: true
-        071_nine_hole_peg_test:
-          Value: true
-        072-a_toy_airplane:
-          Value: true
         All Enabled: false
-        a_marbles:
-          Value: true
-        a_toy_airplane:
-          Value: true
         arm_flex_link:
           Value: false
         arm_lift_link:
@@ -375,6 +355,28 @@ Visualization Manager:
           Value: false
         base_roll_link:
           Value: false
+        book_shelf:
+          Value: true
+        coach:
+          Value: true
+        counter:
+          Value: true
+        cupboard:
+          Value: true
+        desk:
+          Value: true
+        dining_room:
+          Value: true
+        dining_table:
+          Value: true
+        dish_washer:
+          Value: true
+        end_table:
+          Value: true
+        entrance:
+          Value: true
+        exit:
+          Value: true
         hand_camera_frame:
           Value: false
         hand_camera_gazebo_frame:
@@ -429,34 +431,28 @@ Visualization Manager:
           Value: false
         head_tilt_link:
           Value: false
-        large_marker:
+        kitchen:
+          Value: true
+        living_room:
           Value: true
         map:
           Value: true
-        master_chef_can:
-          Value: true
-        nine_hole_peg_test:
-          Value: true
-        object_0:
-          Value: true
-        object_0_norot:
-          Value: true
-        object_1:
-          Value: true
-        object_1_norot:
-          Value: true
         odom:
           Value: false
-        pitcher_lid:
-          Value: true
-        plum:
+        rear_door:
           Value: true
         shelf:
           Value: true
+        side_table:
+          Value: true
+        sink:
+          Value: true
+        start:
+          Value: true
+        storage_table:
+          Value: true
         torso_lift_link:
           Value: false
-        windex_bottle:
-          Value: true
         wrist_flex_link:
           Value: false
         wrist_ft_sensor_frame:
@@ -473,23 +469,31 @@ Visualization Manager:
       Show Names: true
       Tree:
         map:
-          a_marbles:
+          book_shelf:
             {}
-          a_toy_airplane:
+          coach:
             {}
-          large_marker:
+          counter:
             {}
-          master_chef_can:
+          cupboard:
             {}
-          nine_hole_peg_test:
+          desk:
             {}
-          object_0:
+          dining_room:
             {}
-          object_0_norot:
+          dining_table:
             {}
-          object_1:
+          dish_washer:
             {}
-          object_1_norot:
+          end_table:
+            {}
+          entrance:
+            {}
+          exit:
+            {}
+          kitchen:
+            {}
+          living_room:
             {}
           odom:
             base_footprint:
@@ -551,22 +555,7 @@ Visualization Manager:
                       head_l_stereo_camera_link:
                         head_l_stereo_camera_frame:
                           head_rgbd_sensor_rgb_frame:
-                            002_master_chef_can:
-                              {}
-                            018_plum:
-                              {}
-                            020_pitcher_lid:
-                              {}
-                            022_windex_bottle:
-                              {}
-                            040_large_marker:
-                              {}
-                            063-a_marbles:
-                              {}
-                            071_nine_hole_peg_test:
-                              {}
-                            072-a_toy_airplane:
-                              {}
+                            {}
                         head_l_stereo_camera_gazebo_frame:
                           {}
                       head_r_stereo_camera_link:
@@ -577,13 +566,17 @@ Visualization Manager:
                           {}
             base_footprint_wheel:
               {}
-          pitcher_lid:
-            {}
-          plum:
+          rear_door:
             {}
           shelf:
             {}
-          windex_bottle:
+          side_table:
+            {}
+          sink:
+            {}
+          start:
+            {}
+          storage_table:
             {}
       Update Interval: 0
       Value: true
@@ -716,7 +709,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 12.735452651977539
+      Distance: 15.97535228729248
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -724,17 +717,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 0.7523125410079956
-        Y: -2.6818814277648926
-        Z: -6.249798774719238
+        X: 0.7716740965843201
+        Y: -2.3852758407592773
+        Z: -6.2466139793396
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.5497963428497314
+      Pitch: 1.5597963333129883
       Target Frame: <Fixed Frame>
-      Yaw: 1.505391001701355
+      Yaw: 4.420393943786621
     Saved: ~
 Window Geometry:
   Displays:
@@ -753,4 +746,4 @@ Window Geometry:
     collapsed: true
   Width: 1386
   X: 303
-  Y: 77
+  Y: 40

@@ -183,7 +183,11 @@ class Scan_floor(smach.State):
         print (res.poses.data)
         #res=segmentation_server.call()
         #origin_map_img=[round(img_map.shape[0]*0.5) ,round(img_map.shape[1]*0.5)]
-
+        #if img_map[origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m)]!=0:#### Yes axes seem to be "flipped" !=0:
+        #    print ('[ANALYZETRASH] reject point, most likely part of arena, occupied inflated map')
+        #    tf_man.pub_static_tf(pos=[0,0,0], point_name=point_name, ref='head_rgbd_sensor_rgb_frame')
+        #    num_objs-=1
+        #print (f'[ANALYZETRASH] object found at robot coords.{pose} ')
         if len(res.poses.data)==0:
             talk('no Objects in area....')
             return 'failed'
