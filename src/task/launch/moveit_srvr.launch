@@ -1,0 +1,13 @@
+
+
+<launch>  
+  <node pkg="point_cloud"  name="point_cloud_filter_node" type="passthrough_filter"/>  
+  <include file="$(find hsrb_moveit_config)/launch/hsrb_demo_with_controller.launch"> 
+  <arg name="use_gui" value="true"/> 
+  </include>
+
+
+  <node pkg="action_server"  name="action_server" type="ACT_SRVR_grasp_mio.py"/>  
+  <node pkg="action_server"  name="place_action_server" type="ACT_SRVR_pickplace.py"/>   
+  
+</launch>  
