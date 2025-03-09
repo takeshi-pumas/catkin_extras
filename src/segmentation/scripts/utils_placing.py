@@ -2,7 +2,8 @@
 import tf
 import cv2
 import rospy  
-import tf2_ros                                    
+import tf2_ros     
+import tf2_geometry_msgs
 from segmentation.srv import Segmentation, SegmentationResponse 
 from cv_bridge import CvBridge
 from object_classification.srv import *
@@ -15,7 +16,7 @@ import matplotlib.pyplot as plt
 import rospkg
 import yaml
 from sensor_msgs.msg import Image , LaserScan , PointCloud2
-from geometry_msgs.msg import TransformStamped, Pose
+from geometry_msgs.msg import TransformStamped, Pose, Vector3Stamped , PointStamped
 from tf2_sensor_msgs.tf2_sensor_msgs import do_transform_cloud
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import matplotlib.pyplot as plt
@@ -26,7 +27,7 @@ import pandas as pd
 from sklearn.decomposition import PCA
 #-----------------------------------------------------------------
 global tf_listener, ptcld_lis, broadcaster , bridge , rospack , Pca
-
+import open3d as o3d
 rospack = rospkg.RosPack()
 #rospy.init_node('plane_segmentation') 
 rospy.init_node('placing_finder') 

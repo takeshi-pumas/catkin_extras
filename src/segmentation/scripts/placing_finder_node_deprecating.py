@@ -16,7 +16,6 @@ def trigger_response(request):
     image=cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
     image = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]
     rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)    
-    image_height, image_width, _ = rgb_image.shape
     #
     ################
     #CORRECT POINTS###################
@@ -37,52 +36,16 @@ def trigger_response(request):
 
     #AUTO DETECT PLANE?
     if request.height.data==-1:
-        xyz = np.vstack((np_corrected['x'], np_corrected['y'], np_corrected['z'])).T
- 
-        pcd = o3d.geometry.PointCloud()
-        pcd.points = o3d.utility.Vector3dVector(xyz)
- 
-        # Apply RANSAC to segment the dominant plane
-        planes=[]
-        horizontal_plane_found = False
-        while len(pcd.points) > 10 and not horizontal_plane_found:
-            plane_model, inliers = pcd.segment_plane(distance_threshold=0.02,
-                                                     ransac_n=3,
-                                                     num_iterations=1000)
-            [a, b, c, d] = plane_model  # Plane equation: ax + by + cz + d = 0wrt to sensor
-            plane_coeffs = [a, b, c, d]
-            print(f'Estimated Plane Coeffs in Sensor Frame: {plane_coeffs}')
-            inlier_cloud = pcd.select_by_index(inliers)
-            print(f"Detected Plane: {plane_model}")
-                
-            if abs(a) < 0.1 and abs(b) < 0.1:  # Horizontal plane condition
-                print(f"Detected Horizontal Plane: {plane_model}")
-                inlier_cloud = pcd.select_by_index(inliers)
-                planes.append(plane_model)  # Store detected horizontal plane
-                ransac_mask= np.zeros(corrected['z'].shape)#mask
-                inlier_points = np.asarray(pcd.points)[inliers]
-                mean_inlier = np.mean(inlier_points, axis=0)  # Mean across the points (axis=0 means mean of each coordinate)
-                print("Mean of inliers:", mean_inlier)
-                
-                
+        counts, bins =(np.histogram(zs_no_nans, bins=100))
+        print (f'counts,bins {counts,bins}')
+        inds=np.where(counts>10000)
+        planes_heights=bins[np.add(inds, 1)].flatten()
+        for plane in planes_heights:planes.append(plane)
 
-                planes_heights=[mean_inlier[2]]
-                
-                if mean_inlier[2]>0.1:
-                    horizontal_plane_found=True
-                else:
-                    pcd = pcd.select_by_index(inliers, invert=True)
-                    print( 'Floor, trivial solution, lets keep looking')
-                
-                
-            else:
-                # If the plane is not horizontal, remove the inliers and continue searching for the next plane
-                print("Detected a non-horizontal plane, removing inliers and trying again...")
-                pcd = pcd.select_by_index(inliers, invert=True)  # Remove the inliers
-            
+        sorted_planes=np.sort(np.asarray(planes).ravel())
 
-            
-
+        print (f' planes found {len(inds[0])}, sorted at z=[{sorted_planes[::-1]}]#############3')
+        print (f'Plane heights detected {planes_heights} maximum  z=[{bins[ np.add(np.argmax(counts) , 1)]}]#############3')    
     else:planes_heights=[request.height.data]
     for plane_height in planes_heights:
         low_plane = (corrected['z'] > (plane_height-0.02)) #plane height
@@ -94,15 +57,6 @@ def trigger_response(request):
         result_indices = np.where(z_lims)#np.logical_and(z_lims, x_lims))
         mask[result_indices]=200
         _, binary_image = cv2.threshold(mask, 20, 255, cv2.THRESH_BINARY)
-        
-        cv2_image = cv2.cvtColor(binary_image.astype(np.uint8), cv2.COLOR_GRAY2BGR) 
-        orig_image=cv2.bitwise_and(orig_image, cv2_image)
-        
-        #######################################
-
-
-
-
         eroded_image=cv2.erode(binary_image,kernel = np.ones((40, 40), np.uint8))
         deb_image=np.copy(orig_image)
         print ('quick estimation',np.nanmean(corrected['x'][np.where(eroded_image==255)]),np.nanmean(corrected['y'][np.where(eroded_image==255)]),np.nanmean(corrected['z'][np.where(eroded_image==255)]))
@@ -126,7 +80,7 @@ def trigger_response(request):
             pose=np.asarray((np.mean(corrected['x'][y:y+45,x-23:x+22]),
                              np.mean(corrected['y'][y:y+45,x-23:x+22]),
                              np.mean(corrected['z'][y:y+45,x-23:x+22]) + 0.05))    
-            deb_image[y:y+45,x-23:x+22,0]=255
+            deb_image[y:y+45,x-23:x+22,:]=255
             poses.append(pose)
             print('estimation', pose)
     ###################################3
@@ -136,12 +90,6 @@ def trigger_response(request):
     heights, widths =Floats(),Floats()
     res= SegmentationResponse()
     #############################################
-    print (mask.shape, deb_image.shape)
-    
-
-    
-    
-    
     img_msg=bridge.cv2_to_imgmsg(deb_image)
     #plt.imshow(img)
     #plt.imshow (image_with_contours)
