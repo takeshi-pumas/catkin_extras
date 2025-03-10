@@ -14,6 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
+  geometry_msgs  
 )
 
 ## System dependencies are found with CMake's conventions
@@ -70,12 +71,15 @@ find_package(catkin REQUIRED COMPONENTS
    Follow.action
    Grasp.action
    IdentifyPerson.action
+   PickPlace.action
  )
 
 ## Generate added messages and services with any dependencies listed here
  generate_messages(
    DEPENDENCIES
-   actionlib_msgs   std_msgs
+   actionlib_msgs   
+   std_msgs 
+   geometry_msgs
  )
 
 ################################################

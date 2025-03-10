@@ -12,7 +12,7 @@ from shape_msgs.msg import SolidPrimitive
 from moveit_msgs.msg import CollisionObject, AttachedCollisionObject
 from moveit_commander import Constraints
 from moveit_msgs.msg import OrientationConstraint
-from action_server.msg import GraspAction
+from action_server.msg import PickPlaceAction
 from std_srvs.srv import Empty
 
 from tf.transformations import euler_from_quaternion, quaternion_from_euler , quaternion_multiply
@@ -73,7 +73,7 @@ class PlacingStateMachine:
             smach.StateMachine.add('NEUTRAL_POSE', smach.CBState(self.neutral_pose, outcomes=['success', 'failed']),
                         transitions={'success':'succeeded', 'failed': 'NEUTRAL_POSE'})
 
-        self.wrapper = ActionServerWrapper("place_server", GraspAction, #from grasp.act
+        self.wrapper = ActionServerWrapper("place_server", PickPlaceAction, #from grasp.act
                                            wrapped_container = self.sm,
                                            succeeded_outcomes=["succeeded"],
                                            aborted_outcomes=["failed"],
@@ -108,32 +108,23 @@ class PlacingStateMachine:
             return 'cancel'
 
 
-        goal = self.sm.userdata.goal.target_pose.data
-        pos = [goal[0], goal[1], goal[2]]
+        goal_pose = PoseStamped()
+        goal_pose.pose = self.sm.userdata.goal.target_pose.pose  # Directly access the Pose object
+        goal_pose.header.frame_id = self.sm.userdata.goal.target_pose.header.frame_id
+        goal_pose.header.stamp = rospy.Time.now()
+        
         self.add_collision_object(position = [0,0,0.15], dimensions = [0.1, 0.1, 0.051], frame='hand_palm_link')
+
         self.attach_object()
         
         rospy.sleep(1)
-        print(f'self.sm.userdata.goal -> {self.sm.userdata.goal.target_pose.data} \n\n\n\n\n\n\n\n\n\n')
+        print(f'self.sm.userdata.goal -> {self.sm.userdata.goal.target_pose} \n\n\n\n\n\n\n\n\n\n')
+        print(f'goal_pose -> {goal_pose} \n\n\n\n\n\n\n\n\n\n')
         print (f'self.sm.userdata.goal.mode -> {self.sm.userdata.goal.mode.data}')
         
 
         self.grasp_approach=self.sm.userdata.goal.mode.data
         #pose_goal = [goal[0], goal[1], goal[2], goal[3], goal[4], goal[5], goal[6]] ## REMOVE IF THIS IS WORKING
-
-
-
-        goal_pose = PoseStamped()
-        goal_pose.header.frame_id = "base_link"
-        goal_pose.header.stamp = rospy.Time.now()
-        goal_pose.pose.position.x =     goal[0]
-        goal_pose.pose.position.y =     goal[1]
-        goal_pose.pose.position.z =     goal[2]
-        goal_pose.pose.orientation.x =  goal[3] 
-        goal_pose.pose.orientation.y =  goal[4]
-        goal_pose.pose.orientation.z =  goal[5]
-        goal_pose.pose.orientation.w =  goal[6]
-        
 
 
         try:
@@ -147,7 +138,7 @@ class PlacingStateMachine:
                              transformed_goal_pose.pose.orientation.z, 
                              transformed_goal_pose.pose.orientation.w] 
 
-
+                self.add_collision_object(name='Placing_goal',position = [transformed_goal_pose.pose.position.x,transformed_goal_pose.pose.position.y,transformed_goal_pose.pose.position.z], dimensions = [0.1, 0.1, 0.051], frame='odom')
 
                 
         except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
