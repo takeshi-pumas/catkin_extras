@@ -612,10 +612,6 @@ Visualization Manager:
           Value: false
         goal_for_place:
           Value: true
-        hallway_1:
-          Value: true
-        hallway_2:
-          Value: true
         hand_camera_frame:
           Value: false
         hand_camera_gazebo_frame:
@@ -658,10 +654,14 @@ Visualization Manager:
           Value: false
         head_pan_link:
           Value: false
+        head_r_stereo_camera_frame:
+          Value: true
         head_r_stereo_camera_gazebo_frame:
           Value: false
         head_r_stereo_camera_link:
           Value: false
+        head_rgbd_sensor_depth_frame:
+          Value: true
         head_rgbd_sensor_gazebo_frame:
           Value: false
         head_rgbd_sensor_link:
@@ -670,41 +670,11 @@ Visualization Manager:
           Value: false
         head_tilt_link:
           Value: false
-        kitchen:
-          Value: false
-        living_room:
-          Value: false
         map:
-          Value: true
-        object_0:
-          Value: true
-        object_0_norot:
-          Value: true
-        object_1:
-          Value: true
-        object_1_norot:
-          Value: true
-        object_2:
-          Value: true
-        object_2_norot:
-          Value: true
-        object_3:
-          Value: true
-        object_3_norot:
-          Value: true
-        object_4:
-          Value: true
-        object_4_norot:
           Value: true
         odom:
           Value: true
-        pickup:
-          Value: true
-        place_shelf:
-          Value: true
         placing_area:
-          Value: true
-        shelf:
           Value: true
         torso_lift_link:
           Value: false
@@ -725,34 +695,6 @@ Visualization Manager:
       Tree:
         map:
           goal_for_place:
-            {}
-          hallway_1:
-            {}
-          hallway_2:
-            {}
-          kitchen:
-            {}
-          living_room:
-            {}
-          object_0:
-            {}
-          object_0_norot:
-            {}
-          object_1:
-            {}
-          object_1_norot:
-            {}
-          object_2:
-            {}
-          object_2_norot:
-            {}
-          object_3:
-            {}
-          object_3_norot:
-            {}
-          object_4:
-            {}
-          object_4_norot:
             {}
           odom:
             base_footprint:
@@ -813,25 +755,24 @@ Visualization Manager:
                           {}
                       head_l_stereo_camera_link:
                         head_l_stereo_camera_frame:
-                          head_rgbd_sensor_rgb_frame:
-                            {}
+                          {}
                         head_l_stereo_camera_gazebo_frame:
                           {}
                       head_r_stereo_camera_link:
+                        head_r_stereo_camera_frame:
+                          {}
                         head_r_stereo_camera_gazebo_frame:
                           {}
                       head_rgbd_sensor_link:
+                        head_rgbd_sensor_depth_frame:
+                          {}
                         head_rgbd_sensor_gazebo_frame:
+                          {}
+                        head_rgbd_sensor_rgb_frame:
                           {}
             base_footprint_wheel:
               {}
-          pickup:
-            {}
-          place_shelf:
-            {}
           placing_area:
-            {}
-          shelf:
             {}
       Update Interval: 0
       Value: true
@@ -1017,9 +958,9 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.45979630947113037
+      Pitch: 0.4947963356971741
       Target Frame: base_footprint
-      Yaw: 3.1645255088806152
+      Yaw: 1.9245233535766602
     Saved: ~
 Window Geometry:
   Displays:

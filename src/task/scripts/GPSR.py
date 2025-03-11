@@ -3,7 +3,7 @@
 # ofc1227@tec.mx
 from smach_utils2 import *
 from smach_ros import SimpleActionState
-from action_server.msg import GraspAction
+from action_server.msg import GraspAction ,PickPlaceAction, PickPlaceGoal
 from std_msgs.msg import Float32MultiArray
 from std_msgs.msg import String
 
@@ -445,48 +445,56 @@ class Place(smach.State):
         ##################################################
         head.set_joint_values([ 0.0, -0.5])
         rospy.sleep(1.0)                
-        find_placing_area(plane_height=.58)
-        pos, quat = tf_man.getTF(target_frame = 'placing_area', ref_frame = 'odom')
-        target_pose = Float32MultiArray()
-        target_pose.data = pos
-        offset_point=[0.0,0.0,0.15 ]
-        ###################
-        #####################APPLY OFFSET
-        object_point = PointStamped()
-        object_point.header.frame_id = "placing_area"    ##userdata.target_object#"base_link"
-        object_point.point.x = offset_point[0]
-        object_point.point.y = offset_point[1]
-        object_point.point.z = offset_point[2]
-        transformed_object_point = tfBuffer.transform(object_point, "map", timeout=rospy.Duration(1))
-        tf_man.pub_static_tf(pos=[transformed_object_point.point.x,transformed_object_point.point.y,transformed_object_point.point.z],rot=quat,point_name='goal_for_place')
-        ##################################################################3
-        rospy.sleep(0.5)
-        pos, quat = tf_man.getTF(target_frame = 'goal_for_place', ref_frame = 'odom')
-        print (f"pos{pos}transformed_object_point.point.z{transformed_object_point.point.z}")
-        pose_goal=np.concatenate((pos,quat))
-        print (f'transalted_point-<{pose_goal}')    
-        target_pose = Float32MultiArray()
-        target_pose.data = pose_goal#pos
-        userdata.target_pose = target_pose
+        find_placing_area(plane_height=-1)###AUTO
 
+        pos, quat = tf_man.getTF(target_frame = 'placing_area', ref_frame = 'map')
+
+
+        print (pos)
+        rospy.sleep(1.0)                
+        pos, quat = tf_man.getTF(target_frame = 'placing_area', ref_frame = 'map')
+        print (pos)
+        rospy.sleep(1.0)                
+        pos, quat = tf_man.getTF(target_frame = 'placing_area', ref_frame = 'map')
+        
+
+        offset_point=[0.0,0.0,0.15 ]
+        pos[2]=pos[2]+offset_point[2]
+        print (pos)
+        
+        
+        tf_man.pub_static_tf(pos=pos,rot=quat,point_name='goal_for_place')
+        rospy.sleep(0.5)
+        ##################################################################3
+        print (f"pos{pos}")
+
+        pos, quat = tf_man.getTF(target_frame = 'goal_for_place', ref_frame = 'map')
+
+        print (f"pos{pos}")
+        
+        pose_goal = PoseStamped()
+        pose_goal.header.frame_id = 'map'
+        pose_goal.header.stamp = rospy.Time.now()
+        pose_goal.pose.position.x=   pos[0]
+        pose_goal.pose.position.y=   pos[1]
+        pose_goal.pose.position.z=   pos[2]
+        pose_goal.pose.orientation.x=quat[0]
+        pose_goal.pose.orientation.y=quat[1]
+        pose_goal.pose.orientation.z=quat[2]
+        pose_goal.pose.orientation.w=quat[3]
+        ########################################
+        userdata.target_pose = pose_goal
+        print (pose_goal)
         ###################
         head.set_named_target('neutral')
         string_msg = String()
-        string_msg.data='above'                
-        if transformed_object_point.point.z>=0.6:
-            #av=arm.get_current_joint_values()
-            #av[0]=+0.3
-            #av[1]=-0.74
-            #av[2]=0.0
-            #arm.go(av) 
-            string_msg.data='above'    
-            #string_msg.data='pour'
+        string_msg.data='frontal'                
         userdata.mode=string_msg             
         ###################################
         rospy.sleep(0.5)
-        #clear octo client is recommended
-        #clear_octo_client()               
         return 'succ'        
+
+
 class Goto_shelf(smach.State):  
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed', 'tries', 'scanned_shelf'])
@@ -1044,7 +1052,7 @@ if __name__ == '__main__':
         smach.StateMachine.add("GRASP_GOAL", SimpleActionState('grasp_server', GraspAction, goal_slots={'target_pose': 'target_pose', 'mode': 'mode'}),                      
                                 transitions={'preempted': 'PLAN', 'succeeded': 'CHECK_GRASP', 'aborted': 'PLAN'})
        
-        smach.StateMachine.add("PLACE_GOAL", SimpleActionState('place_server', GraspAction, goal_slots={'target_pose': 'target_pose', 'mode': 'mode'}),                    
+        smach.StateMachine.add("PLACE_GOAL", SimpleActionState('place_server', PickPlaceAction, goal_slots={'target_pose': 'target_pose', 'mode': 'mode'}),                    
                                 transitions={'preempted': 'PLACE', 'succeeded': 'POST_PLACE', 'aborted': 'PLACE'})
         
         smach.StateMachine.add("ID_PERSON", SimpleActionState('id_server', IdentifyPersonAction, goal_slots={'command_id': 'command_id'}),

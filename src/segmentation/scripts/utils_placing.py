@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 import rospkg
 import yaml
 from sensor_msgs.msg import Image , LaserScan , PointCloud2
-from geometry_msgs.msg import TransformStamped, Pose, Vector3Stamped , PointStamped
+from geometry_msgs.msg import TransformStamped, Pose, Vector3Stamped , PointStamped , PoseStamped
 from tf2_sensor_msgs.tf2_sensor_msgs import do_transform_cloud
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import matplotlib.pyplot as plt
