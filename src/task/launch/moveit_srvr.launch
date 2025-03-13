@@ -8,6 +8,6 @@
 
 
   <node pkg="action_server"  name="action_server" type="ACT_SRVR_grasp_mio.py"/>  
-  <node pkg="action_server"  name="place_action_server" type="ACT_SRVR_pickplace.py"/>   
+  <!--node pkg="action_server"  name="place_action_server" type="ACT_SRVR_pickplace.py"/-->   
   
 </launch>  

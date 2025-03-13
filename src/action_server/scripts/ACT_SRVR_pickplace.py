@@ -35,7 +35,7 @@ class PlacingStateMachine:
         # Inicializar tf2_ros
         self.tf2_buffer = tf2_ros.Buffer()
         self.listener = tf2_ros.TransformListener(self.tf2_buffer)
-        #self.br = tf2_ros.StaticTransformBroadcaster()
+        self.br = tf2_ros.StaticTransformBroadcaster()
 
         # Inicializar MoveIt
         moveit_commander.roscpp_initialize(sys.argv)
@@ -98,11 +98,6 @@ class PlacingStateMachine:
 
 
     def approach(self, userdata):
-        #Add primitive objets to planning scene
-
-        
-        # Maybe create a safe area to plan... COnstraints .. maybe create positional constraint ( see pick service)
-        
         self.approach_count += 1
         if self.approach_limit == self.approach_count:
             return 'cancel'
@@ -112,68 +107,51 @@ class PlacingStateMachine:
         goal_pose.pose = self.sm.userdata.goal.target_pose.pose  # Directly access the Pose object
         goal_pose.header.frame_id = self.sm.userdata.goal.target_pose.header.frame_id
         goal_pose.header.stamp = rospy.Time.now()
-        
+        ################################################
+        t = TransformStamped()
+        t.header.frame_id = self.sm.userdata.goal.target_pose.header.frame_id  
+        t.header.stamp = rospy.Time.now()  
+        t.child_frame_id = "goal_pose_received"
+        t.transform.translation = goal_pose.pose.position
+        t.transform.rotation = goal_pose.pose.orientation
+        self.br.sendTransform(t) 
+        ##################################################
         self.add_collision_object(position = [0,0,0.15], dimensions = [0.1, 0.1, 0.051], frame='hand_palm_link')
-
         self.attach_object()
-        
         rospy.sleep(1)
         print(f'self.sm.userdata.goal -> {self.sm.userdata.goal.target_pose} \n\n\n\n\n\n\n\n\n\n')
         print(f'goal_pose -> {goal_pose} \n\n\n\n\n\n\n\n\n\n')
         print (f'self.sm.userdata.goal.mode -> {self.sm.userdata.goal.mode.data}')
-        
-
         self.grasp_approach=self.sm.userdata.goal.mode.data
-        #pose_goal = [goal[0], goal[1], goal[2], goal[3], goal[4], goal[5], goal[6]] ## REMOVE IF THIS IS WORKING
-
-
         try:
-                # Transform goal to odom frame
-                transformed_goal_pose = self.tf2_buffer.transform(goal_pose, "odom", timeout=rospy.Duration(1))
-                pose_goal = [transformed_goal_pose.pose.position.x   ,   
-                             transformed_goal_pose.pose.position.y   ,   
-                             transformed_goal_pose.pose.position.z   ,   
-                             transformed_goal_pose.pose.orientation.x, 
-                             transformed_goal_pose.pose.orientation.y, 
-                             transformed_goal_pose.pose.orientation.z, 
-                             transformed_goal_pose.pose.orientation.w] 
-
-                self.add_collision_object(name='Placing_goal',position = [transformed_goal_pose.pose.position.x,transformed_goal_pose.pose.position.y,transformed_goal_pose.pose.position.z], dimensions = [0.1, 0.1, 0.051], frame='odom')
-
+                transform_goal_received = self.tf2_buffer.lookup_transform("odom", "goal_pose_received", rospy.Time(0), timeout=rospy.Duration(1))
+                print (f"{transform_goal_received} \n \n \n")
+                pose_goal = [transform_goal_received.transform.translation.x   ,   
+                             transform_goal_received.transform.translation.y   ,   
+                             transform_goal_received.transform.translation.z   ,   
+                             transform_goal_received.transform.rotation.x      , 
+                             transform_goal_received.transform.rotation.y      , 
+                             transform_goal_received.transform.rotation.z      , 
+                             transform_goal_received.transform.rotation.w       ] 
+                self.add_collision_object(name='Placing_goal',position = [pose_goal[0],pose_goal[1],pose_goal[2]], dimensions = [0.1, 0.1, 0.051], frame='odom')
                 
         except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
                 rospy.logwarn("Could not get transform from 'goal' to 'odom'. Something went wrong...")
                 return 'failed'
-
-
 
         if self.grasp_approach == "above":
             self.target_pose, gaze_dir = self.calculate_above_approach(target_position=pose_goal)
             print(f"Mode Above ")
         else: #if self.grasp_approach == "frontal":
             self.target_pose = self.calculate_frontal_approach(target_position=pose_goal)
-            
         rospy.sleep(0.5)
-        
-
         try:
             transform = self.tf2_buffer.lookup_transform("odom", "base_link", rospy.Time(0), timeout=rospy.Duration(1))
             rotation = transform.transform.rotation
             fixed_quat = [rotation.x, rotation.y, rotation.z, rotation.w]
             self.set_orientation_constraint(fixed_quat=fixed_quat)
-            # Set orientation constraint based on the current orientation of base_link
-            #self.set_combined_constraints(fixed_quat=fixed_quat)
-            
         except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
             rospy.logwarn("Could not get transform from 'odom' to 'base_link'. Using default quaternion.")
-            
-        # Calculate the target pose based on the grasp approach
-
-        #if self.grasp_approach == "above":
-        #    self.target_pose, gaze_dir = self.calculate_above_approach(target_position=pose_goal)
-        #else:
-        #    self.target_pose = self.calculate_frontal_approach(target_position=pose_goal)
-        
         rospy.sleep(0.5)
 
         ## ADD constraints for pouring ( Placing may not need them) #FOR POURING
@@ -184,7 +162,6 @@ class PlacingStateMachine:
                 fixed_quat = [rotation.x, rotation.y, rotation.z, rotation.w]
                 # Set orientation constraint based on the current orientation of base_link
                 self.set_orientation_constraint(fixed_quat=fixed_quat)
-            
             except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
                 rospy.logwarn("Could not get transform from 'odom' to 'base_link'. Using default quaternion.")
                 # Use a default quaternion if unable to retrieve the current orientation
@@ -193,8 +170,6 @@ class PlacingStateMachine:
         # Move the robot to the target pose with orientation constraint
         succ = self.move_to_pose(self.whole_body, self.target_pose)
         print (succ)
-        rospy.sleep(3)
-        # Clear the orientation constraint after the movement
         self.clear_orientation_constraint()
        
         ##ASK FOR POUR
@@ -239,8 +214,8 @@ class PlacingStateMachine:
         
         ### 
         ###TODO CREATE A SAFE RETREAT POSE!
-        joint_values = self.brazo.get_joint_values()
-        
+        self.brazo.set_named_target('neutral')
+        rospy.sleep(0.5)
         return 'success'
         # if succ:
         #     return 'success'

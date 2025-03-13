@@ -448,30 +448,15 @@ class Place(smach.State):
         find_placing_area(plane_height=-1)###AUTO
 
         pos, quat = tf_man.getTF(target_frame = 'placing_area', ref_frame = 'map')
-
-
-        print (pos)
         rospy.sleep(1.0)                
-        pos, quat = tf_man.getTF(target_frame = 'placing_area', ref_frame = 'map')
-        print (pos)
-        rospy.sleep(1.0)                
-        pos, quat = tf_man.getTF(target_frame = 'placing_area', ref_frame = 'map')
-        
-
         offset_point=[0.0,0.0,0.15 ]
         pos[2]=pos[2]+offset_point[2]
-        print (pos)
-        
-        
         tf_man.pub_static_tf(pos=pos,rot=quat,point_name='goal_for_place')
         rospy.sleep(0.5)
         ##################################################################3
-        print (f"pos{pos}")
 
         pos, quat = tf_man.getTF(target_frame = 'goal_for_place', ref_frame = 'map')
-
         print (f"pos{pos}")
-        
         pose_goal = PoseStamped()
         pose_goal.header.frame_id = 'map'
         pose_goal.header.stamp = rospy.Time.now()

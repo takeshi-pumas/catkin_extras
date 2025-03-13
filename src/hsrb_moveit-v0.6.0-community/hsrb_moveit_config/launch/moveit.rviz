@@ -320,7 +320,7 @@ Visualization Manager:
         Goal State Color: 250; 128; 0
         Interactive Marker Size: 0
         Joint Violation Color: 255; 0; 255
-        Planning Group: head
+        Planning Group: arm
         Query Goal State: false
         Query Start State: false
         Show Workspace: false
@@ -612,6 +612,8 @@ Visualization Manager:
           Value: false
         goal_for_place:
           Value: true
+        goal_pose_received:
+          Value: true
         hand_camera_frame:
           Value: false
         hand_camera_gazebo_frame:
@@ -695,6 +697,8 @@ Visualization Manager:
       Tree:
         map:
           goal_for_place:
+            {}
+          goal_pose_received:
             {}
           odom:
             base_footprint:
