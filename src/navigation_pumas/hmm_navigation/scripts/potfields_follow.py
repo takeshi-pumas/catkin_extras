@@ -18,7 +18,13 @@ import numpy as np
 import tf as tf
 xcl,ycl=0,0
 cont=0
-
+err=0.0
+err_i=0.0
+err_d=0.0
+err_last=0
+Kp=5.0
+Ki=0.1
+Kd=4.1
 
 
 
@@ -165,7 +171,7 @@ def readPoint(punto):
 
 
 def readSensor(data):
-    global cont, xcl,ycl , current_speed
+    global cont, xcl,ycl , current_speed , err ,err_i , err_d , err_last , Kp,Ki,Kd
     
     lec=np.asarray(data.ranges)
     lec[np.isinf(lec)]=13.5
@@ -187,6 +193,9 @@ def readSensor(data):
         euclD= np.linalg.norm((-xcl+x,-ycl+y))
         print  ("euclD",euclD)
         print("Ftotth",Ftotth)
+        err=Ftotth
+        err_i+=err
+        err_d=err_last - err
         if (xcl!=0 and ycl!=0):
             vel=0.07
             if (euclD < 0.5) :####################HOW CLOSE?
@@ -197,35 +206,35 @@ def readSensor(data):
             else:
                 if( abs(Ftotth) < .35) :
                     speed.linear.x=  min (current_speed.linear.x+0.0015, 2.0)  #0.5)#1.9   MAX SPEED
+                    err_i=0
                     if abs (F_atr[1])<0.1:
                         speed.angular.z= np.clip(0.5 * F_atr[1], -0.5, 0.5)
                         print(f'correcting heading{speed.angular.z}')
                     print('lin')
                 else:
+                    pid_output = (Kp * err) + (Ki * err_i) + (Kd * err_d)
+                    print (f'error {err} , PID {pid_output}')
                     if Ftotth > -np.pi/2  and Ftotth <0:
                         print('Vang-')
                         speed.linear.x  = max(current_speed.linear.x -0.0003, 0.08)
-                        speed.angular.z = max(current_speed.angular.z-0.003, -0.15)
 
+                        speed.angular.z = max(current_speed.angular.z-0.003, -0.15)
                     if Ftotth < np.pi/2  and Ftotth > 0:
                         print('Vang+')
                         speed.linear.x  = max(current_speed.linear.x-0.0003, 0.04)
                         speed.angular.z = min(current_speed.angular.z+0.003,0.15)
-
-
                     if Ftotth < -np.pi/2:
-
                         print('Vang---')
                         speed.linear.x  = max(current_speed.linear.x-0.025, 0.0)
                         speed.angular.z = max(current_speed.angular.z-0.06,-0.38)
-
-
                     if Ftotth > np.pi/2:
-
                         print('Vang+++')
                         speed.linear.x  = max(current_speed.linear.x-0.025, 0.0)
                         speed.angular.z = min(current_speed.angular.z+0.06, 0.38)
-            
+                    print (f'bang bang speed{ speed.angular.z}')    
+                    speed.angular.z = max(min(pid_output, 1.3), -1.3)  # Clamp within limits
+                    print (f' PID speed{ speed.angular.z}')    
+
         print (speed.linear.x , speed.angular.z)
         #current_speed=speed
     

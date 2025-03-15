@@ -26,7 +26,6 @@ class Initial(smach.State):
 
         arm = moveit_commander.MoveGroupCommander('arm')
         head.set_named_target('neutral')
-
         rospy.sleep(0.8)
         arm.set_named_target('go')
         arm.go()
@@ -476,7 +475,7 @@ if __name__ == '__main__':
     with sm:
         # State machine STICKLER
         smach.StateMachine.add("INITIAL",           Initial(),              transitions={'failed': 'INITIAL',           
-                                                                                         'succ': 'WAIT_PUSH_HAND',   
+                                                                                         'succ': 'FIND_HUMAN',   
                                                                                          'tries': 'END'})
         smach.StateMachine.add("WAIT_PUSH_HAND",    Wait_push_hand(),       transitions={'failed': 'WAIT_PUSH_HAND',    
                                                                                          'succ': 'GOTO_LIVING_ROOM',       
@@ -485,7 +484,8 @@ if __name__ == '__main__':
                                                                                          'succ': 'FIND_HUMAN',   
                                                                                          'tries': 'INITIAL'})  
         smach.StateMachine.add("FIND_HUMAN",         Find_human(),          transitions={'failed': 'FIND_HUMAN',        
-                                                                                         'succ': 'SCAN_FLOOR',   
+                                                                                         #'succ': 'SCAN_FLOOR',   
+                                                                                         'succ': 'GOTO_HUMAN',   
                                                                                          'tries': 'GOTO_LIVING_ROOM'})
         smach.StateMachine.add("SCAN_FLOOR",         Scan_floor(),          transitions={'failed': 'SCAN_FLOOR',     
                                                                                          'succ': 'PRE_PICKUP',    

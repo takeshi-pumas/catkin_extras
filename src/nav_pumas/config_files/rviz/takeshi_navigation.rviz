@@ -355,28 +355,6 @@ Visualization Manager:
           Value: false
         base_roll_link:
           Value: false
-        book_shelf:
-          Value: true
-        coach:
-          Value: true
-        counter:
-          Value: true
-        cupboard:
-          Value: true
-        desk:
-          Value: true
-        dining_room:
-          Value: true
-        dining_table:
-          Value: true
-        dish_washer:
-          Value: true
-        end_table:
-          Value: true
-        entrance:
-          Value: true
-        exit:
-          Value: true
         hand_camera_frame:
           Value: false
         hand_camera_gazebo_frame:
@@ -419,10 +397,14 @@ Visualization Manager:
           Value: false
         head_pan_link:
           Value: false
+        head_r_stereo_camera_frame:
+          Value: true
         head_r_stereo_camera_gazebo_frame:
           Value: false
         head_r_stereo_camera_link:
           Value: false
+        head_rgbd_sensor_depth_frame:
+          Value: true
         head_rgbd_sensor_gazebo_frame:
           Value: false
         head_rgbd_sensor_link:
@@ -431,26 +413,10 @@ Visualization Manager:
           Value: false
         head_tilt_link:
           Value: false
-        kitchen:
-          Value: true
-        living_room:
-          Value: true
         map:
           Value: true
         odom:
           Value: false
-        rear_door:
-          Value: true
-        shelf:
-          Value: true
-        side_table:
-          Value: true
-        sink:
-          Value: true
-        start:
-          Value: true
-        storage_table:
-          Value: true
         torso_lift_link:
           Value: false
         wrist_flex_link:
@@ -469,32 +435,6 @@ Visualization Manager:
       Show Names: true
       Tree:
         map:
-          book_shelf:
-            {}
-          coach:
-            {}
-          counter:
-            {}
-          cupboard:
-            {}
-          desk:
-            {}
-          dining_room:
-            {}
-          dining_table:
-            {}
-          dish_washer:
-            {}
-          end_table:
-            {}
-          entrance:
-            {}
-          exit:
-            {}
-          kitchen:
-            {}
-          living_room:
-            {}
           odom:
             base_footprint:
               base_link:
@@ -554,30 +494,23 @@ Visualization Manager:
                           {}
                       head_l_stereo_camera_link:
                         head_l_stereo_camera_frame:
-                          head_rgbd_sensor_rgb_frame:
-                            {}
+                          {}
                         head_l_stereo_camera_gazebo_frame:
                           {}
                       head_r_stereo_camera_link:
+                        head_r_stereo_camera_frame:
+                          {}
                         head_r_stereo_camera_gazebo_frame:
                           {}
                       head_rgbd_sensor_link:
+                        head_rgbd_sensor_depth_frame:
+                          {}
                         head_rgbd_sensor_gazebo_frame:
+                          {}
+                        head_rgbd_sensor_rgb_frame:
                           {}
             base_footprint_wheel:
               {}
-          rear_door:
-            {}
-          shelf:
-            {}
-          side_table:
-            {}
-          sink:
-            {}
-          start:
-            {}
-          storage_table:
-            {}
       Update Interval: 0
       Value: true
     - Alpha: 1
@@ -681,6 +614,16 @@ Visualization Manager:
       Topic: /hri/leg_finder/leg_pose
       Unreliable: false
       Value: true
+    - Alpha: 0.699999988079071
+      Class: rviz/Map
+      Color Scheme: map
+      Draw Behind: false
+      Enabled: true
+      Name: Map
+      Topic: /dynamic_obstacle_map
+      Unreliable: false
+      Use Timestamp: false
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -709,7 +652,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 15.97535228729248
+      Distance: 16.586849212646484
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -717,17 +660,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 0.7716740965843201
-        Y: -2.3852758407592773
-        Z: -6.2466139793396
+        X: -1.350926399230957
+        Y: -0.590813398361206
+        Z: -5.53788423538208
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.5597963333129883
+      Pitch: 1.3697965145111084
       Target Frame: <Fixed Frame>
-      Yaw: 4.420393943786621
+      Yaw: 2.9903934001922607
     Saved: ~
 Window Geometry:
   Displays:
@@ -745,5 +688,5 @@ Window Geometry:
   Views:
     collapsed: true
   Width: 1386
-  X: 303
-  Y: 40
+  X: 447
+  Y: 124
