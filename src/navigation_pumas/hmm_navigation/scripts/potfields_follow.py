@@ -22,9 +22,10 @@ err=0.0
 err_i=0.0
 err_d=0.0
 err_last=0
-Kp=5.0
-Ki=0.1
-Kd=4.1
+Kp= 2.5
+Ki= 1.0
+Kd= 1.5
+map_repulsors=[]
 
 
 
@@ -61,12 +62,13 @@ def get_avoid_chairs_force(msg,K_tune=10):
         numpy.ndarray: The repulsive force vector.
     """
     #cloud_pub = rospy.Publisher('cloud_topic', PointCloud, queue_size=10)
-    global cloud_pub
+    global cloud_pub , map_repulsors
     #msg=rospy.wait_for_message('/hsrb/base_scan', LaserScan)
     cloud = PointCloud()
     cloud.header.frame_id = "base_range_sensor_link" # "map"
     F_rep=[]
     repulsors=[]
+
     angles= np.flip(np.arange(msg.angle_min, msg.angle_max,msg.angle_increment ))
     ranges=np.asarray(msg.ranges)
     spikes=np.diff(np.nan_to_num(ranges))
@@ -80,15 +82,15 @@ def get_avoid_chairs_force(msg,K_tune=10):
         if mask.any(): 
             pt_xy= [np.cos(angles[spike_n])*np.nanmean(range_reg[mask]),np.sin(angles[spike_n])*np.nanmean(range_reg[mask])]
             frep=np.asarray((pt_xy))
-            
             d_torep=np.linalg.norm(frep)
-            if d_torep <1.0:  #TUNABLE
+            if d_torep <2.0:  #TUNABLE
                 F_rep.append(frep/d_torep**3)
                 pt = write_Point_Stamped(pt_xy)
-                
-                point_odom = tfBuffer.transform(pt, "base_range_sensor_link", timeout=rospy.Duration(1))
-                #point_odom = tfBuffer.transform(pt, "map", timeout=rospy.Duration(1))
-                cloud.points.append(Point32(point_odom.point.x, -point_odom.point.y, point_odom.point.z))
+                point_base = tfBuffer.transform(pt, "base_range_sensor_link", timeout=rospy.Duration(1))
+                cloud.points.append(Point32(point_base.point.x, -point_base.point.y, point_base.point.z))
+                point_map = tfBuffer.transform(pt, "map", timeout=rospy.Duration(1))
+                print(f'point_map{point_map}')
+                map_repulsors.append(point_map)
 
     
     if len (F_rep)!=0:F_rep=np.asarray(F_rep).sum(axis=0)
@@ -186,7 +188,7 @@ def readSensor(data):
         F_rep=get_rep_force(data)
         F_rep_chairs= get_avoid_chairs_force(data)
         print ( F_atr,F_rep,F_rep_chairs,"F_atr,F_rep,F_rep_chairs")
-        Ftotx,Ftoty=  10*F_atr+ 0.025*F_rep + F_rep_chairs
+        Ftotx,Ftoty=  10*F_atr+ 0.025*F_rep + 1.5*F_rep_chairs
         Ftotth=np.arctan2(Ftoty,Ftotx)
         Ftotth = np.fmod(Ftotth + np.pi, 2 * np.pi) - np.pi        
         print('Ftotxy',Ftotx,Ftoty,Ftotth)
@@ -216,21 +218,16 @@ def readSensor(data):
                     print (f'error {err} , PID {pid_output}')
                     if Ftotth > -np.pi/2  and Ftotth <0:
                         print('Vang-')
-                        speed.linear.x  = max(current_speed.linear.x -0.0003, 0.08)
-
-                        speed.angular.z = max(current_speed.angular.z-0.003, -0.15)
+                        speed.linear.x  = max(current_speed.linear.x -0.0003, 0.1)
                     if Ftotth < np.pi/2  and Ftotth > 0:
                         print('Vang+')
-                        speed.linear.x  = max(current_speed.linear.x-0.0003, 0.04)
-                        speed.angular.z = min(current_speed.angular.z+0.003,0.15)
+                        speed.linear.x  = max(current_speed.linear.x-0.0003, 0.1)
                     if Ftotth < -np.pi/2:
                         print('Vang---')
                         speed.linear.x  = max(current_speed.linear.x-0.025, 0.0)
-                        speed.angular.z = max(current_speed.angular.z-0.06,-0.38)
                     if Ftotth > np.pi/2:
                         print('Vang+++')
                         speed.linear.x  = max(current_speed.linear.x-0.025, 0.0)
-                        speed.angular.z = min(current_speed.angular.z+0.06, 0.38)
                     print (f'bang bang speed{ speed.angular.z}')    
                     speed.angular.z = max(min(pid_output, 1.3), -1.3)  # Clamp within limits
                     print (f' PID speed{ speed.angular.z}')    
