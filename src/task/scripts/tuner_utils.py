@@ -36,7 +36,7 @@ import rospkg
 import yaml
 from act_recog.srv import Recognize,RecognizeResponse,RecognizeRequest
 from object_classification.srv import *
-
+from segmentation.srv import SegmentRegion, SegmentRegionRequest
 
 from ros_whisper_vosk.srv import SetGrammarVosk
 
@@ -78,6 +78,7 @@ analyze_face = rospy.ServiceProxy('analyze_face', RecognizeFace)    ###DEEP FACE
 recognize_action = rospy.ServiceProxy('recognize_act', Recognize) 
 classify_client = rospy.ServiceProxy('/classify', Classify)
 classify_client_dino = rospy.ServiceProxy('grounding_dino_detect', Classify_dino)
+segment_service = rospy.ServiceProxy("segment_region", SegmentRegion)
 
 
 #map_msg= rospy.wait_for_message('/augmented_map', OccupancyGrid , 20)####WAIT for nav pumas map .. 

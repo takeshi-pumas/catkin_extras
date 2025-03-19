@@ -210,6 +210,43 @@ def callback(points_msg):
 
             print("Label probs:", probs,keys[np.argmax(probs)] ,keys, probs[0][1] ) # prints: [[0.9927937  0.00421068 0.00299572]]
 
+        elif key == 'r':
+                       # Obtener una nube de puntos del sensor
+            rospy.loginfo("Esperando nube de puntos desde /hsrb/head_rgbd_sensor/depth_registered/rectified_points")
+            #pointcloud_msg = rospy.wait_for_message("/hsrb/head_rgbd_sensor/depth_registered/rectified_points", PointCloud2)
+            pointcloud_msg = points_msg
+            if pointcloud_msg is None:
+                rospy.logerr("No se recibió la nube de puntos.")
+                return
+            rospy.loginfo("Nube de puntos recibida. Enviando solicitud de segmentación...")
+
+            # Nombre de la región a segmentar (ajustar según el YAML)
+            region_name = "beverage_area"
+            
+            rospy.wait_for_service("segment_region")
+            try:
+                request = SegmentRegionRequest(pointcloud=pointcloud_msg, region_name=region_name)
+                response = segment_service(request)
+
+                if response.success:
+                    bridge = CvBridge()
+                    mask = bridge.imgmsg_to_cv2(response.mask, "mono8")
+                    #TODO:apply dilate and erode
+                    # **Aplicar operaciones morfológicas para reducir ruido**
+                    kernel = np.ones((13, 13), np.uint8)  # Define un kernel de 5x5 (ajustable)
+                    
+                    # mask_cleaned = cv2.dilate(mask, kernel, iterations=5)  # **Rellena huecos**
+                    # mask_cleaned = cv2.erode(mask_cleaned, kernel, iterations=1)  # **Reduce pequeños artefactos**
+                    
+                    segment_img = cv2.bitwise_and(img, img, mask=mask)
+                else:
+                    rospy.logwarn("Error en segmentación: " + response.message)
+                cv2.imshow("Mascara de Segmentacion", segment_img)
+                cv2.waitKey(0)
+                cv2.destroyAllWindows()
+            except rospy.ServiceException as e:
+                rospy.logerr("Error llamando al servicio: %s" % e)
+
         elif key == 'd':        # Usar Dino para object classification by prompt
             prompt = "coke"     #put here favorite drink
             img=rgbd.get_image()

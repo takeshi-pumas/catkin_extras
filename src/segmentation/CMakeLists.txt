@@ -59,7 +59,8 @@ add_message_files(
 ## Generate services in the 'srv' folder
 add_service_files(
   FILES
-   Segmentation.srv
+   Segmentation.srv 
+   SegmentRegion.srv
    
 )
 

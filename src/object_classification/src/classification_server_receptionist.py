@@ -21,11 +21,11 @@ STD = [0.229, 0.224, 0.225]
 
 # Load CLIP Model
 device = "cuda" if torch.cuda.is_available() else "cpu"
-clip_model, clip_preprocess = clip.load("ViT-B/32", device=device)
+clip_model, clip_preprocess = clip.load("ViT-B/32", device=device)  
 rospy.loginfo("CLIP model loaded successfully.")
 
 # Set base directory
-BASE_DIR = os.path.expanduser("~/GroundingDINO")
+BASE_DIR = os.path.expanduser("~/Repositories/GroundingDINO")
 CONFIG_PATH = os.path.join(BASE_DIR, "groundingdino/config/GroundingDINO_SwinT_OGC.py")
 WEIGHTS_PATH = os.path.join(BASE_DIR, "weights", "groundingdino_swint_ogc.pth")
 
