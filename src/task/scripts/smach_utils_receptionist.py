@@ -54,7 +54,8 @@ set_grammar = rospy.ServiceProxy('set_grammar_vosk', SetGrammarVosk)            
 recognize_face = rospy.ServiceProxy('recognize_face', RecognizeFace)                    #FACE RECOG
 train_new_face = rospy.ServiceProxy('new_face', RecognizeFace)                          #FACE RECOG
 analyze_face = rospy.ServiceProxy('analyze_face', RecognizeFace)    ###DEEP FACE ONLY
-classify_client_dino = rospy.ServiceProxy('grounding_dino_detect', Classify_dino_receptionist)
+classify_client_dino = rospy.ServiceProxy('grounding_dino_detect', Classify_dino_receptionist) #beverage recognition
+segment_service = rospy.ServiceProxy("segment_region", SegmentRegion) # Beverage area segmentation
 
 
 enable_mic_pub = rospy.Publisher('/talk_now', Bool, queue_size=10)
@@ -216,11 +217,36 @@ def analyze_face_background(img, name=" "):
 
 #------------------------------------------------------
 def get_favorite_drink_location(favorite_drink):
-    
+    bridge = CvBridge()
     # Convert image to ROS format
-    ros_image = rospy.wait_for_message('/hsrb/head_r_stereo_camera/image_raw', Image, timeout=5)
+    pointcloud_msg = rospy.wait_for_message("/hsrb/head_rgbd_sensor/depth_registered/rectified_points", PointCloud2)
+    img_msg = rospy.wait_for_message('/hsrb/head_rgbd_sensor/rgb/image_raw', Image, timeout=5)
+    img = bridge.imgmsg_to_cv2(img_msg,"bgr8")
+    if pointcloud_msg is None:
+        rospy.logerr("No se recibió la nube de puntos.")
+        return
+    rospy.loginfo("Nube de puntos recibida. Enviando solicitud de segmentación...")
+    # Nombre de la región a segmentar (ajustar según el YAML)
+    region_name = "beverage_area"
+    rospy.wait_for_service("segment_region")
+    try:
+        request = SegmentRegionRequest(pointcloud=pointcloud_msg, region_name=region_name)
+        response = segment_service(request)
+
+        if response.success:
+            bridge = CvBridge()
+            mask = bridge.imgmsg_to_cv2(response.mask, "mono8")
+            # **Aplicar operaciones morfológicas para reducir ruido**
+            kernel = np.ones((13, 13), np.uint8)  # Define un kernel de 5x5 (ajustable)
+            mask = cv2.dilate(mask, kernel, iterations=4)  # **Rellena huecos**
+            #mask = cv2.erode(mask, kernel, iterations=1)  # **Reduce pequeños artefactos**
+            segment_img = cv2.bitwise_and(img, img, mask=mask)
+        else:
+            rospy.logwarn("Error en segmentación: " + response.message)
+    except rospy.ServiceException as e:
+        rospy.logerr("Error llamando al servicio: %s" % e)
     print("Message Received")
-    # Create a proper ROS String message
+    ros_image=bridge.cv2_to_imgmsg(segment_img,encoding="bgr8")
     prompt_msg = String()
     prompt_msg.data = favorite_drink
 
