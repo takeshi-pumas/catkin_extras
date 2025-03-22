@@ -67,29 +67,32 @@ class Wait_push_hand(smach.State):
 class Wait_door_opened(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed'])
+        self.first = True
         self.tries = 0
 
     def execute(self, userdata):
+        if self.first:
+            self.first=False 
+            rospy.loginfo('STATE : Wait for door to be opened')
+            print('Waiting for door to be opened')
+            self.tries += 1
+            print(f'Try {self.tries} of 4 attempts')
 
-        rospy.loginfo('STATE : Wait for door to be opened')
-        print('Waiting for door to be opened')
-
-        self.tries += 1
-        print(f'Try {self.tries} of 4 attempts')
-
-        # if self.tries == 100:
-        #     return 'tries'
-        voice.talk('I am ready for receptionist task.')
-        rospy.sleep(0.8)
-        voice.talk('I am waiting for the door to be opened')
-        succ = line_detector.line_found()
-        #succ = wait_for_push_hand(100)
-        rospy.sleep(1.0)
-        if succ:
-            self.tries = 0
-            return 'succ'
+            # if self.tries == 100:
+            #     return 'tries'
+            voice.talk('I am ready for receptionist task.')
+            rospy.sleep(0.8)
+            voice.talk('I am waiting for the door to be opened')
+            succ = line_detector.line_found()
+            #succ = wait_for_push_hand(100)
+            rospy.sleep(1.0)
+            if succ:
+                self.tries = 0
+                return 'succ'
+            else:
+                return 'failed'
         else:
-            return 'failed'
+            return 'succ'
 
 # Go to door STATE: Move robot to known location "door" 
 
@@ -338,7 +341,8 @@ class Find_drink(smach.State):
         print('Try', self.tries, 'of 3 attempts')
 
         voice.talk('Scanning table')
-        head.set_joint_values([0.0, -0.1])
+        head.set_joint_values([0.0, -0.3])
+        rospy.sleep(1)
 
         favorite_drink = party.get_active_guest_drink()
         res,position = get_favorite_drink_location(favorite_drink)
@@ -347,8 +351,11 @@ class Find_drink(smach.State):
             self.tries = 0
             voice.talk(f"I found a {favorite_drink} on the {position}, take it please.")
             return 'succ'
-        else:
+        elif res.result.data == "not found":
+            self.tries = 0
             voice.talk(f'There is no {favorite_drink}, if you want to, take another one.')
+            return 'succ'
+        else:
             return 'failed'
 
 # Lead to living room STATE: Ask guest to follow robot to living room

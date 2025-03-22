@@ -3,6 +3,13 @@ People:
     drink: Coke
     location: Place_3
     name: john
+  Guest_1:
+    description: john has arrived... he is a Man... I believe he is  around 23 years
+      old... I would say he is a bit neutral. I might guess he is of white descent.
+    drink: coke
+    interest: null
+    location: Place_1
+    name: john
 Places:
   Place_0:
     location:
@@ -15,7 +22,7 @@ Places:
       theta: -0.05
       x: -0.33
       y: -1.7
-    occupied: null
+    occupied: Guest_1
   Place_2:
     location:
       theta: -1.51

@@ -241,6 +241,7 @@ def get_favorite_drink_location(favorite_drink):
             mask = cv2.dilate(mask, kernel, iterations=4)  # **Rellena huecos**
             #mask = cv2.erode(mask, kernel, iterations=1)  # **Reduce pequeños artefactos**
             segment_img = cv2.bitwise_and(img, img, mask=mask)
+            cv2.imwrite("img_debug.png",segment_img)
         else:
             rospy.logwarn("Error en segmentación: " + response.message)
     except rospy.ServiceException as e:
@@ -262,7 +263,7 @@ def get_favorite_drink_location(favorite_drink):
 
     except rospy.ServiceException as e:
         print(f"Service call failed: {e}")
-        return False,"not found"
+        return False,e
 #------------------------------------------------------
 def detect_human_to_tf():
     humanpose=human_detect_server.call()
