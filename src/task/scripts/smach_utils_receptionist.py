@@ -33,11 +33,14 @@ from vision_msgs.srv import *
 from std_msgs.msg import String, Bool
 import random
 
+# Common states for all SMACHs
+from common_states import WaitPushHand, WaitDoorOpen, GotoPlace
+
 from ros_whisper_vosk.srv import SetGrammarVosk
 
 from utils import grasp_utils, misc_utils, nav_utils, receptionist_knowledge_new
 
-global listener, broadcaster, tfBuffer, tf_static_broadcaster, scene, rgbd, head,train_new_face, wrist, human_detect_server, line_detector, clothes_color
+global listener, broadcaster, tfBuffer, tf_static_broadcaster, scene, rgbd, head,train_new_face, human_detect_server, clothes_color
 global clear_octo_client, goal,navclient,segmentation_server  , tf_man , omni_base, brazo, speech_recog_server, bridge, map_msg, pix_per_m, analyze_face , arm , set_grammar
 
 rospy.init_node('smach_receptionist')
@@ -65,11 +68,11 @@ rgbd= misc_utils.RGBD()
 bridge = CvBridge()
 tf_man = misc_utils.TF_MANAGER()
 gripper = grasp_utils.GRIPPER()
-omni_base = nav_utils.NAVIGATION()
-wrist= grasp_utils.WRIST_SENSOR()
+omni_base = nav_utils.Navigation()
+# wrist= grasp_utils.WRIST_SENSOR()
 head = grasp_utils.GAZE()
 brazo = grasp_utils.ARM()
-line_detector = misc_utils.LineDetector()
+# line_detector = misc_utils.LineDetector()
 voice = misc_utils.TALKER()
 party = receptionist_knowledge_new.Receptionist()
 
@@ -157,22 +160,22 @@ def wait_for_face(timeout=10 , name=''):
 
 #------------------------------------------------------
 
-def wait_for_push_hand(time=10):
+# def wait_for_push_hand(time=10):
 
-    start_time = rospy.get_time()
-    time= 10
-    print('timeout will be ',time,'seconds')
-    while rospy.get_time() - start_time < time and not rospy.is_shutdown():
-        torque = wrist.get_torque()
-        if np.abs(torque[1])>1.0:
-            print(' Hand Pused Ready To Start')
-            #takeshi_talk_pub.publish(string_to_Voice())
-            #talk('Im ready to start')
-            return True
+#     start_time = rospy.get_time()
+#     time= 10
+#     print('timeout will be ',time,'seconds')
+#     while rospy.get_time() - start_time < time and not rospy.is_shutdown():
+#         torque = wrist.get_torque()
+#         if np.abs(torque[1])>1.0:
+#             print(' Hand Pused Ready To Start')
+#             #takeshi_talk_pub.publish(string_to_Voice())
+#             #talk('Im ready to start')
+#             return True
 
-    if (rospy.get_time() - start_time >= time):
-        print(time, 'secs have elapsed with no hand push')
-        return False
+#     if (rospy.get_time() - start_time >= time):
+#         print(time, 'secs have elapsed with no hand push')
+#         return False
 #
 ##------------------------------------------------------
 def analyze_face_from_image(cv2_img,name=''):   

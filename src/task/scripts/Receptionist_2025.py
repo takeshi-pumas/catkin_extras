@@ -38,84 +38,84 @@ class Initial(smach.State):
 
 # Wait push hand STATE: Trigger for task to start
 
-class Wait_push_hand(smach.State):
-    def __init__(self):
-        smach.State.__init__(self, outcomes=['succ', 'failed'])
-        self.tries = 0
+# class Wait_push_hand(smach.State):
+#     def __init__(self):
+#         smach.State.__init__(self, outcomes=['succ', 'failed'])
+#         self.tries = 0
 
-    def execute(self, userdata):
-        rospy.loginfo('STATE : Wait for Wait_push_hand')
-        self.tries += 1
-        print(f'Try {self.tries} of 4 attempts')
-        # if self.tries == 4:
-        #     return 'failed'
-        head.set_named_target('neutral')
-        brazo.set_named_target('go')
-        voice.talk('Gently... push my hand to begin')
-        succ = wait_for_push_hand(100)
+#     def execute(self, userdata):
+#         rospy.loginfo('STATE : Wait for Wait_push_hand')
+#         self.tries += 1
+#         print(f'Try {self.tries} of 4 attempts')
+#         # if self.tries == 4:
+#         #     return 'failed'
+#         head.set_named_target('neutral')
+#         brazo.set_named_target('go')
+#         voice.talk('Gently... push my hand to begin')
+#         succ = wait_for_push_hand(100)
 
-        if succ:
-            return 'succ'
-        else:
-            return 'failed'
+#         if succ:
+#             return 'succ'
+#         else:
+#             return 'failed'
 
-# Wait door opened STATE: Trigger for task to start
+# # Wait door opened STATE: Trigger for task to start
 
-class Wait_door_opened(smach.State):
-    def __init__(self):
-        smach.State.__init__(self, outcomes=['succ', 'failed'])
-        self.first = True
-        self.tries = 0
+# class Wait_door_opened(smach.State):
+#     def __init__(self):
+#         smach.State.__init__(self, outcomes=['succ', 'failed'])
+#         self.first = True
+#         self.tries = 0
 
-    def execute(self, userdata):
-        if self.first:
-            self.first=False 
-            rospy.loginfo('STATE : Wait for door to be opened')
-            print('Waiting for door to be opened')
-            self.tries += 1
-            print(f'Try {self.tries} of 4 attempts')
+#     def execute(self, userdata):
+#         if self.first:
+#             self.first=False 
+#             rospy.loginfo('STATE : Wait for door to be opened')
+#             print('Waiting for door to be opened')
+#             self.tries += 1
+#             print(f'Try {self.tries} of 4 attempts')
 
-            # if self.tries == 100:
-            #     return 'tries'
-            voice.talk('I am ready for receptionist task.')
-            rospy.sleep(0.8)
-            voice.talk('I am waiting for the door to be opened')
-            succ = line_detector.line_found()
-            #succ = wait_for_push_hand(100)
-            rospy.sleep(1.0)
-            if succ:
-                self.tries = 0
-                return 'succ'
-            else:
-                return 'failed'
-        else:
-            return 'succ'
+#             # if self.tries == 100:
+#             #     return 'tries'
+#             voice.talk('I am ready for receptionist task.')
+#             rospy.sleep(0.8)
+#             voice.talk('I am waiting for the door to be opened')
+#             succ = line_detector.line_found()
+#             #succ = wait_for_push_hand(100)
+#             rospy.sleep(1.0)
+#             if succ:
+#                 self.tries = 0
+#                 return 'succ'
+#             else:
+#                 return 'failed'
+#         else:
+#             return 'succ'
 
 # Go to door STATE: Move robot to known location "door" 
 
-class Goto_door(smach.State):  # ADD KNONW LOCATION DOOR
-    def __init__(self):
-        smach.State.__init__(self, outcomes=['succ', 'failed'])
-        self.tries = 0
+# class Goto_door(smach.State):  # ADD KNONW LOCATION DOOR
+#     def __init__(self):
+#         smach.State.__init__(self, outcomes=['succ', 'failed'])
+#         self.tries = 0
 
-    def execute(self, userdata):
+#     def execute(self, userdata):
 
-        rospy.loginfo('STATE : Navigate to known location: Door')
+#         rospy.loginfo('STATE : Navigate to known location: Door')
 
-        print(f'Try {self.tries} of 3 attempts')
-        self.tries += 1
-        if self.tries == 3:
-            return 'succ'
-        if self.tries == 1: voice.talk('Navigating to, door')
-        res = omni_base.move_base(known_location = 'door')
-        print(res)
+#         print(f'Try {self.tries} of 3 attempts')
+#         self.tries += 1
+#         if self.tries == 3:
+#             return 'succ'
+#         if self.tries == 1: voice.talk('Navigating to, door')
+#         res = omni_base.move_base(known_location = 'door')
+#         print(res)
 
-        if res:
-            self.tries = 0
-            return 'succ'
-        else:
-            voice.talk('Navigation Failed, retrying')
-            return 'failed'
+#         if res:
+#             self.tries = 0
+#             return 'succ'
+#         else:
+#             voice.talk('Navigation Failed, retrying')
+#             return 'failed'
 
 # Scan face STATE: Take a picture of the new guest to meet them
 
@@ -320,7 +320,7 @@ class Lead_to_beverage_area(smach.State):
 
         voice.talk(f'{party.get_active_guest_name()}... I will take you to beverage area, please follow me')
         # voice.talk('Navigating to ,living room')
-        res = omni_base.move_base(known_location='beverage_area')
+        res = omni_base.move_to(known_location='beverage_area')
         if res:
             self.tries = 0
             voice.talk(f"I will check if there is {party.get_active_guest_drink()} here")
@@ -372,7 +372,7 @@ class Lead_to_living_room(smach.State):
 
         voice.talk(f"{party.get_active_guest_name()}... Follow me to living room")
         # voice.talk('Navigating to ,living room')
-        res = omni_base.move_base(known_location='living_room')
+        res = omni_base.move_to(known_location='living_room')
         if res:
             self.tries = 0
             return 'succ'
@@ -536,11 +536,13 @@ if __name__ == '__main__':
 
         # Initial states routine
         smach.StateMachine.add("INITIAL", Initial(),              
-                               transitions={'failed': 'INITIAL', 'succ': 'WAIT_PUSH_HAND'})
-        smach.StateMachine.add("WAIT_PUSH_HAND", Wait_push_hand(),       
-                               transitions={'failed': 'WAIT_PUSH_HAND', 'succ': 'GOTO_DOOR'})
-        smach.StateMachine.add("WAIT_DOOR_OPENED", Wait_door_opened(),     
-                               transitions={'failed': 'WAIT_DOOR_OPENED', 'succ': 'SCAN_FACE'})
+            transitions={'failed': 'INITIAL', 'succ': 'WAIT_PUSH_HAND'})
+        smach.StateMachine.add("WAIT_PUSH_HAND", WaitPushHand(
+            talker=voice, talk_message='Gently... push my hand to begin', timeout=100.0, push_threshold=0.3),       
+            transitions={'failed': 'WAIT_PUSH_HAND', 'succ': 'GOTO_DOOR'})
+        smach.StateMachine.add("WAIT_DOOR_OPENED", WaitDoorOpen(
+            talker=voice, talk_message='Open the door please', timeout=100.0, distance_threshold=0.5),     
+            transitions={'failed': 'WAIT_DOOR_OPENED', 'succ': 'SCAN_FACE'})
         
         # Guest recognition states
         smach.StateMachine.add("SCAN_FACE", Scan_face(),
@@ -555,18 +557,22 @@ if __name__ == '__main__':
                                transitions={'failed': 'GET_INTEREST', 'succ': 'LEAD_TO_BEVERAGE_AREA'})
 
         # Guest treatment
-        smach.StateMachine.add("LEAD_TO_BEVERAGE_AREA", Lead_to_beverage_area(),  
+        smach.StateMachine.add("LEAD_TO_BEVERAGE_AREA", GotoPlace(
+            navigation=omni_base, location='beverage_area', talker=voice, start_message=f'{party.get_active_guest_name()}... I will take you to beverage area, please follow me', 
+            end_message=f"I will check if there is {party.get_active_guest_drink()} here"),
                                transitions={'failed': 'LEAD_TO_BEVERAGE_AREA', 'succ': 'FIND_DRINK'})
         smach.StateMachine.add("FIND_DRINK", Find_drink(),
                                transitions={'failed': 'FIND_DRINK', 'succ': 'LEAD_TO_LIVING_ROOM'})
-        smach.StateMachine.add("LEAD_TO_LIVING_ROOM", Lead_to_living_room(),  
-                               transitions={'failed': 'LEAD_TO_LIVING_ROOM', 'succ': 'FIND_SITTING_PLACE'})
+        smach.StateMachine.add("LEAD_TO_LIVING_ROOM", GotoPlace(
+            navigation=omni_base, location='living_room', talker=voice, start_message=f"{party.get_active_guest_name()}... Follow me to living room"),  
+            transitions={'failed': 'LEAD_TO_LIVING_ROOM', 'succ': 'FIND_SITTING_PLACE'})
         smach.StateMachine.add("FIND_SITTING_PLACE", Find_sitting_place(),
                                transitions={'failed': 'FIND_SITTING_PLACE', 'succ': 'CHECK_PARTY'})
         smach.StateMachine.add("CHECK_PARTY", Check_party(),
                                transitions={'failed': 'CHECK_PARTY', 'guest_done': 'GOTO_DOOR', 'party_done': 'FIND_GUEST'})
-        smach.StateMachine.add("GOTO_DOOR", Goto_door(),            
-                               transitions={'failed': 'GOTO_DOOR', 'succ': 'WAIT_DOOR_OPENED'})
+        smach.StateMachine.add("GOTO_DOOR", GotoPlace(
+            navigation=omni_base, location='door', talker=voice, start_message='Navigating to door', end_message='Arrived to door'),
+            transitions={'failed': 'GOTO_DOOR', 'succ': 'WAIT_DOOR_OPENED'})
         
         # Introducing guests
         smach.StateMachine.add("FIND_GUEST", Find_guests(),
