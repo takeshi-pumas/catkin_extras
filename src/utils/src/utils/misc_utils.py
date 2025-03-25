@@ -217,7 +217,7 @@ class LineDetector:
 
         # Tomar solo las muestras centrales
         num_samples = len(ranges)
-        num_central_samples = int(num_samples * 0.05)  # valor ajustable
+        num_central_samples = int(num_samples * 0.1)  # valor ajustable
         start_index = int((num_samples - num_central_samples) / 2)
         central_ranges = ranges[start_index: start_index + num_central_samples]
 
@@ -225,12 +225,12 @@ class LineDetector:
         mean = sum(central_ranges) / len(central_ranges)
 
         # Calcular la desviación estándar de las lecturas
-        variance = sum((x - mean)**2 for x in central_ranges) / \
-            len(central_ranges)
-        std_dev = variance**0.5
+        # variance = sum((x - mean)**2 for x in central_ranges) / \
+        #     len(central_ranges)
+        # std_dev = variance**0.5
 
         # Verificar si las lecturas se aproximan a ser una línea
-        if std_dev < 0.5:  # valor ajustable
+        if mean < 0.6:  # Distancia ajustable
             # rospy.loginfo("Posible línea enfrente")
             self._result = True
         else:

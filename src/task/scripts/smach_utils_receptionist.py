@@ -48,14 +48,14 @@ broadcaster = tf2_ros.TransformBroadcaster()
 tf_static_broadcaster = tf2_ros.StaticTransformBroadcaster()
 
 # Service callers
-human_detect_server = rospy.ServiceProxy('/detect_human' , Human_detector)  ####HUMAN FINDER OPPOSEBASED
-speech_recog_server = rospy.ServiceProxy('/speech_recognition/vosk_service' ,GetSpeech)##############SPEECH VOSK RECOG FULL DICT
-set_grammar = rospy.ServiceProxy('set_grammar_vosk', SetGrammarVosk)                   ###### Get speech vosk keywords from grammar (function get_keywords)         
-recognize_face = rospy.ServiceProxy('recognize_face', RecognizeFace)                    #FACE RECOG
-train_new_face = rospy.ServiceProxy('new_face', RecognizeFace)                          #FACE RECOG
-analyze_face = rospy.ServiceProxy('analyze_face', RecognizeFace)    ###DEEP FACE ONLY
-classify_client_dino = rospy.ServiceProxy('grounding_dino_detect', Classify_dino_receptionist) #beverage recognition
-segment_service = rospy.ServiceProxy("segment_region", SegmentRegion) # Beverage area segmentation
+human_detect_server = 	rospy.ServiceProxy('/detect_human' , Human_detector)  ####HUMAN FINDER OPPOSEBASED
+speech_recog_server = 	rospy.ServiceProxy('/speech_recognition/vosk_service' ,GetSpeech)##############SPEECH VOSK RECOG FULL DICT
+set_grammar    =	rospy.ServiceProxy('set_grammar_vosk', SetGrammarVosk)                   ###### Get speech vosk keywords from grammar (function get_keywords)         
+recognize_face = 	rospy.ServiceProxy('recognize_face', RecognizeFace)                    #FACE RECOG
+train_new_face = 	rospy.ServiceProxy('new_face', RecognizeFace)                          #FACE RECOG
+analyze_face   = 	rospy.ServiceProxy('analyze_face', RecognizeFace)    ###DEEP FACE ONLY
+classify_client_dino = 	rospy.ServiceProxy('grounding_dino_detect', Classify_dino_receptionist) #beverage recognition
+segment_service      = 	rospy.ServiceProxy("segment_region", SegmentRegion) # Beverage area segmentation
 
 
 enable_mic_pub = rospy.Publisher('/talk_now', Bool, queue_size=10)
@@ -71,7 +71,7 @@ head = grasp_utils.GAZE()
 brazo = grasp_utils.ARM()
 line_detector = misc_utils.LineDetector()
 voice = misc_utils.TALKER()
-party = receptionist_knowledge.RECEPTIONIST()
+party = receptionist_knowledge.Receptionist()
 
 # Functions
 def places_2_tf():
@@ -123,7 +123,7 @@ def wait_for_face(timeout=10 , name=''):
 
         #NO FACE FOUND
         if res.Ids.ids[0].data == 'NO_FACE':
-            print ('No face FOund Keep scanning')
+            print ('No face Found Keep scanning')
             
             return None, None
         #AT LEAST ONE FACE FOUND
