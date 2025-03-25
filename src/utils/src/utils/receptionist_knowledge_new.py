@@ -1,13 +1,13 @@
 import yaml
 import random
 import os
-# import rospkg
+import rospkg
 
 class Receptionist:
     def __init__(self, knowledge_file='receptionist_knowledge.yaml'):
-        # rospack = rospkg.RosPack()
-        # package = rospack.get_path('config_files')
-        package = os.path.dirname(__file__)
+        rospack = rospkg.RosPack()
+        package = rospack.get_path('config_files')
+        # package = os.path.dirname(__file__)
         self.file_path = os.path.join(package, knowledge_file)
         self.places = self.__load_places_from_yaml()
         self.people = {}
