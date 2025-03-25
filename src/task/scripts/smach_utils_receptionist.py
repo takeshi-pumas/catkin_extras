@@ -35,7 +35,7 @@ import random
 
 from ros_whisper_vosk.srv import SetGrammarVosk
 
-from utils import grasp_utils, misc_utils, nav_utils, receptionist_knowledge
+from utils import grasp_utils, misc_utils, nav_utils, receptionist_knowledge_new
 
 global listener, broadcaster, tfBuffer, tf_static_broadcaster, scene, rgbd, head,train_new_face, wrist, human_detect_server, line_detector, clothes_color
 global clear_octo_client, goal,navclient,segmentation_server  , tf_man , omni_base, brazo, speech_recog_server, bridge, map_msg, pix_per_m, analyze_face , arm , set_grammar
@@ -71,7 +71,7 @@ head = grasp_utils.GAZE()
 brazo = grasp_utils.ARM()
 line_detector = misc_utils.LineDetector()
 voice = misc_utils.TALKER()
-party = receptionist_knowledge.Receptionist()
+party = receptionist_knowledge_new.Receptionist()
 
 # Functions
 def places_2_tf():
