@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from lugg_utils import *
+from smach_utils2 import *
 from smach_ros import SimpleActionState
 from std_msgs.msg import String
 

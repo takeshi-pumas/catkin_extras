@@ -77,6 +77,7 @@ class Find_human(smach.State):
         if self.tries >= 4:
             self.tries = 0
             return'tries'
+        print('Detecting Humans ')
         if self.tries==1:head.set_joint_values([ 0.0, 0.3])
         if self.tries==2:head.set_joint_values([ 0.7, 0.1])
         if self.tries==3:head.set_joint_values([-0.7, 0.1])
@@ -84,17 +85,26 @@ class Find_human(smach.State):
         
         rospy.sleep(0.7)
         humanpose=detect_human_to_tf()
+<<<<<<< Updated upstream
         print (humanpose)
         
         print('Detecting Humans ')
+=======
+
+>>>>>>> Stashed changes
 
 
         if humanpose== False:
             print ('no human ')
             return 'failed'
         else : 
+<<<<<<< Updated upstream
             #head.to_tf('human')
             print (f'Human Detected  ')
+=======
+            head.to_tf('human')
+            print ('human tf published')
+>>>>>>> Stashed changes
             return 'succ'    
 
 class Find_legs(smach.State):
@@ -144,6 +154,7 @@ class Find_legs(smach.State):
 #########################################################################################################
 class Goto_human(smach.State):
     def __init__(self):
+<<<<<<< Updated upstream
         smach.State.__init__(self, outcomes=['succ', 'arrived', 'lost'])
         self.tries = 0
 
@@ -166,6 +177,27 @@ class Goto_human(smach.State):
 
 
 
+=======
+        smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
+        self.tries = 0
+        self.last_legs=[]
+    def execute(self, userdata):
+        rospy.loginfo('STATE : Human_found,Navigating to last know position')
+        pose_robot,quat_robot= tf_man.getTF('base_link')
+        head.set_joint_values([0.0,-0.7 ])
+        rospy.sleep(0.75)
+        yaw_robot=tf.transformations.euler_from_quaternion(quat_robot)[2]
+        print (pose_robot[:2], yaw_robot, 'robot pose')
+        res=move_base(1.00,0.0,yaw_robot,'human')
+        print (res)
+        if res:
+            return 'succ'
+
+
+
+
+#########################################################################################################
+>>>>>>> Stashed changes
 class Follow_human(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'arrived', 'lost'])
@@ -241,6 +273,8 @@ if __name__ == '__main__':
         smach.StateMachine.add("WAIT_PUSH_HAND", Wait_push_hand(), transitions={'failed': 'WAIT_PUSH_HAND', 'succ': 'FIND_LEGS', 'tries': 'failed'})
         smach.StateMachine.add("FIND_HUMAN", Find_human(), transitions={'failed': 'FIND_HUMAN', 'succ': 'GOTO_HUMAN', 'tries': 'failed'})
         smach.StateMachine.add("FIND_LEGS", Find_legs(), transitions={'failed': 'FIND_LEGS', 'succ': 'FOLLOW_HUMAN', 'tries': 'failed'})
+        smach.StateMachine.add("FIND_HUMAN", Find_human(), transitions={'failed': 'FIND_HUMAN', 'succ': 'GOTO_HUMAN', 'tries': 'failed'})
+        smach.StateMachine.add("GOTO_HUMAN", Goto_human(), transitions={'failed': 'FIND_HUMAN', 'succ': 'succeeded', 'tries': 'failed'})
         smach.StateMachine.add("FOLLOW_HUMAN", Follow_human(), transitions={'arrived': 'succeeded', 'succ': 'FOLLOW_HUMAN', 'lost': 'FIND_LEGS'})
         smach.StateMachine.add("GOTO_HUMAN", Goto_human(), transitions={'arrived': 'succeeded', 'succ': 'FOLLOW_HUMAN', 'lost': 'FIND_LEGS'})
 

@@ -4,11 +4,19 @@ People:
     location: Place_3
     name: john
   Guest_1:
+<<<<<<< Updated upstream
     description: john has arrived... he is a Man... I believe he is  around 23 years
       old... I would say he is a bit neutral. I might guess he is of white descent.
     drink: coke
     interest: null
     location: Place_1
+=======
+    description: john has arrived... he is a Man... I believe he is  around 25 years
+      old... I would say he is a bit neutral. I might guess he is of white descent.
+    drink: null
+    interest: null
+    location: null
+>>>>>>> Stashed changes
     name: john
 Places:
   Place_0:
