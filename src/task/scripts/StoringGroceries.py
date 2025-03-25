@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from smach_utils2 import *
+from smach_utils_storing import *
 from smach_ros import SimpleActionState
 from action_server.msg import GraspAction
 from std_msgs.msg import Float32MultiArray
@@ -180,8 +180,11 @@ class Scan_table(smach.State):
         
         
         head.set_joint_values([ 0.0, -0.5])
-        rospy.sleep(5.0)                        
-        img_msg  = bridge.cv2_to_imgmsg( cv2.cvtColor(rgbd.get_image(), cv2.COLOR_RGB2BGR))### GAZEBO BGR!?!??!
+        rospy.sleep(5.0)
+        region_name = "pickup_area"
+        segmented_img = segment_region(region_name)
+        cv2.imwrite("debug.png",segmented_img)                 
+        img_msg  = bridge.cv2_to_imgmsg( cv2.cvtColor(segmented_img, cv2.COLOR_RGB2BGR))### GAZEBO BGR!?!??!
         req      = classify_client.request_class()
         req.in_.image_msgs.append(img_msg)        
         res      = classify_client(req)
@@ -510,7 +513,9 @@ class Check_grasp(smach.State):
         arm.go()
         head.to_tf(target_object)
         rospy.sleep(1.0)
-        img_msg  = bridge.cv2_to_imgmsg( cv2.cvtColor(rgbd.get_image(), cv2.COLOR_RGB2BGR))### GAZEBO BGR!?!??!
+        region_name = "shelf_area"
+        segmented_img = segment_region(region_name = region_name) 
+        img_msg  = bridge.cv2_to_imgmsg( cv2.cvtColor(segmented_img, cv2.COLOR_RGB2BGR))### GAZEBO BGR!?!??!
         req      = classify_client.request_class()
         req.in_.image_msgs.append(img_msg)
         res      = classify_client(req)

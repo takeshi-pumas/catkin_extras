@@ -351,7 +351,7 @@ class Find_drink(smach.State):
             self.tries = 0
             voice.talk(f"I found a {favorite_drink} on the {position}, take it please.")
             return 'succ'
-        elif res.result.data == "not found":
+        elif position == "not found":
             self.tries = 0
             voice.talk(f'There is no {favorite_drink}, if you want to, take another one.')
             return 'succ'
