@@ -22,9 +22,9 @@ err=0.0
 err_i=0.0
 err_d=0.0
 err_last=0
-Kp= 2.5
-Ki= 1.0
-Kd= 1.5
+Kp= 1.5
+Ki= 0.0
+Kd= 0.5
 map_repulsors=[]
 
 
@@ -83,13 +83,13 @@ def get_avoid_chairs_force(msg,K_tune=10):
             pt_xy= [np.cos(angles[spike_n])*np.nanmean(range_reg[mask]),np.sin(angles[spike_n])*np.nanmean(range_reg[mask])]
             frep=np.asarray((pt_xy))
             d_torep=np.linalg.norm(frep)
-            if d_torep <2.0:  #TUNABLE
+            if d_torep <1.0:  #TUNABLE
                 F_rep.append(frep/d_torep**3)
                 pt = write_Point_Stamped(pt_xy)
                 point_base = tfBuffer.transform(pt, "base_range_sensor_link", timeout=rospy.Duration(1))
                 cloud.points.append(Point32(point_base.point.x, -point_base.point.y, point_base.point.z))
                 point_map = tfBuffer.transform(pt, "map", timeout=rospy.Duration(1))
-                print(f'point_map{point_map}')
+                #print(f'point_map{point_map}')
                 map_repulsors.append(point_map)
 
     
@@ -188,7 +188,7 @@ def readSensor(data):
         F_rep=get_rep_force(data)
         F_rep_chairs= get_avoid_chairs_force(data)
         print ( F_atr,F_rep,F_rep_chairs,"F_atr,F_rep,F_rep_chairs")
-        Ftotx,Ftoty=  10*F_atr+ 0.025*F_rep + 1.5*F_rep_chairs
+        Ftotx,Ftoty=  10*F_atr+ 0.025*F_rep + 0.5*F_rep_chairs
         Ftotth=np.arctan2(Ftoty,Ftotx)
         Ftotth = np.fmod(Ftotth + np.pi, 2 * np.pi) - np.pi        
         print('Ftotxy',Ftotx,Ftoty,Ftotth)
@@ -207,7 +207,7 @@ def readSensor(data):
                 xcl,ycl=0.0 , 0.0
             else:
                 if( abs(Ftotth) < .35) :
-                    speed.linear.x=  min (current_speed.linear.x+0.0015, 2.0)  #0.5)#1.9   MAX SPEED
+                    speed.linear.x=  min (current_speed.linear.x+0.0015, 1.0)  #0.5)#1.9   MAX SPEED
                     err_i=0
                     if abs (F_atr[1])<0.1:
                         speed.angular.z= np.clip(0.5 * F_atr[1], -0.5, 0.5)
@@ -218,16 +218,16 @@ def readSensor(data):
                     print (f'error {err} , PID {pid_output}')
                     if Ftotth > -np.pi/2  and Ftotth <0:
                         print('Vang-')
-                        speed.linear.x  = max(current_speed.linear.x -0.0003, 0.1)
+                        speed.linear.x  = max(current_speed.linear.x -0.003, 0.1)
                     if Ftotth < np.pi/2  and Ftotth > 0:
                         print('Vang+')
-                        speed.linear.x  = max(current_speed.linear.x-0.0003, 0.1)
+                        speed.linear.x  = max(current_speed.linear.x-0.003, 0.1)
                     if Ftotth < -np.pi/2:
                         print('Vang---')
-                        speed.linear.x  = max(current_speed.linear.x-0.025, 0.0)
+                        speed.linear.x  = max(current_speed.linear.x-0.05, 0.0)
                     if Ftotth > np.pi/2:
                         print('Vang+++')
-                        speed.linear.x  = max(current_speed.linear.x-0.025, 0.0)
+                        speed.linear.x  = max(current_speed.linear.x-0.05, 0.0)
                     print (f'bang bang speed{ speed.angular.z}')    
                     speed.angular.z = max(min(pid_output, 1.3), -1.3)  # Clamp within limits
                     print (f' PID speed{ speed.angular.z}')    

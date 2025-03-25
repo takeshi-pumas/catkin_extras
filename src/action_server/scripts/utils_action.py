@@ -13,6 +13,7 @@ import time
 import moveit_commander
 import moveit_msgs.msg
 import tf2_ros
+from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 from geometry_msgs.msg import PoseStamped, Point , PointStamped , Quaternion , TransformStamped , Twist
 from std_msgs.msg import Bool
 from std_srvs.srv import Trigger, TriggerResponse, Empty
@@ -48,6 +49,10 @@ arm =  moveit_commander.MoveGroupCommander('arm')
 #gripper =  moveit_commander.MoveGroupCommander('gripper')
 #whole_body=moveit_commander.MoveGroupCommander('whole_body')
 
+
+
+
+
 #broadcaster = tf.TransformBroadcaster()
 tfBuffer = tf2_ros.Buffer()
 hand_cam= HAND_RGB()
@@ -73,12 +78,12 @@ classify_client = rospy.ServiceProxy('/classify', Classify)
 
 
 enable_mic_pub = rospy.Publisher('/talk_now', Bool, queue_size=10)
-map_msg= rospy.wait_for_message('/augmented_map', OccupancyGrid , 20)####WAIT for nav pumas map .. 
-inflated_map= np.asarray(map_msg.data)
-img_map=inflated_map.reshape((map_msg.info.width,map_msg.info.height))
-pix_per_m=map_msg.info.resolution
-contours, hierarchy = cv2.findContours(img_map.astype('uint8'),cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
-contoured=cv2.drawContours(img_map.astype('uint8'), contours, 1, (255,255,255), 1)
+#map_msg= rospy.wait_for_message('/augmented_map', OccupancyGrid , 20)####WAIT for nav pumas map .. 
+#inflated_map= np.asarray(map_msg.data)
+#img_map=inflated_map.reshape((map_msg.info.width,map_msg.info.height))
+#pix_per_m=map_msg.info.resolution
+#contours, hierarchy = cv2.findContours(img_map.astype('uint8'),cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+#contoured=cv2.drawContours(img_map.astype('uint8'), contours, 1, (255,255,255), 1)
 
 rgbd= RGBD()
 bridge = CvBridge()
@@ -91,7 +96,38 @@ wrist= WRIST_SENSOR()
 head = GAZE()
 brazo = ARM()
 line_detector = LineDetector()
-# arm =  moveit_commander.MoveGroupCommander('arm')
+navclient = actionlib.SimpleActionClient('/move_base/move', MoveBaseAction)  #TOYOTA NAV
+#------------------------------------------------------
+def move_base(goal_x,goal_y,goal_yaw,ref_frame='map' ,time_out=10):
+
+    
+    
+    
+    #using nav client and toyota navigation go to x,y,yaw
+    #To Do: PUMAS NAVIGATION
+    pose = PoseStamped()
+    pose.header.stamp = rospy.Time(0)
+    pose.header.frame_id = ref_frame
+    pose.pose.position = Point(goal_x, goal_y, 0)
+    quat = tf.transformations.quaternion_from_euler(0, 0, goal_yaw)
+    pose.pose.orientation = Quaternion(*quat)
+
+
+    # create a MOVE BASE GOAL
+    goal = MoveBaseGoal()
+    goal.target_pose = pose
+
+    # send message to the action server
+    navclient.send_goal(goal)
+
+    # wait for the action server to complete the order
+    navclient.wait_for_result(timeout=rospy.Duration(time_out))
+
+    # print result of navigation
+    action_state = navclient.get_state()
+    return navclient.get_state()
+
+
 
 
 #------------------------------------------------------

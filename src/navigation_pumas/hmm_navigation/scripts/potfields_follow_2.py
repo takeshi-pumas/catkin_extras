@@ -23,8 +23,8 @@ err_i=0.0
 err_d=0.0
 err_last=0
 Kp= 2.5
-Ki= 1.0
-Kd= 1.5
+Ki= 0.0
+Kd= 1.9
 map_repulsors=[]
 
 
@@ -181,7 +181,7 @@ def readSensor(data):
     lec[np.isinf(lec)]=13.5
     
     
-    if 'x' not in globals():
+    if 'x' not in globals():    
         print ('waiting for odom')
     else:
         print ('odom received',xcl,ycl)
@@ -190,7 +190,7 @@ def readSensor(data):
         F_rep=get_rep_force(data)
         F_rep_chairs= get_avoid_chairs_force(data)
         print ( F_atr,F_rep,F_rep_chairs,"F_atr,F_rep,F_rep_chairs")
-        Ftotx,Ftoty=  10*F_atr+ 0.025*F_rep + 1.5*F_rep_chairs
+        Ftotx,Ftoty=  20*F_atr+ 0.25*F_rep + 0.05*F_rep_chairs
         Ftotth=np.arctan2(Ftoty,Ftotx)
         Ftotth = np.fmod(Ftotth + np.pi, 2 * np.pi) - np.pi        
         print('Ftotxy',Ftotx,Ftoty,Ftotth)
@@ -202,7 +202,7 @@ def readSensor(data):
         err_d=err_last - err
         if (xcl!=0 and ycl!=0):
             vel=0.07
-            if (euclD < 0.5) :####################HOW CLOSE?
+            if (euclD < 1.5) :####################HOW CLOSE?
                 speed.linear.x=0
                 speed.linear.y=0
                 speed.angular.z=0
@@ -231,7 +231,7 @@ def readSensor(data):
                         print('Vang+++')
                         speed.linear.x  = max(current_speed.linear.x-0.025, 0.0)
                     print (f'bang bang speed{ speed.angular.z}')    
-                    speed.angular.z = max(min(pid_output, 1.3), -1.3)  # Clamp within limits
+                    speed.angular.z = max(min(pid_output, 0.7), -0.7)  # Clamp within limits
                     print (f' PID speed{ speed.angular.z}')    
 
         print (speed.linear.x , speed.angular.z)
@@ -255,7 +255,8 @@ def inoutinout():
     #rospy.Subscriber("/hsrb/wheel_odom",Odometry,newOdom)
     rospy.Subscriber("/hsrb/odom",Odometry,newOdom)
     rospy.Subscriber("/hsrb/base_scan",LaserScan,readSensor)
-    rospy.Subscriber("/clicked_point",PointStamped,readPoint)
+    #rospy.Subscriber("/clicked_point",PointStamped,readPoint)
+    rospy.Subscriber("/hri/leg_finder/leg_pose",PointStamped,readPoint)
     pub = rospy.Publisher('/hsrb/command_velocity', Twist, queue_size=1)
     
     rate = rospy.Rate(25) # 10hz

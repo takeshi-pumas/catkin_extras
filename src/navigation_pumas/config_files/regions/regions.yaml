@@ -7,7 +7,7 @@ pickup:
 shelves:
  x_min: -1.2
  x_max: -0.7
- y_min: 0.6
+ y_min: 0.7
  y_max: 0.95
  z: 0.8,0.5,0.05
  quat_w:  0.0
