@@ -85,26 +85,16 @@ class Find_human(smach.State):
         
         rospy.sleep(0.7)
         humanpose=detect_human_to_tf()
-<<<<<<< Updated upstream
-        print (humanpose)
-        
-        print('Detecting Humans ')
-=======
 
->>>>>>> Stashed changes
 
 
         if humanpose== False:
             print ('no human ')
             return 'failed'
         else : 
-<<<<<<< Updated upstream
-            #head.to_tf('human')
-            print (f'Human Detected  ')
-=======
+
             head.to_tf('human')
             print ('human tf published')
->>>>>>> Stashed changes
             return 'succ'    
 
 class Find_legs(smach.State):
@@ -154,30 +144,6 @@ class Find_legs(smach.State):
 #########################################################################################################
 class Goto_human(smach.State):
     def __init__(self):
-<<<<<<< Updated upstream
-        smach.State.__init__(self, outcomes=['succ', 'arrived', 'lost'])
-        self.tries = 0
-
-    def execute(self, userdata):
-        
-        human_pose,human_quat=tf_man.getTF('human')
-        human_yaw=tf.transformations.euler_from_quaternion(human_quat)[2]
-        print (human_pose, human_yaw)
-        res=move_base(1.6,0.0,human_yaw,'human')
-
-        if res:
-            return 'succ'
-
-        else:
-            talk('Failed, retrying')
-            print("""talk('Failed, retrying')""")
-            rospy.sleep(0.8)
-            return 'lost'
-
-
-
-
-=======
         smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
         self.tries = 0
         self.last_legs=[]
@@ -197,7 +163,7 @@ class Goto_human(smach.State):
 
 
 #########################################################################################################
->>>>>>> Stashed changes
+
 class Follow_human(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'arrived', 'lost'])
@@ -273,10 +239,8 @@ if __name__ == '__main__':
         smach.StateMachine.add("WAIT_PUSH_HAND", Wait_push_hand(), transitions={'failed': 'WAIT_PUSH_HAND', 'succ': 'FIND_LEGS', 'tries': 'failed'})
         smach.StateMachine.add("FIND_HUMAN", Find_human(), transitions={'failed': 'FIND_HUMAN', 'succ': 'GOTO_HUMAN', 'tries': 'failed'})
         smach.StateMachine.add("FIND_LEGS", Find_legs(), transitions={'failed': 'FIND_LEGS', 'succ': 'FOLLOW_HUMAN', 'tries': 'failed'})
-        smach.StateMachine.add("FIND_HUMAN", Find_human(), transitions={'failed': 'FIND_HUMAN', 'succ': 'GOTO_HUMAN', 'tries': 'failed'})
         smach.StateMachine.add("GOTO_HUMAN", Goto_human(), transitions={'failed': 'FIND_HUMAN', 'succ': 'succeeded', 'tries': 'failed'})
         smach.StateMachine.add("FOLLOW_HUMAN", Follow_human(), transitions={'arrived': 'succeeded', 'succ': 'FOLLOW_HUMAN', 'lost': 'FIND_LEGS'})
-        smach.StateMachine.add("GOTO_HUMAN", Goto_human(), transitions={'arrived': 'succeeded', 'succ': 'FOLLOW_HUMAN', 'lost': 'FIND_LEGS'})
 
     asw = ActionServerWrapper(
         'follow_server', FollowAction,
