@@ -25,12 +25,13 @@ class WaitPushHand(smach.State):
             timeout: Maximum time to wait for push in seconds
             push_threshold: Force threshold to detect push
         """
-        smach.State.__init__(self, outcomes=['succ', 'failed'])
+        smach.State.__init__(self, outcomes=['succ', 'failed', 'ended'])
 
         self.push_threshold = push_threshold
         self.timeout = timeout
         self.talker = talker
         self.talk_message = talk_message
+        self.counter = 0
 
         topic_wrench_sensor = '/hsrb/wrist_wrench/compensated'
         self.wrist_sensor_sub = rospy.Subscriber(
@@ -48,7 +49,6 @@ class WaitPushHand(smach.State):
         print("State: Wait for push hand")
 
         if self.talker:
-            print("talked enabled")
             try:
                 self.talker.talk(self.talk_message)
             except Exception as e:
@@ -57,19 +57,22 @@ class WaitPushHand(smach.State):
         start_time = rospy.get_time()
 
         while not rospy.is_shutdown():
+            self.counter += 1
             if self.pushed:
                 print('Hand push detected')
                 self.wrist_sensor_sub.unregister()
                 return 'succ'
-            else:
-                print('Waiting for hand push ...')
+
+            if self.counter % 20 == 0:
+                print(f'Waiting for hand push ({self.counter // 20})')
+            
             if rospy.get_time() - start_time > self.timeout:
                 print('Timeout waiting for push')
                 return 'failed'
             
             rospy.sleep(0.1)
         
-        return 'failed'
+        return 'ended'
     
     def __del__(self):
         """Cleanup subscriber on deletion"""
@@ -92,11 +95,12 @@ class WaitDoorOpen(smach.State):
             talk_message: Message to speak when waiting for door
             timeout: Maximum time to wait for door to open in seconds
         """
-        smach.State.__init__(self, outcomes=['succ', 'failed'])
+        smach.State.__init__(self, outcomes=['succ', 'failed', 'ended'])
 
         self.timeout = timeout
         self.talker = talker
         self.talk_message = talk_message
+        self.counter = 0
 
         topic_laser_scan = '/hsrb/base_scan'
         self.laser_sensor_sub = rospy.Subscriber(
@@ -112,7 +116,7 @@ class WaitDoorOpen(smach.State):
 
         # Tomar solo las muestras centrales
         num_samples = len(ranges)
-        num_central_samples = int(num_samples * 0.1)
+        num_central_samples = int(num_samples * 0.05)
         start_index = (num_samples - num_central_samples) // 2
         central_ranges = ranges[start_index: start_index + num_central_samples]
 
@@ -134,17 +138,22 @@ class WaitDoorOpen(smach.State):
         start_time = rospy.get_time()
 
         while not rospy.is_shutdown():
+            self.counter += 1
+            if self.counter % 20 == 0:
+                print(f'Waiting for door to open ({self.counter // 20})')
+
             if self.door_opened:
                 print('Door opened')
                 self.laser_sensor_sub.unregister()
                 return 'succ'
+
             if rospy.get_time() - start_time > self.timeout:
                 print('Timeout waiting for door')
                 return 'failed'
             
             rospy.sleep(0.1)
         
-        return 'failed'
+        return 'ended'
     
     def __del__(self):
         """Cleanup subscriber on deletion"""
