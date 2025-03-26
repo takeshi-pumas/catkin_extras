@@ -1,4 +1,0 @@
-#JSGF V1.0;
-grammar restaurant_number;
-public <restaurant_order>=<number>;
-<number>=(ONE | TWO | THREE	| FOUR | FIVE);

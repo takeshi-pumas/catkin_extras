@@ -1,0 +1,6 @@
+sensor_msgs/PointCloud2 pointcloud
+string region_name
+---
+bool success
+string message
+sensor_msgs/Image mask

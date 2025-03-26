@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from smach_utils_receptionist import *
 confirmation = ('yes', 'robot yes','yeah', 'correct', 'right', 'that is right', 'that is correct', 'that is it')
-
+# from common.states
 
 # Initial STATE: task setup (grammar, knowledge, robot position, ...)
 

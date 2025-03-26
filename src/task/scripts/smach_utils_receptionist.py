@@ -73,7 +73,7 @@ omni_base = nav_utils.Navigation()
 head = grasp_utils.GAZE()
 brazo = grasp_utils.ARM()
 # line_detector = misc_utils.LineDetector()
-voice = misc_utils.TALKER()
+voice = misc_utils.Voice()
 party = receptionist_knowledge_new.Receptionist()
 
 # Functions

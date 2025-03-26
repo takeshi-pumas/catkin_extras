@@ -1,8 +1,0 @@
-#JSGF V1.0;
-grammar simple_commands;
-public <command> = (<move> | <turn> | <rob> | <st>);
-<move> = <rob>* MOVE (FORWARD | BACKWARD);
-<turn> = <rob>* TURN TO THE (LEFT | RIGHT);
-<st> = <rob>* (STOP);
-<rob> = (ROBOT | TAKESHI);
-

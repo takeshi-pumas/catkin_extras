@@ -60,6 +60,16 @@ class Receptionist:
             "location": None, 
             "description": None}
         return guest_num
+
+    def get_places_location(self):
+        locs = []
+        places = []
+        for place, info in self.places.items():
+            if place != 'Place_0':
+                xyt = [info['location']['x'], info['location']['y'], info['location']['theta']]
+                places.append(place)
+                locs.append(xyt)
+        return places, locs
     
     def get_active_guest_name(self):
         return self.people.get(self.active_guest, {}).get("name")

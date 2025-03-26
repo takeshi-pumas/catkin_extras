@@ -1,7 +1,0 @@
-#JSGF V1.0;
-grammar gpsr;
-public <instructions> = (<validInstructions>);
-<validInstructions> = (go to <validLocations> | go to <validLocations> and find <validObjects> | go to <validLocations> and find <validPerson> | go to <validLocations> and bring me <validObjects>) ;
-<validLocations> = (living room | dinning room | bedroom | kitchen);
-<validObjects> = (coke | apple | mug | soap | banana | pitcher);
-<validPerson> = (jack);
