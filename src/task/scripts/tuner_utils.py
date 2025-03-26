@@ -27,7 +27,7 @@ from std_srvs.srv import Empty
 from sensor_msgs.msg import Image , LaserScan , PointCloud2
 import tf
 import time
-from cv_bridge import CvBridge, CvBridgeError
+
 from nav_msgs.msg import OccupancyGrid
 from hri_msgs.msg import RecognizedSpeech
 from rospy.exceptions import ROSException
@@ -46,7 +46,9 @@ from utils.nav_utils import *
 
 global listener, broadcaster, tfBuffer, tf_static_broadcaster, scene, rgbd, head,train_new_face, wrist, human_detect_server, line_detector, clothes_color , head_mvit
 global clear_octo_client, goal,navclient,segmentation_server  , tf_man , omni_base, brazo, speech_recog_server, bridge, map_msg, pix_per_m, analyze_face , arm , set_grammar
-global recognize_action , classify_client, classify_client_dino , pointing_detect_server,placing_finder_server,hand_rgb
+global recognize_action , classify_client, classify_client_dino , pointing_detect_server,placing_finder_server,hand_rgb 
+##########################
+global model , preprocess
 rospy.init_node('tuner_node')
 #head_mvit = moveit_commander.MoveGroupCommander('head')
 #gripper =  moveit_commander.MoveGroupCommander('gripper')
@@ -95,7 +97,7 @@ bridge = CvBridge()
 #segmentation_server = rospy.ServiceProxy('/segment_2_tf', Trigger) 
 tf_man = TF_MANAGER()
 gripper = GRIPPER()
-omni_base=OMNIBASE()        #  NAV ACTION
+#omni_base=OMNIBASE()        #  NAV ACTION
 #omni_base=NAVIGATION()     #  nav UTILS
 wrist= WRIST_SENSOR()
 head = GAZE()

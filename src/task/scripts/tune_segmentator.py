@@ -20,10 +20,13 @@ from std_msgs.msg import String
 import torch
 import clip
 from PIL import Image
-global model , preprocess
+import cv_bridge
+from cv_bridge import CvBridge
+
+bridge = CvBridge()  
 device = "cuda" if torch.cuda.is_available() else "cpu"
 model, preprocess = clip.load("ViT-B/32", device=device)
-
+print ('bridge',bridge)
 first= True
 rospack = rospkg.RosPack()
 yaml_file = rospy.get_param("segmentation_params", "/segmentation_params.yaml")
@@ -43,7 +46,7 @@ def nothing(x):
 
 ##############################################################################################################################################################################################################################################################################################################################
 def callback(points_msg):
-    global first , rospack , file_path
+    global first , rospack , file_path , bridge
     #print('got imgs msgs')
     points_data = ros_numpy.numpify(points_msg)    
     image_data = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]   #JUST TO MANTAIN DISPLAY

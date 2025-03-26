@@ -571,7 +571,45 @@ Visualization Manager:
       Filter (whitelist): ""
       Frame Timeout: 15
       Frames:
+        005_tomato_soup_can:
+          Value: true
+        007_tuna_fish_can:
+          Value: true
+        008_pudding_box:
+          Value: true
+        009_gelatin_box:
+          Value: true
+        011_banana:
+          Value: true
+        013_apple:
+          Value: true
+        014_lemon:
+          Value: true
+        015_peach:
+          Value: true
+        016_pear:
+          Value: true
+        017_orange:
+          Value: true
+        024_bowl:
+          Value: true
+        030_fork:
+          Value: true
+        033_spatula:
+          Value: true
+        054_softball:
+          Value: true
+        055_baseball:
+          Value: true
+        056_tennis_ball:
+          Value: true
+        057_racquetball:
+          Value: true
+        058_golf_ball:
+          Value: true
         All Enabled: false
+        apple:
+          Value: true
         arm_flex_link:
           Value: false
         arm_lift_link:
@@ -610,9 +648,33 @@ Visualization Manager:
           Value: false
         base_roll_link:
           Value: false
-        goal_for_place:
+        baseball:
           Value: true
-        goal_pose_received:
+        bedroom:
+          Value: true
+        bedroom_a:
+          Value: true
+        bedroom_b:
+          Value: true
+        bowl:
+          Value: true
+        breakfast:
+          Value: true
+        dining_room:
+          Value: true
+        dining_room_a:
+          Value: true
+        dining_room_b:
+          Value: true
+        dining_room_c:
+          Value: true
+        door_lab:
+          Value: true
+        gelatin_box:
+          Value: true
+        goal_for_grasp:
+          Value: true
+        golf_ball:
           Value: true
         hand_camera_frame:
           Value: false
@@ -672,14 +734,50 @@ Visualization Manager:
           Value: false
         head_tilt_link:
           Value: false
+        kitchen:
+          Value: true
+        lemon:
+          Value: true
+        living_room:
+          Value: true
         map:
           Value: true
         odom:
           Value: true
+        orange:
+          Value: true
+        peach:
+          Value: true
+        pear:
+          Value: true
+        pickup:
+          Value: true
+        place_shelf:
+          Value: true
         placing_area:
+          Value: true
+        pudding_box:
+          Value: true
+        racquetball:
+          Value: true
+        shelf:
+          Value: true
+        shelf_a:
+          Value: true
+        sitting_place_1:
+          Value: true
+        sitting_place_2:
+          Value: true
+        softball:
+          Value: true
+        tennis_ball:
+          Value: true
+        tomato_soup_can:
           Value: true
         torso_lift_link:
           Value: false
+        tuna_fish_can:
+          Value: true
         wrist_flex_link:
           Value: false
         wrist_ft_sensor_frame:
@@ -696,9 +794,41 @@ Visualization Manager:
       Show Names: true
       Tree:
         map:
-          goal_for_place:
+          apple:
             {}
-          goal_pose_received:
+          baseball:
+            {}
+          bedroom:
+            {}
+          bedroom_a:
+            {}
+          bedroom_b:
+            {}
+          bowl:
+            {}
+          breakfast:
+            {}
+          dining_room:
+            {}
+          dining_room_a:
+            {}
+          dining_room_b:
+            {}
+          dining_room_c:
+            {}
+          door_lab:
+            {}
+          gelatin_box:
+            {}
+          goal_for_grasp:
+            {}
+          golf_ball:
+            {}
+          kitchen:
+            {}
+          lemon:
+            {}
+          living_room:
             {}
           odom:
             base_footprint:
@@ -773,10 +903,75 @@ Visualization Manager:
                         head_rgbd_sensor_gazebo_frame:
                           {}
                         head_rgbd_sensor_rgb_frame:
-                          {}
+                          005_tomato_soup_can:
+                            {}
+                          007_tuna_fish_can:
+                            {}
+                          008_pudding_box:
+                            {}
+                          009_gelatin_box:
+                            {}
+                          011_banana:
+                            {}
+                          013_apple:
+                            {}
+                          014_lemon:
+                            {}
+                          015_peach:
+                            {}
+                          016_pear:
+                            {}
+                          017_orange:
+                            {}
+                          024_bowl:
+                            {}
+                          030_fork:
+                            {}
+                          033_spatula:
+                            {}
+                          054_softball:
+                            {}
+                          055_baseball:
+                            {}
+                          056_tennis_ball:
+                            {}
+                          057_racquetball:
+                            {}
+                          058_golf_ball:
+                            {}
             base_footprint_wheel:
               {}
+          orange:
+            {}
+          peach:
+            {}
+          pear:
+            {}
+          pickup:
+            {}
+          place_shelf:
+            {}
           placing_area:
+            {}
+          pudding_box:
+            {}
+          racquetball:
+            {}
+          shelf:
+            {}
+          shelf_a:
+            {}
+          sitting_place_1:
+            {}
+          sitting_place_2:
+            {}
+          softball:
+            {}
+          tennis_ball:
+            {}
+          tomato_soup_can:
+            {}
+          tuna_fish_can:
             {}
       Update Interval: 0
       Value: true
@@ -946,7 +1141,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 4.9675493240356445
+      Distance: 4.17087459564209
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -954,17 +1149,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 1.4394667148590088
-        Y: 0.3782203793525696
-        Z: -4.140933015150949e-06
+        X: -0.1071244478225708
+        Y: 0.5471919775009155
+        Z: -3.3064679882954806e-06
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.4947963356971741
+      Pitch: 0.2097966969013214
       Target Frame: base_footprint
-      Yaw: 1.9245233535766602
+      Yaw: 5.094522953033447
     Saved: ~
 Window Geometry:
   Displays:

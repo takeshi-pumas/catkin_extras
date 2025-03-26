@@ -1,5 +1,3 @@
-
-
 <launch>  
   
   <include file="$(find hsrb_moveit_config)/launch/hsrb_demo_with_controller.launch"> 
@@ -7,7 +5,8 @@
   </include>
 
 
-  <param name="file_name" value="/known_locations_storing.yaml"/>
+  <!--param name="file_name" value="/known_locations_storing.yaml"/-->
+  <param name="file_name" value="/known_locations_storingTMR.yaml"/>
   <node pkg="hmm_navigation"  name="pumas_nav" type="pumas_nav.py" output="screen" />
   <node pkg="known_locations_tf_server"  name="known_locs" type="known_locs_node.py" output="screen" />
   <node pkg="object_classification"  name="objs_reco" type="classification_server.py"  />  
@@ -18,6 +17,8 @@
   <node pkg="action_server"  name="action_server" type="ACT_SRVR_grasp_mio.py"/>  
   <node pkg="action_server"  name="place_action_server" type="ACT_SRVR_place.py"/> 
   <node pkg="segmentation"  name="segment_region" type="segment_region_server.py"/>
-  <param name="map_yaml" value="/home/joel/Repositories/catkin_extras/src/navigation_pumas/config_files/prohibition_maps/map_lab_2024/map.yaml"/>  
+  
+
+  <!--param name="map_yaml" value="/home/joel/Repositories/catkin_extras/src/navigation_pumas/config_files/prohibition_maps/map_lab_2024/map.yaml"/-->  
   
 </launch>  

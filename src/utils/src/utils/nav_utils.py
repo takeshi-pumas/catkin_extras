@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# from utils.misc_utils import *
+from utils.misc_utils import *
 import rospy
 import yaml
 import rospkg
@@ -7,7 +7,9 @@ import tf
 import numpy as np
 from geometry_msgs.msg import Twist, Point, Quaternion, PoseStamped
 from actionlib_msgs.msg import GoalStatus
-
+#import actionlib
+#from actionlib_msgs.msg import GoalStatus
+#from hmm_navigation.msg import NavigateActionGoal, NavigateAction
 class OMNIBASE:
     def __init__(self, cmd_vel_topic = '/hsrb/command_velocity'):
         self._base_vel_pub = rospy.Publisher(
@@ -321,14 +323,14 @@ class LocationManager:
             rospy.logerr(f"Failed to load locations: {e}")
             return {}
     
-    def get_location(self, name: str) -> tuple[float, float, float]:
-        """Get x, y, theta for a known location"""
-        try:
-            loc = self._locations[name][:3]
-            return (loc[0]['x'], loc[1]['y'], loc[2]['theta'])
-        except (KeyError, IndexError):
-            rospy.logerr(f"Location '{name}' not found")
-            return None
+    #def get_location(self, name: str) -> tuple[float, float, float]:
+    #    """Get x, y, theta for a known location"""
+    #    try:
+    #        loc = self._locations[name][:3]
+    #        return (loc[0]['x'], loc[1]['y'], loc[2]['theta'])
+    #    except (KeyError, IndexError):
+    #        rospy.logerr(f"Location '{name}' not found")
+    #        return None
 
 class Navigation:
     """Handles robot navigation combining velocity control and move_base"""
