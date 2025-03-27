@@ -20,7 +20,7 @@ import control_msgs.msg
 from tmc_msgs.msg import TalkRequestActionGoal, TalkRequestAction
 import actionlib
 from actionlib_msgs.msg import GoalStatus
-from hmm_navigation.msg import NavigateActionGoal, NavigateAction
+# from hmm_navigation.msg import NavigateActionGoal, NavigateAction
 from sensor_msgs.msg import LaserScan
 from glob import glob
 from os import path

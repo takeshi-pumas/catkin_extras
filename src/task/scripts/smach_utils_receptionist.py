@@ -4,11 +4,11 @@ import smach
 import smach_ros
 from geometry_msgs.msg import PoseStamped, Point , PointStamped , Quaternion , TransformStamped , Twist
 from std_srvs.srv import Trigger, TriggerResponse 
-import tf2_ros
+# import tf2_ros
 from tf2_sensor_msgs.tf2_sensor_msgs import do_transform_cloud
 from object_classification.srv import *
 from segmentation.srv import *
-from human_detector.srv import Human_detector ,Human_detectorResponse 
+from human_detector.srv import Human_detector, Human_detectorResponse 
 from ros_whisper_vosk.srv import GetSpeech
 from face_recog.msg import *
 from face_recog.srv import *
@@ -34,21 +34,23 @@ from std_msgs.msg import String, Bool
 import random
 
 # Common states for all SMACHs
-from common_states import WaitPushHand, WaitDoorOpen, GotoPlace
+from common.states import WaitPushHand, WaitDoorOpen, GotoPlace
+from common.navigation_functions import TFManager, Talker
+
 
 from ros_whisper_vosk.srv import SetGrammarVosk
 
 from utils import grasp_utils, misc_utils, nav_utils, receptionist_knowledge_new
 
-global listener, broadcaster, tfBuffer, tf_static_broadcaster, scene, rgbd, head,train_new_face, human_detect_server, clothes_color
-global clear_octo_client, goal,navclient,segmentation_server  , tf_man , omni_base, brazo, speech_recog_server, bridge, map_msg, pix_per_m, analyze_face , arm , set_grammar
+global rgbd, head,train_new_face, human_detect_server
+global clear_octo_client, goal,navclient,segmentation_server  , tf_manager , omni_base, brazo, speech_recog_server, bridge, map_msg, pix_per_m, analyze_face , arm , set_grammar
 
 rospy.init_node('smach_receptionist')
 # TF2_ROS setup
-tfBuffer = tf2_ros.Buffer()
-listener = tf2_ros.TransformListener(tfBuffer)
-broadcaster = tf2_ros.TransformBroadcaster()
-tf_static_broadcaster = tf2_ros.StaticTransformBroadcaster()
+# tfBuffer = tf2_ros.Buffer()
+# listener = tf2_ros.TransformListener(tfBuffer)
+# broadcaster = tf2_ros.TransformBroadcaster()
+# tf_static_broadcaster = tf2_ros.StaticTransformBroadcaster()
 
 # Service callers
 human_detect_server = 	rospy.ServiceProxy('/detect_human' , Human_detector)  ####HUMAN FINDER OPPOSEBASED
@@ -66,14 +68,12 @@ enable_mic_pub = rospy.Publisher('/talk_now', Bool, queue_size=10)
 # Utils
 rgbd= misc_utils.RGBD()
 bridge = CvBridge()
-tf_man = misc_utils.TF_MANAGER()
+tf_manager = misc_utils.TF_MANAGER()
 gripper = grasp_utils.GRIPPER()
 omni_base = nav_utils.Navigation()
-# wrist= grasp_utils.WRIST_SENSOR()
 head = grasp_utils.GAZE()
 brazo = grasp_utils.ARM()
-# line_detector = misc_utils.LineDetector()
-voice = misc_utils.Voice()
+voice = Talker()
 party = receptionist_knowledge_new.Receptionist()
 
 # Functions

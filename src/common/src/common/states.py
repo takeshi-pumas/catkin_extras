@@ -5,8 +5,8 @@ import smach
 from typing import Callable, Optional
 from geometry_msgs.msg import WrenchStamped
 from sensor_msgs.msg import LaserScan
-from common.utils import Talker
-from common.utils import Navigation
+from common.hsr_functions import Talker
+from common.navigation_functions import Navigation
 
 class WaitPushHand(smach.State):
     """Common state for waiting for the hand push interaction"""

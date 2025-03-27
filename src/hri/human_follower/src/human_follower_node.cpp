@@ -2,7 +2,7 @@
 #include "ros/ros.h"
 #include "std_msgs/Bool.h"
 #include "std_msgs/Empty.h"
-#include "std_msgs/Float64MultiArray.h"
+#include "std_msgs/Float32MultiArray.h"
 #include "geometry_msgs/Twist.h"
 #include "geometry_msgs/PointStamped.h"
 #include "std_msgs/Float32.h"
@@ -85,7 +85,7 @@ void callback_legs_pose(const geometry_msgs::PointStamped::ConstPtr& msg)
     }
     if(move_head)
     {
-	std_msgs::Float64MultiArray head_poses;
+	std_msgs::Float32MultiArray head_poses;
 	head_poses.data.push_back(atan2(msg->point.y, msg->point.x));
 	head_poses.data.push_back(-0.6);
 	pub_head_pose.publish(head_poses);
@@ -154,7 +154,7 @@ int main(int argc, char** argv)
     ros::Subscriber sub_stop   = n->subscribe("/stop", 1, callback_stop);
     listener = new tf::TransformListener();
     pub_cmd_vel   = n->advertise<geometry_msgs::Twist>(cmd_vel_topic, 1);
-    pub_head_pose = n->advertise<std_msgs::Float64MultiArray>(head_topic, 1);
+    pub_head_pose = n->advertise<std_msgs::Float32MultiArray>(head_topic, 1);
     
     ros::Rate loop(30);
 
