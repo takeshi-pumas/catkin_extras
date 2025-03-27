@@ -48,9 +48,9 @@ class Initial(smach.State):
         
         
         ###############################################
-        #o=read_yaml('/regions/regions.yaml')#REAL
+        o=read_yaml('/regions/regions.yaml')#REAL
         ############################################
-        o=read_yaml('/regions/regions_sim.yaml')#SIM
+        #o=read_yaml('/regions/regions_sim.yaml')#SIM
         ###############################################
         regions_df=pd.DataFrame.from_dict(o)
         ############################
@@ -181,7 +181,6 @@ class Scan_table(smach.State):
         
         head.set_joint_values([ 0.0, -0.5])
         rospy.sleep(5.0)
-        
         img_msg  = bridge.cv2_to_imgmsg( cv2.cvtColor(rgbd.get_image(), cv2.COLOR_RGB2BGR))### GAZEBO BGR!?!??!
         req      = classify_client.request_class()
         req.in_.image_msgs.append(img_msg)        
