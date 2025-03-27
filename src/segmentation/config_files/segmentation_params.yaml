@@ -1,8 +1,8 @@
 hg: 0.666
-higher: 6693
+higher: 36643
 lg: 0.001
-lower: 439
+lower: 377
+reg_hx: 479
 reg_hy: 442
-reg_ly: 77
-reg_hx: 540
 reg_lx: 100
+reg_ly: 237
