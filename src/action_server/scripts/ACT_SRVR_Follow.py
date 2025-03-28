@@ -154,7 +154,9 @@ class Goto_human(smach.State):
         rospy.sleep(0.75)
         yaw_robot=tf.transformations.euler_from_quaternion(quat_robot)[2]
         print (pose_robot[:2], yaw_robot, 'robot pose')
+        tf_man.pub_static_tf(np.asarray((1.0,0.0,0.0)),point_name='move_base_goal', ref='human')
         res=move_base(1.00,0.0,yaw_robot,'human')
+        head.to_tf('human')
         print (res)
         if res:
             return 'succ'
