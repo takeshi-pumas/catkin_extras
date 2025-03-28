@@ -399,6 +399,12 @@ def detect_human_to_tf():
     else:
         tf_man.pub_static_tf(np.asarray((humanpose.x,humanpose.x,humanpose.z)),point_name='human', ref='head_rgbd_sensor_link')
         succ=tf_man.change_ref_frame_tf('human')
+        _,quat= tf_man.getTF('base_link')
+        pose,_= tf_man.getTF('human')
+        rot180 = [0, 0, 1, 0]  # This is (x, y, z, w) format for 180° around Z
+        # Perform quaternion multiplication
+        quat_rotated = tf.transformations.quaternion_multiply(rot180, quat) 
+        tf_man.pub_static_tf(pose, quat_rotated,point_name='human')
         return succ
 #------------------------------------------------------
 
@@ -473,9 +479,11 @@ def move_base(goal_x,goal_y,goal_yaw,frame_id='map' ,time_out=10):
 
     # send message to the action server
     navclient.send_goal(goal)
-
+    print ("naving")
+    head.to_tf('human')
     # wait for the action server to complete the order
     navclient.wait_for_result(timeout=rospy.Duration(time_out))
+    print ( "waited for  res")
 
     # print result of navigation
     action_state = navclient.get_state()

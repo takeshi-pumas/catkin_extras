@@ -14,7 +14,7 @@
   <node pkg="smach_viewer"  name="smach_viewer" type="smach_viewer.py"  />  
   <node pkg="human_detector"  name="human_detector" type="pointing_detector_server.py"/>  
   <node pkg="leg_finder"  name="leg_finder_node" type="leg_finder_node"/>  
-  <node pkg="human_follower"  name="human_follower_node" type="human_follower_node"/>  
+  <node pkg="human_follower"  name="human_follower_node" type="human_follower_node2"/>  
   <!--node pkg="action_server"  name="action_server" type="ACT_SRVR_Follow.py"/-->   
   <include file="$(find speech_recog)/launch/ros_vosk.launch"/>
   <node pkg="head" name="mic_enable" type="mic_node"/>
