@@ -18,7 +18,7 @@ ros::Publisher   pub_cmd_vel;
 ros::Publisher   pub_head_pose;
 ros::Publisher   pub_next_wp;
 tf::TransformListener* listener;
-std::string legs_pose_topic = "/hri/human_follower/active_waypoint";
+std::string legs_pose_topic = "/hri/leg_finder/leg_pose";
 std::string laser_topic = "/hsrb/base_scan";
 //Potential fields can be used only with an omnidirectional base.
 float repulsiveForceX = 0.0;

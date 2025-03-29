@@ -19,8 +19,13 @@
   <node pkg="action_server"  name="action_server" type="ACT_SRVR_Follow.py"/>   
 =======
   <node pkg="human_follower"  name="human_follower_node" type="human_follower_node2"/>  
+<<<<<<< Updated upstream
   <!--node pkg="action_server"  name="action_server" type="ACT_SRVR_Follow.py"/-->   
 >>>>>>> 282fe4daab521c97c7ce33c55654604d1ae74bf9
+=======
+  <!--node pkg="action_server"  name="action_server" type="ACT_SRVR_Follow_nuevo.py"/-->   
+  <node pkg="action_server"  name="action_server" type="ACT_SRVR_Follow.py"/>   
+>>>>>>> Stashed changes
   <include file="$(find speech_recog)/launch/ros_vosk.launch"/>
   <node pkg="head" name="mic_enable" type="mic_node"/>
 

@@ -404,7 +404,10 @@ class Post_Pickup(smach.State):
         talk('Rotating to previous human location found')
         rospy.sleep(0.7)
         
-        res = new_move_D_to(tf_name='human',d_x=1.5)
+
+        res = new_move_D_to(tf_name='human',d_x=15)
+        #omni_base.move_d_to(target_distance= 1.5, target_link='human')
+
         if res:
             return 'succ'
 
