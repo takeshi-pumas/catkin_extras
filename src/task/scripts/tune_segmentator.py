@@ -251,7 +251,7 @@ def callback(points_msg):
                 rospy.logerr("Error llamando al servicio: %s" % e)
 
         elif key == 'd':        # Usar Dino para object classification by prompt
-            prompt = "coke"     #put here favorite drink
+            prompt = "bag"     #put here favorite drink
             img=rgbd.get_image()
             #cv2.imwrite('img.png',img)
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
@@ -265,7 +265,7 @@ def callback(points_msg):
             rospy.wait_for_service('grounding_dino_detect')
             try:
                 response = classify_client_dino(ros_image, prompt_msg)
-                print("Result:", response.result.data,"for drink:",prompt)
+                print("Result for:",prompt)
                 if response.image is None or response.image.data == b'':
                     print("Error: Received an empty image response!")
                 else:
