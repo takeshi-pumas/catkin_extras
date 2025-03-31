@@ -217,7 +217,7 @@ class LineDetector:
 
         # Tomar solo las muestras centrales
         num_samples = len(ranges)
-        num_central_samples = int(num_samples * 0.1)  # valor ajustable
+        num_central_samples = int(num_samples * 0.05)  # valor ajustable
         start_index = int((num_samples - num_central_samples) / 2)
         central_ranges = ranges[start_index: start_index + num_central_samples]
 
@@ -225,12 +225,12 @@ class LineDetector:
         mean = sum(central_ranges) / len(central_ranges)
 
         # Calcular la desviación estándar de las lecturas
-        # variance = sum((x - mean)**2 for x in central_ranges) / \
-        #     len(central_ranges)
-        # std_dev = variance**0.5
+        variance = sum((x - mean)**2 for x in central_ranges) / \
+            len(central_ranges)
+        std_dev = variance**0.5
 
         # Verificar si las lecturas se aproximan a ser una línea
-        if mean < 0.6:  # Distancia ajustable
+        if std_dev < 0.5:  # valor ajustable
             # rospy.loginfo("Posible línea enfrente")
             self._result = True
         else:
@@ -256,41 +256,21 @@ def talk(msg, time_out=5):
     return talk_client.wait_for_result(timeout=rospy.Duration(time_out))
 
 
-class Voice:
-    def __init__(self, talk_request_action='/talk_request_action'):
-        """Initialize the talker with ROS action client"""
+class TALKER:
+    def __init__(self, talk_request_action = '/talk_request_action'):
         self.talk_client = actionlib.SimpleActionClient(talk_request_action, TalkRequestAction)
-        # Wait for server to be available
-        self.talk_client.wait_for_server(timeout=rospy.Duration(5.0))
-        
     @staticmethod
     def _fillMsg(msg):
-        """Create a TalkRequestActionGoal message"""
         voice = TalkRequestActionGoal()
         voice.goal.data.interrupting = False
         voice.goal.data.queueing = True
         voice.goal.data.language = 1
         voice.goal.data.sentence = msg
         return voice.goal
-        
-    def talk(self, sentence: str, timeout: float = 5.0) -> bool:
-        """
-        Send talk request and wait for result
-        
-        Args:
-            sentence: Text to speak
-            timeout: Time to wait for result in seconds
-            
-        Returns:
-            bool: True if successful, False otherwise
-        """
-        try:
-            goal = self._fillMsg(sentence)
-            self.talk_client.send_goal(goal)
-            return self.talk_client.wait_for_result(timeout=rospy.Duration(timeout))
-        except Exception as e:
-            rospy.logwarn(f"Failed to execute talk: {e}")
-            return False
+    def talk(self, sentence, timeout = 5):
+        goal = self._fillMsg(sentence)
+        self.talk_client.send_goal(goal)
+        return self.talk_client.wait_for_result(timeout = rospy.Duration(timeout))
 
 
 def save_image(img,name='',dirName=''):

@@ -25,7 +25,7 @@ clip_model, clip_preprocess = clip.load("ViT-B/32", device=device)
 rospy.loginfo("CLIP model loaded successfully.")
 
 # Set base directory
-BASE_DIR = os.path.expanduser("~/Repositories/GroundingDINO")
+BASE_DIR = os.path.expanduser("~/GroundingDINO")
 CONFIG_PATH = os.path.join(BASE_DIR, "groundingdino/config/GroundingDINO_SwinT_OGC.py")
 WEIGHTS_PATH = os.path.join(BASE_DIR, "weights", "groundingdino_swint_ogc.pth")
 
@@ -38,9 +38,9 @@ THRESHOLD = 0.28  # CLIP Similarity threshold (adjust as needed)
 
 # 🔹 Diccionario de descripciones personalizadas
 prompt_dict = {
-    "coke": "A bottle of coke with red label.",
+    "coke": "A coke's bottle with a red label.",
     "coffee": "A cup of hot coffee.",
-    "water": "A bottle of water with sky blue label.",
+    "water": "A bottle of water with a sky blue label.",
     "juice": "A white bottle of mango juice.",
     "lipton": "A bottle with lipton label and amber drink."
 }
@@ -153,7 +153,6 @@ def handle_detection(req):
         cropped_image = image_source[y_min:y_max, x_min:x_max]  
 
         similarity_score = classify_with_clip(cropped_image, prompt)
-        print(similarity_score)
         rospy.loginfo(f"Similarity score for {prompt} in {pos}: {similarity_score:.2f}")
 
         if similarity_score > best_similarity and similarity_score >= THRESHOLD:
