@@ -34,7 +34,7 @@ float dist_to_human  = 1.0;
 
 bool  move_backwards = false;
 bool  move_head      = false;
-bool  pot_fields     = false;
+bool  pot_fields     = true;
 bool  last_pose      = false;
 
 bool new_legs_pose = false;

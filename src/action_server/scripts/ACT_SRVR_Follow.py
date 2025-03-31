@@ -149,13 +149,14 @@ class Goto_human(smach.State):
         self.last_legs=[]
     def execute(self, userdata):
         rospy.loginfo('STATE : Human_found,Navigating to last know position')
-        pose_robot,quat_robot= tf_man.getTF('base_link')
+        tf_man.pub_static_tf(np.asarray((1.0,0.0,0.0)),np.asarray((0.0,0.0,1.0,0.0)) ,point_name='move_base_goal', ref='human')
+        rospy.sleep(0.25)
+        _,quat= tf_man.getTF('move_base_goal')
         head.set_joint_values([0.0,-0.7 ])
         rospy.sleep(0.75)
-        yaw_robot=tf.transformations.euler_from_quaternion(quat_robot)[2]
-        print (pose_robot[:2], yaw_robot, 'robot pose')
-        tf_man.pub_static_tf(np.asarray((1.0,0.0,0.0)),point_name='move_base_goal', ref='human')
-        res=move_base(1.00,0.0,yaw_robot,'human')
+        yaw=tf.transformations.euler_from_quaternion(quat)[2]
+        print (yaw,'yaw \n \n\n \n')
+        res=move_base(1.50,0.0,yaw,'human')
         head.to_tf('human')
         print (res)
         if res:
@@ -237,7 +238,7 @@ if __name__ == '__main__':
     
         
         # Other states
-        smach.StateMachine.add("INITIAL", Initial(), transitions={'failed': 'INITIAL', 'succ': 'FIND_LEGS'})
+        smach.StateMachine.add("INITIAL", Initial(), transitions={'failed': 'INITIAL', 'succ': 'FIND_HUMAN'})
         smach.StateMachine.add("WAIT_PUSH_HAND", Wait_push_hand(), transitions={'failed': 'WAIT_PUSH_HAND', 'succ': 'FIND_LEGS', 'tries': 'failed'})
         smach.StateMachine.add("FIND_HUMAN", Find_human(), transitions={'failed': 'FIND_HUMAN', 'succ': 'GOTO_HUMAN', 'tries': 'failed'})
         smach.StateMachine.add("FIND_LEGS", Find_legs(), transitions={'failed': 'FIND_LEGS', 'succ': 'FOLLOW_HUMAN', 'tries': 'failed'})
