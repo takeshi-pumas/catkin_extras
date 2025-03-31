@@ -10,62 +10,43 @@ from face_recog.srv import FaceRecognition, FaceRecognitionRequest
 import sys
 
 # Inicializar ROS y la conversión de imágenes
-rospy.init_node("face_recognition_client")
+# rospy.init_node("face_recognition_client")
 bridge = CvBridge()
 IMAGE_TOPIC = "/hsrb/head_rgbd_sensor/rgb/image_raw"
 
 
-def capture_frame():
+def capture_frame(image_topic: str = IMAGE_TOPIC):
     """Espera y obtiene una imagen del sensor."""
     rospy.loginfo("Esperando una imagen...")
-    image_msg = rospy.wait_for_message(IMAGE_TOPIC, Image)
+    image_msg = rospy.wait_for_message(image_topic, Image)
     return image_msg
 
 
-def recognize_face():
+def recognize_face(image: Image):
     """Envía una imagen al servicio de reconocimiento de caras."""
     rospy.wait_for_service("/recognize_face")
     try:
         recognize_service = rospy.ServiceProxy("/recognize_face", FaceRecognition)
         request = FaceRecognitionRequest()
-        request.input_img = capture_frame()  # Obtener la imagen más reciente
+        request.input_img = image  # Obtener la imagen más reciente
 
         response = recognize_service(request)
         rospy.loginfo(f"Caras reconocidas: {', '.join([name.data for name in response.name_response])}")
+        return response.name_response
     except rospy.ServiceException as e:
         rospy.logerr(f"Error llamando al servicio: {e}")
 
 
-def train_face():
+def train_face(image: Image):
     """Envía una imagen al servicio de entrenamiento."""
     rospy.wait_for_service("/new_face")
     try:
         train_service = rospy.ServiceProxy("/new_face", FaceRecognition)
         request = FaceRecognitionRequest()
-        request.input_img = capture_frame()  # Obtener la imagen más reciente
+        request.input_img = image  # Obtener la imagen más reciente
         request.name_request = [String(input("Ingrese el nombre de la persona: "))]
 
         response = train_service(request)
         rospy.loginfo(f"Respuesta del entrenamiento: {response.name_response[0].data}")
     except rospy.ServiceException as e:
         rospy.logerr(f"Error llamando al servicio: {e}")
-
-
-def main():
-    """Bucle principal para seleccionar reconocimiento o entrenamiento."""
-    while not rospy.is_shutdown():
-        mode = input("Presiona 0 para reconocer, 1 para entrenar, q para salir: ").strip()
-
-        if mode == "0":
-            recognize_face()
-        elif mode == "1":
-            train_face()
-        elif mode.lower() == "q":
-            rospy.loginfo("Saliendo del programa.")
-            sys.exit(0)
-        else:
-            rospy.logwarn("Opción inválida. Intenta de nuevo.")
-
-
-if __name__ == "__main__":
-    main()

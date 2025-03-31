@@ -4,6 +4,7 @@ import smach
 from common.states import WaitPushHand, WaitDoorOpen
 from common.hsr_functions import Talker, Gaze
 from common.ros_functions import TFManager
+from common.vision_functions import capture_frame, recognize_face
 
 
 if __name__ == '__main__':
@@ -80,23 +81,30 @@ if __name__ == '__main__':
     #     (1.0, 0.0, 2.0)   # Up
     # ]
 
-    for i in range(1, 6):
-        print(f"Looking at object{i}")
-        gaze.look_at_frame(f"object{i}") #(*pos, frame='map')
-        rospy.sleep(4.0)
+    # for i in range(1, 6):
+    #     print(f"Looking at object{i}")
+    #     gaze.look_at_frame(f"object{i}") #(*pos, frame='map')
+    #     rospy.sleep(4.0)
+
+    image = capture_frame()
+    recognized_names = recognize_face(image)
+    print(f"Recognized names: {', '.join([name.data for name in recognized_names])}")
+    # voice.talk(f"Recognized names: {[name.data for name in recognized_names].join(', ')}")
+    voice.talk(f"Recognized names {', '.join([name.data for name in recognized_names])}", timeout=3.0)
 
     sm = smach.StateMachine(outcomes=['succ', 'failed'])
-
-
-
-
-
 
     # print("Posicion y rotacion del objeto ahora con respecto a map",new_pos, new_rot)
 
     with sm:
         smach.StateMachine.add('WAIT_PUSH_HAND', 
-        WaitPushHand(talker = voice, talk_message=" ", timeout=1000), transitions={'succ': 'WAIT_DOOR_OPEN', 'failed': 'WAIT_PUSH_HAND', 'ended': 'failed'})
+        WaitPushHand(talker = voice, talk_message="push hand", timeout=1000, push_threshold=10.0), 
+        transitions={'succ': 'WAIT_DOOR_OPEN', 
+                     'failed': 'WAIT_PUSH_HAND', 
+                     'ended': 'failed'})
         smach.StateMachine.add('WAIT_DOOR_OPEN', 
-        WaitDoorOpen(talker = voice, talk_message=" ", timeout=1000), transitions={'succ': 'succ', 'failed': 'WAIT_DOOR_OPEN', 'ended': 'failed'})
+        WaitDoorOpen(talker = voice, talk_message=" ", timeout=1000), 
+        transitions={'succ': 'succ', 
+                     'failed': 'WAIT_DOOR_OPEN', 
+                     'ended': 'failed'})
     outcome = sm.execute()
