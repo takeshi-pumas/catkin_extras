@@ -57,7 +57,7 @@ def recognize_callback(req):
 
     if not face_locations:
         return FaceRecognitionResponse(
-            name_response=[String("NO_FACE")], 
+            name_response=[String("no_face")], 
             features=[], 
             bounding_boxes=[]
         )

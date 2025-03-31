@@ -98,12 +98,12 @@ if __name__ == '__main__':
 
     with sm:
         smach.StateMachine.add('WAIT_PUSH_HAND', 
-        WaitPushHand(talker = voice, talk_message="push hand", timeout=1000, push_threshold=10.0), 
+        WaitPushHand(talker = voice, talk_message="Push my hand to begin", timeout=1000, push_threshold=10.0), 
         transitions={'succ': 'WAIT_DOOR_OPEN', 
                      'failed': 'WAIT_PUSH_HAND', 
                      'ended': 'failed'})
         smach.StateMachine.add('WAIT_DOOR_OPEN', 
-        WaitDoorOpen(talker = voice, talk_message=" ", timeout=1000), 
+        WaitDoorOpen(talker = voice, talk_message="open the door", timeout=1000), 
         transitions={'succ': 'succ', 
                      'failed': 'WAIT_DOOR_OPEN', 
                      'ended': 'failed'})

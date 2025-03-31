@@ -25,7 +25,7 @@ class WaitPushHand(smach.State):
             timeout: Maximum time to wait for push in seconds
             push_threshold: Force threshold to detect push
         """
-        smach.State.__init__(self, outcomes=['succ', 'failed', 'ended'])
+        smach.State.__init__(self, outcomes=['succ', 'failed', 'aborted'])
 
         self.push_threshold = push_threshold
         self.timeout = timeout
@@ -72,7 +72,7 @@ class WaitPushHand(smach.State):
             
             rospy.sleep(0.1)
         
-        return 'ended'
+        return 'aborted'
     
     def __del__(self):
         """Cleanup subscriber on deletion"""
@@ -95,7 +95,7 @@ class WaitDoorOpen(smach.State):
             talk_message: Message to speak when waiting for door
             timeout: Maximum time to wait for door to open in seconds
         """
-        smach.State.__init__(self, outcomes=['succ', 'failed', 'ended'])
+        smach.State.__init__(self, outcomes=['succ', 'failed', 'aborted'])
 
         self.timeout = timeout
         self.talker = talker
@@ -153,7 +153,7 @@ class WaitDoorOpen(smach.State):
             
             rospy.sleep(0.1)
         
-        return 'ended'
+        return 'aborted'
     
     def __del__(self):
         """Cleanup subscriber on deletion"""
@@ -169,9 +169,10 @@ class GotoPlace(smach.State):
                  theta: Optional[float] = None,
                  location: Optional[str] = None,
                  talker: Optional[Talker] = None,
-                 start_message: str = "Going to destination",
-                 end_message: str = "Arrived at destination",
-                 timeout: float = 90.0):
+                 start_message: Optional[str] = None,
+                 end_message: Optional[str] = None,
+                 timeout: float = 90.0,
+                 debug: bool = False):
         """
         Initialize GotoPlace state
         
@@ -185,8 +186,9 @@ class GotoPlace(smach.State):
             start_message: Message to speak when starting navigation
             end_message: Message to speak when navigation completes
             timeout: Maximum time to wait for navigation
+            debug: Dontify if debug mode is enabled
         """
-        smach.State.__init__(self, outcomes=['succ', 'failed'])
+        smach.State.__init__(self, outcomes=['succ', 'failed', 'aborted'])
         
         if location is None and (x is None or y is None or theta is None):
             raise ValueError("Must provide either location name or x,y,theta coordinates")
@@ -200,6 +202,7 @@ class GotoPlace(smach.State):
         self.start_message = start_message
         self.end_message = end_message
         self.timeout = timeout
+        self.debug = debug
 
     def execute(self, userdata) -> str:
         """Execute the navigation state"""
@@ -211,6 +214,14 @@ class GotoPlace(smach.State):
                 self.talker.talk(self.start_message)
             except Exception as e:
                 rospy.logwarn(f"Failed to announce start: {e}")
+        
+        if self.debug:
+            if self.talker and self.end_message:
+                    try:
+                        self.talker.talk(self.end_message)
+                    except Exception as e:
+                        rospy.logwarn(f"Failed to announce completion: {e}")
+            return 'succ'
 
         try:
             # Navigate using either location name or coordinates
@@ -234,6 +245,6 @@ class GotoPlace(smach.State):
             else:
                 return 'failed'
                 
-        except Exception as e:
-            rospy.logerr(f"Navigation failed: {e}")
-            return 'failed'
+        except rospy.ROSInterruptException:
+            # rospy.logerr(f"Navigation failed: {e}")
+            return 'aborted'

@@ -1,4 +1,5 @@
 import rospy
+# import re
 import actionlib
 import numpy as np
 import tf2_ros
@@ -27,17 +28,47 @@ class Talker:
         except Exception as e:
             rospy.logerr(f"Failed to initialize Voice: {e}")
             raise
+
+    def estimate_timeout(self, sentence: str, speed: float = 10) -> float:
+        """
+        Estimate timeout based on sentence length and complexity.
+        
+        Args:
+            sentence: Text to speak
+            
+        Returns:
+            float: Estimated timeout in seconds
+        """
+        num_characters = len(sentence)
+        
+        # Penalización por signos de puntuación (simula pausas)
+        pauses = {
+            ',': 0.2,   # Pequeña pausa
+            '.': 0.4,   # Fin de oración
+            '!': 0.3,   # Énfasis
+            '?': 0.3,   # Pregunta
+            '...': 0.5  # Suspenso
+        }
+        
+        # Contar pausas
+        pause_time = sum(sentence.count(p) * t for p, t in pauses.items())
+        
+        # Estimar tiempo de habla
+        time_speech = num_characters / speed
+        
+        return time_speech + pause_time
+    
     @staticmethod
     def _fillMsg(msg):
         """Create a Voice message"""
         voice_msg = Voice()
         voice_msg.interrupting = False
-        voice_msg.queueing = False
+        voice_msg.queueing = True
         voice_msg.language = 0
         voice_msg.sentence = msg
         return voice_msg
 
-    def talk(self, sentence: str, timeout: float = 0.0) -> bool:
+    def talk(self, sentence: str, timeout: float = 3.0) -> bool:
         """
         Send a talk request and wait for result (using publisher)
         
@@ -55,9 +86,10 @@ class Talker:
             
             rospy.loginfo(f"Sent sentence: {sentence}")
             if timeout > 0.0:
-                rospy.sleep(timeout)  # Esperamos por el tiempo que definimos
+                timeout = self.estimate_timeout(sentence, speed=10)
+                rospy.sleep(timeout)
             
-            return True  # Suponemos que el mensaje fue publicado correctamente
+            return True
             
         except Exception as e:
             rospy.logwarn(f"Failed to send talk message: {e}")

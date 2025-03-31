@@ -2,10 +2,10 @@ import rospy
 import yaml
 import rospkg
 import numpy as np
+from std_msgs.msg import Empty
 from geometry_msgs.msg import Twist, Point, Quaternion, PoseStamped
 from actionlib_msgs.msg import GoalStatus
 from typing import Tuple
-from geometry_msgs.msg import  Point, Quaternion
 from tf import transformations
 
 # Pumas Navigation Functionalities
@@ -25,7 +25,7 @@ class VelocityMovement:
     def move(self, duration: float = 0.5):
         """Execute movement for specified duration"""
         start_time = rospy.Time.now().to_sec()
-        while rospy.Time.now().to_sec() - start_time < duration:
+        while (rospy.Time.now().to_sec() - start_time < duration) and not rospy.is_shutdown():
             self.vel_pub.publish(self.vel)
             rospy.sleep(0.1)
 
@@ -65,6 +65,7 @@ class Navigation:
         self._vel_pub = rospy.Publisher(cmd_vel_topic, Twist, queue_size=10)
         self._nav_pub = rospy.Publisher('/move_base_simple/goal', PoseStamped, queue_size=10)
         self._status_sub = rospy.Subscriber('/navigation/status', GoalStatus, self._nav_status_cb)
+        self._stop_pub = rospy.Publisher('/simple_move/stop', Empty, queue_size=1)
         
         # Movement handlers
         self._velocity = VelocityMovement(self._vel_pub)
@@ -131,4 +132,8 @@ class Navigation:
                 rospy.logwarn("Navigation timeout")
                 return False
             rate.sleep()
+        
+        self._stop_pub(Empty())
+        return False
+
 
