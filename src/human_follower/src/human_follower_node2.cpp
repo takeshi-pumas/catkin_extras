@@ -23,10 +23,10 @@ std::string laser_topic = "/hsrb/base_scan";
 //Potential fields can be used only with an omnidirectional base.
 float repulsiveForceX = 0.0;
 float repulsiveForceY = 0.0;
-float KInfRep = 0.03;
+float KInfRep = 0.00;
 
 //Values passed as parameters
-float control_alpha  = 0.6548;// 0.6548 ;//= 0.9; // = 1.2
+float control_alpha  = 1.2;// 0.6548 ;//= 0.9; // = 1.2
 float control_beta   = 0.3;
 float max_linear     = 0.3;
 float max_angular    = 0.7; //0.5
@@ -34,7 +34,7 @@ float dist_to_human  = 1.0;
 
 bool  move_backwards = false;
 bool  move_head      = false;
-bool  pot_fields     = true;
+bool  pot_fields     = false;
 bool  last_pose      = false;
 
 bool new_legs_pose = false;
