@@ -226,7 +226,7 @@ class GotoPlace(smach.State):
         try:
             # Navigate using either location name or coordinates
             if self.location:
-                success = self.navigation.move_to(known_location=self.location, 
+                success = self.navigation.move_to(location=self.location, 
                                                   timeout=self.timeout)
             else:
                 success = self.navigation.move_to(goal_x=self.x,

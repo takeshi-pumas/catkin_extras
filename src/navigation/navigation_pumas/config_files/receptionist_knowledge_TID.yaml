@@ -1,0 +1,13 @@
+places:
+  Place_1:
+    location:
+      theta: 1.52
+      x: 5.21
+      y: -0.74
+    occupied: ''
+  Place_2:
+    location:
+      theta: 1.58
+      x: 4.48
+      y: -0.71
+    occupied: ''

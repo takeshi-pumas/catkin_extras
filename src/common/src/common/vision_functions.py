@@ -64,14 +64,17 @@ def recognize_face(image: Image, timeout: float = 5.0) -> List[String]:
         return []
 
 
-def train_face(image: Image):
+def train_face(image: Image, name: str):
     """Envía una imagen al servicio de entrenamiento."""
     rospy.wait_for_service("/new_face")
     try:
         train_service = rospy.ServiceProxy("/new_face", FaceRecognition)
         request = FaceRecognitionRequest()
         request.input_img = image  # Obtener la imagen más reciente
-        request.name_request = [String(input("Ingrese el nombre de la persona: "))]
+        if name:
+            request.name_request = [String(name)]
+        else: 
+            raise NameError
 
         response = train_service(request)
         rospy.loginfo(f"Respuesta del entrenamiento: {response.name_response[0].data}")

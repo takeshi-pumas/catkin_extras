@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<launch>
+    <!-- Argumentos para los archivos de configuración -->
+    <arg name="locations_file" default="/known_locations_TID.yaml" />
+    <arg name="knowledge_file" default="/receptionist_knowledge_TID.yaml" />
+
+    <!-- Nodo de location server -->
+    <node pkg="known_locations_tf_server" type="location_server_gui.py" name="location_server" output="screen">
+        <param name="locations_file_name" value="$(arg locations_file)" />
+        <param name="knowledge_file_name" value="$(arg knowledge_file)" />
+    </node>
+</launch>

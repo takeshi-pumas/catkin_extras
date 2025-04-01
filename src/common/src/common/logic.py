@@ -35,6 +35,7 @@ class Receptionist:
         name = name.lower()
         self.active_guest = self.add_new_person(name)
         self.active_seat = self.get_any_available_seat()
+        print(self.active_seat)
     
     def add_guest_drink(self, drink):
         drink = drink.lower()
@@ -75,10 +76,10 @@ class Receptionist:
         return self.people.get(self.active_guest, {}).get("name")
 
     def get_any_available_seat(self):
-        seats = self.__get_available_seats()
+        seats = self._get_available_seats()
         return random.choice(seats) if seats else None
 
-    def __get_available_seats(self):
+    def _get_available_seats(self):
         return [place for place, info in self.places.items() if not info.get("occupied")]
 
     def get_guest_by_name(self, guest_name):

@@ -20,10 +20,13 @@ confirmation = ('yes', 'robot yes','yeah',
 # Initialize objects
 voice = Talker()
 tf_manager = TFManager()
-omni_base = Navigation()
-party = Receptionist()
+omni_base = Navigation(locations_file='/known_locations_TID.yaml')
+party = Receptionist("receptionist_knowledge_TID.yaml")
 head = Gaze()
 arm = ArmController(omni_base, tf_manager)
+
+# Enable debug flag to avoid navigation
+debug = False
 
 def publish_places():
     """Publish known locations to TF"""
@@ -31,7 +34,7 @@ def publish_places():
     for i in range(len(places)):
         tf_manager.publish_transform(
             position=[locations[i][0], locations[i][1], 0.0],
-            rotation=[0.0, 0.0, 0.0],
+            rotation=[0.0, 0.0, locations[i][2]],
             child_frame=places[i],
             parent_frame="map",
             static=True
@@ -198,6 +201,8 @@ class New_face(smach.State):
             if self.tries == 3:
                 voice.talk ('I didnt undestand your name, lets continue')
                 userdata.name = 'someone'
+                image = capture_frame()
+                train_face(image, userdata.name)
                 # train_face(userdata.face_img, userdata.name )
                 party.add_guest(userdata.name)
                 self.tries = 0
@@ -205,7 +210,6 @@ class New_face(smach.State):
             
             #Asking for name
             voice.talk('Please, tell me your name')
-            #rospy.sleep(1.0)
             # speech = get_keywords_speech(10)
             speech = 'john'
             # in case thinks like I am , my name is . etc
@@ -217,13 +221,11 @@ class New_face(smach.State):
                 return 'failed'
 
             voice.talk(f'Is {name} your name?')
-            #rospy.sleep(2.0)
             # speech = get_keywords_speech(10)
             speech = 'yes'
             print (speech)
 
-            speech = speech.split(' ')
-            # confirm = match_speech(speech, ('yes','yeah','jack','juice'))
+            # speech = speech.split(' ')
 
             if speech not in confirmation:
                 voice.talk ('lets try again')
@@ -232,7 +234,8 @@ class New_face(smach.State):
             userdata.name = name
             voice.talk (f'Nice to Meet You {userdata.name}')
             party.add_guest(userdata.name)
-            # train_face(userdata.face_img, userdata.name)
+            image = capture_frame()
+            train_face(image, userdata.name)
             self.tries = 0
             return 'succ'
         except rospy.ROSInterruptException:
@@ -379,10 +382,16 @@ class Find_sitting_place(smach.State):
                 guest = party.get_active_guest_name()
                 
                 # Get angle from robot to place and turn base
-                traslation, _ = tf_manager.get_transform(target_frame = place,
+                traslation, rotation = tf_manager.get_transform(target_frame = place,
                                         source_frame = 'base_link')
                 
+                from tf.transformations import euler_from_quaternion
+                _, _, theta = euler_from_quaternion(rotation)
+                
+                
                 angle = np.arctan2(traslation[1], traslation[0])
+
+                angle -= theta + 3.14
                 head.request_base_turn(angle)
 
                 head.set_named_target('neutral')
@@ -442,8 +451,8 @@ class Find_guests(smach.State):
             # First try: find first guest
             # Second try: find second guest
 
-            guest_name = party.people[f'Guest_{self.tries}'].name
-            guest_loc = party.people[f'Guest_{self.tries}'].location
+            guest_name = party.people[f'Guest_{self.tries}']['name']
+            guest_loc = party.people[f'Guest_{self.tries}']['location']
 
             voice.talk(f'Looking for {guest_name} on: {guest_loc}')
             tf_host = guest_loc.replace('_', '_face')
@@ -521,9 +530,6 @@ if __name__ == '__main__':
 
     with sm:
         # State machine for Receptionist task
-
-        # Enable debug flag to avoid navigation
-        debug = True
         if debug:
             # omni_base.set_debug(debug)
             voice.talk('Debug mode activated, no navigation will be performed', timeout=4.0)
