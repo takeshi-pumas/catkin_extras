@@ -443,7 +443,7 @@ class Return_Living_Room(smach.State):
     def execute(self, userdata):
         self.tries += 1
         talk("I will return to start location")
-        res = omni_base.move_base(known_location='living_room', time_out=200)
+        res = omni_base.move_base(known_location='start_point', time_out=200)
         print(res)
         if res:
             talk("Task completed")
