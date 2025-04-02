@@ -235,7 +235,7 @@ if __name__ == '__main__':
     
         
         # Other states
-        smach.StateMachine.add("INITIAL", Initial(), transitions={'failed': 'INITIAL', 'succ': 'FIND_HUMAN'})
+        smach.StateMachine.add("INITIAL", Initial(), transitions={'failed': 'INITIAL', 'succ': 'FIND_LEGS'})
         smach.StateMachine.add("WAIT_PUSH_HAND", Wait_push_hand(), transitions={'failed': 'WAIT_PUSH_HAND', 'succ': 'FIND_LEGS', 'tries': 'failed'})
         smach.StateMachine.add("FIND_HUMAN", Find_human(), transitions={'failed': 'FIND_HUMAN', 'succ': 'GOTO_HUMAN', 'tries': 'failed'})
         smach.StateMachine.add("FIND_LEGS", Find_legs(), transitions={'failed': 'FIND_LEGS', 'succ': 'FOLLOW_HUMAN', 'tries': 'failed'})

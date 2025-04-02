@@ -218,6 +218,7 @@ class Pre_pickup(smach.State):
         talk(f'Picking up luggage, please stay where you are')
         rospy.sleep(0.7)
         global target_object, pca_angle
+        target_object=self.target
         head.set_named_target('neutral')
         rospy.sleep(0.5)
         clear_octo_client()
@@ -244,7 +245,7 @@ class Pre_pickup(smach.State):
                 _,rot = tf_man.getTF(target_frame='base_link', ref_frame='map')
 
                 if type(trans) is bool:
-                    trans,_ = tf_man.getTF(target_frame='static029_plate', ref_frame='hand_palm_link')
+                    trans,_ = tf_man.getTF(target_frame='bag', ref_frame='hand_palm_link')
                     _,rot = tf_man.getTF(target_frame='base_link', ref_frame='map')
                     print('no tf')
                     return 'failed'
@@ -313,12 +314,12 @@ class Pickup_two(smach.State):
         smach.State.__init__(
             self, outcomes=['succ', 'failed', 'tries'])
         self.tries = 0
-        self.target='object_0'
+        self.target='bag'
     def execute(self, userdata):
         rospy.loginfo('State :  PICKUP ')
         clear_octo_client()
         self.tries += 1
-        target_object=self.target
+        
 
         if self.tries >= 4:
             self.tries = 0
@@ -352,7 +353,7 @@ class Pickup_two(smach.State):
             X, Y, Z = trans
             rospy.loginfo("Pose: {:.2f}, {:.2f}, angle {:.2f}, target obj frame {}".format(X, Y , eT,target_object))
             
-            if abs(eX) <=0.05 :
+            if abs(eX) <=0.25:
                 print ('here')
                 eX = 0
             if abs(eY) <=0.05  :
@@ -415,8 +416,8 @@ class Post_Pickup(smach.State):
         talk('Rotating to previous human location found')
         rospy.sleep(0.7)
         
-        #res = new_move_D_to(tf_name='human',d_x=15)
-        omni_base.move_d_to(target_distance= 1.5, target_link='human')
+        res = new_move_D_to(tf_name='human',d_x=15)
+        #omni_base.move_d_to(target_distance= 1.5, target_link='human')
         if res:
             return 'succ'
 

@@ -4,19 +4,20 @@ People:
     location: Place_3
     name: john
   Guest_1:
-    description: yeah has arrived... he is a Man... I believe he is  around 24 years
-      old... I would say he is a bit sad. I might guess he is of white descent.
+    description: a has arrived... he is a Man... I believe he is  around 21 years
+      old... I would say he is a bit neutral. I might guess he is of latino hispanic
+      descent.
     drink: coke
     interest: null
-    location: Place_1
-    name: yeah
+    location: Place_2
+    name: a
   Guest_2:
-    description: yeah has arrived... he is a Man... I believe he is  around 29 years
-      old... I would say he is a bit sad. I might guess he is of white descent.
+    description: john has arrived... he is a Man... I believe he is  around 24 years
+      old... I would say he is a bit neutral. I might guess he is of white descent.
     drink: lipton
     interest: null
-    location: Place_2
-    name: yeah
+    location: Place_1
+    name: john
 Places:
   Place_0:
     location:
@@ -29,13 +30,13 @@ Places:
       theta: -0.05
       x: -0.33
       y: -1.7
-    occupied: Guest_1
+    occupied: Guest_2
   Place_2:
     location:
       theta: -1.51
       x: -0.82
       y: -1.61
-    occupied: Guest_2
+    occupied: Guest_1
   Place_3:
     location:
       theta: 3.1
