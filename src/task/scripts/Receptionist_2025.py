@@ -24,13 +24,14 @@ class Initial(smach.State):
         #drinks=['coke','juice','beer', 'water', 'soda', 'wine', 'i want a', 'i would like a']
         #drinks = ['coke','juice','milk', 'water', 'soda', 'wine', 
         #          'i want a', 'i would like a', 'tea', 'icedtea', 'cola', 'redwine', 'orangejuice', 'tropicaljuice']
-        drinks = ['water', 'soda', 'coke', 'juice', 'iced tea', 'i want a', 'i would like a']
+        drinks = ['water', 'soda', 'coke', 'juice', 'iced tea', 'i want a', 'i would like a','lipton']
+        interest = ['movies','music','food','cooking','programming','go out','sports']
         #names=['rebeca','ana','jack', 'michael', ' my name is' , 'i am','george','mary','ruben','oscar','yolo','mitzi']
         #names = [' my name is' , 'i am','adel', 'angel', 'axel', 
         #         'charlie', 'jane', 'john', 'jules', 'morgan', 'paris', 'robin', 'simone', 'jack']
         names = ['my name is', 'i am','john', 'jack', 'paris', 'charlie', 'simone', 'robin', 'jane', 'jules']
         confirmation = ['yes','no', 'robot yes', 'robot no','not','now','nope','yeah']                     
-        gram = drinks + names + confirmation                                                                                
+        gram = drinks + names + confirmation + interest                                                                               
         
         if self.tries == 1:
             set_grammar(gram)  ##PRESET DRINKS
@@ -298,7 +299,22 @@ class Get_interest(smach.State):
 
         voice.talk('which interest do you have?')
         
-        response = get_keywords_speech(10)
+        interest = get_keywords_speech(10)
+
+        if len(interest.split(' '))>1: interest=(interest.split(' ')[-1])
+        print(interest)
+        rospy.sleep(0.5)
+
+        if interest=='timeout':
+            voice.talk("Sorry, couldn't hear you. Please speak louder.")
+            return 'failed' 
+        voice.talk(f'Did you say {interest}?')
+
+        #rospy.sleep(2.5)
+        confirmation = get_keywords_speech(10)
+        confirmation = confirmation.split(' ')
+        confirm = match_speech(confirmation, ['yes','yeah','jack','juice'])
+        if not confirm: return 'failed'
         
         #TODO: save interest response to the yaml
 
@@ -445,10 +461,11 @@ class Check_party(smach.State):
 
         if party.guest_assigned == 1:
             return 'guest_done'
-        elif party.guest_assigned == 2:
-            return 'party_done'
+        
+        # elif party.guest_assigned == 2:
+        #     return 'party_done'
         else:
-            return 'failed'
+            return 'party_done'
 
 
 
@@ -479,7 +496,7 @@ class Find_guests(smach.State):
         if res is not None:
             person_name = res.Ids.ids
             if (person_name == guest_name):
-                # userdata.name_like_host = person_name
+                userdata.name_like_host = 'Joel'
                 return 'succ'
             else:
                 return 'failed'
@@ -490,7 +507,7 @@ class Find_guests(smach.State):
         
 class Introduce_guest(smach.State):
     def __init__(self):
-        smach.State.__init__(self, outcomes=['succ', 'failed', ],
+        smach.State.__init__(self, outcomes=['succ', 'failed'],
                              input_keys=['name_like_host'])
         self.tries = 0
 
@@ -501,7 +518,7 @@ class Introduce_guest(smach.State):
         self.tries += 1
         print('Try', self.tries, 'of 3 attempts')
 
-        voice.talk(f'Host like name is {userdata.name_like_host}')
+        #voice.talk(f'Host like name is {userdata.name_like_host}')
 
         active_guest = party.get_active_guest_name()
         takeshi_line = party.get_active_guest_description()                    
@@ -536,8 +553,7 @@ if __name__ == '__main__':
     print("Takeshi STATE MACHINE...")
     # State machine, final state "END"
     sm = smach.StateMachine(outcomes=['END'])
-
-    # sm.userdata.clear = False
+    sm.userdata.name_like_host = "Joel"
     #sis = smach_ros.IntrospectionServer(
     #    'SMACH_VIEW_SERVER', sm, '/SM_RECEPTIONIST')
     #sis.start()
@@ -575,7 +591,7 @@ if __name__ == '__main__':
         smach.StateMachine.add("FIND_SITTING_PLACE", Find_sitting_place(),
                                transitions={'failed': 'FIND_SITTING_PLACE', 'succ': 'CHECK_PARTY'})
         smach.StateMachine.add("CHECK_PARTY", Check_party(),
-                               transitions={'failed': 'CHECK_PARTY', 'guest_done': 'GOTO_DOOR', 'party_done': 'FIND_GUEST'})
+                               transitions={'failed': 'CHECK_PARTY', 'guest_done': 'GOTO_DOOR', 'party_done': 'INTRODUCE_GUEST'})
         smach.StateMachine.add("GOTO_DOOR", Goto_door(),            
                                transitions={'failed': 'GOTO_DOOR', 'succ': 'WAIT_DOOR_OPENED'})
         

@@ -84,7 +84,7 @@ recognize_face = rospy.ServiceProxy('recognize_face', RecognizeFace)            
 train_new_face = rospy.ServiceProxy('new_face', RecognizeFace)                          #FACE RECOG
 analyze_face = rospy.ServiceProxy('analyze_face', RecognizeFace)    ###DEEP FACE ONLY
 classify_client = rospy.ServiceProxy('/classify', Classify)             #YOLO OBJ RECOG
-
+classify_client_dino = rospy.ServiceProxy('grounding_dino_detect', Classify_dino)
 
 
 classify_clnt_stickler = rospy.ServiceProxy('/classifystick', Classify)
@@ -747,6 +747,54 @@ def removeBackground(points_msg,distance = 2):
     #img_corrected = img_corrected.astype(np.uint8)
     masked_image = cv2.bitwise_and(rgb_image, rgb_image, mask=img_corrected.astype(np.uint8))
     return rgb_image, masked_image
+
+
+#------------------------------------------------------
+def get_luggage_tf():
+    prompt = "bag"     #put here favorite drink
+    img=rgbd.get_image()
+    #cv2.imwrite('img.png',img)
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    # Convert image to ROS format
+    ros_image = bridge.cv2_to_imgmsg(img, encoding="bgr8")
+    points= rgbd.get_points()
+    # Create a proper ROS String message
+    prompt_msg = String()
+    prompt_msg.data = prompt
+
+    rospy.wait_for_service('grounding_dino_detect')
+    try:
+        response = classify_client_dino(ros_image, prompt_msg)
+        if response.image is None or response.image.data == b'':
+            print("Error: Received an empty image response!")
+        else:
+            debug_image = bridge.imgmsg_to_cv2(response.image, desired_encoding="rgb8")
+
+            # Verificar si el bounding box está vacío
+            if len(response.bounding_boxes.data) == 0:
+                print("No se detectó ningún objeto.")
+                return debug_image,False
+            else:
+                print("Bounding box recibido:", response.bounding_boxes.data)
+                x_min, y_min, x_max, y_max = response.bounding_boxes.data
+
+                # Calcular el centroide 3D dentro del bounding box
+                cc = [
+                    np.nanmean(points['x'][y_min:y_max, x_min:x_max]),
+                    np.nanmean(points['y'][y_min:y_max, x_min:x_max]),
+                    np.nanmean(points['z'][y_min:y_max, x_min:x_max])
+                ]
+                
+                tf_man.pub_static_tf(pos= cc , rot=[0,0,0,1], ref="head_rgbd_sensor_rgb_frame", point_name=prompt )   # TODO ADD PCA
+                tf_man.change_ref_frame_tf(prompt)
+                return debug_image,True
+
+
+    except rospy.ServiceException as e:
+        print(f"Service call failed: {e}")
+
+
+
 
 
 #------------------------------------------------------

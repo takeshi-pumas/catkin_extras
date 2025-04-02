@@ -1,3 +1,4 @@
+
 # -*- coding: utf-8 -*-
 #!/usr/bin/env python
     
@@ -251,13 +252,13 @@ def callback(points_msg):
                 rospy.logerr("Error llamando al servicio: %s" % e)
 
         elif key == 'd':        # Usar Dino para object classification by prompt
-            prompt = "coke"     #put here favorite drink
+            prompt = "bag"     #put here favorite drink
             img=rgbd.get_image()
             #cv2.imwrite('img.png',img)
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             # Convert image to ROS format
             ros_image = bridge.cv2_to_imgmsg(img, encoding="bgr8")
-
+            points= rgbd.get_points()
             # Create a proper ROS String message
             prompt_msg = String()
             prompt_msg.data = prompt
@@ -265,13 +266,30 @@ def callback(points_msg):
             rospy.wait_for_service('grounding_dino_detect')
             try:
                 response = classify_client_dino(ros_image, prompt_msg)
-                print("Result:", response.result.data,"for drink:",prompt)
                 if response.image is None or response.image.data == b'':
                     print("Error: Received an empty image response!")
                 else:
                     debug_image = bridge.imgmsg_to_cv2(response.image, desired_encoding="rgb8")
-                    cv2.imshow('our of res', debug_image)
-                    cv2.waitKey(1)  # Allow OpenCV to refresh window
+
+                    # Verificar si el bounding box está vacío
+                    if len(response.bounding_boxes.data) == 0:
+                        print("No se detectó ningún objeto.")
+                    else:
+                        print("Bounding box recibido:", response.bounding_boxes.data)
+                        x_min, y_min, x_max, y_max = response.bounding_boxes.data
+
+                        # Calcular el centroide 3D dentro del bounding box
+                        cc = [
+                            np.nanmean(points['x'][y_min:y_max, x_min:x_max]),
+                            np.nanmean(points['y'][y_min:y_max, x_min:x_max]),
+                            np.nanmean(points['z'][y_min:y_max, x_min:x_max])
+                        ]
+                        
+                        tf_man.pub_static_tf(pos= cc , rot=[0,0,0,1], ref="head_rgbd_sensor_rgb_frame", point_name=prompt )   # TODO ADD PCA
+                        tf_man.change_ref_frame_tf(prompt)
+
+                        cv2.imshow('our of res', debug_image)
+                        cv2.waitKey(1)  # Allow OpenCV to refresh window
 
             except rospy.ServiceException as e:
                 print(f"Service call failed: {e}")
@@ -304,4 +322,3 @@ def listener():
 
 if __name__ == '__main__':
     listener()
-

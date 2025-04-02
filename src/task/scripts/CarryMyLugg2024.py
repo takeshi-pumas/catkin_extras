@@ -168,39 +168,50 @@ class Scan_floor(smach.State):
         if self.tries==3:
             self.tries=0
             return 'tries'
-        
-        
-        ##### Segment and analyze
-        #img=rgbd.get_image()
-        print ('got image for segmentation')
-        ##### Segment and analyze
         rospy.sleep(1.5)
-        request= segmentation_server.request_class() 
-        request.height.data=-0.05
-        res=segmentation_server.call(request)
-        img=bridge.imgmsg_to_cv2(res.im_out.image_msgs[0])
-        save_image(img,name="segmentCarry")
-        print (res.poses.data)
-        #res=segmentation_server.call()
-        #origin_map_img=[round(img_map.shape[0]*0.5) ,round(img_map.shape[1]*0.5)]
-        #if img_map[origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m)]!=0:#### Yes axes seem to be "flipped" !=0:
-        #    print ('[ANALYZETRASH] reject point, most likely part of arena, occupied inflated map')
-        #    tf_man.pub_static_tf(pos=[0,0,0], point_name=point_name, ref='head_rgbd_sensor_rgb_frame')
-        #    num_objs-=1
-        #print (f'[ANALYZETRASH] object found at robot coords.{pose} ')
-        if len(res.poses.data)==0:
-            talk('no Objects in area....')
-            return 'failed'
-        else:
-            succ=seg_res_tf_pointing(res)   # Cambia ya que depende de tf pointing_
-            return 'succ'
+        try:
+            img,obj = get_luggage_tf()
+            save_image(img,name="segmentCarry")
+            if obj:
+                return 'succ'
+            else:
+                print(obj)
+                talk('no Objects in area....')
+                return 'failed'
+
+        except rospy.ServiceException as e:
+            print(f"Service call failed: {e}")
+        # ##### Segment and analyze
+        # #img=rgbd.get_image()
+        # print ('got image for segmentation')
+        # ##### Segment and analyze
+        # rospy.sleep(1.5)
+        # request= segmentation_server.request_class() 
+        # request.height.data=-0.05
+        # res=segmentation_server.call(request)
+        # img=bridge.imgmsg_to_cv2(res.im_out.image_msgs[0])
+        # save_image(img,name="segmentCarry")
+        # print (res.poses.data)
+        # #res=segmentation_server.call()
+        # #origin_map_img=[round(img_map.shape[0]*0.5) ,round(img_map.shape[1]*0.5)]
+        # #if img_map[origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m)]!=0:#### Yes axes seem to be "flipped" !=0:
+        # #    print ('[ANALYZETRASH] reject point, most likely part of arena, occupied inflated map')
+        # #    tf_man.pub_static_tf(pos=[0,0,0], point_name=point_name, ref='head_rgbd_sensor_rgb_frame')
+        # #    num_objs-=1
+        # #print (f'[ANALYZETRASH] object found at robot coords.{pose} ')
+        # if len(res.poses.data)==0:
+        #     talk('no Objects in area....')
+        #     return 'failed'
+        # else:
+        #     succ=seg_res_tf_pointing(res)   # Cambia ya que depende de tf pointing_
+        #     return 'succ'
             
 #########################################################################################################
 class Pre_pickup(smach.State):
     def __init__(self):
         smach.State.__init__(
             self, outcomes=['succ', 'failed', 'tries'])
-        self.target= 'object_0'    
+        self.target= 'bag'    
         
     def execute(self, userdata):
         rospy.loginfo(f'State : Pre PICKUP  {self.target} ')

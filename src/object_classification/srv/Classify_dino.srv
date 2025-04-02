@@ -2,4 +2,4 @@ sensor_msgs/Image image
 std_msgs/String prompt
 ---
 sensor_msgs/Image image
-std_msgs/String bounding_boxes
+std_msgs/Int32MultiArray bounding_boxes
