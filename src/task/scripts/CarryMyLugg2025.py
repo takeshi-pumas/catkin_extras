@@ -161,6 +161,39 @@ class Scan_floor(smach.State):
     def execute(self, userdata):
 
         rospy.loginfo('STATE : Scan estimated pointing area')
+        self.tries+=1 
+        if self.tries==1:
+            head.to_tf('pointing_')
+            print("looking to TF")
+                #if self.tries==2:head.to_tf('pointing_left')     
+        if self.tries==3:
+            self.tries=0
+            return 'tries'
+        rospy.sleep(1.5)
+        try:
+            img,obj = get_luggage_tf()
+            save_image(img,name="segmentCarry")
+            if obj:
+                return 'succ'
+            else:
+                print(obj)
+                talk('no Objects in area....')
+                return 'failed'
+
+        except rospy.ServiceException as e:
+            print(f"Service call failed: {e}")
+
+
+###################################################################
+class Scan_floor_deprecating(smach.State):
+    def __init__(self):
+        smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
+        self.tries = 0
+        
+
+    def execute(self, userdata):
+
+        rospy.loginfo('STATE : Scan estimated pointing area')
         self.tries+=1  
         if self.tries==1:head.to_tf('pointing_')
         #if self.tries==2:head.to_tf('pointing_left')     
@@ -169,29 +202,34 @@ class Scan_floor(smach.State):
             return 'tries'
         
         
-        ##### Segment and analyze
+        ##### Segment and analyze   
         #img=rgbd.get_image()
         print ('got image for segmentation')
         ##### Segment and analyze
         rospy.sleep(1.5)
+        prompt = "bag"     #put here favorite drink
+        img=rgbd.get_image()
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        ros_image = bridge.cv2_to_imgmsg(img, encoding="bgr8")
+        prompt_msg = String()
+        prompt_msg.data = prompt
+        
+
+        # OLD BAREBONES SEGMENTATION####################        
         request= segmentation_server.request_class() 
         request.height.data=-0.05
         res=segmentation_server.call(request)
         img=bridge.imgmsg_to_cv2(res.im_out.image_msgs[0])
         save_image(img,name="segmentCarry")
         print (res.poses.data)
-        #res=segmentation_server.call()
-        #origin_map_img=[round(img_map.shape[0]*0.5) ,round(img_map.shape[1]*0.5)]
-        #if img_map[origin_map_img[1]+ round(pose[1]/pix_per_m),origin_map_img[0]+ round(pose[0]/pix_per_m)]!=0:#### Yes axes seem to be "flipped" !=0:
-        #    print ('[ANALYZETRASH] reject point, most likely part of arena, occupied inflated map')
-        #    tf_man.pub_static_tf(pos=[0,0,0], point_name=point_name, ref='head_rgbd_sensor_rgb_frame')
-        #    num_objs-=1
-        #print (f'[ANALYZETRASH] object found at robot coords.{pose} ')
+        ################################################
+
+
         if len(res.poses.data)==0:
             talk('no Objects in area....')
             return 'failed'
         else:
-            succ=seg_res_tf_pointing(res)   # Cambia ya que depende de tf pointing_
+            succ=seg_res_tf_pointing(res)   # la funcion seg res tf pointing traudce el response del servivio a una tf estatica. con el nombre pointing_right left
             return 'succ'
             
 #########################################################################################################
@@ -199,7 +237,7 @@ class Pre_pickup(smach.State):
     def __init__(self):
         smach.State.__init__(
             self, outcomes=['succ', 'failed', 'tries'])
-        self.target= 'object_0'    
+        self.target= 'bag'    
         
     def execute(self, userdata):
         rospy.loginfo(f'State : Pre PICKUP  {self.target} ')
@@ -214,49 +252,51 @@ class Pre_pickup(smach.State):
 
         gripper.open()
         if res:return 'succ'
-        #return 0
-        
-        
-        
-        succ= arm.go(pickup_pose)
-        rospy.sleep(1.0)
-        
-
-        if succ:
-            
-            succ = False
-            
-            while not succ:
-                #trans,rot = tf_man.getTF(target_frame='static003_cracker_box', ref_frame='hand_palm_link')
-                trans,_ = tf_man.getTF(target_frame=target_object, ref_frame='hand_palm_link')
-                _,rot = tf_man.getTF(target_frame='base_link', ref_frame='map')
-
-                if type(trans) is bool:
-                    trans,_ = tf_man.getTF(target_frame='static029_plate', ref_frame='hand_palm_link')
-                    _,rot = tf_man.getTF(target_frame='base_link', ref_frame='map')
-                    print('no tf')
-                    return 'failed'
-                if type(trans) is not bool:
-                    eX, eY, eZ = trans
-                    eY+=-0.05
-                    eT= tf.transformations.euler_from_quaternion(rot)[2] - 0.5*np.pi    #(known loc pickup change to line finder?)   NO! THERE ARE  ROUND TABLES !
-                    rospy.loginfo("Distance to goal: {:.2f}, {:.2f}, angle {:.2f}, target obj frame {}".format(eX, eY , eT,target_object))
-                    if abs(eX) < 0.03:
-                        eX = 0
-                    if abs(eY) < 0.01:
-                        eY = 0
-                    if abs(eT   ) < 0.05:
-                        eT = 0
-                    succ =  eX == 0 and eY == 0 and eT==0
-                        # grasp_base.tiny_move(velY=-0.4*trans[1], std_time=0.2, MAX_VEL=0.3)
-                    omni_base.tiny_move(velX=0.13*eX, velY=-0.4*eY, velT=-0.3*eT, std_time=0.2, MAX_VEL=0.3) #Pending test
-            
-            print(tf_man.getTF(ref_frame=target_object,target_frame='base_link'), 'tf obj base######################################')
-
-            
-            return 'succ'
-            
         return 'failed'
+        
+
+        #return 0
+        """
+                                
+                                
+                                succ= arm.go(pickup_pose)
+                                rospy.sleep(1.0)
+                                
+                        
+                                if succ:
+                                    
+                                    succ = False
+                                    
+                                    while not succ:
+                                        #trans,rot = tf_man.getTF(target_frame='static003_cracker_box', ref_frame='hand_palm_link')
+                                        trans,_ = tf_man.getTF(target_frame=target_object, ref_frame='hand_palm_link')
+                                        _,rot = tf_man.getTF(target_frame='base_link', ref_frame='map')
+                        
+                                        if type(trans) is bool:
+                                            trans,_ = tf_man.getTF(target_frame='static029_plate', ref_frame='hand_palm_link')
+                                            _,rot = tf_man.getTF(target_frame='base_link', ref_frame='map')
+                                            print('no tf')
+                                            return 'failed'
+                                        if type(trans) is not bool:
+                                            eX, eY, eZ = trans
+                                            eY+=-0.05
+                                            eT= tf.transformations.euler_from_quaternion(rot)[2] - 0.5*np.pi    #(known loc pickup change to line finder?)   NO! THERE ARE  ROUND TABLES !
+                                            rospy.loginfo("Distance to goal: {:.2f}, {:.2f}, angle {:.2f}, target obj frame {}".format(eX, eY , eT,target_object))
+                                            if abs(eX) < 0.03:
+                                                eX = 0
+                                            if abs(eY) < 0.01:
+                                                eY = 0
+                                            if abs(eT   ) < 0.05:
+                                                eT = 0
+                                            succ =  eX == 0 and eY == 0 and eT==0
+                                                # grasp_base.tiny_move(velY=-0.4*trans[1], std_time=0.2, MAX_VEL=0.3)
+                                            omni_base.tiny_move(velX=0.13*eX, velY=-0.4*eY, velT=-0.3*eT, std_time=0.2, MAX_VEL=0.3) #Pending test
+                                    
+                                    print(tf_man.getTF(ref_frame=target_object,target_frame='base_link'), 'tf obj base######################################')
+                        
+                                    
+                                    return 'succ'"""
+            
 
 #########################################################################################################
 """class Pickup(smach.State):
@@ -301,7 +341,7 @@ class Pickup_two(smach.State):
         smach.State.__init__(
             self, outcomes=['succ', 'failed', 'tries'])
         self.tries = 0
-        self.target='object_0'
+        self.target='bag'
     def execute(self, userdata):
         rospy.loginfo('State :  PICKUP ')
         clear_octo_client()
@@ -340,7 +380,7 @@ class Pickup_two(smach.State):
             X, Y, Z = trans
             rospy.loginfo("Pose: {:.2f}, {:.2f}, angle {:.2f}, target obj frame {}".format(X, Y , eT,target_object))
             
-            if abs(eX) <=0.05 :
+            if abs(eX) <=0.25 :
                 print ('here')
                 eX = 0
             if abs(eY) <=0.05  :
@@ -433,6 +473,8 @@ class Deliver_Luggage(smach.State):
         rospy.sleep(0.7)
         gripper.open()
         talk("Thank you")
+        rospy.sleep(1)
+        gripper.close(0.1)
         return 'succ'
 
 #########################################################################################################
@@ -484,8 +526,8 @@ if __name__ == '__main__':
                                                                                          'succ': 'FIND_HUMAN',   
                                                                                          'tries': 'INITIAL'})  
         smach.StateMachine.add("FIND_HUMAN",         Find_human(),          transitions={'failed': 'FIND_HUMAN',        
-                                                                                         #'succ': 'SCAN_FLOOR',   
-                                                                                         'succ': 'GOTO_HUMAN',   
+                                                                                         'succ': 'SCAN_FLOOR',   
+                                                                                         #'succ': 'GOTO_HUMAN',   
                                                                                          'tries': 'GOTO_LIVING_ROOM'})
         smach.StateMachine.add("SCAN_FLOOR",         Scan_floor(),          transitions={'failed': 'SCAN_FLOOR',     
                                                                                          'succ': 'PRE_PICKUP',    

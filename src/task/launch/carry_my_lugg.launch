@@ -12,8 +12,8 @@
   <node pkg="object_classification"  name="objs_reco" type="classification_server.py"  />  
   <node pkg="segmentation"  name="segmentation" type="segment_node.py"  />  
   <node pkg="smach_viewer"  name="smach_viewer" type="smach_viewer.py"  />  
-  <node pkg="human_detector"  name="human_detector" type="pointing_detector_server.py"/>  
-
+  <node pkg="human_detector"  name="human_detector" type="pointing_detector_server.py"/>
+  <node pkg="object_classification"  name="dino_server" type="classification_server_dino.py"/> 
   <node pkg="leg_finder"  name="leg_finder_node" type="leg_finder_node"/>  
   <node pkg="human_follower"  name="human_follower_node" type="human_follower_node2"/>  
   <node pkg="action_server"  name="action_server" type="ACT_SRVR_Follow.py"/>   

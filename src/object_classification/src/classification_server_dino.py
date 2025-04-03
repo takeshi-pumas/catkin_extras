@@ -6,7 +6,7 @@ import torch
 import numpy as np
 from cv_bridge import CvBridge
 from sensor_msgs.msg import Image
-from std_msgs.msg import String
+from std_msgs.msg import String,Int32MultiArray, MultiArrayDimension
 from matplotlib import pyplot as plt
 from geometry_msgs.msg import Polygon, Point32
 from object_classification.srv import Classify_dino, Classify_dinoResponse, Classify_dinoRequest
@@ -60,6 +60,22 @@ def preprocess_image(cv2_image, max_size=1333, stride=32, device="cuda"):
 
     return image_tensor
 
+def create_multiarray(box):
+    """Convierte un bounding box a Int32MultiArray."""
+    multiarray = Int32MultiArray()
+    flat_data = [int(coord) for coord in box]  # Asegurar que sean enteros
+
+    # Definir la dimensión del array
+    dim = MultiArrayDimension()
+    dim.label = "bounding_boxes"
+    dim.size = len(flat_data)
+    dim.stride = len(flat_data)
+
+    multiarray.layout.dim.append(dim)
+    multiarray.layout.data_offset = 0
+    multiarray.data = flat_data
+
+    return multiarray
 
 
 # Set base directory
@@ -77,6 +93,7 @@ def handle_detection(req):
     try:
         # Convert ROS image message to OpenCV format
         image = bridge.imgmsg_to_cv2(req.image, desired_encoding="bgr8")
+        he, wi,_= image.shape
 
         # Convert OpenCV image to the format expected by GroundingDINO
         image_source = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
@@ -95,6 +112,14 @@ def handle_detection(req):
             text_threshold=0.2
         )
 
+        # Si no se detectaron objetos
+        if boxes is None or len(boxes) == 0:
+            rospy.logwarn("No se detectaron objetos.")
+            # Devuelve la imagen original (sin anotaciones) y un bounding box vacío
+            ros_annotated_image = bridge.cv2_to_imgmsg(image, encoding="bgr8")  # sin conversión
+            empty_msg = Int32MultiArray()  # Bounding box vacío
+            return Classify_dinoResponse(image=ros_annotated_image, bounding_boxes=empty_msg)
+
         # Annotate the image
         annotated_frame = annotate(image_source, boxes=boxes, logits=logits, phrases=phrases)
 
@@ -106,24 +131,37 @@ def handle_detection(req):
         ros_annotated_image = bridge.cv2_to_imgmsg(annotated_frame, encoding="rgb8")
 
         # Convert bounding boxes to ROS message format
-        polygons = []
-        for box in boxes:
-            polygon = Polygon()
-            polygon.points = [
-                Point32(x=float(box[0]), y=float(box[1]), z=0),
-                Point32(x=float(box[2]), y=float(box[1]), z=0),
-                Point32(x=float(box[2]), y=float(box[3]), z=0),
-                Point32(x=float(box[0]), y=float(box[3]), z=0)
-            ]
-            polygons.append(polygon)
+        # Encontrar el bounding box con mayor confianza
+        max_index = np.argmax(logits)
+        print(max_index)
+        best_box = boxes[max_index]
+        best_confidence = logits[max_index].item()
+        rospy.loginfo(f"Mejor bounding box encontrado con confianza: {best_confidence:.2f}")
 
-        rospy.loginfo(f"Detected {len(polygons)} objects for prompt: {prompt_text}")
+        # Convertir bounding box a formato ROS
+        bounding_box = [
+            int((float(best_box[0]) - float(best_box[2]) / 2) * wi),  # x_min
+            int((float(best_box[1]) - float(best_box[3]) / 2) * he),  # y_min
+            int((float(best_box[0]) + float(best_box[2]) / 2) * wi),  # x_max
+            int((float(best_box[1]) + float(best_box[3]) / 2) * he)   # y_max
+        ]
 
-        # Return response with the processed image and bounding boxes
-        return Classify_dinoResponse(image=ros_annotated_image, bounding_boxes=polygons)
+        rospy.loginfo(f"Bounding box seleccionado: {bounding_box}")
+
+        # Crear el mensaje de bounding box como Int32MultiArray
+        bounding_boxes_msg = create_multiarray(bounding_box)
+
+        # Anotar la imagen con el bounding box seleccionado
+        annotated_frame = annotate(image_source, boxes=boxes[max_index:max_index + 1], logits=logits[max_index:max_index + 1], phrases=[phrases[max_index]])
+
+        # Convertir imagen anotada a formato ROS
+        ros_annotated_image = bridge.cv2_to_imgmsg(annotated_frame, encoding="rgb8")
+
+        # Enviar respuesta con la mejor caja y la imagen anotada
+        return Classify_dinoResponse(image=ros_annotated_image, bounding_boxes=bounding_boxes_msg)
 
     except Exception as e:
-        rospy.logerr(f"Error processing request: {e}")
+        rospy.logerr(f"Error al procesar la solicitud: {e}")
         return Classify_dinoResponse()
 
 

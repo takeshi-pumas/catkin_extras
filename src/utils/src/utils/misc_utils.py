@@ -255,6 +255,23 @@ def talk(msg, time_out=5):
     talk_client.send_goal(voice.goal)
     return talk_client.wait_for_result(timeout=rospy.Duration(time_out))
 
+class TALKER:
+    def __init__(self, talk_request_action = '/talk_request_action'):
+        self.talk_client = actionlib.SimpleActionClient(talk_request_action, TalkRequestAction)
+    @staticmethod
+    def _fillMsg(msg):
+        voice = TalkRequestActionGoal()
+        voice.goal.data.interrupting = False
+        voice.goal.data.queueing = True
+        voice.goal.data.language = 1
+        voice.goal.data.sentence = msg
+        return voice.goal
+    def talk(self, sentence, timeout = 5):
+        goal = self._fillMsg(sentence)
+        self.talk_client.send_goal(goal)
+        return self.talk_client.wait_for_result(timeout = rospy.Duration(timeout))
+
+
 
 class Voice:
     def __init__(self, talk_request_action='/talk_request_action'):
