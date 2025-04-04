@@ -162,14 +162,14 @@ class Scan_floor(smach.State):
 
         rospy.loginfo('STATE : Scan estimated pointing area')
         self.tries+=1 
-        if self.tries==1:
-            head.to_tf('pointing_')
-            print("looking to TF")
-                #if self.tries==2:head.to_tf('pointing_left')     
-        if self.tries==3:
-            self.tries=0
-            return 'tries'
-        rospy.sleep(1.5)
+        #if self.tries==1:
+        #    head.to_tf('pointing_')
+        #    print("looking to TF")
+        #        #if self.tries==2:head.to_tf('pointing_left')     
+        #if self.tries==3:
+        #    self.tries=0
+        #    return 'tries'
+        #rospy.sleep(1.5)
         try:
             img,obj = get_luggage_tf()
             save_image(img,name="segmentCarry")
@@ -511,13 +511,14 @@ if __name__ == '__main__':
     sm = smach.StateMachine(outcomes=['END'])
 
     # sm.userdata.clear = False
-    sis = smach_ros.IntrospectionServer('SMACH_VIEW_SERVER', sm, '/SM_STICKLER')
+    sis = smach_ros.IntrospectionServer('SMACH_VIEW_SERVER', sm, '/SM_CARRY')
     sis.start()
 
     with sm:
         # State machine STICKLER
         smach.StateMachine.add("INITIAL",           Initial(),              transitions={'failed': 'INITIAL',           
-                                                                                         'succ': 'FIND_HUMAN',   
+                                                                                         #'succ': 'FIND_HUMAN',   
+                                                                                         'succ': 'SCAN_FLOOR',   
                                                                                          'tries': 'END'})
         smach.StateMachine.add("WAIT_PUSH_HAND",    Wait_push_hand(),       transitions={'failed': 'WAIT_PUSH_HAND',    
                                                                                          'succ': 'GOTO_LIVING_ROOM',       

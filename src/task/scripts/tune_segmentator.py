@@ -266,22 +266,7 @@ def callback(points_msg):
             try:
                 response = classify_client_dino(ros_image, prompt_msg)
                 print("Result for:",prompt,response.bounding_boxes)
-                x= int(img.shape[1] *  (response.bounding_boxes[0].points[0].x  -  (0.5 * response.bounding_boxes[0].points[1].x)))
-                y= int(img.shape[0] *  (response.bounding_boxes[0].points[0].y  -  (0.5 * response.bounding_boxes[0].points[2].y)))
-                x2=int(img.shape[1] *  (response.bounding_boxes[0].points[0].x  +  (0.5 * response.bounding_boxes[0].points[1].x)))
-                y2=int(img.shape[0] *  (response.bounding_boxes[0].points[0].y  +  (0.5 * response.bounding_boxes[0].points[2].y)))   
-                print (f'pix_x{ x }')
-                print (f'pix_y{ y }')
-                print (f'pix_x{ x2}')
-                print (f'pix_y{ y2}')  
-
-
-                cc=[np.nanmean(  points['x'][y:y2,x:x2]),
-                    np.nanmean(  points['y'][y:y2,x:x2]),
-                    np.nanmean(  points['z'][y:y2,x:x2]) ]
                 
-                tf_man.pub_static_tf(pos= cc , rot=[0,0,0,1], ref="head_rgbd_sensor_rgb_frame", point_name=prompt )   # TODO ADD PCA
-                tf_man.change_ref_frame_tf(prompt)
 
                 if response.image is None or response.image.data == b'':
                     print("Error: Received an empty image response!")

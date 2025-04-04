@@ -45,17 +45,19 @@ from nav_msgs.msg import OccupancyGrid
 from hri_msgs.msg import RecognizedSpeech
 from rospy.exceptions import ROSException
 from vision_msgs.srv import *
+from sklearn.decomposition import PCA
 #from act_recog.srv import Recognize,RecognizeResponse,RecognizeRequest
 from ros_whisper_vosk.srv import SetGrammarVosk
 from action_server.msg import FollowActionGoal ,  FollowAction , IdentifyPersonAction , IdentifyPersonActionGoal
 from utils.grasp_utils import *
 from utils.misc_utils import *
 from utils.nav_utils import *
+
 #from utils.know_utils import *
 
 global listener, broadcaster, tfBuffer, tf_static_broadcaster, scene, rgbd, head,train_new_face, wrist, human_detect_server, line_detector, clothes_color , head_mvit
 global clear_octo_client, goal,navclient,segmentation_server  , tf_man , omni_base, brazo, speech_recog_server, bridge, map_msg, pix_per_m, analyze_face , arm , set_grammar
-global recognize_action , classify_client,pointing_detect_server ,placing_finder_server,action_planner_server, classify_client_dino 
+global recognize_action , classify_client,pointing_detect_server ,placing_finder_server,action_planner_server, classify_client_dino ,Pca
 rospy.init_node('smach', anonymous=True)
 logger = logging.getLogger('rosout')
 logger.setLevel(logging.ERROR)
@@ -89,7 +91,7 @@ classify_client = rospy.ServiceProxy('/classify', Classify)             #YOLO OB
 classify_client_dino = rospy.ServiceProxy('grounding_dino_detect', Classify_dino)
 classify_clnt_stickler = rospy.ServiceProxy('/classifystick', Classify)
 recognize_action = rospy.ServiceProxy('recognize_act',RecognizeOP)
-
+Pca=PCA()
 
 ####################################################################
 #map_msg= rospy.wait_for_message('/augmented_map', OccupancyGrid , 20)####WAIT for nav pumas map .. 
@@ -822,10 +824,38 @@ def get_luggage_tf():
     # Convert image to ROS format
     ros_image = bridge.cv2_to_imgmsg(img, encoding="bgr8")
     points= rgbd.get_points()
+
+
+    points_msg=rospy.wait_for_message("/hsrb/head_rgbd_sensor/depth_registered/rectified_points",PointCloud2,timeout=5)
+    points_data = ros_numpy.numpify(points_msg)    
+    
+
+    #image_data = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]   
+    #image=cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
+    #image = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]
+    #rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)    
+    
+
     # Create a proper ROS String message
     prompt_msg = String()
     prompt_msg.data = prompt
+    ######################################################
+    ################
+    #CORRECT POINTS###################
+    ################
+    try:
+            trans = tfBuffer.lookup_transform('map', 'head_rgbd_sensor_link', rospy.Time())
+                        
+            trans,rot=read_tf(trans)
+            #print ("############head",trans,rot)
+    except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
+            print ( 'No head TF FOUND')
+    t= write_tf(trans,rot)
+    cloud_out = do_transform_cloud(points_msg, t)
+    np_corrected=ros_numpy.numpify(cloud_out)
+    corrected=np_corrected.reshape(points_data.shape)
 
+    ######################################################
     #rospy.wait_for_service('grounding_dino_detect')
     try:
         response = classify_client_dino(ros_image, prompt_msg)
@@ -848,8 +878,32 @@ def get_luggage_tf():
                     np.nanmean(points['y'][y_min:y_max, x_min:x_max]),
                     np.nanmean(points['z'][y_min:y_max, x_min:x_max])
                 ]
-                
                 tf_man.pub_static_tf(pos= cc , rot=[0,0,0,1], ref="head_rgbd_sensor_rgb_frame", point_name=prompt )   # TODO ADD PCA
+                ###########PCA######################
+                mask = np.zeros_like(corrected['z']) 
+                mask=cv2.rectangle(mask,(x_min, y_min),(x_max, y_max), (255,255,255), -1)
+                _, binary_image = cv2.threshold(mask, 20, 255, cv2.THRESH_BINARY)
+
+                individual_mask=(mask*binary_image).astype(np.uint8)        
+                cent=np.asarray(   ((  np.nanmean(corrected['x'][np.where(individual_mask==1)]) ,np.nanmean(corrected['y'][np.where(individual_mask==1)]),np.nanmean(corrected['z'][np.where(individual_mask==1)])       ))      )
+                print ('cent',cent)
+                ################################PCA
+                points_c=np.asarray((corrected['x'][np.where(individual_mask==1)],corrected['y'][np.where(individual_mask==1)],corrected['z'][np.where(individual_mask==1)]))
+                print ( points_c.shape)
+                E_R=points_to_PCA(points_c.transpose())
+                e_ER=tf.transformations.euler_from_matrix(E_R)
+                quat_pca= tf. transformations.quaternion_from_euler(e_ER[0],e_ER[1],e_ER[2])
+                print("ANGLE:",tf.transformations.euler_from_matrix(E_R)," Degrees:",np.rad2deg(tf.transformations.euler_from_matrix(E_R)))
+
+
+                #######################################
+                tf_man.pub_static_tf(pos= cc , rot=quat_pca, ref="head_rgbd_sensor_rgb_frame", point_name=prompt+'pca' )   # quat  PCA
+
+                rospy.sleep(0.5)
+                tf_man.change_ref_frame_tf(prompt+'pca')
+
+
+
                 tf_man.change_ref_frame_tf(prompt)
                 return debug_image,True
 
@@ -857,3 +911,65 @@ def get_luggage_tf():
     except rospy.ServiceException as e:
         print(f"Service call failed: {e}")
 
+
+#-----------------------------------------------------------------
+def points_to_PCA(points):
+    df=pd.DataFrame(points)
+    df.columns=[['x','y','z']]
+    threshold= df['z'].min().values[0]*0.998
+    print (threshold)
+    rslt_df = df.loc[df[df['z'] > threshold].index]
+    points=rslt_df[['x','y','z']].dropna().values
+    Pca=PCA(n_components=3)
+    Pca.fit(points)
+    print('Pca.explained_variance_',Pca.explained_variance_)
+    ref=np.eye(3)
+    pcas=Pca.components_
+    R=[]
+    R.append(np.dot(pcas[0],ref))
+    R.append(np.dot(pcas[1],ref))
+    R.append(np.dot(pcas[2],ref))
+    R=np.asarray(R)
+    ## HOMOGENEUS
+    E_R= np.zeros((4,4))
+    E_R[:3,:3]+=R
+    E_R[-1,-1]=1
+    return     E_R
+
+
+#-----------------------------------------------------------------
+def write_tf(pose, q, child_frame="" , parent_frame='map'):
+    #  pose = trans  q = quaternion  , childframe =""
+    # format  write the transformstampled message
+    t= TransformStamped()
+    t.header.stamp = rospy.Time.now()
+    #t.header.stamp = rospy.Time(0)
+    t.header.frame_id =parent_frame
+    t.child_frame_id =  child_frame
+    t.transform.translation.x = pose[0]
+    t.transform.translation.y = pose[1]
+    t.transform.translation.z = pose[2]
+    #q = tf.transformations.quaternion_from_euler(eu[0], eu[1], eu[2])
+    t.transform.rotation.x = q[0]
+    t.transform.rotation.y = q[1]
+    t.transform.rotation.z = q[2]
+    t.transform.rotation.w = q[3]
+    return t
+    
+#-----------------------------------------------------------------
+def read_tf(t):
+    # trasnform message to np arrays
+    pose=np.asarray((
+        t.transform.translation.x,
+        t.transform.translation.y,
+        t.transform.translation.z
+        ))
+    quat=np.asarray((
+        t.transform.rotation.x,
+        t.transform.rotation.y,
+        t.transform.rotation.z,
+        t.transform.rotation.w
+        ))
+    
+    return pose, quat
+#-----------------------------------------------------------------    

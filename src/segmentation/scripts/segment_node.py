@@ -39,6 +39,7 @@ def trigger_response(request):
     cloud_out = do_transform_cloud(points_msg, t)
     np_corrected=ros_numpy.numpify(cloud_out)
     corrected=np_corrected.reshape(points_data.shape)
+    
     orig_image= rgb_image.copy()
     mask= np.zeros(corrected['z'].shape)#mask    
     ###################################3
@@ -97,7 +98,8 @@ def trigger_response(request):
                     cents.append(cent)        
                     ################################PCA
                     points_c=np.asarray((corrected['x'][np.where(individual_mask==1)],corrected['y'][np.where(individual_mask==1)],corrected['z'][np.where(individual_mask==1)]))
-
+                    np.save( "/home/roboworks/Documents/points2.npy" ,points_c.transpose()  )
+                    print ( points_c.shape)
                     heights.append(max(corrected['z'][np.where(individual_mask==1)]) - min(corrected['z'][np.where(individual_mask==1)]))
                     widths.append (max(corrected['y'][np.where(individual_mask==1)]) - min(corrected['y'][np.where(individual_mask==1)]))
                     print ('Estimated Height #######################',max(corrected['z'][np.where(individual_mask==1)]) - min(corrected['z'][np.where(individual_mask==1)]))                              
