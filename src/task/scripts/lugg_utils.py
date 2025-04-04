@@ -890,6 +890,7 @@ def get_luggage_tf():
                 ################################PCA
                 points_c=np.asarray((corrected['x'][np.where(individual_mask==1)],corrected['y'][np.where(individual_mask==1)],corrected['z'][np.where(individual_mask==1)]))
                 print ( points_c.shape)
+                np.save('/home/roboworks/Documents/points2.npy', points_c)
                 E_R=points_to_PCA(points_c.transpose())
                 e_ER=tf.transformations.euler_from_matrix(E_R)
                 quat_pca= tf. transformations.quaternion_from_euler(e_ER[0],e_ER[1],e_ER[2])
