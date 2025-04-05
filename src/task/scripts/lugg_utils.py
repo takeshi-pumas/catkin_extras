@@ -878,33 +878,28 @@ def get_luggage_tf():
                     np.nanmean(points['y'][y_min:y_max, x_min:x_max]),
                     np.nanmean(points['z'][y_min:y_max, x_min:x_max])
                 ]
-                tf_man.pub_static_tf(pos= cc , rot=[0,0,0,1], ref="head_rgbd_sensor_rgb_frame", point_name=prompt )   # TODO ADD PCA
+                tf_man.pub_static_tf(pos= cc , rot=[0,0,0,1], ref="head_rgbd_sensor_rgb_frame", point_name=prompt )   # Just Bounding Box Mask
                 ###########PCA######################
-                mask = np.zeros_like(corrected['z']) 
-                mask=cv2.rectangle(mask,(x_min, y_min),(x_max, y_max), (255,255,255), -1)
-                _, binary_image = cv2.threshold(mask, 20, 255, cv2.THRESH_BINARY)
 
-                individual_mask=(mask*binary_image).astype(np.uint8)        
-                cent=np.asarray(   ((  np.nanmean(corrected['x'][np.where(individual_mask==1)]) ,np.nanmean(corrected['y'][np.where(individual_mask==1)]),np.nanmean(corrected['z'][np.where(individual_mask==1)])       ))      )
-                print ('cent',cent)
-                ################################PCA
-                points_c=np.asarray((corrected['x'][np.where(individual_mask==1)],corrected['y'][np.where(individual_mask==1)],corrected['z'][np.where(individual_mask==1)]))
+
+                mask = np.zeros_like(corrected['z']) 
+                mask_bb=cv2.rectangle(mask,(x_min,y_min),(x_max, y_max), (255,255,255), -1)
+                mask_z= corrected['z']>0.01
+                mask = (mask_bb == 255) & (corrected['z'] > 0.01)
+                cent=np.asarray(   ((  np.nanmean(corrected['x'][np.where(mask==1)]) ,np.nanmean(corrected['y'][np.where(mask==1)]),np.nanmean(corrected['z'][np.where(mask==1)])       ))      )
+                points_c=np.asarray((corrected['x'][np.where(mask==1)],corrected['y'][np.where(mask==1)],corrected['z'][np.where(mask==1)]))
+                cent=np.asarray(   ((  np.nanmean(corrected['x'][np.where(mask==1)]) ,np.nanmean(corrected['y'][np.where(mask==1)]),np.nanmean(corrected['z'][np.where(mask==1)])       ))      )
                 print ( points_c.shape)
-                np.save('/home/roboworks/Documents/points2.npy', points_c)
                 E_R=points_to_PCA(points_c.transpose())
                 e_ER=tf.transformations.euler_from_matrix(E_R)
                 quat_pca= tf. transformations.quaternion_from_euler(e_ER[0],e_ER[1],e_ER[2])
                 print("ANGLE:",tf.transformations.euler_from_matrix(E_R)," Degrees:",np.rad2deg(tf.transformations.euler_from_matrix(E_R)))
 
-
                 #######################################
-                tf_man.pub_static_tf(pos= cc , rot=quat_pca, ref="head_rgbd_sensor_rgb_frame", point_name=prompt+'pca' )   # quat  PCA
+                tf_man.pub_static_tf(pos= cent , rot=quat_pca,  point_name=prompt+'pca' )   # quat  PCA Bounding box and floor mask
 
                 rospy.sleep(0.5)
-                tf_man.change_ref_frame_tf(prompt+'pca')
-
-
-
+                #tf_man.change_ref_frame_tf(prompt+'pca')
                 tf_man.change_ref_frame_tf(prompt)
                 return debug_image,True
 
