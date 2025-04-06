@@ -123,6 +123,7 @@ class PlacingStateMachine:
         print(f'goal_pose -> {goal_pose} \n\n\n\n\n\n\n\n\n\n')
         print (f'self.sm.userdata.goal.mode -> {self.sm.userdata.goal.mode.data}')
         self.grasp_approach=self.sm.userdata.goal.mode.data
+        rospy.sleep(0.1)
         try:
                 transform_goal_received = self.tf2_buffer.lookup_transform("odom", "goal_pose_received", rospy.Time(0), timeout=rospy.Duration(1))
                 print (f"{transform_goal_received} \n \n \n")

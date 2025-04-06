@@ -249,6 +249,7 @@ class Pre_pickup(smach.State):
         clear_octo_client()
         
         res = omni_base.move_d_to(0.55,self.target)
+       
 
         gripper.open()
         if res:return 'succ'
@@ -396,7 +397,11 @@ class Pickup_two(smach.State):
         clear_octo_client()
         rospy.sleep(1.0)
         print("MOVING ARM")    
-        floor_pose=[0.05,-1.6,0.0,-1.41,0.0,0.0]
+        _,_,theta=ransac_laser()
+        wrist_adjust =theta-(0.5*np.pi)
+        print ('theta, remvoe',wrist_adjust )
+        #floor_pose=[0.05,-1.6,0.0,-1.41,0.0,0.0]
+        floor_pose=[0.05,-1.6,0.0,-1.41,wrist_adjust,0.0]
         arm.set_joint_value_target(floor_pose)
         arm.go()
         rospy.sleep(1.0)

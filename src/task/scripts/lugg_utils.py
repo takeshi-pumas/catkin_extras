@@ -21,6 +21,7 @@ from glob import glob
 from pyzbar import pyzbar
 import ros_numpy
 from geometry_msgs.msg import PoseStamped, Point  , Quaternion , TransformStamped , Twist
+import tf2_geometry_msgs
 from tf2_geometry_msgs import PointStamped
 from std_msgs.msg import String,Float32MultiArray
 from std_srvs.srv import Trigger, TriggerResponse 
@@ -969,3 +970,24 @@ def read_tf(t):
     
     return pose, quat
 #-----------------------------------------------------------------    
+
+#-----------------------------------------------------------------    
+def ransac_laser():
+    msg= rospy.wait_for_message("/hsrb/base_scan",LaserScan)    
+    ranges = np.array(msg.ranges)
+    angles = np.linspace(msg.angle_min, msg.angle_max, len(ranges))
+    mask = np.isfinite(ranges)
+    ranges = ranges[mask]
+    angles = angles[mask]
+    # Polar to Cartesian
+    xs = ranges * np.cos(angles)
+    ys = ranges * np.sin(angles)
+    points = np.vstack((xs, ys)).T
+    pca = PCA(n_components=2)
+    pca.fit(points)
+    direction = pca.components_[0]
+    theta = np.arctan2(direction[1], direction[0])  # angle of the line w.r.t. sensor's x-axis
+    x0, y0 = pca.mean_  # approximate center of the detected line
+    return x0,y0,theta
+#-----------------------------------------------------------------    
+
