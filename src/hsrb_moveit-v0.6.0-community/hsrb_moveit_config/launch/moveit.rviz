@@ -571,6 +571,12 @@ Visualization Manager:
       Filter (whitelist): ""
       Frame Timeout: 15
       Frames:
+        001_chips_can:
+          Value: true
+        002_master_chef_can:
+          Value: true
+        003_cracker_box:
+          Value: true
         005_tomato_soup_can:
           Value: true
         007_tuna_fish_can:
@@ -579,35 +585,59 @@ Visualization Manager:
           Value: true
         009_gelatin_box:
           Value: true
+        010_potted_meat_can:
+          Value: true
         011_banana:
+          Value: true
+        012_strawberry:
           Value: true
         013_apple:
           Value: true
-        014_lemon:
-          Value: true
         015_peach:
           Value: true
-        016_pear:
+        019-a_pitcher_base:
           Value: true
-        017_orange:
+        019-b_pitcher_base_v2:
+          Value: true
+        020_pitcher_lid:
+          Value: true
+        021_bleach_cleanser:
+          Value: true
+        022_windex_bottle:
           Value: true
         024_bowl:
           Value: true
-        030_fork:
+        025_mug:
           Value: true
         033_spatula:
           Value: true
-        054_softball:
+        040_large_marker:
+          Value: true
+        050_medium_clamp:
           Value: true
         055_baseball:
           Value: true
         056_tennis_ball:
           Value: true
-        057_racquetball:
-          Value: true
         058_golf_ball:
           Value: true
+        062_dice:
+          Value: true
+        063-a_marbles:
+          Value: true
+        063-b_marbles:
+          Value: true
+        065-c_cups:
+          Value: true
+        070-a_colored_wood_blocks:
+          Value: true
+        071_nine_hole_peg_test:
+          Value: true
+        073-b_lego_duplo:
+          Value: true
         All Enabled: false
+        a_pitcher_base:
+          Value: true
         apple:
           Value: true
         arm_flex_link:
@@ -616,6 +646,10 @@ Visualization Manager:
           Value: false
         arm_roll_link:
           Value: false
+        b_marbles:
+          Value: true
+        banana:
+          Value: true
         base_b_bumper_link:
           Value: false
         base_f_bumper_link:
@@ -650,31 +684,27 @@ Visualization Manager:
           Value: false
         baseball:
           Value: true
-        bedroom:
-          Value: true
-        bedroom_a:
-          Value: true
-        bedroom_b:
+        bleach_cleanser:
           Value: true
         bowl:
           Value: true
-        breakfast:
+        c_cups:
           Value: true
-        dining_room:
+        chips_can:
           Value: true
-        dining_room_a:
-          Value: true
-        dining_room_b:
-          Value: true
-        dining_room_c:
+        dice:
           Value: true
         door_lab:
           Value: true
-        gelatin_box:
+        entrance:
           Value: true
         goal_for_grasp:
           Value: true
         golf_ball:
+          Value: true
+        hallway_1:
+          Value: true
+        hallway_2:
           Value: true
         hand_camera_frame:
           Value: false
@@ -718,14 +748,10 @@ Visualization Manager:
           Value: false
         head_pan_link:
           Value: false
-        head_r_stereo_camera_frame:
-          Value: true
         head_r_stereo_camera_gazebo_frame:
           Value: false
         head_r_stereo_camera_link:
           Value: false
-        head_rgbd_sensor_depth_frame:
-          Value: true
         head_rgbd_sensor_gazebo_frame:
           Value: false
         head_rgbd_sensor_link:
@@ -736,39 +762,33 @@ Visualization Manager:
           Value: false
         kitchen:
           Value: true
-        lemon:
-          Value: true
         living_room:
           Value: true
         map:
           Value: true
-        odom:
+        master_chef_can:
           Value: true
-        orange:
+        nine_hole_peg_test:
+          Value: true
+        odom:
           Value: true
         peach:
           Value: true
-        pear:
-          Value: true
         pickup:
+          Value: true
+        pitcher_lid:
           Value: true
         place_shelf:
           Value: true
         placing_area:
           Value: true
-        pudding_box:
+        potted_meat_can:
           Value: true
-        racquetball:
+        pudding_box:
           Value: true
         shelf:
           Value: true
-        shelf_a:
-          Value: true
-        sitting_place_1:
-          Value: true
-        sitting_place_2:
-          Value: true
-        softball:
+        strawberry:
           Value: true
         tennis_ball:
           Value: true
@@ -794,41 +814,45 @@ Visualization Manager:
       Show Names: true
       Tree:
         map:
+          a_pitcher_base:
+            {}
           apple:
+            {}
+          b_marbles:
+            {}
+          banana:
             {}
           baseball:
             {}
-          bedroom:
-            {}
-          bedroom_a:
-            {}
-          bedroom_b:
+          bleach_cleanser:
             {}
           bowl:
             {}
-          breakfast:
+          c_cups:
             {}
-          dining_room:
+          chips_can:
             {}
-          dining_room_a:
-            {}
-          dining_room_b:
-            {}
-          dining_room_c:
+          dice:
             {}
           door_lab:
             {}
-          gelatin_box:
+          entrance:
             {}
           goal_for_grasp:
             {}
           golf_ball:
             {}
+          hallway_1:
+            {}
+          hallway_2:
+            {}
           kitchen:
             {}
-          lemon:
-            {}
           living_room:
+            {}
+          master_chef_can:
+            {}
+          nine_hole_peg_test:
             {}
           odom:
             base_footprint:
@@ -889,83 +913,98 @@ Visualization Manager:
                           {}
                       head_l_stereo_camera_link:
                         head_l_stereo_camera_frame:
-                          {}
+                          head_rgbd_sensor_rgb_frame:
+                            001_chips_can:
+                              {}
+                            002_master_chef_can:
+                              {}
+                            003_cracker_box:
+                              {}
+                            005_tomato_soup_can:
+                              {}
+                            007_tuna_fish_can:
+                              {}
+                            008_pudding_box:
+                              {}
+                            009_gelatin_box:
+                              {}
+                            010_potted_meat_can:
+                              {}
+                            011_banana:
+                              {}
+                            012_strawberry:
+                              {}
+                            013_apple:
+                              {}
+                            015_peach:
+                              {}
+                            019-a_pitcher_base:
+                              {}
+                            019-b_pitcher_base_v2:
+                              {}
+                            020_pitcher_lid:
+                              {}
+                            021_bleach_cleanser:
+                              {}
+                            022_windex_bottle:
+                              {}
+                            024_bowl:
+                              {}
+                            025_mug:
+                              {}
+                            033_spatula:
+                              {}
+                            040_large_marker:
+                              {}
+                            050_medium_clamp:
+                              {}
+                            055_baseball:
+                              {}
+                            056_tennis_ball:
+                              {}
+                            058_golf_ball:
+                              {}
+                            062_dice:
+                              {}
+                            063-a_marbles:
+                              {}
+                            063-b_marbles:
+                              {}
+                            065-c_cups:
+                              {}
+                            070-a_colored_wood_blocks:
+                              {}
+                            071_nine_hole_peg_test:
+                              {}
+                            073-b_lego_duplo:
+                              {}
                         head_l_stereo_camera_gazebo_frame:
                           {}
                       head_r_stereo_camera_link:
-                        head_r_stereo_camera_frame:
-                          {}
                         head_r_stereo_camera_gazebo_frame:
                           {}
                       head_rgbd_sensor_link:
-                        head_rgbd_sensor_depth_frame:
-                          {}
                         head_rgbd_sensor_gazebo_frame:
                           {}
-                        head_rgbd_sensor_rgb_frame:
-                          005_tomato_soup_can:
-                            {}
-                          007_tuna_fish_can:
-                            {}
-                          008_pudding_box:
-                            {}
-                          009_gelatin_box:
-                            {}
-                          011_banana:
-                            {}
-                          013_apple:
-                            {}
-                          014_lemon:
-                            {}
-                          015_peach:
-                            {}
-                          016_pear:
-                            {}
-                          017_orange:
-                            {}
-                          024_bowl:
-                            {}
-                          030_fork:
-                            {}
-                          033_spatula:
-                            {}
-                          054_softball:
-                            {}
-                          055_baseball:
-                            {}
-                          056_tennis_ball:
-                            {}
-                          057_racquetball:
-                            {}
-                          058_golf_ball:
-                            {}
             base_footprint_wheel:
               {}
-          orange:
-            {}
           peach:
             {}
-          pear:
-            {}
           pickup:
+            {}
+          pitcher_lid:
             {}
           place_shelf:
             {}
           placing_area:
             {}
-          pudding_box:
+          potted_meat_can:
             {}
-          racquetball:
+          pudding_box:
             {}
           shelf:
             {}
-          shelf_a:
-            {}
-          sitting_place_1:
-            {}
-          sitting_place_2:
-            {}
-          softball:
+          strawberry:
             {}
           tennis_ball:
             {}
@@ -1157,9 +1196,9 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.2097966969013214
+      Pitch: 1.149796485900879
       Target Frame: base_footprint
-      Yaw: 5.094522953033447
+      Yaw: 4.8045220375061035
     Saved: ~
 Window Geometry:
   Displays:
