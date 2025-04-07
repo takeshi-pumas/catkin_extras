@@ -162,14 +162,14 @@ class Scan_floor(smach.State):
 
         rospy.loginfo('STATE : Scan estimated pointing area')
         self.tries+=1 
-        #if self.tries==1:
-        #    head.to_tf('pointing_')
-        #    print("looking to TF")
-        #        #if self.tries==2:head.to_tf('pointing_left')     
-        #if self.tries==3:
-        #    self.tries=0
-        #    return 'tries'
-        #rospy.sleep(1.5)
+        if self.tries==1:
+            head.to_tf('pointing_')
+            print("looking to TF")
+                #if self.tries==2:head.to_tf('pointing_left')     
+        if self.tries==3:
+            self.tries=0
+            return 'tries'
+        rospy.sleep(1.5)
         try:
             img,obj = get_luggage_tf()
             save_image(img,name="segmentCarry")
@@ -223,7 +223,8 @@ class Scan_floor_deprecating(smach.State):
         save_image(img,name="segmentCarry")
         print (res.poses.data)
         ################################################
-
+        _,_,theta=ransac_laser()
+        print (theta,'\n\n\n\n')
 
         if len(res.poses.data)==0:
             talk('no Objects in area....')
@@ -398,9 +399,11 @@ class Pickup_two(smach.State):
         rospy.sleep(1.0)
         print("MOVING ARM")    
         _,_,theta=ransac_laser()
-        wrist_adjust =theta-(0.5*np.pi)
-        print ('theta, remvoe',wrist_adjust )
+        print (theta)
+        wrist_adjust =    max(theta-(0.5*np.pi), -1.57)
+        print ('theta, remvoe',wrist )
         #floor_pose=[0.05,-1.6,0.0,-1.41,0.0,0.0]
+
         floor_pose=[0.05,-1.6,0.0,-1.41,wrist_adjust,0.0]
         arm.set_joint_value_target(floor_pose)
         arm.go()
@@ -522,8 +525,8 @@ if __name__ == '__main__':
     with sm:
         # State machine STICKLER
         smach.StateMachine.add("INITIAL",           Initial(),              transitions={'failed': 'INITIAL',           
-                                                                                         #'succ': 'FIND_HUMAN',   
-                                                                                         'succ': 'SCAN_FLOOR',   
+                                                                                         'succ': 'FIND_HUMAN',   
+                                                                                         #'succ': 'SCAN_FLOOR',   
                                                                                          'tries': 'END'})
         smach.StateMachine.add("WAIT_PUSH_HAND",    Wait_push_hand(),       transitions={'failed': 'WAIT_PUSH_HAND',    
                                                                                          'succ': 'GOTO_LIVING_ROOM',       
