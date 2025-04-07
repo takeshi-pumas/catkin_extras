@@ -1,0 +1,6 @@
+<launch>
+  <node name="vosk" pkg="ros_whisper_vosk" type="vosk_recog.py" respawn="true" output="screen">
+  	<param name="input_device_index" value="8"/>
+  </node>
+
+</launch>

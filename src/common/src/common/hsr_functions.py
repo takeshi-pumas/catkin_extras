@@ -6,7 +6,7 @@ import tf2_ros
 from tf import transformations
 from typing import List, Tuple, Optional, Literal
 
-from std_msgs.msg import Float32MultiArray
+from std_msgs.msg import Float32MultiArray, String, Bool
 from geometry_msgs.msg import WrenchStamped
 from sensor_msgs.msg import JointState
 from tmc_msgs.msg import Voice 
@@ -17,6 +17,7 @@ from control_msgs.msg import FollowJointTrajectoryAction, FollowJointTrajectoryG
 from common.navigation_functions import Navigation
 from common.ros_functions import TFManager
 
+from rospy.exceptions import ROSException
 
 # HSR functionalities
 
@@ -654,3 +655,49 @@ class ArmController:
         except Exception as e:
             rospy.logerr(f"Hand movement failed: {e}")
             return False
+
+
+# from speech_recog.msg import SpeechRecogResult
+from ros_whisper_vosk.srv import SetGrammarVosk
+class SpeechRecog:
+    """Handles speech recognition using ROS"""
+    
+    def __init__(self, 
+                 topic: str = '/speech_recognition/final_result',
+                 enable_topic : str = '/speech_recognition/enable'):
+        """
+        Initialize speech recognition with ROS service client
+        
+        Args:
+            topic: ROS topic for speech recognition
+            timeout: Timeout for service call
+        """
+        self._topic = topic
+        self._enable_topic = enable_topic
+        self.enabled = False
+        self.enable_pub = rospy.Publisher(self._enable_topic, Bool, queue_size=1)
+        self.enable_pub.publish(Bool(data=self.enabled))
+        rospy.wait_for_service('/set_grammar_vosk', timeout=5.0)
+        rospy.loginfo("Speech recognition service is available")
+        self.set_grammar = rospy.ServiceProxy(
+            '/set_grammar_vosk', 
+            SetGrammarVosk)
+
+    def _toggle_recog(self):
+        self.enabled = not self.enabled
+        self.enable_pub.publish(Bool(data=self.enabled))
+
+    def get_speech(self, timeout: float = 5.0):
+        try:
+            self._toggle_recog()
+            rospy.sleep(0.4)
+            recog_msg = rospy.wait_for_message(self._topic, String, timeout=timeout)
+            self._toggle_recog()
+            rospy.loginfo(f"Speech recognition result: {recog_msg.data}")
+            return recog_msg.data
+        
+        except rospy.ROSException as e:
+            return None
+    
+    def set_grammar(self, grammar):
+        return self.set_grammar(grammar)
