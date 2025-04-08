@@ -583,7 +583,7 @@ if __name__ == '__main__':
 
         # Guest treatment
         smach.StateMachine.add("LEAD_TO_BEVERAGE_AREA", Lead_to_beverage_area(),  
-                               transitions={'failed': 'LEAD_TO_BEVERAGE_AREA', 'succ': 'LEAD_TO_LIVING_ROOM'})
+                               transitions={'failed': 'LEAD_TO_BEVERAGE_AREA', 'succ': 'FIND_DRINK'})
         smach.StateMachine.add("FIND_DRINK", Find_drink(),
                                transitions={'failed': 'FIND_DRINK', 'succ': 'LEAD_TO_LIVING_ROOM'})
         smach.StateMachine.add("LEAD_TO_LIVING_ROOM", Lead_to_living_room(),  
