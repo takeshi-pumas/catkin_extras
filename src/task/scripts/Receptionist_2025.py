@@ -338,7 +338,7 @@ class Lead_to_beverage_area(smach.State):
         res = omni_base.move_base(known_location='beverage_area')
         if res:
             self.tries = 0
-            voice.talk(f"I will check if there is {party.get_active_guest_drink()} here")
+            if party.get_active_guest_drink() != 'something': voice.talk(f"I will check if there is {party.get_active_guest_drink()} here")
             return 'succ'
         else:
             voice.talk('Navigation Failed, retrying')
