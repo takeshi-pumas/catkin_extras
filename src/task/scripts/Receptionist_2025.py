@@ -14,7 +14,7 @@ class Initial(smach.State):
         rospy.loginfo('STATE : INITIAL')
         rospy.loginfo(f'Try {self.tries} of 5 attempts')
 
-        party.clean_knowledge(host_name = "john", host_location = "Place_3")
+        party.clean_knowledge(host_name = "Oscar", host_location = "Place_3")
         #party.publish_tf_seats()
         places_2_tf()
 
@@ -254,7 +254,7 @@ class Get_drink(smach.State):
             analyze_face_background(userdata.face_img, party.get_active_guest_name())#userdata.name)
             print(userdata.face_img.shape)
 
-        elif self.tries == 3:
+        elif self.tries == 4:
             voice.talk ('I am having trouble understanding you, lets keep going')
             drink = 'something'
             self.tries=0
@@ -356,11 +356,15 @@ class Find_drink(smach.State):
         self.tries += 1
         print('Try', self.tries, 'of 3 attempts')
 
+        favorite_drink = party.get_active_guest_drink()
+        if favorite_drink == 'something':
+            voice.talk("This table has available drinks, please take whatever you want")
+            return 'succ'
+
         voice.talk('Scanning table')
         head.set_joint_values([0.0, -0.3])
         rospy.sleep(1)
 
-        favorite_drink = party.get_active_guest_drink()
         res,position = get_favorite_drink_location(favorite_drink)
 
         if res:
