@@ -9,7 +9,7 @@ from common.states import WaitPushHand, WaitDoorOpen, GotoPlace
 from common.navigation_functions import Navigation
 from common.hsr_functions import Talker, Gaze, ArmController, SpeechRecog
 from common.ros_functions import TFManager
-from common.vision_functions import capture_frame, recognize_face, train_face
+from common.vision_functions import capture_frame, recognize_face, train_face, analyze_face
 from common.logic import Receptionist
 
 # Start Node
@@ -24,8 +24,12 @@ head = Gaze()
 arm = ArmController(omni_base, tf_manager)
 speech_recognition = SpeechRecog()
 
+# Global variables
+guest_name = ''
+guest_image = None
+
 # Enable debug flag to avoid navigation
-debug = False
+debug = True
 
 confirmation = ('yes', 'robot yes','yeah', 
                 'correct', 'right', 'that is right', 
@@ -42,7 +46,7 @@ def publish_places():
             parent_frame="map",
             static=True
         )
-        rospy.sleep(0.7)
+        rospy.sleep(0.4)
 
         # pub faces tf's
         tf_manager.publish_transform(
@@ -52,7 +56,7 @@ def publish_places():
             parent_frame=places[i],
             static=True
         )
-    rospy.sleep(0.7)
+    rospy.sleep(0.4)
 
 
 # Initial STATE: task setup (grammar, knowledge, robot position, ...)
@@ -79,8 +83,9 @@ class Initial(smach.State):
             #          'i want a', 'i would like a', 'tea', 'icedtea', 'cola', 'redwine', 'orangejuice', 'tropicaljuice']
             drinks = ('wine', 'beer', 'water', 'soda', 'coke', 'juice', 'iced tea', 'i want a', 'i would like a')
             names = ('my name is', 'i am','john', 'jack', 'paris', 'charlie', 'simone', 'robin', 'jane', 'jules')
+            interests = ('music', 'sports', 'movies', 'books', 'art', 'travel', 'food', 'i like', 'i enjoy', 'i am interested in')
             declination = ('no','nope','not','now','robot no', 'incorrect', 'wrong', 'that is wrong', 'that is not right', 'that is not correct')       
-            grammar = list(drinks + names + confirmation + declination)
+            grammar = list(drinks + names + confirmation + declination + interests)
             print("Grammar: ", grammar)                                                            
             
             if self.tries == 1:
@@ -98,11 +103,11 @@ class Initial(smach.State):
 class Scan_face(smach.State):
     def __init__(self):
         smach.State.__init__(self, 
-                             outcomes = ['succ', 'failed', 'aborted'], 
-                             output_keys = ['name', 'face_img'])
+                             outcomes = ['succ', 'failed', 'aborted'])
         self.tries = 0
 
     def execute(self, userdata):
+        global guest_name, guest_image
         rospy.loginfo('State : Scan face')
         try:
             head.move_head(0.0, 0.3)
@@ -115,9 +120,9 @@ class Scan_face(smach.State):
 
             
             if recognized_names != None:
-                # userdata.name = res.Ids.ids
-                userdata.name = recognized_names
-                userdata.face_img = "xd"
+                # guest_name = res.Ids.ids
+                guest_name = recognized_names
+                guest_image = image
                 return 'succ'
             else:
                 return 'failed'
@@ -129,51 +134,50 @@ class Scan_face(smach.State):
 class Decide_face(smach.State):
     def __init__(self):
         smach.State.__init__(self, 
-                             outcomes=['succ', 'failed', 'unknown', 'aborted'], 
-                             input_keys=['name', 'face_img'], 
-                             output_keys=['name', 'face_img'])
+                             outcomes=['succ', 'failed', 'unknown', 'aborted'])
         self.tries = 0
     def execute(self, userdata):
-        global confirmation
+        global confirmation, guest_name, guest_image
         self.tries += 1
         rospy.loginfo("STATE: Decide face")
 
         try:
             # Check first if at least one known face was detected
-            if not userdata.name or userdata.name == ["no_face"]:
+            if not guest_name or guest_name == ["no_face"]:
                 voice.talk('I did not see you, I will try again')
                 return 'failed'
             
-            print("userdata: ", userdata.name)
+            print("guest_name: ", guest_name)
             
             # Si hay al menos un nombre conocido, proceder con la confirmación
-            known_names = [n for n in userdata.name if n != "unknown"]
+            known_names = [n for n in guest_name if n != "unknown"]
             if known_names:
                 name = str(known_names[0])
-                voice.talk(f'I found you, I think you are {name}.', timeout=1.5)
+                voice.talk(f'I found you, I think you are {name}')
                 voice.talk('Is it correct?')
 
                 # Simulación de respuesta
                 speech = speech_recognition.get_speech(6)
                 print(speech)
 
+                if not speech:
+                    voice.talk("I could not hear you, let's try again. Please speak louder.")
+                    return 'failed'
+
                 if speech not in confirmation:
                     return 'unknown'
                 
-                elif speech == "timeout":
-                    voice.talk("I could not hear you, let's try again. Please speak louder.")
-                    return 'failed'
                 else:
                     self.tries = 0
-                    userdata.name = name
-                    party.add_guest(userdata.name)
+                    guest_name = name
+                    party.add_guest(guest_name)
                     return 'succ'
                 
             # Count "unknown" faces
-            unknown_count = userdata.name.count('unknown')
+            unknown_count = guest_name.count('unknown')
 
             # If there is only one unknown face
-            if unknown_count == 1 and len(userdata.name) == 1:
+            if unknown_count == 1 and len(guest_name) == 1:
                 voice.talk('I believe we have not met.')
                 self.tries = 0
                 return 'unknown'
@@ -190,26 +194,24 @@ class Decide_face(smach.State):
 class New_face(smach.State):
     def __init__(self):
         smach.State.__init__(self, 
-                             outcomes=['succ', 'failed', 'aborted'],
-                             input_keys=['name', 'face_img'],
-                             output_keys=['name', 'face_img'])
+                             outcomes=['succ', 'failed', 'aborted'])
         #self.new_name = ''
         #self.num_faces = 0
         self.tries = 0
 
     def execute(self, userdata):
-        global confirmation
+        global confirmation, guest_name
         self.tries += 1
         rospy.loginfo('STATE : NEW_FACE')
         try:
             #If name is not recognized 3 times, guest will be registered as a "someone"
             if self.tries == 3:
                 voice.talk ('I didnt undestand your name, lets continue')
-                userdata.name = 'someone'
+                guest_name = 'someone'
                 image = capture_frame()
-                train_face(image, userdata.name)
-                # train_face(userdata.face_img, userdata.name )
-                party.add_guest(userdata.name)
+                train_face(image, guest_name)
+                # train_face(userdata.face_img, guest_name )
+                party.add_guest(guest_name)
                 self.tries = 0
                 return 'succ'
             
@@ -218,27 +220,27 @@ class New_face(smach.State):
             speech = speech_recognition.get_speech(10)
             # speech = 'john'
             # in case thinks like I am , my name is . etc
-            if len(speech.split(' ')) > 1: name = (speech.split(' ')[-1])
-            else: name = speech
+            if len(speech.split(' ')) > 1: 
+                name = (speech.split(' ')[-1])
+            else: 
+                name = speech
 
-            if userdata.name == 'timeout':
+            if not name:
                 voice.talk('Please repeat it and speak louder.')
                 return 'failed'
 
             voice.talk(f'Is {name} your name?')
             speech = speech_recognition.get_speech(10)
 
-            # speech = speech.split(' ')
-
             if speech not in confirmation:
                 voice.talk ('lets try again')
                 return 'failed'
             
-            userdata.name = name
-            voice.talk (f'Nice to Meet You {userdata.name}')
-            party.add_guest(userdata.name)
+            guest_name = name
+            voice.talk (f'Nice to Meet You {guest_name}')
+            party.add_guest(guest_name)
             image = capture_frame()
-            train_face(image, userdata.name)
+            train_face(image, guest_name)
             self.tries = 0
             return 'succ'
         except rospy.ROSInterruptException:
@@ -249,40 +251,51 @@ class New_face(smach.State):
 class Get_drink(smach.State):
     def __init__(self):
         smach.State.__init__(self, 
-                             outcomes=['succ', 'failed', 'aborted'],
-                             input_keys=['name', 'face_img'])
+                             outcomes=['succ', 'failed', 'aborted'])
         self.tries = 0
 
+    def analyze_and_describe(self, image):
+        """Analiza la cara y genera una descripción."""
+        # image = capture_frame()
+        response = analyze_face(image)
+        print("Features: ", response)
+        features = response['features'][0]
+        gender, race, emotion, age = features[0:4]
+        pronoun = "he" if gender.lower() == "man" else "she"
+        description = f"{pronoun} is a {age}-year-old {gender}, I believe {pronoun} is {race}, and seems to be {emotion}."
+        party.add_guest_description(description)
+
     def execute(self, userdata):
-        global confirmation
+        global confirmation, guest_name, guest_image
         self.tries += 1
         rospy.loginfo('STATE : GET DRINK')
         try:
             if self.tries == 1:
-                pass
-                # analyze_face_background(userdata.face_img, userdata.name)
-                # print(userdata.face_img.shape)
+                self.analyze_and_describe(guest_image)
 
             elif self.tries == 3:
                 voice.talk ('I am having trouble understanding you, lets keep going')
                 drink = 'something'
                 self.tries=0
                 party.add_guest_drink(drink)
-                #analyze_face_background(userdata.face_img, userdata.name)
+
+                self.analyze_and_describe(guest_image)
+                
                 return 'succ'
+            
             #Asking for drink
             voice.talk('What would you like to drink?')
-            #rospy.sleep(2.0)
-            # drink = get_keywords_speech(10)
             drink = speech_recognition.get_speech(10)
 
-            if len(drink.split(' '))>1: drink=(drink.split(' ')[-1])
-            print(drink)
-            rospy.sleep(0.5)
+            if len(drink.split(' ')) > 1: 
+                drink=(drink.split(' ')[-1])
+            
+            rospy.sleep(0.4)
 
             if not drink:
                 voice.talk("Sorry, couldn't hear you. Please speak louder.")
                 return 'failed' 
+            
             voice.talk(f'Did you say {drink}?')
             speech = speech_recognition.get_speech(10)
             if speech not in confirmation: 
@@ -292,6 +305,7 @@ class Get_drink(smach.State):
             voice.talk("Okay")
             self.tries = 0
             return 'succ'
+        
         except rospy.ROSInterruptException:
             return 'aborted'
         
@@ -345,6 +359,7 @@ class Find_drink(smach.State):
             print("Party state: ", party)
 
             favorite_drink = party.get_active_guest_drink()
+            # TODO: scan table to find drink implementation
             # res,position = get_favorite_drink_location(favorite_drink)
             res = True
             position = 'left'
@@ -436,6 +451,7 @@ class Check_party(smach.State):
     def execute(self, userdata):
         self.tries += 1
         rospy.loginfo("State: Check party status")
+        arm.set_named_target('go')
 
         try:
             if party.guest_assigned == 1:
@@ -450,8 +466,7 @@ class Check_party(smach.State):
 
 class Find_guests(smach.State):
     def __init__(self):
-        smach.State.__init__(self, outcomes= ['succ', 'failed', 'aborted'],
-                             output_keys=['name_like_host'])
+        smach.State.__init__(self, outcomes= ['succ', 'failed', 'aborted'])
         self.tries = 0
     def execute(self, userdata):
         rospy.loginfo("STATE: Find guests to introduces each other")
@@ -478,13 +493,11 @@ class Find_guests(smach.State):
         
 class Introduce_guest(smach.State):
     def __init__(self):
-        smach.State.__init__(self, outcomes=['succ', 'next', 'aborted'],
-                             input_keys=['name_like_host'])
+        smach.State.__init__(self, outcomes=['succ', 'next', 'aborted'])
         self.tries = 0
 
     def execute(self, userdata):
-        #global name_like_host
-        rospy.loginfo('STATE : Find host')
+        rospy.loginfo('STATE : Introduce guests')
         try:
             self.tries += 1
             if self.tries == 1:
@@ -501,28 +514,32 @@ class Introduce_guest(smach.State):
             print(f'Guest to introduce: {guest_to_introduce}')
 
             # Introduce guests
-
-            voice.talk(f'{guest_to_talk['name']}, I would like to introduce you to {guest_to_introduce['name']}')
+            gtt_name = guest_to_talk['name']
+            gti_name = guest_to_introduce['name']
+            voice.talk(f'{gtt_name}, I would like to introduce you to {gti_name}')
             speech = ''
 
             # Description line
             if guest_to_introduce['description']:
-                speech = guest_to_introduce['description']
+                description = guest_to_introduce['description']
+                speech += f'{description}, '
 
             # Drink line
             if guest_to_introduce['drink'] != 'something':
-                speech += f'likes to drink {guest_to_introduce['drink']}'
+                drink = guest_to_introduce['drink']
+                speech += f'likes to drink {drink}, '
             
             # Interest line
             if guest_to_introduce['interest']:
-                speech = f'and is interested in {guest_to_introduce['interest']}'
+                interest = guest_to_introduce['interest']
+                speech += f'is interested in {interest}'
             
             voice.talk(speech)
             
-            if self.tries == 0:
+            if self.tries == 1:
                 return 'next'
             else:
-                rospy.sleep(3.0)
+                rospy.sleep(1.0)
                 voice.talk("Task completed, thanks for watching")
                 return 'succ'
 
@@ -540,7 +557,7 @@ if __name__ == '__main__':
         # State machine for Receptionist task
         if debug:
             # omni_base.set_debug(debug)
-            voice.talk('Debug mode activated, no navigation will be performed', timeout=4.0)
+            voice.talk('Debug mode')
 
         # Initial states routine
         smach.StateMachine.add("INITIAL", Initial(), 
@@ -611,8 +628,7 @@ if __name__ == '__main__':
                                    navigation = omni_base, 
                                    location = 'door', 
                                    talker = voice, 
-                                   start_message = 'Navigating to door', 
-                                   end_message = 'Arrived to door',
+                                   start_message = 'Navigating to door',
                                    debug = debug),
                                 transitions = {'failed': 'GOTO_DOOR', 'succ': 'WAIT_DOOR_OPENED', 'aborted': 'failure'})
         

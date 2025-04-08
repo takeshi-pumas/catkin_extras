@@ -80,3 +80,58 @@ def train_face(image: Image, name: str):
         rospy.loginfo(f"Respuesta del entrenamiento: {response.name_response[0].data}")
     except rospy.ServiceException as e:
         rospy.logerr(f"Error llamando al servicio: {e}")
+
+
+def analyze_face(image_msg: Image, names_request: list = []):
+    """
+    Cliente para el servicio de análisis facial.
+
+    Args:
+        image_msg (sensor_msgs/Image): Imagen a analizar.
+        names_request (list[str], optional): Lista de nombres a buscar.
+
+    Returns:
+        dict: Resultado del análisis con:
+            - names (list[str])
+            - features (list[list[str]]) por rostro: [gender, race, emotion, age]
+            - bounding_boxes (list[dict])
+    """
+    rospy.wait_for_service('/face_recognition/analyze_face')
+    try:
+        analyze_srv = rospy.ServiceProxy('/face_recognition/analyze_face', FaceRecognition)
+
+        req = FaceRecognitionRequest()
+        req.input_img = image_msg
+        req.name_request = [String(name) for name in names_request]
+
+        response = analyze_srv(req)
+
+        result = {
+            "names": [n.data for n in response.name_response],
+            "features": [],
+            "bounding_boxes": []
+        }
+
+        # Separar las features de cada rostro (4 por rostro)
+        feats = response.features
+        for i in range(0, len(feats), 4):
+            result["features"].append([
+                feats[i].data,      # gender
+                feats[i+1].data,    # race
+                feats[i+2].data,    # emotion
+                feats[i+3].data     # age
+            ])
+
+        for bb in response.bounding_boxes:
+            result["bounding_boxes"].append({
+                "x": bb.x_offset,
+                "y": bb.y_offset,
+                "w": bb.width,
+                "h": bb.height
+            })
+
+        return result
+
+    except rospy.ServiceException as e:
+        rospy.logerr(f"Service call failed: {e}")
+        return None
