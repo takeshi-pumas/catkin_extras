@@ -253,6 +253,9 @@ class Pre_pickup(smach.State):
        
 
         gripper.open()
+
+        
+
         if res:return 'succ'
         return 'failed'
         
@@ -398,9 +401,18 @@ class Pickup_two(smach.State):
         clear_octo_client()
         rospy.sleep(1.0)
         print("MOVING ARM")    
-        _,_,theta=ransac_laser()
-        print (theta)
-        wrist_adjust =    max(theta-(0.5*np.pi), -1.57)
+        #_,_,theta=ransac_laser()
+        #rint (theta)
+        _,quat_r=tf_man.getTF('base_link')
+        print(f'Quat base',np.rad2deg(tf.transformations.euler_from_quaternion(quat_r)[2]))
+        ang_base=tf.transformations.euler_from_quaternion(quat_r)[2]
+        _,quat_b=tf_man.getTF('bagpca')
+        print(f'Quat bag' ,np.rad2deg(tf.transformations.euler_from_quaternion(quat_b)[2]))
+        ang_bag=tf.transformations.euler_from_quaternion(quat_b)[2]
+        
+
+        #wrist_adjust =    max(theta-(0.5*np.pi), -1.57)
+        wrist_adjust =    min(max((ang_base-ang_bag), -1.57) , 1.57)
         print ('theta, remvoe',wrist )
         #floor_pose=[0.05,-1.6,0.0,-1.41,0.0,0.0]
 
@@ -482,6 +494,8 @@ class Deliver_Luggage(smach.State):
         gripper.open()
         talk("Thank you")
         rospy.sleep(1)
+        talk("Closing Gripper. Please be sure your hand is out of the way")
+        rospy.sleep(2.5)
         gripper.close(0.1)
         return 'succ'
 

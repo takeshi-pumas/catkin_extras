@@ -893,7 +893,8 @@ def get_luggage_tf():
                 print ( points_c.shape)
                 E_R=points_to_PCA(points_c.transpose())
                 e_ER=tf.transformations.euler_from_matrix(E_R)
-                quat_pca= tf. transformations.quaternion_from_euler(e_ER[0],e_ER[1],e_ER[2])
+                #quat_pca= tf. transformations.quaternion_from_euler(e_ER[0],e_ER[1],e_ER[2])
+                quat_pca= tf. transformations.quaternion_from_euler(0,0,e_ER[2])
                 print("ANGLE:",tf.transformations.euler_from_matrix(E_R)," Degrees:",np.rad2deg(tf.transformations.euler_from_matrix(E_R)))
 
                 #######################################
