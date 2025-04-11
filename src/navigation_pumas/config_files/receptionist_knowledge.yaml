@@ -3,6 +3,66 @@ People:
     drink: Coke
     location: Place_3
     name: Oscar
+  Guest_1:
+    description: null
+    drink: null
+    interest: null
+    location: Place_2
+    name: jack
+  Guest_10:
+    description: null
+    drink: null
+    interest: null
+    location: null
+    name: jack
+  Guest_2:
+    description: null
+    drink: null
+    interest: null
+    location: null
+    name: jack
+  Guest_3:
+    description: null
+    drink: null
+    interest: null
+    location: null
+    name: yeah
+  Guest_4:
+    description: null
+    drink: null
+    interest: null
+    location: null
+    name: jack
+  Guest_5:
+    description: null
+    drink: null
+    interest: null
+    location: null
+    name: jack
+  Guest_6:
+    description: null
+    drink: null
+    interest: null
+    location: null
+    name: jack
+  Guest_7:
+    description: null
+    drink: null
+    interest: null
+    location: Place_1
+    name: jack
+  Guest_8:
+    description: null
+    drink: null
+    interest: null
+    location: null
+    name: jack
+  Guest_9:
+    description: null
+    drink: null
+    interest: null
+    location: null
+    name: jack
 Places:
   Place_0:
     location:
@@ -15,13 +75,13 @@ Places:
       theta: -0.05
       x: -0.33
       y: -1.7
-    occupied: null
+    occupied: Guest_7
   Place_2:
     location:
       theta: -1.51
       x: -0.82
       y: -1.61
-    occupied: null
+    occupied: Guest_1
   Place_3:
     location:
       theta: 3.1

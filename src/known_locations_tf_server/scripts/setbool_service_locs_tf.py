@@ -11,7 +11,7 @@ from known_locations_tf_server.srv import *
 import pandas as pd
 from geometry_msgs.msg import TransformStamped
 from copy import deepcopy
-from utils.know_utils import *
+#from utils.know_utils import *
 global path 
 #path = '/home/takeshi/Codes/known_locations.txt'
 def write_tf(pose, q, child_frame , parent_frame='map'):

@@ -32,7 +32,10 @@ from rospy.exceptions import ROSException
 from vision_msgs.srv import *
 from std_msgs.msg import String, Bool
 import random
-
+import rospkg
+import yaml
+import pandas as pd
+rospack = rospkg.RosPack()
 from ros_whisper_vosk.srv import SetGrammarVosk
 
 from utils import grasp_utils, misc_utils, nav_utils, receptionist_knowledge
@@ -330,3 +333,30 @@ def new_move_D_to(tf_name='placing_area',d_x=15 , timeout=30.0):
             i=0
         omni_base.tiny_move( velX=corr_velX,velY=0, velT=delta_th,std_time=0.2, MAX_VEL=0.3) 
     return succ
+
+
+
+## PARAM  FILE
+def read_yaml(known_locations_file = '/known_locations.yaml'):
+    
+    file_path = rospack.get_path('config_files')  + known_locations_file
+
+    with open(file_path, 'r') as file:
+        content = yaml.safe_load(file)
+    return content
+
+def yaml_to_df():
+    con = read_yaml('/known_locations.yaml')
+    values=[]
+    locations=[]
+    for c in con:
+        locations.append(c)
+
+        for i in range(len(con[c])):
+            values.append(list(con[c][i].values())[0])
+
+    data=np.asarray(values).reshape((int(len(values)/7),7))    #x , y ,theta  ,quat   since z always 0
+    df= pd.DataFrame( data)
+    df.columns=['x','y','th','qx','qy','qz','qw']
+    df['child_id_frame']=locations
+    return df

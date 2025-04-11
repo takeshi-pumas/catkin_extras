@@ -21,7 +21,7 @@ class Initial(smach.State):
         rospy.loginfo('STATE : INITIAL')
         print('Robot neutral pose')
         self.tries += 1
-        rospy.loginfo(f"Received command: {sm.userdata.goal.command}")
+        rospy.loginfo(f"Received command: {sm.userdata.goal}")
         #print (f'self.sm.userdata.goal.mode -> {self.sm.userdata.goal.mode.data}')
         head.set_named_target('neutral')
         #print('head listo')
@@ -108,11 +108,11 @@ class Find_face(smach.State):
         if self.tries==1:head.set_joint_values([ 0.0, 0.3])
         if self.tries==2:head.set_joint_values([ 0.7, 0.1])
         if self.tries==3:head.set_joint_values([-0.7, 0.1])
-        talk('Waiting for guest, look at me, please')
+        talk(' look at me, please')
         res, userdata.face_img = wait_for_face()  # default 10 secs
         #rospy.sleep(0.7)
         if res != None:
-            #userdata.name = res.Ids.ids
+            userdata.name = res.Ids.ids
             return 'succ'
         else:
             return 'failed'
@@ -145,15 +145,17 @@ class Decide_face(smach.State):
             print (confirmation)
 
             if confirmation not in ['yes','jack','juice', 'takeshi yes','yeah']:
-                talk(f'I am looking for{sm.userdata.goal.command} ')
+                talk(f'I am looking for{sm.userdata.goal} ')
                 return 'unknown'
             elif confirmation == "timeout":
                 talk('I could not hear you, lets try again, please speak louder.')
                 return "failed"
             else:       
-                talk(f'{sm.userdata.goal.command} Found.')
-                         
-                return 'succ'
+                if sm.userdata.goal==userdata.name: 
+                    talk(f'{sm.userdata.goal} Found.')                         
+                    return 'succ'
+                else: 
+                    talk(f' Here is {usardata.name }, however I am looking for{sm.userdata.goal} ')                         
 
 # New face STATE: Train new guest on DB
 
