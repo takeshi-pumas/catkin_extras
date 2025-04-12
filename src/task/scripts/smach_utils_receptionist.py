@@ -113,8 +113,6 @@ def wait_for_face(timeout=10 , name=''):
     string_msg.data='Anyone'
     while rospy.get_time() - start_time < timeout:
         img=rgbd.get_image()
-
-        img  
         req=RecognizeFaceRequest()
         print ('Got  image with shape',img.shape)
         req.Ids.ids.append(string_msg)
@@ -156,8 +154,18 @@ def wait_for_face(timeout=10 , name=''):
                 ds_to_faces=[]
                 return new_res , img
 
-
-
+#------------------------------------------------------
+def faces_2_tf(res):
+    
+    for place, loc in zip(places, locs):
+        print(place, loc)
+        pos = [loc[0], loc[1], 0.85]
+        rot = tf.transformations.quaternion_from_euler(0.0, 0.0, loc[2])
+        tf_man.pub_static_tf(pos=pos, rot=rot, point_name=place)
+        rospy.sleep(0.6)
+        tf_face = place.replace('_', '_face')
+        tf_man.pub_static_tf(pos=[1.0, 0, 0], rot=rot, point_name=tf_face, ref=place)
+        rospy.sleep(0.6)
 #------------------------------------------------------
 
 def wait_for_push_hand(time=10):

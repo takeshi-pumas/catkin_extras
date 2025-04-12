@@ -571,74 +571,8 @@ Visualization Manager:
       Filter (whitelist): ""
       Frame Timeout: 15
       Frames:
-        001_chips_can:
-          Value: true
-        002_master_chef_can:
-          Value: true
-        003_cracker_box:
-          Value: true
-        005_tomato_soup_can:
-          Value: true
-        007_tuna_fish_can:
-          Value: true
-        008_pudding_box:
-          Value: true
-        009_gelatin_box:
-          Value: true
-        010_potted_meat_can:
-          Value: true
-        011_banana:
-          Value: true
-        012_strawberry:
-          Value: true
-        013_apple:
-          Value: true
-        015_peach:
-          Value: true
-        019-a_pitcher_base:
-          Value: true
-        019-b_pitcher_base_v2:
-          Value: true
-        020_pitcher_lid:
-          Value: true
-        021_bleach_cleanser:
-          Value: true
-        022_windex_bottle:
-          Value: true
-        024_bowl:
-          Value: true
-        025_mug:
-          Value: true
-        033_spatula:
-          Value: true
-        040_large_marker:
-          Value: true
-        050_medium_clamp:
-          Value: true
-        055_baseball:
-          Value: true
-        056_tennis_ball:
-          Value: true
-        058_golf_ball:
-          Value: true
-        062_dice:
-          Value: true
-        063-a_marbles:
-          Value: true
-        063-b_marbles:
-          Value: true
-        065-c_cups:
-          Value: true
-        070-a_colored_wood_blocks:
-          Value: true
-        071_nine_hole_peg_test:
-          Value: true
-        073-b_lego_duplo:
-          Value: true
         All Enabled: false
-        a_pitcher_base:
-          Value: true
-        apple:
+        Scarlet:
           Value: true
         arm_flex_link:
           Value: false
@@ -646,10 +580,6 @@ Visualization Manager:
           Value: false
         arm_roll_link:
           Value: false
-        b_marbles:
-          Value: true
-        banana:
-          Value: true
         base_b_bumper_link:
           Value: false
         base_f_bumper_link:
@@ -682,29 +612,9 @@ Visualization Manager:
           Value: false
         base_roll_link:
           Value: false
-        baseball:
+        beverage_area:
           Value: true
-        bleach_cleanser:
-          Value: true
-        bowl:
-          Value: true
-        c_cups:
-          Value: true
-        chips_can:
-          Value: true
-        dice:
-          Value: true
-        door_lab:
-          Value: true
-        entrance:
-          Value: true
-        goal_for_grasp:
-          Value: true
-        golf_ball:
-          Value: true
-        hallway_1:
-          Value: true
-        hallway_2:
+        door:
           Value: true
         hand_camera_frame:
           Value: false
@@ -748,10 +658,14 @@ Visualization Manager:
           Value: false
         head_pan_link:
           Value: false
+        head_r_stereo_camera_frame:
+          Value: true
         head_r_stereo_camera_gazebo_frame:
           Value: false
         head_r_stereo_camera_link:
           Value: false
+        head_rgbd_sensor_depth_frame:
+          Value: true
         head_rgbd_sensor_gazebo_frame:
           Value: false
         head_rgbd_sensor_link:
@@ -760,43 +674,25 @@ Visualization Manager:
           Value: false
         head_tilt_link:
           Value: false
-        kitchen:
-          Value: true
         living_room:
           Value: true
         map:
           Value: true
-        master_chef_can:
-          Value: true
-        nine_hole_peg_test:
-          Value: true
         odom:
           Value: true
-        peach:
+        seat_place_1:
           Value: true
-        pickup:
+        seat_place_2:
           Value: true
-        pitcher_lid:
+        seat_place_3:
           Value: true
-        place_shelf:
+        seat_place_4:
           Value: true
-        placing_area:
-          Value: true
-        potted_meat_can:
-          Value: true
-        pudding_box:
-          Value: true
-        shelf:
-          Value: true
-        strawberry:
-          Value: true
-        tennis_ball:
-          Value: true
-        tomato_soup_can:
+        seat_place_5:
           Value: true
         torso_lift_link:
           Value: false
-        tuna_fish_can:
+        unknown:
           Value: true
         wrist_flex_link:
           Value: false
@@ -814,45 +710,11 @@ Visualization Manager:
       Show Names: true
       Tree:
         map:
-          a_pitcher_base:
+          beverage_area:
             {}
-          apple:
-            {}
-          b_marbles:
-            {}
-          banana:
-            {}
-          baseball:
-            {}
-          bleach_cleanser:
-            {}
-          bowl:
-            {}
-          c_cups:
-            {}
-          chips_can:
-            {}
-          dice:
-            {}
-          door_lab:
-            {}
-          entrance:
-            {}
-          goal_for_grasp:
-            {}
-          golf_ball:
-            {}
-          hallway_1:
-            {}
-          hallway_2:
-            {}
-          kitchen:
+          door:
             {}
           living_room:
-            {}
-          master_chef_can:
-            {}
-          nine_hole_peg_test:
             {}
           odom:
             base_footprint:
@@ -913,104 +775,35 @@ Visualization Manager:
                           {}
                       head_l_stereo_camera_link:
                         head_l_stereo_camera_frame:
-                          head_rgbd_sensor_rgb_frame:
-                            001_chips_can:
-                              {}
-                            002_master_chef_can:
-                              {}
-                            003_cracker_box:
-                              {}
-                            005_tomato_soup_can:
-                              {}
-                            007_tuna_fish_can:
-                              {}
-                            008_pudding_box:
-                              {}
-                            009_gelatin_box:
-                              {}
-                            010_potted_meat_can:
-                              {}
-                            011_banana:
-                              {}
-                            012_strawberry:
-                              {}
-                            013_apple:
-                              {}
-                            015_peach:
-                              {}
-                            019-a_pitcher_base:
-                              {}
-                            019-b_pitcher_base_v2:
-                              {}
-                            020_pitcher_lid:
-                              {}
-                            021_bleach_cleanser:
-                              {}
-                            022_windex_bottle:
-                              {}
-                            024_bowl:
-                              {}
-                            025_mug:
-                              {}
-                            033_spatula:
-                              {}
-                            040_large_marker:
-                              {}
-                            050_medium_clamp:
-                              {}
-                            055_baseball:
-                              {}
-                            056_tennis_ball:
-                              {}
-                            058_golf_ball:
-                              {}
-                            062_dice:
-                              {}
-                            063-a_marbles:
-                              {}
-                            063-b_marbles:
-                              {}
-                            065-c_cups:
-                              {}
-                            070-a_colored_wood_blocks:
-                              {}
-                            071_nine_hole_peg_test:
-                              {}
-                            073-b_lego_duplo:
-                              {}
+                          {}
                         head_l_stereo_camera_gazebo_frame:
                           {}
                       head_r_stereo_camera_link:
+                        head_r_stereo_camera_frame:
+                          {}
                         head_r_stereo_camera_gazebo_frame:
                           {}
                       head_rgbd_sensor_link:
+                        head_rgbd_sensor_depth_frame:
+                          {}
                         head_rgbd_sensor_gazebo_frame:
                           {}
+                        head_rgbd_sensor_rgb_frame:
+                          Scarlet:
+                            {}
+                          unknown:
+                            {}
             base_footprint_wheel:
               {}
-          peach:
+          seat_place_1:
             {}
-          pickup:
+          seat_place_2:
             {}
-          pitcher_lid:
+          seat_place_3:
             {}
-          place_shelf:
+          seat_place_4:
             {}
-          placing_area:
-            {}
-          potted_meat_can:
-            {}
-          pudding_box:
-            {}
-          shelf:
-            {}
-          strawberry:
-            {}
-          tennis_ball:
-            {}
-          tomato_soup_can:
-            {}
-          tuna_fish_can:
+          seat_place_5:
             {}
       Update Interval: 0
       Value: true
@@ -1180,7 +973,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 4.17087459564209
+      Distance: 7.345926761627197
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -1188,17 +981,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: -0.1071244478225708
-        Y: 0.5471919775009155
-        Z: -3.3064679882954806e-06
+        X: 0.7903976440429688
+        Y: -1.6491289138793945
+        Z: -2.114375092787668e-06
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.149796485900879
+      Pitch: 1.0197964906692505
       Target Frame: base_footprint
-      Yaw: 4.8045220375061035
+      Yaw: 6.234531402587891
     Saved: ~
 Window Geometry:
   Displays:
