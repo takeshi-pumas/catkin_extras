@@ -77,7 +77,17 @@ def read_yaml(known_locations_file='/known_locations.yaml'):
 ######################################################################################        
 
 
-def plan_command(command, model='mistral'):
+import yaml
+import rospkg
+
+
+
+
+import yaml
+import rospkg
+
+
+def plan_command(command):
     # Load necessary data
     actions=read_yaml('actions.yaml')
     known_locs=read_yaml('known_locs_gpsr.yaml')
@@ -87,22 +97,18 @@ def plan_command(command, model='mistral'):
     with open(file_path, 'r') as file:
         examples = file.read()
     ######################################################################################        
-    print('Planning... wait for a few seconds ')
-  
+    # Step 1: Generate YAML-formatted action plan
     prompt_1 = (
         f"You are a robot with a limited action set described here: {actions}. "
-        #f"Here are some examples of sequences of actions to solve commands: {examples}. "
+        f"Here are some examples of sequences of actions to solve commands: {examples}. "
         f"User requests: {command}. Using ONLY the provided action set and known locations {known_locs}, "
         f"generate a structured action plan that follows the sequence of tasks required to accomplish the goal. "
         f"Ensure the output is in YAML format and includes specific actions from the available action set "
         f"(e.g., navigate, locate_object, bring_object). All actions and parameters must be formatted in snake_case."
-        f"Assume all persons and objects can move, so unless directly mentioned in {known_locs} or in {command} assume location is unknown, and you should ask user for this info ( this is an action AskUser)"
-        f"Do NOT add any assumptions or extra entities not mentioned in the command."
     )
 
     messages = [{"role": "tool", "content": prompt_1}]
-    #response = chat('mistral', messages=messages)
-    response = chat(model, messages=messages)
+    response = chat('mistral', messages=messages)
     plan_yaml = response['message']['content']
     print(plan_yaml)
 
@@ -118,11 +124,12 @@ def plan_command(command, model='mistral'):
         {"role": "tool", "content": plan_yaml},
         {"role": "tool", "content": prompt_2},
     ]
-    response2 = chat(model, messages=messages)
+    response2 = chat('mistral', messages=messages)
     plan_list = response2['message']['content']
     print(plan_list)
 
     return plan_list
+
 
 ######################################################################################        
 def fact_check(plan):
@@ -189,14 +196,22 @@ def action_planner(req):
             print (f'question: {req.command.data}')
             answer=answer_question(req.command.data)
             response.data=answer
+        else:
+            plan=plan_command(req.command.data)
+            print (f'plan{plan}')
+            #check_plan=fact_check(plan)
+            response.data = plan
     else:
         qr_text=wait_for_qr(req.timeout)
         print(qr_text)
+        
+        print ('planning',qr_text)
         if qr_text != "time out":
             command=qr_text
             plan=plan_command(command)
-            check_plan=fact_check(plan)
-
+            print (f'plan{plan}')
+            #check_plan=fact_check(plan)
+            response.data = plan
             #corr_plan = check_format(plan)
             # Find the start and end of the sequence
             #start = corr_plan.find("[")
@@ -210,13 +225,13 @@ def action_planner(req):
             #    print("No sequence found.")
             #out_plan=', '.join(actions)
             #out_plan
-            if check_plan=='continue':
-                print ("Plan accepted. executing")
-                response.data = plan
-            else: 
-                print ( "more info is needed.Ask user")
-                response.data = check_plan 
-            print(f"{response.data}\n \n")
+            #if check_plan=='continue':
+            #    print ("Plan accepted. executing")
+            #    response.data = plan
+            #else: 
+            #    print ( "more info is needed.Ask user")
+            #    response.data = check_plan 
+            #print(f"{response.data}\n \n")
         else:
             print (' Qr Timed OuT')
             response.data ='timed out'
