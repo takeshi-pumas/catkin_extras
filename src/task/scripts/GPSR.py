@@ -125,36 +125,36 @@ class Wait_command(smach.State):
         if self.tries == 4:
             return 'tries'
         talk('Ready for GPSR, waiting for comand using QR')   
-        return 'succ' 
-        #plan="plan=['FindObject(EndTable)', 'Navigate(EndTable)', 'IdentifyObject(largest_object)', 'ReportObjectAttribute(size)']"
-        #succ = wait_for_qr(100) # TO DO
-        succ=True
+        print('Ready for GPSR, waiting for comand using QR')   
+        
+        #plan="plan=['FindObject(EndTable)', 'Navigate(EndTable)', 'IdentifyObject(largest_object)', 'ReportObjectAttribute(size)']" #Example Desired PLAN
+                
         req = ActionPlannerRequest()
         req.timeout=10
         command=action_planner_server(req)
         print(f'command.plan.data{command.plan.data}.')
         if command.plan.data== 'timed out':return 'failed'
-        
-        #plan="plan = [ Navigate(Desk),FollowPerson(Skyler),Navigate(dining_room)]"
-        #plan= "plan = [ Navigate(end_table),FindObject(bowl),PickObject(bowl),Navigate(cupboard),PlaceObject(cupboard)]"
-        #plan="plan = [ Navigate(cupboard),PlaceObject(cupboard)]"
-        #command_msg= String()
-        #command_msg.data=plan.split("=")[1].strip("[ ]")
+        plan=command.plan.data
+        start = plan.find("[") + 1
+        end = plan.rfind("]")
+        inner = plan[start:end]
+
+        # Step 2: Split by comma keeping quotes in mind
+        action_calls = [s.strip().strip('"') for s in inner.split(',')]
+
+        # Step 3: Parse each call
         actions=[]
         params=[]
-        for command in ("Navigate(cupboard),PlaceObject(cupboard)"):#command.plan.data.split(','):   ### TODO THIS IS SUPER BAD
-            print (command)
-            action = command.split('(')[0]  # Get the part before '('
-            param = command.split('(')[1][:-1]  # Get the part inside '()'
-            # Append to the respective arrays
-            actions.append(action)
-            params.append(param)
+        for call in action_calls:
+            name, args = call.split("(", 1)
+            args = args.rstrip(")")
+            print(f"Action: {name}, Args: {args}")
+            actions.append(name)
+            params.append(args)
+        print (f'acttions params{actions,params}')
         userdata.actions=actions
         userdata.params=params
-        if succ:
-            return 'succ'
-        else:
-            return 'failed'
+        return 'succ'
 #########################################################################################################
 class Wait_push_hand(smach.State):
     def __init__(self):
