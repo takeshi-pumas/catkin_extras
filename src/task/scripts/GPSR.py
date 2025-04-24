@@ -84,8 +84,6 @@ class Plan(smach.State):
 
         rospy.loginfo('STATE : Execute PLAN')
         actions=userdata.actions
-        
-        actions.append('place_object')
         talk (actions[0]) 
         print(f'Ollama plan to actions{actions} ')
         if len(actions)==0:
@@ -134,27 +132,40 @@ class Wait_command(smach.State):
         command=action_planner_server(req)
         print(f'command.plan.data{command.plan.data}.')
         if command.plan.data== 'timed out':return 'failed'
+        # Step 1: Extract the list part of the string
         plan=command.plan.data
-        start = plan.find("[") + 1
-        end = plan.rfind("]")
-        inner = plan[start:end]
+        start = plan.find("[")
+        plan_str = plan[start:]
 
-        # Step 2: Split by comma keeping quotes in mind
-        action_calls = [s.strip().strip('"') for s in inner.split(',')]
+        # Step 2: Safely evaluate the string as a Python list
+        try:
+            plan_list = ast.literal_eval(plan_str)
+        except Exception as e:
+            print("Error evaluating plan string:", e)
+            plan_list = []
 
-        # Step 3: Parse each call
-        actions=[]
-        params=[]
-        for call in action_calls:
-            name, args = call.split("(", 1)
-            args = args.rstrip(")")
-            print(f"Action: {name}, Args: {args}")
-            actions.append(name)
-            params.append(args)
-        print (f'acttions params{actions,params}')
+        # Step 3: Parse each function call using regex
+        regex = re.compile(r'(\w+)\s*\(\s*(.*?)\s*\)')
+        actions = []
+        params = []
+
+        for call in plan_list:
+            match = regex.match(call)
+            if match:
+                name = match.group(1)
+                arg_string = match.group(2)
+                args = [arg.strip() for arg in arg_string.split(',') if arg.strip()]
+                actions.append(name)
+                params.append(args)
+            else:
+                print("Could not parse call:", call)
+
+        print("Actions:", actions)
+        print("Parameters:", params)
         userdata.actions=actions
         userdata.params=params
-        return 'succ'
+        if len (actions)>0:return 'succ'
+        return 'failed'
 #########################################################################################################
 class Wait_push_hand(smach.State):
     def __init__(self):

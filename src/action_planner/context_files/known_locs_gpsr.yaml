@@ -1,56 +1,168 @@
-- name: Navigate
-  purpose: Move the robot to a target location.
-  parameters:
-    - target_location: The location to navigate to.
-- name: FollowPerson
-  purpose: Follow a specific person as they move.
-  parameters:
-    - person_name: The name of the person to follow.
-- name: PickObject
-  purpose: Pick an object.
-  parameters:
-    - object_name: The name of the object to pick.
-- name: PlaceObject
-  purpose: Place an object at a target location.
-  parameters:
-    - object_name: The name of the object to place.
-    - target_location: The location where the object should be placed.
-- name: GreetPerson
-  purpose: Greet a person verbally or visually.
-  parameters:
-    - person_name: The name of the person to greet.
-- name: AnswerQuestion
-  purpose: Respond to a question from a person.
-  parameters:
-    - question: The question to answer.
-- name: IdentifyPerson
-  purpose: Provide information about a person (e.g., gender, pose).
-  parameters:
-    - person_name: The name of the person to identify.
-- name: TellJoke
-  purpose: Tell a joke to entertain or engage a person.
-  parameters:
-    - person_name: The name of the person to tell a joke to.
-- name: StateInfo
-  purpose: State contextual information (e.g., time, day).
-  parameters:
-    - info_item: The information to state (e.g., time, date).
-- name: FindObject
-  purpose: Locate a specific object in the environment or by type.
-  parameters:
-    - object_name: (optional) The name of the specific object to locate.
-    - object_type: (optional) The type of object to locate (e.g., "fruits").
-- name: CountObjects
-  purpose: Count the number of objects of a specific type in a location.
-  parameters:
-    - type_object: The type of object to count (e.g., "fruits").
-    - location: (optional) The location where the objects are found.
-- name: ReportObjectAttribute
-  purpose: Identify attributes of an object (e.g., weight, size).
-  parameters:
-    - attribute: The attribute to report (e.g., "weight").
-    - object_name: (optional) The object whose attribute is being reported.
-- name: LocatePerson
-  purpose: Identify the location of a specific person.
-  parameters:
-    - person_name: The name of the person to locate.
+bed:
+- x: 3.831
+- y: -2.537
+- theta: -0.043
+- qx: 0.0
+- qy: 0.0
+- qz: -0.021
+- qw: 0.999
+bedroom:
+- x: 4.052
+- y: -1.242
+- theta: -1.178
+- qx: 0.0
+- qy: 0.0
+- qz: -0.555
+- qw: 0.831
+book_shelf:
+- x: 1.326
+- y: -2.068
+- theta: 1.627
+- qx: 0.0
+- qy: 0.0
+- qz: 0.726
+- qw: 0.686
+coach:
+- x: 1.224
+- y: -2.451
+- theta: -1.605
+- qx: 0.0
+- qy: 0.0
+- qz: -0.719
+- qw: 0.694
+counter:
+- x: 4.909
+- y: 1.873
+- theta: 1.544
+- qx: 0.0
+- qy: 0.0
+- qz: 0.697
+- qw: 0.716
+cupboard:
+- x: 5.013
+- y: 0.772
+- theta: -1.586
+- qx: 0.0
+- qy: 0.0
+- qz: -0.712
+- qw: 0.701
+desk:
+- x: 0.617
+- y: -1.744
+- theta: 1.667
+- qx: 0.0
+- qy: 0.0
+- qz: 0.74
+- qw: 0.671
+dining_room:
+- x: 2.764
+- y: 0.06
+- theta: 2.142
+- qx: 0.0
+- qy: 0.0
+- qz: 0.877
+- qw: 0.479
+dining_table:
+- x: 1.969
+- y: 0.118
+- theta: 1.562
+- qx: 0.0
+- qy: 0.0
+- qz: 0.704
+- qw: 0.71
+dish_washer:
+- x: 4.898
+- y: 0.864
+- theta: -1.586
+- qx: 0.0
+- qy: 0.0
+- qz: -0.712
+- qw: 0.701
+end_table:
+- x: 5.236
+- y: 1.11
+- theta: -0.07
+- qx: 0.0
+- qy: 0.0
+- qz: -0.035
+- qw: 0.999
+entrance:
+- x: 1.065
+- y: -0.01
+- theta: 0.01
+- qx: 0.0
+- qy: 0.0
+- qz: 0.005
+- qw: 0.999
+exit:
+- x: 1.188
+- y: 2.588
+- theta: 1.475
+- qx: 0.0
+- qy: 0.0
+- qz: 0.672
+- qw: 0.74
+kitchen:
+- x: 4.385
+- y: 0.479
+- theta: 1.097
+- qx: 0.0
+- qy: 0.0
+- qz: 0.521
+- qw: 0.853
+living_room:
+- x: 2.417
+- y: -1.342
+- theta: -2.446
+- qx: 0.0
+- qy: 0.0
+- qz: -0.94
+- qw: 0.34
+rear_door:
+- x: 1.186
+- y: 2.603
+- theta: 1.475
+- qx: 0.0
+- qy: 0.0
+- qz: 0.672
+- qw: 0.739
+shelf:
+- x: 4.985
+- y: 0.585
+- theta: -1.6
+- qx: 0.0
+- qy: 0.0
+- qz: -0.717
+- qw: 0.696
+side_table:
+- x: 5.114
+- y: -1.29
+- theta: 0.014
+- qx: 0.0
+- qy: 0.0
+- qz: 0.007
+- qw: 0.999
+sink:
+- x: 4.863
+- y: 0.845
+- theta: -1.61
+- qx: 0.0
+- qy: 0.0
+- qz: -0.721
+- qw: 0.692
+start:
+- x: 0.0
+- y: 0.0
+- theta: -1.621
+- qx: 0.0
+- qy: 0.0
+- qz: -0.724
+- qw: 0.688
+storage_table:
+- x: 5.203
+- y: 1.161
+- theta: -0.048
+- qx: 0.0
+- qy: 0.0
+- qz: -0.024
+- qw: 0.999

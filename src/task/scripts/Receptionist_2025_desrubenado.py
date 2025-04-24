@@ -429,47 +429,34 @@ class Lead_to_living_room(smach.State):
 
 class Find_sitting_place(smach.State):
     def __init__(self):
-        smach.State.__init__(self, outcomes=['succ', 'failed'], input_keys=['name','guest_num','interest'])
+        smach.State.__init__(self, outcomes=['succ', 'failed', 'end'], input_keys=['name','guest_num','interest'])
         self.tries = 0
+        self.intros=0
         self.introduced=False
         self.sat=False
     def execute(self, userdata):
 
         rospy.loginfo('STATE : Looking for a place to sit')
 
-        print('Try', self.tries, 'of 3 attempts')
+        print('Try', self.tries, 'of 5 sitting places')
         self.tries += 1
         if self.tries==6 :
-            (f' Hey {userdata.name}  Something went wrong please use any available seat  ')
+            (f' Hey  everyone Here is {userdata.name},he likes {userdata.interest} ')
             self.tries=0
+            if userdata.guest_num>=3:
+                voice.talk('Task completed , Thanks for your attention')
+                return 'end'
             return 'succ'
-        
-        # if self.sat:voice.talk('I am looking for people to introduce you')
-        # else:voice.talk('I am looking for a place to sit')
-
-        #isPlace, place = party.get_active_seat()
-        # isLocation, loc = party.get_active_seat_location()
-        # if isLocation:
-        #     #omni_base.move_base(*loc)
-        #     pass
-        # else:
-        #     voice.talk('Sorry, there is no more places to sit')
-        #     return 'succ'
-
-        #if isPlace:
-        #    tf_name = place.replace('_', '_face')
-        #    head.to_tf(tf_name)
-
-        #commented detect human
-        #res = detect_human_to_tf()
 
         place='seat_place_'+str(self.tries)
         print (place)
         
         head.to_tf(place)
         voice.talk('I will check if this place is empty')
-        res , _ = wait_for_face()  # seconds
-        if not res:            
+        res , _ = wait_for_face()  # seconds       
+
+
+        if not res:              # IF a seat is found.
             rospy.sleep(0.8)
             if not self.sat:
                 head.turn_base_gaze2(tf = place, to_gaze = 'base_link')
@@ -477,31 +464,51 @@ class Find_sitting_place(smach.State):
                 brazo.set_named_target('neutral')
                 voice.talk(f'{userdata.name}, I found you a free place, sit here please.')
                 self.sat=True
-                if self.introduced:
+                if self.introduced:    #SHOULD ONLY BE TRUE IF NEW GGUEST HAS BEEN INTRODUCED TO EVERY ONE 
                     self.sat=False
                     self.introduced=False
                     self.tries=0
+                    self.intros=0    
+
                     if userdata.guest_num>=3:
                         voice.talk('Task completed , Thanks for your attention')
-                        return 0 
+                        return 'end'
                     else:
                         self.tries=0
                         return 'succ'
                 else:return 'failed'
             else:return'failed'
-        else:
+        
+
+        
+
+        else:                        # A person is found.
             occupant_name = res.Ids.ids
             voice.talk(f'Hi {occupant_name},let me introduce you to {userdata.name}, he likes {userdata.interest} ')
             self.introduced=True
+            self.intros+=1
+
             if self.sat:
                 self.sat=False
                 self.introduced=False
-                self.tries=0
-                if userdata.guest_num>=3:   
+                self.tries=0    
+                self.intros=0            
+                
+                if userdata.guest_num>=3 and self.intros>=2:    #Only  ends if 2 nd guest is introduced twoce
                     voice.talk('Task completed , Thanks for your attention')
-                    return 0 
-                else:return 'succ'
-            return 'failed'
+                    return 'end' 
+                elif userdata.guest_num<=2:return 'succ' # GO TO DOOR
+                else:return 'failed'
+               
+
+
+
+            else:return 'failed'
+            return 'failed'  # KEEP SCANNING TROUGH SEATS
+
+
+
+
 
 class Check_party(smach.State):
     def __init__(self):
@@ -640,7 +647,7 @@ if __name__ == '__main__':
         smach.StateMachine.add("LEAD_TO_BEVERAGE_AREA", Lead_to_beverage_area(),  
                                transitions={'failed': 'LEAD_TO_BEVERAGE_AREA', 'succ': 'FIND_DRINK'})
         smach.StateMachine.add("FIND_DRINK", Find_drink(),
-                               transitions={'failed': 'FIND_DRINK', 'succ': 'LEAD_TO_LIVING_ROOM'})
+                               transitions={'failed': 'FIND_DRINK', 'succ': 'LEAD_TO_LIVING_ROOM','end':'END'})
         smach.StateMachine.add("LEAD_TO_LIVING_ROOM", Lead_to_living_room(),  
                                transitions={'failed': 'LEAD_TO_LIVING_ROOM', 'succ': 'FIND_SITTING_PLACE'})
         smach.StateMachine.add("FIND_SITTING_PLACE", Find_sitting_place(),

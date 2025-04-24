@@ -77,10 +77,6 @@ def read_yaml(known_locations_file='/known_locations.yaml'):
 ######################################################################################        
 
 
-import yaml
-import rospkg
-
-
 
 
 import yaml
@@ -88,47 +84,124 @@ import rospkg
 
 
 def plan_command(command):
-    # Load necessary data
-    actions=read_yaml('actions.yaml')
+    #model="llama3.2"
+    model="mistral"
+    tools="""
+        def Navigate(target_location: str):
+            \"\"\"
+            Move the robot to a target location.
+            \"\"\"
+        
+        def FollowPerson(person_name: str):
+            \"\"\"
+            Follow a specific person as they move.
+            \"\"\"
+        
+        def PickObject(object_name: str):
+            \"\"\"
+            Pick an object.
+            \"\"\"
+        
+        def PlaceObject(object_name: str, target_location: str):
+            \"\"\"
+            Place an object at a target location.
+            \"\"\"
+        
+        def GreetPerson(person_name: str):
+            \"\"\"
+            Greet a person verbally or visually.
+            \"\"\"
+        
+        def AnswerQuestion(question: str):
+            \"\"\"
+            Respond to a question from a person.
+            \"\"\"
+        
+        def IdentifyPerson(person_name: str):
+            \"\"\"
+            Provide information about a person (pose, clothing, gender, etc.).
+            \"\"\"
+        
+        def TellJoke(person_name: str):
+            \"\"\"
+            Tell a joke to entertain or engage a person.
+            \"\"\"
+        
+        def TellStatement(info_item: str):
+            \"\"\"
+            Inform something to someone (robot assumes it already navigated to the person).
+            \"\"\"
+        
+        def StateInfo(info_item: str):
+            \"\"\"
+            State contextual information (e.g., time, date).
+            \"\"\"
+        
+        def FindObject(object_name: str = None, object_type: str = None):
+            \"\"\"
+            Locate a specific object in the environment.
+            \"\"\"
+        
+        def CountObjects(type_object: str, location: str = None):
+            \"\"\"
+            Count the number of objects of a specific type in a location.
+            \"\"\"
+        
+        def ReportObjectAttribute(attribute: str, object_name: str = None):
+            \"\"\"
+            Identify attributes of an object.
+            \"\"\"
+        
+        def LocatePerson(person_name: str):
+            \"\"\"
+            Identify the location of a specific person.
+            \"\"\"
+        """
+
+    
+    
+    
     known_locs=read_yaml('known_locs_gpsr.yaml')
     ######################################################################################        
     rospack = rospkg.RosPack()                                                                                  # THIS CAN BE YAMLD TODO
     file_path=rospack.get_path('action_planner')+'/context_files/examples.txt'
     with open(file_path, 'r') as file:
         examples = file.read()
-    ######################################################################################        
-    # Step 1: Generate YAML-formatted action plan
     prompt_1 = (
-        f"You are a robot with a limited action set described here: {actions}. "
-        f"Here are some examples of sequences of actions to solve commands: {examples}. "
-        f"User requests: {command}. Using ONLY the provided action set and known locations {known_locs}, "
-        f"generate a structured action plan that follows the sequence of tasks required to accomplish the goal. "
-        f"Ensure the output is in YAML format and includes specific actions from the available action set "
-        f"(e.g., navigate, locate_object, bring_object). All actions and parameters must be formatted in snake_case."
+            f"You are a robot with a limited action set described here: {tools}. "
+            f"Here are some examples of sequences of actions to solve commands: {examples}. "
+            f"User requests: {command}. Using ONLY the provided action set and known locations {known_locs}, "
+            f"generate a structured action plan that follows the sequence of tasks required to accomplish the goal. "
+            f"Ensure the output is includes specific actions from the available action set "
+            f"(e.g., navigate, locate_object, bring_object)."
     )
-
     messages = [{"role": "tool", "content": prompt_1}]
-    response = chat('mistral', messages=messages)
+    #response = chat('mistral', messages=messages)
+    response = chat(model, messages=messages)
     plan_yaml = response['message']['content']
     print(plan_yaml)
 
     # Step 2: Reformat the plan into a list format
     prompt_2 = (
-        f"Based on the previous YAML action plan:\n{plan_yaml}\n\n"
+        f"Based on the previous  action plan:\n{plan_yaml}\n\n"
+        f"make sure all actions are part of the action set\n\n"
+        f"make sure all actions have parameters \n\n"
         f"Reformat the actions into this format: "
         f"plan=[name_of_action(parameter), name_of_action2(parameter), etc]. "
-        f"Ensure all action parameters follow snake_case convention and the output is concise."
     )
-
     messages = [
+        {"role": "tool", "content": prompt_1},
         {"role": "tool", "content": plan_yaml},
         {"role": "tool", "content": prompt_2},
     ]
-    response2 = chat('mistral', messages=messages)
+    response2 = chat(model, messages=messages)
     plan_list = response2['message']['content']
-    print(plan_list)
+    #print(plan_list)
+  
 
     return plan_list
+    
+
 
 
 ######################################################################################        
