@@ -481,7 +481,7 @@ class Find_sitting_place(smach.State):
                     self.sat=False
                     self.introduced=False
                     self.tries=0
-                    if userdata.guest_num==3: userdata.guest_num==3
+                    if userdata.guest_num>=3:
                         voice.talk('Task completed , Thanks for your attention')
                         return 0 
                     else:
