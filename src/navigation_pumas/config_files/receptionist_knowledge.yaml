@@ -4,11 +4,12 @@ People:
     location: Place_3
     name: Oscar
   Guest_1:
-    description: null
-    drink: null
+    description: john has arrived... he is a Man... I believe he is  around 22 years
+      old... I would say he is a bit sad. I might guess he is of white descent.
+    drink: coke
     interest: null
     location: Place_2
-    name: jack
+    name: john
   Guest_10:
     description: null
     drink: null
@@ -20,15 +21,13 @@ People:
     drink: null
     interest: null
     location: null
-    name: jack
-<<<<<<< HEAD
-=======
+    name: john
   Guest_12:
     description: null
     drink: null
     interest: null
     location: null
-    name: jack
+    name: john
   Guest_13:
     description: null
     drink: null
@@ -46,13 +45,13 @@ People:
     drink: null
     interest: null
     location: null
-    name: jack
+    name: john
   Guest_16:
     description: null
     drink: null
     interest: null
     location: null
-    name: jack
+    name: john
   Guest_17:
     description: null
     drink: null
@@ -71,235 +70,37 @@ People:
     interest: null
     location: null
     name: jack
->>>>>>> efe345a586bcbda4829438a40a0d6b2fa0e058a2
   Guest_2:
-    description: null
-    drink: null
+    description: john has arrived... he is a Man... I believe he is  around 28 years
+      old... I would say he is a bit neutral. I might guess he is of white descent.
+    drink: water
     interest: null
-    location: null
-    name: jack
+    location: Place_1
+    name: john
   Guest_20:
     description: null
     drink: null
     interest: null
     location: null
-    name: jack
-  Guest_21:
-    description: null
-    drink: null
-    interest: null
-    location: null
-    name: jack
-  Guest_22:
-    description: null
-    drink: null
-    interest: null
-    location: null
-    name: jack
-  Guest_23:
-    description: null
-    drink: null
-    interest: null
-    location: null
-    name: jack
-  Guest_24:
-    description: null
-    drink: null
-    interest: null
-    location: null
-    name: jack
-  Guest_25:
-    description: null
-    drink: null
-    interest: null
-    location: null
-    name: jack
-  Guest_26:
-    description: null
-    drink: null
-    interest: null
-    location: null
-    name: jack
-  Guest_27:
-    description: null
-    drink: null
-    interest: null
-    location: null
-    name: jack
-  Guest_28:
-    description: null
-    drink: null
-    interest: null
-    location: null
-    name: jack
-  Guest_29:
-    description: null
-    drink: null
-    interest: null
-    location: null
-    name: jack
+    name: john
   Guest_3:
     description: null
-    drink: null
-    interest: null
-    location: null
-    name: yeah
-  Guest_30:
-    description: null
-    drink: null
-    interest: null
-    location: null
-    name: jack
-  Guest_31:
-    description: null
-    drink: null
-    interest: null
-    location: null
-    name: jack
-  Guest_32:
-    description: null
-    drink: null
-    interest: null
-    location: null
-    name: jack
-  Guest_33:
-    description: null
-    drink: null
-    interest: null
-    location: null
-    name: jack
-  Guest_34:
-    description: null
-    drink: null
-    interest: null
-    location: null
-    name: jack
-  Guest_35:
-    description: null
-    drink: null
-    interest: null
-    location: null
-    name: jack
-  Guest_36:
-    description: null
     drink: something
     interest: null
     location: null
-    name: jack
-  Guest_37:
-    description: null
-    drink: null
-    interest: null
-    location: null
-    name: jack
-  Guest_38:
-    description: null
-    drink: null
-    interest: null
-    location: null
-    name: jack
-  Guest_39:
-    description: null
-    drink: something
-    interest: null
-    location: null
-    name: jack
+    name: john
   Guest_4:
     description: null
     drink: null
     interest: null
     location: null
-    name: jack
-  Guest_40:
-    description: null
-    drink: null
-    interest: null
-    location: null
-    name: jack
-  Guest_41:
-    description: null
-    drink: null
-    interest: null
-    location: null
-    name: jack
-  Guest_42:
-    description: null
-    drink: null
-    interest: null
-    location: null
-    name: jack
-  Guest_43:
-    description: null
-    drink: null
-    interest: null
-    location: null
-    name: jack
-  Guest_44:
-    description: null
-    drink: something
-    interest: null
-    location: null
-    name: jack
-  Guest_45:
-    description: null
-    drink: null
-    interest: null
-    location: null
-    name: jack
-  Guest_46:
-    description: null
-    drink: null
-    interest: null
-    location: null
-    name: jack
-  Guest_47:
-    description: null
-    drink: something
-    interest: null
-    location: null
-    name: jack
-  Guest_48:
-    description: null
-    drink: null
-    interest: null
-    location: null
-    name: jack
-  Guest_49:
-    description: null
-    drink: something
-    interest: null
-    location: null
-    name: jack
+    name: john
   Guest_5:
     description: null
-    drink: null
-    interest: null
-    location: null
-    name: jack
-  Guest_50:
-    description: null
-    drink: null
-    interest: null
-    location: null
-    name: jack
-  Guest_51:
-    description: null
-    drink: null
-    interest: null
-    location: null
-    name: jack
-  Guest_52:
-    description: null
     drink: something
     interest: null
     location: null
-    name: jack
-  Guest_53:
-    description: null
-    drink: null
-    interest: null
-    location: null
-    name: jack
+    name: john
   Guest_6:
     description: null
     drink: null
@@ -310,20 +111,20 @@ People:
     description: null
     drink: null
     interest: null
-    location: Place_1
-    name: jack
+    location: null
+    name: john
   Guest_8:
     description: null
     drink: null
     interest: null
     location: null
-    name: jack
+    name: john
   Guest_9:
     description: null
     drink: null
     interest: null
     location: null
-    name: jack
+    name: john
 Places:
   Place_0:
     location:
@@ -336,7 +137,7 @@ Places:
       theta: -0.05
       x: -0.33
       y: -1.7
-    occupied: Guest_7
+    occupied: Guest_2
   Place_2:
     location:
       theta: -1.51

@@ -546,6 +546,7 @@ class Introduce_guest(smach.State):
         voice.talk(speech, timeout)
         
         if self.tries < 3:
+            voice.talk("Task completed, thanks for watching")
             return 'succ'
         else:
             voice.talk("Task completed, thanks for watching")

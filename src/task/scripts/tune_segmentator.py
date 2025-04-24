@@ -200,7 +200,7 @@ def callback(points_msg):
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             cv2.imshow('our of res'  , img)
             print ('got image for CLIP analysis')
-            keys=[ 'table','shelf','human']
+            keys=[ 'kitchen','livingroom','bedroom','bathroom','diningroom']
             image = preprocess(Image.fromarray(img)).unsqueeze(0).to(device) #img array from grbd get image
             text = clip.tokenize(keys).to(device)
 
@@ -251,7 +251,7 @@ def callback(points_msg):
                 rospy.logerr("Error llamando al servicio: %s" % e)
 
         elif key == 'd':        # Usar Dino para object classification by prompt
-            prompt = "bag"     #put here favorite drink
+            prompt = "chair"     #put here favorite drink
             img=rgbd.get_image()
             #cv2.imwrite('img.png',img)
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)

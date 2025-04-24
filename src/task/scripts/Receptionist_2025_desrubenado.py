@@ -259,7 +259,7 @@ class Get_drink(smach.State):
     def __init__(self):
         smach.State.__init__(self, 
                              outcomes=['succ', 'failed'],
-                             input_keys=['name', 'face_img'])
+                             input_keys=['name', 'face_img'],output_keys=['favorite_drink'])
         #self.new_name = ''
         #self.num_faces = 0
         self.tries = 0
@@ -267,11 +267,11 @@ class Get_drink(smach.State):
     def execute(self, userdata):
         self.tries += 1
         rospy.loginfo('STATE : GET DRINK')
-        if self.tries == 1:
+        if self.tries == 4:
             voice.talk ('I am having trouble understanding you, lets keep going')
             drink = 'something'
             self.tries=0
-            party.add_guest_drink(drink)
+            userdata.favorite_drink = drink
             #analyze_face_background(userdata.face_img, userdata.name)
             return 'succ'
         #Asking for drink
@@ -294,7 +294,7 @@ class Get_drink(smach.State):
         confirm = match_speech(confirmation, ['yes','yeah','jack','juice'])
         if not confirm: return 'failed' 
 
-        party.add_guest_drink(drink)
+        userdata.favorite_drink = drink
         voice.talk("Nice") 
         self.tries = 0
         return 'succ'
@@ -352,7 +352,7 @@ class Get_interest(smach.State):
 
 class Lead_to_beverage_area(smach.State):
     def __init__(self):
-        smach.State.__init__(self, outcomes=['succ', 'failed'])
+        smach.State.__init__(self, outcomes=['succ', 'failed'],input_keys=['favorite_drink'])
         self.tries = 0
 
     def execute(self, userdata):
@@ -364,7 +364,7 @@ class Lead_to_beverage_area(smach.State):
         res = omni_base.move_base(known_location='beverage_area')
         if res:
             self.tries = 0
-            if party.get_active_guest_drink() != 'something': voice.talk(f"I will check if there is {party.get_active_guest_drink()} here")
+            if party.get_active_guest_drink() != 'something': voice.talk(f"I will check if there is {userdata.favorite_drink} here")
             return 'succ'
         else:
             voice.talk('Navigation Failed, retrying')
@@ -374,7 +374,7 @@ class Lead_to_beverage_area(smach.State):
 
 class Find_drink(smach.State):
     def __init__(self):
-        smach.State.__init__(self, outcomes=['succ', 'failed'])
+        smach.State.__init__(self, outcomes=['succ', 'failed'],input_keys=['favorite_drink'])
         self.tries = 0
 
     def execute(self, userdata):
@@ -382,7 +382,7 @@ class Find_drink(smach.State):
         self.tries += 1
         print('Try', self.tries, 'of 3 attempts')
 
-        favorite_drink = party.get_active_guest_drink()
+        favorite_drink = userdata.favorite_drink
         if favorite_drink == 'something':
             voice.talk("This table has available drinks, please take whatever you want")
             return 'succ'
@@ -441,10 +441,12 @@ class Find_sitting_place(smach.State):
         self.tries += 1
         if self.tries==6 :
             (f' Hey {userdata.name}  Something went wrong please use any available seat  ')
+            self.tries=0
             return 'succ'
         
-        if self.sat:voice.talk('I am looking for people to introduce you')
-        else:voice.talk('I am looking for a place to sit')
+        # if self.sat:voice.talk('I am looking for people to introduce you')
+        # else:voice.talk('I am looking for a place to sit')
+
         #isPlace, place = party.get_active_seat()
         # isLocation, loc = party.get_active_seat_location()
         # if isLocation:
@@ -482,7 +484,9 @@ class Find_sitting_place(smach.State):
                     if userdata.guest_num==3: userdata.guest_num==3
                         voice.talk('Task completed , Thanks for your attention')
                         return 0 
-                    else:return 'succ'
+                    else:
+                        self.tries=0
+                        return 'succ'
                 else:return 'failed'
             else:return'failed'
         else:
@@ -493,7 +497,7 @@ class Find_sitting_place(smach.State):
                 self.sat=False
                 self.introduced=False
                 self.tries=0
-                if userdata.guest_num>=3:
+                if userdata.guest_num>=3:   
                     voice.talk('Task completed , Thanks for your attention')
                     return 0 
                 else:return 'succ'
@@ -590,10 +594,11 @@ class Introduce_guest(smach.State):
         voice.talk(speech, timeout)
         
         if self.tries < 3:
+            #voice.talk("Task completed, thanks for watching")
             return 'succ'
         else:
-            voice.talk("Task completed, thanks for watching")
-            #return 'tries'
+            #voice.talk("Task completed, thanks for watching")
+            return 'tries'
 
 # --------------------------------------------------
 # Entry point
@@ -611,7 +616,7 @@ if __name__ == '__main__':
 
         # Initial states routine
         smach.StateMachine.add("INITIAL", Initial(),              
-                               transitions={'failed': 'INITIAL', 'succ': 'GOTO_DOOR'})
+                               transitions={'failed': 'INITIAL', 'succ': 'WAIT_PUSH_HAND'})
                                # 'succ': 'WAIT_PUSH_HAND'})
         smach.StateMachine.add("WAIT_PUSH_HAND", Wait_push_hand(),       
                                transitions={'failed': 'WAIT_PUSH_HAND', 'succ': 'GOTO_DOOR'})
@@ -643,8 +648,7 @@ if __name__ == '__main__':
         smach.StateMachine.add("CHECK_PARTY", Check_party(),
                                transitions={'failed': 'CHECK_PARTY', 'guest_done': 'GOTO_DOOR', 'party_done': 'INTRODUCE_GUEST'})
         smach.StateMachine.add("GOTO_DOOR", Goto_door(),            
-                               transitions={'failed': 'GOTO_DOOR', 'succ': 'SCAN_FACE'})
-                               # 'succ': 'WAIT_DOOR_OPENED'})
+                               transitions={'failed': 'GOTO_DOOR', 'succ': 'WAIT_DOOR_OPENED'})
         
         # Introducing guests
         smach.StateMachine.add("FIND_GUEST", Find_guests(),

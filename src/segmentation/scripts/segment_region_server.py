@@ -16,7 +16,7 @@ class RegionSegmentationServer:
         rospy.loginfo("Servidor de segmentación de regiones iniciado.")
 
         # Cargar el archivo YAML con las regiones y el mapa
-        yaml_path = rospy.get_param("~map_yaml", "/home/joel/Repositories/catkin_extras/src/navigation_pumas/config_files/prohibition_maps/map_lab_2024/map.yaml")
+        yaml_path = rospy.get_param("~map_yaml", "/home/takeshi/catkin_extras/src/navigation_pumas/config_files/prohibition_maps/map_lab_2024/map.yaml")
         rospy.loginfo(f"Cargando YAML del mapa y regiones: {yaml_path}")
         with open(yaml_path, "r") as file:
             map_data = yaml.safe_load(file)
