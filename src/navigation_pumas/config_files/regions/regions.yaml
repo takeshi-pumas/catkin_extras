@@ -1,8 +1,8 @@
 pickup:
  x_min: 0.5
- x_max: 0.92
+ x_max: 1.15
  y_min: -1.77
- y_max: -1.08
+ y_max: -1.00
  z: 0.66
 shelves:
  x_min: -1.11

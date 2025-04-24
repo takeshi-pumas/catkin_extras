@@ -422,10 +422,12 @@ class Pickup_two(smach.State):
         rospy.sleep(1.0)
         print("closing hand")
         gripper.close(0.04)
+        brazo.set_named_target('neutral')         
         rospy.sleep(3.0)
         succ=brazo.check_grasp()
+        
         if succ:
-            brazo.set_named_target('neutral')         
+            
             return 'succ'
         talk (' I think I missed the object, I will retry ')
         return 'failed'
@@ -438,7 +440,7 @@ class Give_to_me(smach.State):
     def execute(self, userdata):
         rospy.loginfo("State: Give to me")
         brazo.set_named_target("neutral")
-        talk("I failed, give the lugg to me, please")
+        talk("I failed, , please give the luggage to me")
         gripper.open()
         rospy.sleep(1.0)
         talk("In three...")
