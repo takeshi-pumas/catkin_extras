@@ -485,22 +485,21 @@ class Find_sitting_place(smach.State):
             occupant_name = res.Ids.ids
             voice.talk(f'Hi {occupant_name},let me introduce you to {userdata.name}, he likes {userdata.interest} ')
             
+            self.intros+=1
             if userdata.guest_num<3:self.introduced=True
             if userdata.guest_num>=3 and self.intros>=2:self.introduced=True    #Only  set if 2nd guest is introduced twice
-
-
-            self.intros+=1
-
             if self.sat:
-                self.sat=False
-                self.introduced=False
-                self.tries=0    
-                self.intros=0            
+                    
                 
                 if userdata.guest_num>=3 and self.intros>=2:    #Only  ends if 2 nd guest is introduced twoce
                     voice.talk('Task completed , Thanks for your attention')
                     return 'end' 
-                elif userdata.guest_num<=2:return 'succ' # GO TO DOOR
+                elif userdata.guest_num<=2:
+                    self.sat=False
+                    self.introduced=False
+                    self.tries=0    
+                    self.intros=0       
+                    return 'succ' # GO TO DOOR
                 else:return 'failed'
                
 
