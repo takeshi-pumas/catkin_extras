@@ -60,6 +60,7 @@ class Wait_push_hand(smach.State):
         
         succ = wait_for_push_hand(100) # NOT GAZEBABLE
         if succ:
+            talk('Starting Carry my luggage task')
             return 'succ'
         else:
             return 'failed'
@@ -79,7 +80,6 @@ class Goto_living_room(smach.State):
         if self.tries == 3:
             return 'tries'
         if self.tries == 1: #talk('Navigating to, living room')
-            talk('Starting Carry my luggage task')
             rospy.sleep(0.8)
         #res = omni_base.move_base(known_location='living_room', time_out=200)
         head.set_named_target('neutral')        
@@ -105,7 +105,7 @@ class Find_human(smach.State):
         rospy.sleep(1.5)
         
         self.tries += 1
-        if self.tries >= 4:
+        if self.tries >= 5:
             self.tries = 0
             return 'tries'
         if self.tries==1:
@@ -143,33 +143,37 @@ class Find_human(smach.State):
         hum_pos,_=tf_man.getTF('human')
         talk('Ok')
         rospy.sleep(0.8)
-        threshold_bag_to_human=2.0
+        threshold_bag_to_human=2.0  
         userdata.second_pointing=False
         ################################################################
         ########################################################
         if   res.x_r ==-1 :
             d_r=np.linalg.norm(hum_pos[:2]-np.asarray((res.x_r,res.y_r)))
             if d_r < threshold_bag_to_human:
+                print("Only left hand")
                 tf_man.pub_static_tf(pos=[res.x_l, res.y_l,0], rot =[0,0,0,1], point_name='pointing_')
                 return 'succ'
         elif res.x_l ==-1:  
             d_l=np.linalg.norm(hum_pos[:2]-np.asarray((res.x_l,res.y_l)))
             if d_l < threshold_bag_to_human:
+                print("Only right hand")
                 tf_man.pub_static_tf(pos=[res.x_r, res.y_r,0], rot =[0,0,0,1], point_name='pointing_')
                 return 'succ'
         else:
             d_l=np.linalg.norm(hum_pos[:2]-np.asarray((res.x_l,res.y_l)))
             d_r=np.linalg.norm(hum_pos[:2]-np.asarray((res.x_r,res.y_r)))
-            if  d_l <threshold_bag_to_human  and d_l < d_r :
+            if  d_l <threshold_bag_to_human  and d_l > d_r :
                 tf_man.pub_static_tf(pos=[res.x_l, res.y_l,0], rot =[0,0,0,1], point_name='pointing_')
                 if d_r <threshold_bag_to_human :
                     userdata.second_pointing=True
+                    print("both hands, first right")
                     tf_man.pub_static_tf(pos=[res.x_r, res.y_r,0], rot =[0,0,0,1], point_name='pointing_2')
                 return 'succ'
-            if  d_r <threshold_bag_to_human  and d_r < d_l :
+            if  d_r <threshold_bag_to_human  and d_r > d_l :
                 tf_man.pub_static_tf(pos=[res.x_r, res.y_r,0], rot =[0,0,0,1], point_name='pointing_')
                 if d_l <threshold_bag_to_human :
                     userdata.second_pointing=True
+                    print("both hands, first left")
                     tf_man.pub_static_tf(pos=[res.x_l, res.y_l,0], rot =[0,0,0,1], point_name='pointing_2')
                 return 'succ'
         ################################################################
@@ -200,7 +204,7 @@ class Scan_floor(smach.State):
         if self.tries==3:
             self.tries=0
             return 'tries'
-        rospy.sleep(1.5)
+        rospy.sleep(3)
         
 
         try:
@@ -381,14 +385,14 @@ class Pickup_two(smach.State):
         smach.State.__init__(
             self, outcomes=['succ', 'failed', 'tries'])
         self.tries = 0
-        self.target='bag'
+        self.target='bag'    
     def execute(self, userdata):
         rospy.loginfo('State :  PICKUP ')
         clear_octo_client()
         self.tries += 1
         target_object=self.target
 
-        if self.tries >= 4:
+        if self.tries >= 3:
             self.tries = 0
             return'tries'
         
@@ -457,13 +461,13 @@ class Pickup_two(smach.State):
         rospy.sleep(1.0)
         print("closing hand")
         gripper.close(0.04)
-        brazo.set_named_target('neutral')         
+        brazo.set_named_target('go')         
+        head.to_tf('bag')
         rospy.sleep(3.0)
-        succ=brazo.check_grasp()
-        #TODO: make sure robot has take the bag.
+        succ = check_carry_bag()
+        #succ=brazo.check_grasp()
         
         if succ:
-            
             return 'succ'
         talk("I think I missed the object, I will retry")
         return 'failed'
@@ -529,13 +533,17 @@ class Deliver_Luggage(smach.State):
         rospy.sleep(0.7)
         talk("One")
         rospy.sleep(0.7)
-        gripper.open()
-        talk("Thank you")
-        rospy.sleep(1)
-        talk("Closing Gripper. Please be sure your hand is out of the way")
-        rospy.sleep(2.5)
-        gripper.close(0.1)
-        return 'succ'
+        gripper.steady()
+        talk('Push my hand when you have taken the bag')
+        succ = wait_for_push_hand(100) # NOT GAZEBABLE
+        if succ:return 'succ'
+        # gripper.open()
+        # talk("Thank you")
+        # rospy.sleep(1)
+        # talk("Closing Gripper. Please be sure your hand is out of the way")
+        # rospy.sleep(2.5)
+        # gripper.close(0.1)
+        # return 'succ'
 
 #########################################################################################################
 class Return_Living_Room(smach.State):
@@ -577,19 +585,19 @@ if __name__ == '__main__':
     with sm:
         # State machine STICKLER
         smach.StateMachine.add("INITIAL",           Initial(),              transitions={'failed': 'INITIAL',           
-                                                                                         'succ': 'FIND_HUMAN',   
+                                                                                         'succ': 'WAIT_PUSH_HAND',   
                                                                                          #'succ': 'SCAN_FLOOR',   
                                                                                          'tries': 'END'})
         smach.StateMachine.add("WAIT_PUSH_HAND",    Wait_push_hand(),       transitions={'failed': 'WAIT_PUSH_HAND',    
-                                                                                         'succ': 'GOTO_LIVING_ROOM',       
+                                                                                         'succ': 'FIND_HUMAN',       
                                                                                          'tries': 'END'})
         smach.StateMachine.add("GOTO_LIVING_ROOM",  Goto_living_room(),     transitions={'failed': 'GOTO_LIVING_ROOM',        
                                                                                          'succ': 'FIND_HUMAN',   
-                                                                                         'tries': 'INITIAL'})  
+                                                                                         'tries': 'END'})  
         smach.StateMachine.add("FIND_HUMAN",         Find_human(),          transitions={'failed': 'FIND_HUMAN',        
                                                                                          'succ': 'SCAN_FLOOR',   
                                                                                          #'succ': 'GOTO_HUMAN',   
-                                                                                         'tries': 'GOTO_LIVING_ROOM'})
+                                                                                         'tries': 'END'})
         smach.StateMachine.add("SCAN_FLOOR",         Scan_floor(),          transitions={'failed': 'SCAN_FLOOR',     
                                                                                          'succ': 'PRE_PICKUP',    
                                                                                          'tries': 'FIND_HUMAN'})   
@@ -599,9 +607,9 @@ if __name__ == '__main__':
         """smach.StateMachine.add("PICKUP",            Pickup(),               transitions={'failed': 'PICKUP',        
                                                                                          'succ': 'GOTO_HUMAN',   
                                                                                          'tries': 'END'})      """  
-        smach.StateMachine.add("PICKUPTWO",         Pickup_two(),           transitions={'failed': 'GIVE_TO_ME',        
+        smach.StateMachine.add("PICKUPTWO",         Pickup_two(),           transitions={'failed': 'PICKUPTWO',        
                                                                                          'succ': 'POST_PICKUP',   
-                                                                                         'tries': 'END'})
+                                                                                         'tries': 'GIVE_TO_ME'})
         
         smach.StateMachine.add("GIVE_TO_ME",        Give_to_me(),                transitions={'failed': 'GIVE_TO_ME',
                                                                                          'succ': 'POST_PICKUP'})

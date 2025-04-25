@@ -971,7 +971,10 @@ def read_tf(t):
     
     return pose, quat
 #-----------------------------------------------------------------    
-
+def check_carry_bag():
+            head.to_tf('bag')
+            _,obj = get_luggage_tf()
+            return not obj
 #-----------------------------------------------------------------    
 def ransac_laser():
     msg= rospy.wait_for_message("/hsrb/base_scan",LaserScan)    

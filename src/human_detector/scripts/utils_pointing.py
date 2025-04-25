@@ -352,17 +352,17 @@ def detect_pointing(points_msg,dist = 6, remove_bkg= True):
         b_st.sendTransform(t)
 
     
-    if np.linalg.norm(vd)>np.linalg.norm(vi):
-        print("Mano DERECHA levantada")
-        res.x_l = -1.0
-        res.y_l = -1.0
-        res.z_l = -1.0
+    # if np.linalg.norm(vd)>np.linalg.norm(vi):
+    #     print("Mano DERECHA levantada")
+    #     res.x_l = -1.0
+    #     res.y_l = -1.0
+    #     res.z_l = -1.0
 
-    else:
-        print("Mano IZQUIERDA levantada")
-        res.x_r = -1.0
-        res.y_r = -1.0
-        res.z_r = -1.0
+    # else:
+    #     print("Mano IZQUIERDA levantada")
+    #     res.x_r = -1.0
+    #     res.y_r = -1.0
+    #     res.z_r = -1.0
         
     
     return res
