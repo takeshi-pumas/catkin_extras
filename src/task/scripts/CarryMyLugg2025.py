@@ -137,19 +137,39 @@ class Find_human(smach.State):
         req.removeBKG = True        # CAMBIAR SI SE QUIERE QUITAR EL FONDO (CHISMOSOS) O NO
         res=pointing_detect_server(req)
         print("RES",res.x_r,res.x_l,res.y_r,res.y_l)
-        print(res.x_r+res.x_l,res.y_r+res.y_l)
-        if (res.x_r+res.x_l) == -1 and  (res.y_r+res.y_l) == -1  :
-            talk('I did not find a pointing arm, I will try again')
-            rospy.sleep(0.8)
-            print ('no pointing ')
-            self.tries -= 1
-            return 'failed'
+
+        hum_pos,_=tf_man.getTF('human')
         talk('Ok')
         rospy.sleep(0.8)
-        if res.x_r ==-1: tf_man.pub_static_tf(pos=[res.x_l, res.y_l,0], rot =[0,0,0,1], point_name='pointing_')
-        else: tf_man.pub_static_tf(pos=[res.x_r, res.y_r,0], rot =[0,0,0,1], point_name='pointing_')
-        #if (res.x_l+res.y_l)!=0:tf_man.pub_static_tf(pos=[res.x_l, res.y_l,0], rot =[0,0,0,1], point_name='pointing_left')
-        return 'succ'# There is now a "human TF with humans aprrox location(face)"
+        threshold_bag_to_human=2.0
+        
+        ################################################################
+        ########################################################
+        if   res.x_r ==-1 :
+            d_r=np.linalg.norm(hum_pos[:2]-np.asarray((res.x_r,res.y_r)))
+            if d_r < threshold_bag_to_human:
+                tf_man.pub_static_tf(pos=[res.x_l, res.y_l,0], rot =[0,0,0,1], point_name='pointing_')
+                return 'succ'
+        elif res.x_l ==-1:  
+            d_l=np.linalg.norm(hum_pos[:2]-np.asarray((res.x_l,res.y_l)))
+            if d_l < threshold_bag_to_human:
+                tf_man.pub_static_tf(pos=[res.x_r, res.y_r,0], rot =[0,0,0,1], point_name='pointing_')
+                return 'succ'
+        else:
+            d_l=np.linalg.norm(hum_pos[:2]-np.asarray((res.x_l,res.y_l)))
+            d_r=np.linalg.norm(hum_pos[:2]-np.asarray((res.x_r,res.y_r)))
+            if  d_l <threshold_bag_to_human  and d_l < d_r :
+                tf_man.pub_static_tf(pos=[res.x_l, res.y_l,0], rot =[0,0,0,1], point_name='pointing_')
+                return 'succ'
+            if  d_r <threshold_bag_to_human  and d_r < d_l :
+                return 'succ'
+        ################################################################
+        ########################################################
+        talk('I did not find a pointing arm, I will try again')
+        rospy.sleep(0.8)
+        print ('no pointing ')
+        self.tries -= 1
+        return 'failed'
 
 #########################################################################################################
 class Scan_floor(smach.State):
