@@ -136,6 +136,8 @@ class Find_human(smach.State):
         req.dist = self.dist
         req.removeBKG = True        # CAMBIAR SI SE QUIERE QUITAR EL FONDO (CHISMOSOS) O NO
         res=pointing_detect_server(req)
+
+        
         print("RES",res.x_r,res.x_l,res.y_r,res.y_l)
 
         hum_pos,_=tf_man.getTF('human')
