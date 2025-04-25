@@ -435,13 +435,12 @@ class Find_sitting_place(smach.State):
         self.introduced=False
         self.sat=False
     def execute(self, userdata):
-
         rospy.loginfo('STATE : Looking for a place to sit')
 
         print('Try', self.tries, 'of 5 sitting places')
         self.tries += 1
         if self.tries==6 :
-            (f' Hey  everyone Here is {userdata.name},he likes {userdata.interest} ')
+            voice.talk(f' Hey  everyone Here is {userdata.name},he likes {userdata.interest} ')
             self.tries=0
             if userdata.guest_num>=3:
                 voice.talk('Task completed , Thanks for your attention')
@@ -452,7 +451,7 @@ class Find_sitting_place(smach.State):
         print (place)
         
         head.to_tf(place)
-        voice.talk('I will check if this place is empty')
+        #voice.talk('I will check if this place is empty')
         res , _ = wait_for_face()  # seconds       
 
 
@@ -506,7 +505,7 @@ class Find_sitting_place(smach.State):
 
 
             else:return 'failed'
-            return 'failed'  # KEEP SCANNING TROUGH SEATS
+        return 'failed'  # KEEP SCANNING TROUGH SEATS
 
 
 
@@ -649,11 +648,11 @@ if __name__ == '__main__':
         smach.StateMachine.add("LEAD_TO_BEVERAGE_AREA", Lead_to_beverage_area(),  
                                transitions={'failed': 'LEAD_TO_BEVERAGE_AREA', 'succ': 'FIND_DRINK'})
         smach.StateMachine.add("FIND_DRINK", Find_drink(),
-                               transitions={'failed': 'FIND_DRINK', 'succ': 'LEAD_TO_LIVING_ROOM','end':'END'})
+                               transitions={'failed': 'FIND_DRINK', 'succ': 'LEAD_TO_LIVING_ROOM'})
         smach.StateMachine.add("LEAD_TO_LIVING_ROOM", Lead_to_living_room(),  
                                transitions={'failed': 'LEAD_TO_LIVING_ROOM', 'succ': 'FIND_SITTING_PLACE'})
         smach.StateMachine.add("FIND_SITTING_PLACE", Find_sitting_place(),
-                               transitions={'failed': 'FIND_SITTING_PLACE', 'succ': 'GOTO_DOOR'})
+                               transitions={'failed': 'FIND_SITTING_PLACE', 'succ': 'GOTO_DOOR','end':'END'})
         smach.StateMachine.add("CHECK_PARTY", Check_party(),
                                transitions={'failed': 'CHECK_PARTY', 'guest_done': 'GOTO_DOOR', 'party_done': 'INTRODUCE_GUEST'})
         smach.StateMachine.add("GOTO_DOOR", Goto_door(),            
