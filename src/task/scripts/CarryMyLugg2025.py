@@ -96,7 +96,7 @@ class Goto_living_room(smach.State):
 class Find_human(smach.State):
     def __init__(self):
         smach.State.__init__(
-            self, outcomes=['succ', 'failed', 'tries'])
+            self, outcomes=['succ', 'failed', 'tries'], output_keys=['second_pointing'])
         self.tries = 0
         self.point_img_pub = rospy.Publisher("/image_topic_name", String, queue_size=1)
         self.dist=2.5
@@ -142,7 +142,7 @@ class Find_human(smach.State):
         talk('Ok')
         rospy.sleep(0.8)
         threshold_bag_to_human=2.0
-        
+        userdata.second_pointing=False
         ################################################################
         ########################################################
         if   res.x_r ==-1 :
@@ -160,8 +160,15 @@ class Find_human(smach.State):
             d_r=np.linalg.norm(hum_pos[:2]-np.asarray((res.x_r,res.y_r)))
             if  d_l <threshold_bag_to_human  and d_l < d_r :
                 tf_man.pub_static_tf(pos=[res.x_l, res.y_l,0], rot =[0,0,0,1], point_name='pointing_')
+                if d_r <threshold_bag_to_human :
+                    userdata.second_pointing=True
+                    tf_man.pub_static_tf(pos=[res.x_r, res.y_r,0], rot =[0,0,0,1], point_name='pointing_2')
                 return 'succ'
             if  d_r <threshold_bag_to_human  and d_r < d_l :
+                tf_man.pub_static_tf(pos=[res.x_r, res.y_r,0], rot =[0,0,0,1], point_name='pointing_')
+                if d_l <threshold_bag_to_human :
+                    userdata.second_pointing=True
+                    tf_man.pub_static_tf(pos=[res.x_l, res.y_l,0], rot =[0,0,0,1], point_name='pointing_2')
                 return 'succ'
         ################################################################
         ########################################################
@@ -174,7 +181,7 @@ class Find_human(smach.State):
 #########################################################################################################
 class Scan_floor(smach.State):
     def __init__(self):
-        smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
+        smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'], input_keys=['second_pointing'])
         self.tries = 0
         
 
@@ -185,11 +192,15 @@ class Scan_floor(smach.State):
         if self.tries==1:
             head.to_tf('pointing_')
             print("looking to TF")
-                #if self.tries==2:head.to_tf('pointing_left')     
+                
+        if self.tries==2 and userdata.second_pointing:
+            head.to_tf('pointing_2')     
         if self.tries==3:
             self.tries=0
             return 'tries'
         rospy.sleep(1.5)
+        
+
         try:
             img,obj = get_luggage_tf()
             save_image(img,name="segmentCarry")
@@ -202,6 +213,7 @@ class Scan_floor(smach.State):
 
         except rospy.ServiceException as e:
             print(f"Service call failed: {e}")
+        return 'failed'
 
 
 ###################################################################
