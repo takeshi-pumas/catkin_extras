@@ -219,6 +219,7 @@ class Scan_floor_deprecating(smach.State):
         #if self.tries==2:head.to_tf('pointing_left')     
         if self.tries==3:
             self.tries=0
+            talk("Let's do it again")
             return 'tries'
         
         
@@ -445,11 +446,12 @@ class Pickup_two(smach.State):
         brazo.set_named_target('neutral')         
         rospy.sleep(3.0)
         succ=brazo.check_grasp()
+        #TODO: make sure robot has take the bag.
         
         if succ:
             
             return 'succ'
-        talk (' I think I missed the object, I will retry ')
+        talk("I think I missed the object, I will retry")
         return 'failed'
         
 #########################################################################################################
@@ -576,7 +578,7 @@ if __name__ == '__main__':
                                                                                          'tries': 'GOTO_LIVING_ROOM'})
         smach.StateMachine.add("SCAN_FLOOR",         Scan_floor(),          transitions={'failed': 'SCAN_FLOOR',     
                                                                                          'succ': 'PRE_PICKUP',    
-                                                                                         'tries': 'END'})   
+                                                                                         'tries': 'FIND_HUMAN'})   
         smach.StateMachine.add("PRE_PICKUP",        Pre_pickup(),           transitions={'failed': 'PRE_PICKUP',        
                                                                                          'succ': 'PICKUPTWO',  
                                                                                          'tries': 'END'})        
