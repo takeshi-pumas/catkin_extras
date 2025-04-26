@@ -132,36 +132,38 @@ class Wait_command(smach.State):
         command=action_planner_server(req)
         print(f'command.plan.data{command.plan.data}.')
         if command.plan.data== 'timed out':return 'failed'
-        # Step 1: Extract the list part of the string
+        ########################
         plan=command.plan.data
-        start = plan.find("[")
-        plan_str = plan[start:]
+        print(plan,'plan \n')
+        
+        #nxt_action= next_action(plan)                              #MAYBE A NEW SERVICE WILL SEE
+        #print(nxt_action,'action \n')
+        #parse_llm_step_response(nxt_action)
+        #action,param,state=parse_llm_step_response(nxt_action)
+        #print("Actions:", actions)
+        #print("Parameters:", params)
+        # Input string with 'plan =' at the beginning
+        actions=[]
+        params=[]
 
+        # Step 1: Extract the list part of the string
+        start = plan.find("[") + 1
+        end = plan.rfind("]")
+        inner = plan[start:end]
+        clean = inner.replace("\n", "").strip()
         # Step 2: Safely evaluate the string as a Python list
-        try:
-            plan_list = ast.literal_eval(plan_str)
-        except Exception as e:
-            print("Error evaluating plan string:", e)
-            plan_list = []
+        for action in clean.split(','):
+            print (action)
+            start = action.find("(") + 1
+            end = action.rfind(")")
+            actions.append(action[:start-1])
+            dirty_param=action[start:end]
+            param=re.sub(r"[^\w\s]", "", dirty_param)
+            params.append(param)
 
-        # Step 3: Parse each function call using regex
-        regex = re.compile(r'(\w+)\s*\(\s*(.*?)\s*\)')
-        actions = []
-        params = []
-
-        for call in plan_list:
-            match = regex.match(call)
-            if match:
-                name = match.group(1)
-                arg_string = match.group(2)
-                args = [arg.strip() for arg in arg_string.split(',') if arg.strip()]
-                actions.append(name)
-                params.append(args)
-            else:
-                print("Could not parse call:", call)
-
-        print("Actions:", actions)
-        print("Parameters:", params)
+            print(f'action  {action[:start-1]}')
+            print(f'param(s){action[start:end]}')
+        actions,params
         userdata.actions=actions
         userdata.params=params
         if len (actions)>0:return 'succ'

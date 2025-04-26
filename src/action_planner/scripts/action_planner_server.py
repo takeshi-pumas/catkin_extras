@@ -11,7 +11,107 @@ from sensor_msgs.msg import Image as ImageMsg
 from cv_bridge import CvBridge
 from ollama import chat
 import re #regex
-######################################################################################
+################
+locations_names="""bed (p) 
+bedside table (p) 
+shelf (p) | cleaning supplies 
+trashbin 
+dishwasher (p) 
+potted plant 
+kitchen table (p) | dishes 
+chairs 
+pantry (p) | food 
+refrigerator (p) 
+sink (p) 
+cabinet (p) | drinks 
+coatrack 
+desk (p) | fruits 
+armchair 
+desk lamp 
+waste basket 
+tv stand (p) 
+storage rack (p) 
+lamp 
+side tables (p) | snacks 
+sofa (p) 
+bookshelf (p) | toys 
+entrance 
+exit 
+"""
+tools="""
+    def Navigate(target_location: str):
+        \"\"\"
+        Move the robot to a target location.
+        \"\"\"
+    
+    def FollowPerson(person_name: str):
+        \"\"\"
+        Follow a specific person as they move.
+        \"\"\"
+    
+    def PickObject(object_name: str):
+        \"\"\"
+        Pick an object.
+        \"\"\"
+    
+    def PlaceObject(object_name: str, target_location: str):
+        \"\"\"
+        Place an object at a target location.
+        \"\"\"
+    
+    def GreetPerson(person_name: str):
+        \"\"\"
+        Greet a person verbally or visually.
+        \"\"\"
+    
+    def AnswerQuestion(question: str):
+        \"\"\"
+        Respond to a question from a person.
+        \"\"\"
+    
+    def IdentifyPerson(person_name: str):
+        \"\"\"
+        Provide information about a person (pose, clothing, gender, etc.).
+        \"\"\"
+    
+    def TellJoke(person_name: str):
+        \"\"\"
+        Tell a joke to entertain or engage a person.
+        \"\"\"
+    
+    def TellStatement(info_item: str):
+        \"\"\"
+        Inform something to someone (robot assumes it already navigated to the person).
+        \"\"\"
+    
+    def StateInfo(info_item: str):
+        \"\"\"
+        State contextual information (e.g., time, date).
+        \"\"\"
+    
+    def FindObject(object_name: str = None, object_type: str = None):
+        \"\"\"
+        Locate a specific object in the environment.
+        \"\"\"
+    
+    def CountObjects(type_object: str, location: str = None):
+        \"\"\"
+        Count the number of objects of a specific type in a location.
+        \"\"\"
+    
+    def ReportObjectAttribute(attribute: str, object_name: str = None):
+        \"\"\"
+        Identify attributes of an object.
+        \"\"\"
+    
+    def LocatePerson(person_name: str):
+        \"\"\"
+        Identify the location of a specific person.
+        \"\"\"
+    """
+
+
+######################################################################
 class RGB:
     def __init__(self):
         # Get the topic name from the parameter server
@@ -86,109 +186,48 @@ import rospkg
 def plan_command(command):
     #model="llama3.2"
     model="mistral"
-    tools="""
-        def Navigate(target_location: str):
-            \"\"\"
-            Move the robot to a target location.
-            \"\"\"
-        
-        def FollowPerson(person_name: str):
-            \"\"\"
-            Follow a specific person as they move.
-            \"\"\"
-        
-        def PickObject(object_name: str):
-            \"\"\"
-            Pick an object.
-            \"\"\"
-        
-        def PlaceObject(object_name: str, target_location: str):
-            \"\"\"
-            Place an object at a target location.
-            \"\"\"
-        
-        def GreetPerson(person_name: str):
-            \"\"\"
-            Greet a person verbally or visually.
-            \"\"\"
-        
-        def AnswerQuestion(question: str):
-            \"\"\"
-            Respond to a question from a person.
-            \"\"\"
-        
-        def IdentifyPerson(person_name: str):
-            \"\"\"
-            Provide information about a person (pose, clothing, gender, etc.).
-            \"\"\"
-        
-        def TellJoke(person_name: str):
-            \"\"\"
-            Tell a joke to entertain or engage a person.
-            \"\"\"
-        
-        def TellStatement(info_item: str):
-            \"\"\"
-            Inform something to someone (robot assumes it already navigated to the person).
-            \"\"\"
-        
-        def StateInfo(info_item: str):
-            \"\"\"
-            State contextual information (e.g., time, date).
-            \"\"\"
-        
-        def FindObject(object_name: str = None, object_type: str = None):
-            \"\"\"
-            Locate a specific object in the environment.
-            \"\"\"
-        
-        def CountObjects(type_object: str, location: str = None):
-            \"\"\"
-            Count the number of objects of a specific type in a location.
-            \"\"\"
-        
-        def ReportObjectAttribute(attribute: str, object_name: str = None):
-            \"\"\"
-            Identify attributes of an object.
-            \"\"\"
-        
-        def LocatePerson(person_name: str):
-            \"\"\"
-            Identify the location of a specific person.
-            \"\"\"
-        """
-
     
     
     
+    
+    #known_locs=read_yaml('known_locs_gpsr.yaml')
+    #######################################################################################        
+    #rospack = rospkg.RosPack()                                                                                  # THIS CAN BE YAMLD TODO
+    #file_path=rospack.get_path('action_planner')+'/context_files/examples.txt'
+    #with open(file_path, 'r') as file:
+    #    examples = file.read()
     known_locs=read_yaml('known_locs_gpsr.yaml')
-    ######################################################################################        
-    rospack = rospkg.RosPack()                                                                                  # THIS CAN BE YAMLD TODO
-    file_path=rospack.get_path('action_planner')+'/context_files/examples.txt'
-    with open(file_path, 'r') as file:
-        examples = file.read()
+    print( 'Planing please wait')
+
     prompt_1 = (
-            f"You are a robot with a limited action set described here: {tools}. "
-            f"Here are some examples of sequences of actions to solve commands: {examples}. "
-            f"User requests: {command}. Using ONLY the provided action set and known locations {known_locs}, "
-            f"generate a structured action plan that follows the sequence of tasks required to accomplish the goal. "
-            f"Ensure the output is includes specific actions from the available action set "
-            f"(e.g., navigate, locate_object, bring_object)."
-    )
+                f" You are an action planner, a service robot will execute the sequence of actions you create"
+                f" Service robot only has this actions {tools} implemented if plan contains any action not inlcuded here it is considered a catastrophic planning failiure"
+                f" Assume you can use Navigate() to go to any location mentioned in {locations_names}"
+                f" After each location name there is a (p) for locations in which robot can place objects and aslo a category of objects"
+                "that migh be found "
+                f" Robot always starts at 'start' location."
+                f"User command is {command}"
+                )
     messages = [{"role": "tool", "content": prompt_1}]
-    #response = chat('mistral', messages=messages)
+    # First call to the model
     response = chat(model, messages=messages)
     plan_yaml = response['message']['content']
-    print(plan_yaml)
-
-    # Step 2: Reformat the plan into a list format
+    print (plan_yaml)
+    # Second prompt to reformat the plan into the desired action list format
     prompt_2 = (
-        f"Based on the previous  action plan:\n{plan_yaml}\n\n"
-        f"make sure all actions are part of the action set\n\n"
-        f"make sure all actions have parameters \n\n"
+        f"Based on this plan\n{plan_yaml}\n\n"
+        f"Make sure all actions are part of the action set{tools}.\n\n"
+        f"Make sure all actions have parameters.\n\n"
         f"Reformat the actions into this format: "
-        f"plan=[name_of_action(parameter), name_of_action2(parameter), etc]. "
+        f"plan=[name_of_action_from_action_set(parameter), name_of_action_from_action_set(parameter), etc]. "
+        "Please ensure:"
+            "- Each action is a function call in the format: function_name(parameter) from the action set do not use any other actions not included "
+            "- Use the exact Python function syntax with no extra characters (e.g., no quotes around function names, no `=` between the function name and parameter)."
+            "- All parameters should be inside the parentheses and should not have additional quotes unless they are string arguments."
+            f"- The entire output should be a Python list format of actions in {tools}"
+            "- avoid any signs like single quotes or  '\n' avoid unnecesary spaces"
     )
+
     messages = [
         {"role": "tool", "content": prompt_1},
         {"role": "tool", "content": plan_yaml},
@@ -196,8 +235,7 @@ def plan_command(command):
     ]
     response2 = chat(model, messages=messages)
     plan_list = response2['message']['content']
-    #print(plan_list)
-  
+    #print(plan_list) 
 
     return plan_list
     
@@ -245,7 +283,72 @@ def fact_check(plan):
             print("No question found.")
             return  "continue"
 
+
+####################################################3
+def next_action(plan):
+    robot_state= {
+            "robot_location": "initial_location",
+            "robot_holding": None
+
+        }
+
+
+    # Step 2: Reformat the plan into a list format
+    prompt = (
+        f" We have a plan{plan}, which should be made only from available actions to the service robot that will use your high level plan"
+        f" It is very important to keep the plan the same, just substitute actions not found in the following action set"
+        f" The actions are {tools}.ONLY ACTIONS from these set are allowed in the thought process."
+        f" What action should be called first, "
+        f" show example call of how the action chosen must be called according to description, "
+        f" how would the current  robot state{robot_state} would be updated if the first action is succesfully performed?"
+        f" Answer must only inlcude next_action , updated robot state in exactly "
+        f" let me emphasize the importance to the highest degree   that the syntax beeing exacly like this "
+        f" next action: example of call, an axample would look like this next action:navigate(living_room)  , updated state: updated robot state "
+        f" and only include calls from {tools} "
+
+
+    )
+    messages = [
+
+        {"role": "tool", "content": prompt},
+
+    ]
+    response2 = chat(model='mistral', messages=messages)
+    plan_list = response2['message']['content']
+    print(plan_list)
+    return plan_list
+
 ######################################################################################        
+import re
+import ast  # for safely parsing the dict
+
+def parse_llm_step_response(response_text):
+    # Flexible match for something like: def Navigate('living room') or Navigate("kitchen")
+    action_match = re.search(r'next action:\s*(?:def\s*)?(\w+)\s*\(\s*[\'"](.+?)[\'"]\s*\)', response_text, re.IGNORECASE)
+    state_match = re.search(r'updated state:\s*(\{.*\})', response_text)
+
+    next_action = action_match.group(1) if action_match else None
+    next_param = action_match.group(2) if action_match else None
+
+    try:
+        updated_state_str = state_match.group(1) if state_match else '{}'
+        # Less strict version — use eval if you're sure of format, or a simple string parser otherwise
+        updated_state = eval(updated_state_str) if updated_state_str else {}
+    except Exception as e:
+        updated_state = {}
+        print("Failed to parse updated state:", e)
+
+    return next_action, next_param, updated_state
+
+######################################################################################        
+
+
+
+######################################################################################        
+
+
+
+
 def check_format(plan):
     messages = [
     {
@@ -282,29 +385,21 @@ def action_planner(req):
         if qr_text != "time out":
             command=qr_text
             plan=plan_command(command)
-            print (f'plan{plan}')
-            #check_plan=fact_check(plan)
+            ########################
+            print(plan,'plan \n')
+            start = plan.find("[") + 1
+            end = plan.rfind("]")
+            inner = plan[start:end]
+            ##########################
+            nxt_action= next_action(plan)
+            print(nxt_action,'action \n')
+            parse_llm_step_response(nxt_action)
+            action,param,state=parse_llm_step_response(nxt_action)
+            print (f'action,param,state{action,param,state}')
             response.data = plan
-            #corr_plan = check_format(plan)
-            # Find the start and end of the sequence
-            #start = corr_plan.find("[")
-            #end =   corr_plan.find("]")
-            ## Extract the content inside the brackets
-            #if start != -1 and end != -1:
-            #    sequence = corr_plan[start + 1:end].strip()  # Remove the brackets
-            #    actions = [action.strip().strip('"') for action in sequence.split(",")]
-            #    print(actions)
-            #else:
-            #    print("No sequence found.")
-            #out_plan=', '.join(actions)
-            #out_plan
-            #if check_plan=='continue':
-            #    print ("Plan accepted. executing")
-            #    response.data = plan
-            #else: 
-            #    print ( "more info is needed.Ask user")
-            #    response.data = check_plan 
-            #print(f"{response.data}\n \n")
+
+
+
         else:
             print (' Qr Timed OuT')
             response.data ='timed out'
