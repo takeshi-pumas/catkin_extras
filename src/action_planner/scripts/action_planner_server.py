@@ -366,17 +366,17 @@ def check_format(plan):
 def action_planner(req):
     global command
     rospy.loginfo(f"Received: {req.command}")
-    response = String()  # Create a new String message
+    response = ActionPlannerResponse()  # Create a new String message
     if len(req.command.data)!=0:
         if req.command.data[-1]=='?':#  What question will be answered?
             print (f'question: {req.command.data}')
             answer=answer_question(req.command.data)
-            response.data=answer
+            response.plan.data=answer
         else:
             plan=plan_command(req.command.data)
             print (f'plan{plan}')
             #check_plan=fact_check(plan)
-            response.data = plan
+            response.plan.data = plan
     else:
         qr_text=wait_for_qr(req.timeout)
         print(qr_text)
@@ -387,23 +387,24 @@ def action_planner(req):
             plan=plan_command(command)
             ########################
             print(plan,'plan \n')
+            response.plan.data = plan
             start = plan.find("[") + 1
             end = plan.rfind("]")
             inner = plan[start:end]
             ##########################
             nxt_action= next_action(plan)
             print(nxt_action,'action \n')
-            parse_llm_step_response(nxt_action)
             action,param,state=parse_llm_step_response(nxt_action)
             print (f'action,param,state{action,param,state}')
-            response.data = plan
+            response.next_action.data = action
+            response.next_param.data = param
 
 
 
         else:
             print (' Qr Timed OuT')
-            response.data ='timed out'
-    return ActionPlannerResponse(response)
+            response.plan.data ='timed out'
+    return response
 
 if __name__ == "__main__":
     global rgb

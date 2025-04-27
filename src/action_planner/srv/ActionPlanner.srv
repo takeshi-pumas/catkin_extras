@@ -2,3 +2,6 @@ std_msgs/String  command
 float32 timeout
 ---
 std_msgs/String  plan
+std_msgs/String  next_action
+std_msgs/String  next_param
+
