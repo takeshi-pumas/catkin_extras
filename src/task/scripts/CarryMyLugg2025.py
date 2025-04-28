@@ -60,6 +60,7 @@ class Wait_push_hand(smach.State):
         
         succ = wait_for_push_hand(100) # NOT GAZEBABLE
         if succ:
+            head.set_joint_values([ 0.0, 0.0])# Looking ahead
             talk('Starting Carry my luggage task')
             return 'succ'
         else:
@@ -110,7 +111,7 @@ class Find_human(smach.State):
             return 'tries'
         if self.tries==1:
             talk('Scanning the room for humans')
-            head.set_joint_values([ 0.0, 0.0])# Looking ahead
+            head.set_joint_values([ 0.0, 0.1])# Looking ahead
         if self.tries==2:head.set_joint_values([ 0.5, 0.1])#looking left
         if self.tries==3:head.set_joint_values([-0.5, 0.1])#looking right        
         rospy.sleep(1.0)
@@ -147,17 +148,17 @@ class Find_human(smach.State):
         userdata.second_pointing=False
         ################################################################
         ########################################################
-        if   res.x_r ==-1 :
+        if   res.x_l ==0 and res.x_r != 0:
             d_r=np.linalg.norm(hum_pos[:2]-np.asarray((res.x_r,res.y_r)))
             if d_r < threshold_bag_to_human:
-                print("Only left hand")
-                tf_man.pub_static_tf(pos=[res.x_l, res.y_l,0], rot =[0,0,0,1], point_name='pointing_')
-                return 'succ'
-        elif res.x_l ==-1:  
-            d_l=np.linalg.norm(hum_pos[:2]-np.asarray((res.x_l,res.y_l)))
-            if d_l < threshold_bag_to_human:
                 print("Only right hand")
                 tf_man.pub_static_tf(pos=[res.x_r, res.y_r,0], rot =[0,0,0,1], point_name='pointing_')
+                return 'succ'
+        elif res.x_r ==0.0 and res.x_l != 0:  
+            d_l=np.linalg.norm(hum_pos[:2]-np.asarray((res.x_l,res.y_l)))
+            if d_l < threshold_bag_to_human:
+                print("Only left hand")
+                tf_man.pub_static_tf(pos=[res.x_l, res.y_l,0], rot =[0,0,0,1], point_name='pointing_')
                 return 'succ'
         else:
             d_l=np.linalg.norm(hum_pos[:2]-np.asarray((res.x_l,res.y_l)))
@@ -166,14 +167,14 @@ class Find_human(smach.State):
                 tf_man.pub_static_tf(pos=[res.x_l, res.y_l,0], rot =[0,0,0,1], point_name='pointing_')
                 if d_r <threshold_bag_to_human :
                     userdata.second_pointing=True
-                    print("both hands, first right")
+                    print("both hands, first left")
                     tf_man.pub_static_tf(pos=[res.x_r, res.y_r,0], rot =[0,0,0,1], point_name='pointing_2')
                 return 'succ'
             if  d_r <threshold_bag_to_human  and d_r > d_l :
                 tf_man.pub_static_tf(pos=[res.x_r, res.y_r,0], rot =[0,0,0,1], point_name='pointing_')
                 if d_l <threshold_bag_to_human :
                     userdata.second_pointing=True
-                    print("both hands, first left")
+                    print("both hands, first right")
                     tf_man.pub_static_tf(pos=[res.x_l, res.y_l,0], rot =[0,0,0,1], point_name='pointing_2')
                 return 'succ'
         ################################################################
@@ -200,7 +201,7 @@ class Scan_floor(smach.State):
             print("looking to TF")
                 
         if self.tries==2 and userdata.second_pointing:
-            head.to_tf('pointing_2')     
+            head.to_tf('pointing_2')      
         if self.tries==3:
             self.tries=0
             return 'tries'
@@ -470,6 +471,7 @@ class Pickup_two(smach.State):
         if succ:
             return 'succ'
         talk("I think I missed the object, I will retry")
+        gripper.open()
         return 'failed'
         
 #########################################################################################################
