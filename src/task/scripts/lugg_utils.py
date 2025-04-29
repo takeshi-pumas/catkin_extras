@@ -872,13 +872,14 @@ def get_luggage_tf():
             else:
                 print("Bounding box recibido:", response.bounding_boxes.data)
                 x_min, y_min, x_max, y_max = response.bounding_boxes.data
-
+                cv2.imwrite("debug_img.png",debug_image)
                 # Calcular el centroide 3D dentro del bounding box
                 cc = [
                     np.nanmean(points['x'][y_min:y_max, x_min:x_max]),
                     np.nanmean(points['y'][y_min:y_max, x_min:x_max]),
                     np.nanmean(points['z'][y_min:y_max, x_min:x_max])
                 ]
+                print(cc)
                 tf_man.pub_static_tf(pos= cc , rot=[0,0,0,1], ref="head_rgbd_sensor_rgb_frame", point_name=prompt )   # Just Bounding Box Mask
                 ###########PCA######################
 

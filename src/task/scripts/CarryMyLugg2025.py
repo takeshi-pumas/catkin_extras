@@ -154,11 +154,12 @@ class Find_human(smach.State):
                 print("Only right hand")
                 tf_man.pub_static_tf(pos=[res.x_r, res.y_r,0], rot =[0,0,0,1], point_name='pointing_')
                 return 'succ'
-        elif res.x_r ==0.0 and res.x_l != 0:  
+        elif res.x_r ==0 and res.x_l != 0:  
             d_l=np.linalg.norm(hum_pos[:2]-np.asarray((res.x_l,res.y_l)))
             if d_l < threshold_bag_to_human:
                 print("Only left hand")
                 tf_man.pub_static_tf(pos=[res.x_l, res.y_l,0], rot =[0,0,0,1], point_name='pointing_')
+                self.tries=0
                 return 'succ'
         else:
             d_l=np.linalg.norm(hum_pos[:2]-np.asarray((res.x_l,res.y_l)))
@@ -169,6 +170,7 @@ class Find_human(smach.State):
                     userdata.second_pointing=True
                     print("both hands, first left")
                     tf_man.pub_static_tf(pos=[res.x_r, res.y_r,0], rot =[0,0,0,1], point_name='pointing_2')
+                self.tries=0    
                 return 'succ'
             if  d_r <threshold_bag_to_human  and d_r > d_l :
                 tf_man.pub_static_tf(pos=[res.x_r, res.y_r,0], rot =[0,0,0,1], point_name='pointing_')
@@ -176,13 +178,15 @@ class Find_human(smach.State):
                     userdata.second_pointing=True
                     print("both hands, first right")
                     tf_man.pub_static_tf(pos=[res.x_l, res.y_l,0], rot =[0,0,0,1], point_name='pointing_2')
+                self.tries=0
                 return 'succ'
         ################################################################
         ########################################################
         talk('I did not find a pointing arm, I will try again')
         rospy.sleep(0.8)
         print ('no pointing ')
-        self.tries -= 1
+        self.tries = 0
+        talk('Please stand in front of me')
         return 'failed'
 
 #########################################################################################################
@@ -446,7 +450,8 @@ class Pickup_two(smach.State):
         _,quat_r=tf_man.getTF('base_link')
         print(f'Quat base',np.rad2deg(tf.transformations.euler_from_quaternion(quat_r)[2]))
         ang_base=tf.transformations.euler_from_quaternion(quat_r)[2]
-        _,quat_b=tf_man.getTF('bagpca')
+        pose,quat_b=tf_man.getTF('bagpca')
+        print(pose)
         print(f'Quat bag' ,np.rad2deg(tf.transformations.euler_from_quaternion(quat_b)[2]))
         ang_bag=tf.transformations.euler_from_quaternion(quat_b)[2]
         
@@ -456,14 +461,17 @@ class Pickup_two(smach.State):
         print ('theta, remvoe',wrist )
         #floor_pose=[0.05,-1.6,0.0,-1.41,0.0,0.0]
 
-        floor_pose=[0.05,-1.6,0.0,-1.41,wrist_adjust,0.0]
+        floor_pose=[pose[2]*2.5,-1.6,0.0,-1.41,wrist_adjust,0.0]
+        arm.set_joint_value_target(floor_pose)
+        arm.go()
+        floor_pose=[max(pose[2]-0.05,0.1),-1.6,0.0,-1.41,wrist_adjust,0.0]
         arm.set_joint_value_target(floor_pose)
         arm.go()
         rospy.sleep(1.0)
         print("closing hand")
         gripper.close(0.04)
         brazo.set_named_target('go')         
-        head.to_tf('bag')
+        head.to_tf('bagpca')
         rospy.sleep(3.0)
         succ = check_carry_bag()
         #succ=brazo.check_grasp()
