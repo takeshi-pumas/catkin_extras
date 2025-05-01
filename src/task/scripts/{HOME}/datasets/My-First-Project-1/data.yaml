@@ -1,0 +1,46 @@
+names:
+- apple
+- balero
+- balero ball
+- banana
+- beisbol ball
+- can of cream
+- can of tuna
+- cereal
+- chips
+- cup
+- fork
+- glass
+- jelly
+- knife
+- lego 2
+- lego 4
+- lego_1
+- lemon
+- mustard
+- orange
+- pear
+- pin pong ball
+- plate
+- rubick
+- softball ball
+- spam
+- spatula
+- sponge
+- spoon
+- tazon
+- tenis ball
+- tomato
+- tuna
+- watermelon
+- wineglass
+nc: 35
+roboflow:
+  license: Public Domain
+  project: my-first-project-quymm
+  url: https://universe.roboflow.com/unam-ea7rp/my-first-project-quymm/dataset/1
+  version: 1
+  workspace: unam-ea7rp
+test: ../test/images
+train: ../train/images
+val: ../valid/images
