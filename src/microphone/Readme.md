@@ -11,6 +11,9 @@ In order to use HSRB PS-EYE (microphone) on ROS laptop you MUST do the following
         click on Start button, then click on play button
     cd ~/catkin_extras/src/microphone/gstreamer
     ./GstreamerClient_pc.sh
+3. In other terminal: 
+    pactl load-module module-jack-source
+
     On gui:
         click on Connect button, then connect Readable client "gst-launch-1.0" (both) with  Writable client "PulseAudio Jack Source" (both)
 

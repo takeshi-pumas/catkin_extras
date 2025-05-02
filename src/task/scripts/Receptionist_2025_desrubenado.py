@@ -34,12 +34,12 @@ class Initial(smach.State):
         #drinks=['coke','juice','beer', 'water', 'soda', 'wine', 'i want a', 'i would like a']
         #drinks = ['coke','juice','milk', 'water', 'soda', 'wine', 
         #          'i want a', 'i would like a', 'tea', 'icedtea', 'cola', 'redwine', 'orangejuice', 'tropicaljuice']
-        drinks = ['water', 'soda', 'coke', 'juice', 'iced tea', 'i want a', 'i would like a','lipton']
-        interest = ['movies','music','food','cooking','programming','go out','sports']
+        drinks = ['water', 'soda','coffee', 'coke', 'juice', 'iced tea', 'i want a', 'i would like a','lipton']
+        interest = ['movies','music','food','cooking','cook','drive','programming','go out','sports']
         #names=['rebeca','ana','jack', 'michael', ' my name is' , 'i am','george','mary','ruben','oscar','yolo','mitzi']
         #names = [' my name is' , 'i am','adel', 'angel', 'axel', 
         #         'charlie', 'jane', 'john', 'jules', 'morgan', 'paris', 'robin', 'simone', 'jack']
-        names = ['my name is', 'i am','john', 'jack', 'paris', 'charlie', 'simone', 'robin', 'jane', 'jules']
+        names = ['my name is', 'i am','john','adel','angel','axel', 'jack', 'paris','morgan', 'charlie', 'simone', 'robin', 'jane', 'jules']
         confirmation = ['yes','no', 'robot yes', 'robot no','not','now','nope','yeah']                     
         gram = drinks + names + confirmation + interest                                                                               
         
@@ -267,7 +267,7 @@ class Get_drink(smach.State):
     def execute(self, userdata):
         self.tries += 1
         rospy.loginfo('STATE : GET DRINK')
-        if self.tries == 4:
+        if self.tries == 3:
             voice.talk ('I am having trouble understanding you, lets keep going')
             drink = 'something'
             self.tries=0

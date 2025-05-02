@@ -4,139 +4,53 @@ People:
     location: Place_3
     name: Oscar
   Guest_1:
-    description: john has arrived... he is a Man... I believe he is  around 22 years
-      old... I would say he is a bit sad. I might guess he is of white descent.
-    drink: coke
+    description: null
+    drink: null
     interest: null
-    location: Place_2
+    location: null
     name: john
   Guest_10:
     description: null
     drink: null
     interest: null
     location: null
-    name: jack
+    name: john
   Guest_11:
     description: null
     drink: null
     interest: null
     location: null
-    name: john
+    name: yeah
   Guest_12:
     description: null
     drink: null
     interest: null
     location: null
-    name: john
+    name: someone
   Guest_13:
     description: null
     drink: null
     interest: null
     location: null
-    name: jack
+    name: someone
   Guest_14:
     description: null
     drink: null
     interest: null
     location: null
-    name: jack
-  Guest_15:
-    description: null
-    drink: null
-    interest: null
-    location: null
-    name: john
-  Guest_16:
-    description: null
-    drink: null
-    interest: null
-    location: null
-    name: john
-  Guest_17:
-    description: null
-    drink: null
-    interest: null
-    location: null
-    name: jack
-  Guest_18:
-    description: null
-    drink: null
-    interest: null
-    location: null
-    name: jack
-  Guest_19:
-    description: null
-    drink: null
-    interest: null
-    location: null
-    name: jack
+    name: angel
   Guest_2:
-    description: john has arrived... he is a Man... I believe he is  around 28 years
-      old... I would say he is a bit neutral. I might guess he is of white descent.
-    drink: water
-    interest: null
-    location: Place_1
-    name: john
-  Guest_20:
     description: null
     drink: null
     interest: null
     location: null
-    name: john
-  Guest_21:
-    description: null
-    drink: null
-    interest: null
-    location: null
-    name: jack
-  Guest_22:
-    description: null
-    drink: null
-    interest: null
-    location: null
-    name: john
-  Guest_23:
-    description: null
-    drink: null
-    interest: null
-    location: null
-    name: jack
-  Guest_24:
-    description: null
-    drink: null
-    interest: null
-    location: null
-    name: john
-  Guest_25:
-    description: null
-    drink: null
-    interest: null
-    location: null
-    name: john
-  Guest_26:
-    description: null
-    drink: null
-    interest: null
-    location: null
-    name: jack
-  Guest_27:
-    description: null
-    drink: null
-    interest: null
-    location: null
-    name: john
-  Guest_28:
-    description: null
-    drink: null
-    interest: null
-    location: null
-    name: john
+    name: yeah
   Guest_3:
     description: null
-    drink: something
+    drink: null
     interest: null
     location: null
-    name: john
+    name: someone
   Guest_4:
     description: null
     drink: null
@@ -145,16 +59,16 @@ People:
     name: john
   Guest_5:
     description: null
-    drink: something
+    drink: null
     interest: null
     location: null
-    name: john
+    name: jane
   Guest_6:
     description: null
     drink: null
     interest: null
     location: null
-    name: jack
+    name: john
   Guest_7:
     description: null
     drink: null
@@ -172,7 +86,7 @@ People:
     drink: null
     interest: null
     location: null
-    name: john
+    name: yeah
 Places:
   Place_0:
     location:
@@ -185,13 +99,13 @@ Places:
       theta: -0.05
       x: -0.33
       y: -1.7
-    occupied: Guest_2
+    occupied: null
   Place_2:
     location:
       theta: -1.51
       x: -0.82
       y: -1.61
-    occupied: Guest_1
+    occupied: null
   Place_3:
     location:
       theta: 3.1
