@@ -34,12 +34,12 @@ class Initial(smach.State):
         #drinks=['coke','juice','beer', 'water', 'soda', 'wine', 'i want a', 'i would like a']
         #drinks = ['coke','juice','milk', 'water', 'soda', 'wine', 
         #          'i want a', 'i would like a', 'tea', 'icedtea', 'cola', 'redwine', 'orangejuice', 'tropicaljuice']
-        drinks = ['water', 'soda','coffee', 'coke', 'juice', 'iced tea', 'i want a', 'i would like a','lipton']
-        interest = ['movies','music','food','cooking','cook','drive','programming','go out','sports']
-        #names=['rebeca','ana','jack', 'michael', ' my name is' , 'i am','george','mary','ruben','oscar','yolo','mitzi']
-        #names = [' my name is' , 'i am','adel', 'angel', 'axel', 
-        #         'charlie', 'jane', 'john', 'jules', 'morgan', 'paris', 'robin', 'simone', 'jack']
-        names = ['my name is', 'i am','john','adel','angel','axel', 'jack', 'paris','morgan', 'charlie', 'simone', 'robin', 'jane', 'jules']
+        drinks = ['water', 'soda', 'coke', 'juice', 'iced tea', 'i want a', 'i would like a','lipton']
+        interest = ['movies','music','food','cooking','programming','going out','sports','football', 'baseball', 'dancing', 'partying', 'poetry']
+
+        names = [' my name is' , 'i am','adel', 'angel', 'axel', 
+                 'charlie', 'jane', 'john', 'jules', 'morgan', 'paris', 'robin', 'simone', 'jack']
+        #names = ['my name is', 'i am','john', 'jack', 'paris', 'charlie', 'simone', 'robin', 'jane', 'jules']
         confirmation = ['yes','no', 'robot yes', 'robot no','not','now','nope','yeah']                     
         gram = drinks + names + confirmation + interest                                                                               
         
@@ -267,7 +267,7 @@ class Get_drink(smach.State):
     def execute(self, userdata):
         self.tries += 1
         rospy.loginfo('STATE : GET DRINK')
-        if self.tries == 3:
+        if self.tries == 4:
             voice.talk ('I am having trouble understanding you, lets keep going')
             drink = 'something'
             self.tries=0
@@ -429,18 +429,25 @@ class Lead_to_living_room(smach.State):
 
 class Find_sitting_place(smach.State):
     def __init__(self):
-        smach.State.__init__(self, outcomes=['succ', 'failed', 'end'], input_keys=['name','guest_num','interest'])
+        smach.State.__init__(self, outcomes=['succ', 'failed', 'end'], input_keys=['name','guest_num','interest'] ,output_keys=['guest_num'])
         self.tries = 0
         self.intros=0
         self.introduced=False
         self.sat=False
     def execute(self, userdata):
-        rospy.loginfo('STATE : Looking for a place to sit')
 
+        #name = 'Jack'        #userdata.name
+        #interest='movies'    #userdata.interest
+        name =   userdata.name
+        interest=userdata.interest
+        rospy.loginfo('STATE : Looking for a place to sit')
         print('Try', self.tries, 'of 5 sitting places')
+        print (f'GUEST NUM{userdata.guest_num}')
         self.tries += 1
         if self.tries==6 :
-            voice.talk(f' Hey  everyone Here is {userdata.name},he likes {userdata.interest} ')
+            #voice.talk(f' Hey  everyone Here is {userdata.name},he likes {userdata.interest} ')
+            
+            voice.talk(f' Hey  everyone Here is {name},he likes {interest} ')
             self.tries=0
             if userdata.guest_num>=3:
                 voice.talk('Task completed , Thanks for your attention')
@@ -449,11 +456,10 @@ class Find_sitting_place(smach.State):
 
         place='seat_place_'+str(self.tries)
         print (place)
-        
         head.to_tf(place)
-        #voice.talk('I will check if this place is empty')
+        voice.talk('I will check if this place is empty')
         res , _ = wait_for_face()  # seconds       
-
+        print (res)
 
         if not res:              # IF a seat is found.
             rospy.sleep(0.8)
@@ -461,7 +467,7 @@ class Find_sitting_place(smach.State):
                 head.turn_base_gaze2(tf = place, to_gaze = 'base_link')
                 head.set_named_target('neutral')
                 brazo.set_named_target('neutral')
-                voice.talk(f'{userdata.name}, I found you a free place, sit here please.')
+                voice.talk(f'{name}, I found you a free place, sit here please.')
                 self.sat=True
                 if self.introduced:    #SHOULD ONLY BE TRUE IF NEW GGUEST HAS BEEN INTRODUCED TO EVERY ONE 
                     self.sat=False
@@ -471,26 +477,23 @@ class Find_sitting_place(smach.State):
                     if userdata.guest_num>=3:
                         voice.talk('Task completed , Thanks for your attention')
                         return 'end'
-                    else:
-                        self.tries=0
+                    else:                        
                         return 'succ'
-                else:return 'failed'
+                else:
+                    head.set_named_target('neutral')
+                    brazo.set_named_target('go')                    
+                    return 'failed'
             else:return'failed'
         
-
-        
-
         else:                        # A person is found.
             occupant_name = res.Ids.ids
-            voice.talk(f'Hi {occupant_name},let me introduce you to {userdata.name}, he likes {userdata.interest} ')
-            
+            #voice.talk(f'Hi {occupant_name},let me introduce you to {userdata.name}, he likes {userdata.interest} ')
+            voice.talk(f'Hi {occupant_name},let me introduce you to {name}, he likes {interest} ')
             self.intros+=1
             if userdata.guest_num<3:self.introduced=True
             if userdata.guest_num>=3 and self.intros>=2:self.introduced=True    #Only  set if 2nd guest is introduced twice
             if self.sat:
-                    
-                
-                if userdata.guest_num>=3 and self.intros>=2:    #Only  ends if 2 nd guest is introduced twoce
+                if userdata.guest_num>=3 and self.intros>=2:    #Only  ends if 2nd guest is introduced twoce
                     voice.talk('Task completed , Thanks for your attention')
                     return 'end' 
                 elif userdata.guest_num<=2:
@@ -627,7 +630,9 @@ if __name__ == '__main__':
                                transitions={'failed': 'INITIAL', 'succ': 'WAIT_PUSH_HAND'})
                                # 'succ': 'WAIT_PUSH_HAND'})
         smach.StateMachine.add("WAIT_PUSH_HAND", Wait_push_hand(),       
-                               transitions={'failed': 'WAIT_PUSH_HAND', 'succ': 'GOTO_DOOR'})
+                               transitions={'failed': 'WAIT_PUSH_HAND'   #, 'succ':'FIND_SITTING_PLACE'
+                               ,'succ': 'GOTO_DOOR'
+                               })
         smach.StateMachine.add("WAIT_DOOR_OPENED", Wait_door_opened(),     
                                transitions={'failed': 'WAIT_DOOR_OPENED', 'succ': 'SCAN_FACE'})
         
@@ -656,7 +661,7 @@ if __name__ == '__main__':
         smach.StateMachine.add("CHECK_PARTY", Check_party(),
                                transitions={'failed': 'CHECK_PARTY', 'guest_done': 'GOTO_DOOR', 'party_done': 'INTRODUCE_GUEST'})
         smach.StateMachine.add("GOTO_DOOR", Goto_door(),            
-                               transitions={'failed': 'GOTO_DOOR', 'succ': 'WAIT_DOOR_OPENED'})
+                               transitions={'failed': 'GOTO_DOOR', 'succ': 'SCAN_FACE'})
         
         # Introducing guests
         smach.StateMachine.add("FIND_GUEST", Find_guests(),
