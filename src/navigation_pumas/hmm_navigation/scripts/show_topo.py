@@ -16,7 +16,8 @@ from sensor_msgs.msg import LaserScan
 import numpy as np
 
 
-file_path = rospkg.RosPack().get_path('hmm_navigation') + '/scripts/hmm_nav_lab/'
+#file_path = rospkg.RosPack().get_path('hmm_navigation') + '/scripts/hmm_nav_lab/'
+file_path = rospkg.RosPack().get_path('hmm_navigation') + '/scripts/hmm_nav/'
 print (file_path)
 centroids = np.load(file_path + 'ccvk.npy')
 ccxyth = np.load(file_path + 'ccxyth.npy')

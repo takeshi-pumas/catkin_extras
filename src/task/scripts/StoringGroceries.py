@@ -728,6 +728,7 @@ class Scan_shelf(smach.State):
         # Determine placing point
         if free_grid.size == 0:
             x, y = np.mean(area_box, axis=0)
+            xy_place=[x,y]
             z_place = 0.44
             print(f'No free space in {corresponding_key} shelf, using default pose.{x,y}')
         else:
