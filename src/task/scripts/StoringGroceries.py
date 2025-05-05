@@ -765,8 +765,7 @@ if __name__ == '__main__':
     with sm:
         # State machine STICKLER
         smach.StateMachine.add("INITIAL",           Initial(),          transitions={'failed': 'INITIAL',           
-                                                                                         #'succ': 'SCAN_SHELF',   
-                                                                                         'succ': 'GOTO_PICKUP',   
+                                                                                         'succ': 'WAIT_DOOR',   
                                                                                          'tries': 'END'})
         smach.StateMachine.add("WAIT_PUSH_HAND",    Wait_push_hand(),   transitions={'failed': 'WAIT_PUSH_HAND',    
                                                                                          'succ': 'GOTO_PICKUP',       
