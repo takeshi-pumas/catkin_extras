@@ -41,8 +41,9 @@ class Initial(smach.State):
                  'charlie', 'jane', 'john', 'jules', 'morgan', 'paris', 'robin', 'simone', 'jack']
         #names = ['my name is', 'i am','john', 'jack', 'paris', 'charlie', 'simone', 'robin', 'jane', 'jules']
         confirmation = ['yes','no', 'robot yes', 'robot no','not','now','nope','yeah']                     
-        gram = drinks + names + confirmation + interest                                                                               
-        
+        gram = drinks + names + confirmation + interest  
+        scarlett=cv2.imread('/home/takeshi/catkin_extras/src/navigation_pumas/config_files/faces_for_recognition/scarlett/scarlett.png')                                                                             
+        _description=analyze_face_from_image(scarlett,"scarlett")
         if self.tries == 1:
             set_grammar(gram)  ##PRESET DRINKS
             rospy.sleep(0.2)
@@ -429,7 +430,7 @@ class Lead_to_living_room(smach.State):
 
 class Find_sitting_place(smach.State):
     def __init__(self):
-        smach.State.__init__(self, outcomes=['succ', 'failed', 'end'], input_keys=['name','guest_num','interest'] ,output_keys=['guest_num'])
+        smach.State.__init__(self, outcomes=['succ', 'failed', 'end'], input_keys=['name','guest_num','interest','favorite_drink'] ,output_keys=['guest_num'])
         self.tries = 0
         self.intros=0
         self.introduced=False
@@ -440,6 +441,7 @@ class Find_sitting_place(smach.State):
         #interest='movies'    #userdata.interest
         name =   userdata.name
         interest=userdata.interest
+        drink=userdata.favorite_drink
         rospy.loginfo('STATE : Looking for a place to sit')
         print('Try', self.tries, 'of 5 sitting places')
         print (f'GUEST NUM{userdata.guest_num}')
@@ -447,7 +449,7 @@ class Find_sitting_place(smach.State):
         if self.tries==6 :
             #voice.talk(f' Hey  everyone Here is {userdata.name},he likes {userdata.interest} ')
             
-            voice.talk(f' Hey  everyone Here is {name},he likes {interest} ')
+            voice.talk(f' Hey  everyone Here is {name},he likes {interest} and {drink}')
             self.tries=0
             if userdata.guest_num>=3:
                 voice.talk('Task completed , Thanks for your attention')
@@ -457,7 +459,8 @@ class Find_sitting_place(smach.State):
         place='seat_place_'+str(self.tries)
         print (place)
         head.to_tf(place)
-        voice.talk('I will check if this place is empty')
+        #voice.talk('I will check if this place is empty')
+        rospy.sleep(1.5)            
         res , _ = wait_for_face()  # seconds       
         print (res)
 
@@ -488,7 +491,7 @@ class Find_sitting_place(smach.State):
         else:                        # A person is found.
             occupant_name = res.Ids.ids
             #voice.talk(f'Hi {occupant_name},let me introduce you to {userdata.name}, he likes {userdata.interest} ')
-            voice.talk(f'Hi {occupant_name},let me introduce you to {name}, he likes {interest} ')
+            voice.talk(f'Hi {occupant_name},let me introduce you to {name}, he likes {interest} and {drink}')
             self.intros+=1
             if userdata.guest_num<3:self.introduced=True
             if userdata.guest_num>=3 and self.intros>=2:self.introduced=True    #Only  set if 2nd guest is introduced twice
