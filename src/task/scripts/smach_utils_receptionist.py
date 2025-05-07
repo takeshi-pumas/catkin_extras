@@ -42,7 +42,7 @@ from utils import grasp_utils, misc_utils, nav_utils, receptionist_knowledge
 
 global listener, broadcaster, tfBuffer, tf_static_broadcaster, scene, rgbd, head,train_new_face, wrist, human_detect_server, line_detector, clothes_color
 global clear_octo_client, goal,navclient,segmentation_server  , tf_man , omni_base, brazo, speech_recog_server, bridge, map_msg, pix_per_m, analyze_face , arm , set_grammar
-arm =  moveit_commander.MoveGroupCommander('arm')
+#   arm =  moveit_commander.MoveGroupCommander('arm')
 rospy.init_node('smach_receptionist')
 # TF2_ROS setup
 tfBuffer = tf2_ros.Buffer()

@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <launch>
-  <include file="$(find hsrb_moveit_config)/launch/hsrb_demo_with_controller.launch"> 
+  <!--include file="$(find hsrb_moveit_config)/launch/hsrb_demo_with_controller.launch"> 
   <arg name="use_gui" value="true"/> 
-  </include>
+  </include-->
   <!-- <include file="$(find nav_pumas)/config_files/launch/navigation_real.launch"/> -->
   <node pkg="human_detector"  name="human_detector" type="pointing_detector_server.py"/>  
   <node pkg="face_recog"  name="face_recog" type="face_recog_server.py"/>

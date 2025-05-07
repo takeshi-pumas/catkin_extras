@@ -21,7 +21,8 @@ STD = [0.229, 0.224, 0.225]
 
 # Load CLIP Model
 device = "cpu"
-clip_model, clip_preprocess = clip.load("ViT-B/32", device=device)  
+clip_model, clip_preprocess = clip.load("ViT-B/32") 
+clip_model.to(device)
 rospy.loginfo("CLIP model loaded successfully.")
 
 # Set base directory

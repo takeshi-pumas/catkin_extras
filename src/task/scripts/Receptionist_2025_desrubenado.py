@@ -383,18 +383,19 @@ class Find_drink(smach.State):
         self.tries += 1
         print('Try', self.tries, 'of 3 attempts')
 
-        #favorite_drink = userdata.favorite_drink
-        favorite_drink = "water"
+        favorite_drink = userdata.favorite_drink
+        #favorite_drink = "water"
         
         if favorite_drink == 'something':
             voice.talk("This table has available drinks, please take whatever you want")
             return 'succ'
 
         voice.talk('Scanning table')
-        av = arm.get_current_joint_values()
-        av[0]=0.16
-        arm.go(av)
-        head.set_joint_values([0.0, -0.3])
+        # av = arm.get_current_joint_values()
+        # av[0]=0.16
+        # arm.go(av)
+        brazo.set_joint_values([0.160 , 0.0, -1.57,-1.57, 0.0])
+        head.set_joint_values([0.0, -0.5])
         rospy.sleep(1)
 
         res,position = get_favorite_drink_location(favorite_drink)
@@ -639,7 +640,7 @@ if __name__ == '__main__':
                                # 'succ': 'WAIT_PUSH_HAND'})
         smach.StateMachine.add("WAIT_PUSH_HAND", Wait_push_hand(),       
                                transitions={'failed': 'WAIT_PUSH_HAND'   #, 'succ':'FIND_SITTING_PLACE'
-                               ,'succ': 'FIND_DRINK'#'GOTO_DOOR'
+                               ,'succ':'GOTO_DOOR'
                                })
         smach.StateMachine.add("WAIT_DOOR_OPENED", Wait_door_opened(),     
                                transitions={'failed': 'WAIT_DOOR_OPENED', 'succ': 'SCAN_FACE'})
