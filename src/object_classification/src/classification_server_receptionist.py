@@ -40,10 +40,11 @@ THRESHOLD = 0.28  # CLIP Similarity threshold (adjust as needed)
 # 🔹 Diccionario de descripciones personalizadas
 prompt_dict = {
     "coke": "A coke's bottle with a red label.",
-    "coffee": "A cup of hot coffee.",
+    "milk": "A white and brown milk box.",
     "water": "A bottle of water with a sky blue label.",
-    "juice": "A white bottle of mango juice.",
-    "lipton": "A bottle with lipton label and amber drink."
+    "fanta": "A orange fanta can.",
+    "lipton": "A bottle with lipton label and amber drink.",
+    "fresca": "A yellow fresca can."
 }
 
 def preprocess_image(cv2_image, max_size=1333, stride=32):
