@@ -304,7 +304,7 @@ class Get_drink(smach.State):
 
 class Get_interest(smach.State):
     def __init__(self):
-        smach.State.__init__(self, outcomes=['succ', 'failed'],input_keys=['guest_num','name','description','face_img'],output_keys=['guest_num','description','interest'])
+        smach.State.__init__(self, outcomes=['succ', 'failed','tries'],input_keys=['guest_num','name','description','face_img'],output_keys=['guest_num','description','interest'])
         self.tries = 0
     
     def execute(self, userdata):
@@ -320,9 +320,19 @@ class Get_interest(smach.State):
         print(interest)
         rospy.sleep(0.5)
 
+        if self.tries==3:
+            #voice.talk(f' Hey  everyone Here is {userdata.name},he likes {userdata.interest} ')
+            interest= 'unknown'
+            userdata.guest_num+=1
+            userdata.interest=interest
+            self.tries=0
+            return 'tries'
+            
+
         if interest=='timeout':
             voice.talk("Sorry, couldn't hear you. Please speak louder.")
             print("Sorry, couldn't hear you. Please speak louder.")
+            self.tries +=1
             return 'failed' 
         voice.talk(f'Did you say {interest}?')
         print(f'Did you say {interest}?')
@@ -331,7 +341,9 @@ class Get_interest(smach.State):
         confirmation = get_keywords_speech(10)
         confirmation = confirmation.split(' ')
         confirm = match_speech(confirmation, ['yes','yeah','jack','juice'])
-        if not confirm: return 'failed'
+        if not confirm: 
+            self.tries+=1
+            return 'failed'
         
         #TODO: save interest response to the yaml
 
@@ -397,7 +409,7 @@ class Find_drink(smach.State):
         # brazo.set_joint_values([0.160 , 0.0, -1.57,-1.57, 0.0])
         # head.set_joint_values([0.0, -0.5])
         head.set_joint_values([0.0, -0.22])
-        rospy.sleep(1)
+        rospy.sleep(3)
 
         #res,position = get_favorite_drink_location(favorite_drink)
         res = True
@@ -657,7 +669,7 @@ if __name__ == '__main__':
         smach.StateMachine.add("GET_DRINK", Get_drink(),    
                                transitions={'failed': 'GET_DRINK', 'succ': 'LEAD_TO_BEVERAGE_AREA'})
         smach.StateMachine.add("GET_INTEREST", Get_interest(),    
-                               transitions={'failed': 'GET_INTEREST', 'succ': 'GET_DRINK'})
+                               transitions={'failed': 'GET_INTEREST', 'succ': 'GET_DRINK', 'tries':'GET_DRINK'})
                                #, 'succ': 'LEAD_TO_BEVERAGE_AREA'})
 
         # Guest treatment
