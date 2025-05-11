@@ -571,8 +571,26 @@ Visualization Manager:
       Filter (whitelist): ""
       Frame Timeout: 15
       Frames:
+        009_gelatin_box:
+          Value: true
+        010_potted_meat_can:
+          Value: true
+        013_apple:
+          Value: true
+        022_windex_bottle:
+          Value: true
+        025_mug:
+          Value: true
+        029_plate:
+          Value: true
+        033_spatula:
+          Value: true
+        050_medium_clamp:
+          Value: true
+        070-a_colored_wood_blocks:
+          Value: true
         All Enabled: false
-        Scarlet:
+        apple:
           Value: true
         arm_flex_link:
           Value: false
@@ -612,9 +630,23 @@ Visualization Manager:
           Value: false
         base_roll_link:
           Value: false
-        beverage_area:
+        bedroom:
           Value: true
-        door:
+        breakfast:
+          Value: true
+        dining_room:
+          Value: true
+        door_lab:
+          Value: true
+        entrance:
+          Value: true
+        gelatin_box:
+          Value: true
+        goal_for_grasp:
+          Value: true
+        hallway_1:
+          Value: true
+        hallway_2:
           Value: true
         hand_camera_frame:
           Value: false
@@ -658,14 +690,10 @@ Visualization Manager:
           Value: false
         head_pan_link:
           Value: false
-        head_r_stereo_camera_frame:
-          Value: true
         head_r_stereo_camera_gazebo_frame:
           Value: false
         head_r_stereo_camera_link:
           Value: false
-        head_rgbd_sensor_depth_frame:
-          Value: true
         head_rgbd_sensor_gazebo_frame:
           Value: false
         head_rgbd_sensor_link:
@@ -674,26 +702,30 @@ Visualization Manager:
           Value: false
         head_tilt_link:
           Value: false
+        kitchen:
+          Value: true
         living_room:
           Value: true
         map:
           Value: true
+        medium_clamp:
+          Value: true
+        mug:
+          Value: true
         odom:
           Value: true
-        seat_place_1:
+        pickup:
           Value: true
-        seat_place_2:
+        place_shelf:
           Value: true
-        seat_place_3:
+        placing_area:
           Value: true
-        seat_place_4:
+        prubea:
           Value: true
-        seat_place_5:
+        shelf:
           Value: true
         torso_lift_link:
           Value: false
-        unknown:
-          Value: true
         wrist_flex_link:
           Value: false
         wrist_ft_sensor_frame:
@@ -710,11 +742,33 @@ Visualization Manager:
       Show Names: true
       Tree:
         map:
-          beverage_area:
+          apple:
             {}
-          door:
+          bedroom:
+            {}
+          breakfast:
+            {}
+          dining_room:
+            {}
+          door_lab:
+            {}
+          entrance:
+            {}
+          gelatin_box:
+            {}
+          goal_for_grasp:
+            {}
+          hallway_1:
+            {}
+          hallway_2:
+            {}
+          kitchen:
             {}
           living_room:
+            {}
+          medium_clamp:
+            {}
+          mug:
             {}
           odom:
             base_footprint:
@@ -775,35 +829,44 @@ Visualization Manager:
                           {}
                       head_l_stereo_camera_link:
                         head_l_stereo_camera_frame:
-                          {}
+                          head_rgbd_sensor_rgb_frame:
+                            009_gelatin_box:
+                              {}
+                            010_potted_meat_can:
+                              {}
+                            013_apple:
+                              {}
+                            022_windex_bottle:
+                              {}
+                            025_mug:
+                              {}
+                            029_plate:
+                              {}
+                            033_spatula:
+                              {}
+                            050_medium_clamp:
+                              {}
+                            070-a_colored_wood_blocks:
+                              {}
                         head_l_stereo_camera_gazebo_frame:
                           {}
                       head_r_stereo_camera_link:
-                        head_r_stereo_camera_frame:
-                          {}
                         head_r_stereo_camera_gazebo_frame:
                           {}
                       head_rgbd_sensor_link:
-                        head_rgbd_sensor_depth_frame:
-                          {}
                         head_rgbd_sensor_gazebo_frame:
                           {}
-                        head_rgbd_sensor_rgb_frame:
-                          Scarlet:
-                            {}
-                          unknown:
-                            {}
             base_footprint_wheel:
               {}
-          seat_place_1:
+          pickup:
             {}
-          seat_place_2:
+          place_shelf:
             {}
-          seat_place_3:
+          placing_area:
             {}
-          seat_place_4:
+          prubea:
             {}
-          seat_place_5:
+          shelf:
             {}
       Update Interval: 0
       Value: true
@@ -973,7 +1036,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 7.345926761627197
+      Distance: 9.214730262756348
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -989,9 +1052,9 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.0197964906692505
+      Pitch: 0.9397962689399719
       Target Frame: base_footprint
-      Yaw: 6.234531402587891
+      Yaw: 6.126346111297607
     Saved: ~
 Window Geometry:
   Displays:
