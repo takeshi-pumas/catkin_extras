@@ -220,14 +220,14 @@ std_msgs::Float32MultiArray get_next_goal_head_angles(float robot_x, float robot
     msg.data.push_back(-1.0);
     return msg;
 }
-/*
+
 std_msgs::Float32MultiArray head_to_neutral()
 {
     std_msgs::Float32MultiArray msg;
     msg.data.push_back(0.0);
     msg.data.push_back(0.0);
     return msg;
-}*/
+}
 
 /*std_msgs::Float32MultiArray arm_to_go()
 {
@@ -442,7 +442,7 @@ int main(int argc, char** argv)
             error = fabs(error);
             if(error < angle_tolerance)
                 state = SM_GOAL_POSE_FINISH;
-            //if(move_head) pub_head_goal_pose.publish(head_to_neutral());
+            if(move_head) pub_head_goal_pose.publish(head_to_neutral());
             pub_cmd_vel.publish(calculate_speeds(robot_t, goal_t, max_angular_speed, beta));
             if(--attempts <= 0)
             {

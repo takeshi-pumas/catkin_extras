@@ -85,7 +85,7 @@ int main(int argc, char **argv)
 
         sub_pumas_head_gp = n.subscribe("/hardware/head/goal_pose", 10, headGoalPoseCallback);
         sub_hsr_head_cp = n.subscribe("/hsrb/head_trajectory_controller/state", 10, headCurrentPoseCallback);
-        sub_nav_finished = n.subscribe("/navigation/status", 10, nav_msg_Callback);
+        // sub_nav_finished = n.subscribe("/navigation/status", 10, nav_msg_Callback);
 
         // make sure the controller is running
         client = n.serviceClient<controller_manager_msgs::ListControllers>("/hsrb/controller_manager/list_controllers");
