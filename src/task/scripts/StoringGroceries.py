@@ -629,7 +629,7 @@ class Scan_shelf(smach.State):
                 av[0] = 0.6
                 av[1] = -0.4
                 arm.go(av)
-                head.set_joint_values([-np.pi/2, -0.4])
+                head.set_joint_values([-np.pi/2, -0.2])
                 #rospy.sleep(5)
             elif self.tries == 2:
                 print(f"gazing already{userdata.missing_shelves}")

@@ -37,78 +37,92 @@ sofa (p)
 bookshelf (p) | toys 
 entrance 
 exit 
+kitchen
+living_room
+dinning_room
+bedroom
 """
-tools="""
-    def Navigate(target_location: str):
-        \"\"\"
-        Move the robot to a target location.
-        \"\"\"
-    
-    def FollowPerson(person_name: str):
-        \"\"\"
-        Follow a specific person as they move.
-        \"\"\"
-    
-    def PickObject(object_name: str):
-        \"\"\"
-        Pick an object.
-        \"\"\"
-    
-    def PlaceObject(object_name: str, target_location: str):
-        \"\"\"
-        Place an object at a target location.
-        \"\"\"
-    
-    def GreetPerson(person_name: str):
-        \"\"\"
-        Greet a person verbally or visually.
-        \"\"\"
-    
-    def AnswerQuestion(question: str):
-        \"\"\"
-        Respond to a question from a person.
-        \"\"\"
-    
-    def IdentifyPerson(person_name: str):
-        \"\"\"
-        Provide information about a person (pose, clothing, gender, etc.).
-        \"\"\"
-    
-    def TellJoke(person_name: str):
-        \"\"\"
-        Tell a joke to entertain or engage a person.
-        \"\"\"
-    
-    def TellStatement(info_item: str):
-        \"\"\"
-        Inform something to someone (robot assumes it already navigated to the person).
-        \"\"\"
-    
-    def StateInfo(info_item: str):
-        \"\"\"
-        State contextual information (e.g., time, date).
-        \"\"\"
-    
-    def FindObject(object_name: str = None, object_type: str = None):
-        \"\"\"
-        Locate a specific object in the environment.
-        \"\"\"
-    
-    def CountObjects(type_object: str, location: str = None):
-        \"\"\"
-        Count the number of objects of a specific type in a location.
-        \"\"\"
-    
-    def ReportObjectAttribute(attribute: str, object_name: str = None):
-        \"\"\"
-        Identify attributes of an object.
-        \"\"\"
-    
-    def LocatePerson(person_name: str):
-        \"\"\"
-        Identify the location of a specific person.
-        \"\"\"
-    """
+tools = """
+def Navigate(target_location: str):
+    \"\"\"Move the robot to a specified target location.\"\"\"
+
+def FollowPerson(person_name: str):
+    \"\"\"Follow a specific person standing in front of the robot as they move.
+    Notes: Robot should navigate in front of person before  calling this function\"\"\"
+
+def PickObject(object_name: str):
+    \"\"\"Pick up a specified object nearby.\"\"\"
+
+def PlaceObject(object_name: str, target_location: str):
+    \"\"\"Place a carried object at the specified location.\"\"\"
+
+def GreetPerson(person_name: str):
+    \"\"\"Greet a specific person verbally or visually.\"\"\"
+
+def AnswerQuestion(question: str):
+    \"\"\"Answer a question posed by a person.\"\"\"
+
+def IdentifyPerson(person_name: str):
+    \"\"\"Provide identifying information about a known person or return their name.\"\"\"
+
+def TellJoke(person_name: str):
+    \"\"\"Tell a joke to a specified person.\"\"\"
+
+def TellStatement(info_item: str):
+    \"\"\"Share a fact or statement with a person.\"\"\"
+
+def FindObject(object_name: str = None, object_type: str = None):
+    \"\"\"
+    Locate a specific object nearby.
+    Parameters:
+      - object_name (str): Name of the object to find.
+      - object_type (str): Category or type of object to find.
+    Note: To find an object in a location, navigate there first using Navigate().
+    \"\"\"
+
+def CountObjects(object_type: str):
+    \"\"\"
+    Count the number of objects of a specified type in fron of the robot
+
+    Parameters:
+      - object_type (str): Type/category of the object 
+      
+    Returns:
+      - int: Number of objects found.
+    \"\"\"
+
+def ReportObjectAttribute(attribute: str, object_name: str = None):
+    \"\"\"Describe an attribute  of a specified object.\"\"\"
+
+def LocatePerson(person_name: str):
+    \"\"\"Identify the current location of a specific person.
+        Note: To locate a person in a location, navigate there first using Navigate().
+    \"\"\"
+
+def AskQuestionToPerson(person_name: str, question: str):
+    \"\"\"Ask a specific question to a person and get their response.\"\"\"
+
+def GuidePersonToLocation(person_name: str, target_location: str):
+    \"\"\"Lead or escort a person from current location to the target location.\"\"\"
+
+def IntroduceYourselfToPerson(person_name: str):
+    \"\"\"Introduce yourself verbally or visually to a specified person.\"\"\"
+
+def ReportNumberOfPeopleWithAttribute(attribute: str, location: str):
+    \"\"\"Count how many people at a location match a given attribute .\"\"\"
+
+def TellPersonInfo(person_name: str, info: str):
+    \"\"\"Communicate specific information or statements to a given person.\"\"\"
+def GiveObjectToPerson(person_location: str):
+    '''
+    Hand over the currently held object to a person on a specified location. If robot is not in that location navigate(location) must be called first
+    Note: The robot should already be at the same location as the person before giving.
+    '''
+def ReportResult(info: str):
+    '''Verbally report the result of a previous query .'''
+
+"""
+
 
 
 ######################################################################
@@ -183,61 +197,81 @@ import yaml
 import rospkg
 
 
-def plan_command(command):
-    #model="llama3.2"
-    model="mistral"
-    
-    
-    
-    
-    #known_locs=read_yaml('known_locs_gpsr.yaml')
-    #######################################################################################        
-    #rospack = rospkg.RosPack()                                                                                  # THIS CAN BE YAMLD TODO
-    #file_path=rospack.get_path('action_planner')+'/context_files/examples.txt'
-    #with open(file_path, 'r') as file:
-    #    examples = file.read()
-    known_locs=read_yaml('known_locs_gpsr.yaml')
-    print( 'Planing please wait')
 
-    prompt_1 = (
-                f" You are an action planner, a service robot will execute the sequence of actions you create"
-                f" Service robot only has this actions {tools} implemented if plan contains any action not inlcuded here it is considered a catastrophic planning failiure"
-                f" Assume you can use Navigate() to go to any location mentioned in {locations_names}"
-                f" After each location name there is a (p) for locations in which robot can place objects and aslo a category of objects"
-                "that migh be found "
-                f" Robot always starts at 'start' location."
-                f"User command is {command}"
-                )
-    messages = [{"role": "tool", "content": prompt_1}]
-    # First call to the model
-    response = chat(model, messages=messages)
-    plan_yaml = response['message']['content']
-    print (plan_yaml)
-    # Second prompt to reformat the plan into the desired action list format
-    prompt_2 = (
-        f"Based on this plan\n{plan_yaml}\n\n"
-        f"Make sure all actions are part of the action set{tools}.\n\n"
-        f"Make sure all actions have parameters.\n\n"
-        f"Reformat the actions into this format: "
-        f"plan=[name_of_action_from_action_set(parameter), name_of_action_from_action_set(parameter), etc]. "
-        "Please ensure:"
-            "- Each action is a function call in the format: function_name(parameter) from the action set do not use any other actions not included "
-            "- Use the exact Python function syntax with no extra characters (e.g., no quotes around function names, no `=` between the function name and parameter)."
-            "- All parameters should be inside the parentheses and should not have additional quotes unless they are string arguments."
-            f"- The entire output should be a Python list format of actions in {tools}"
-            "- avoid any signs like single quotes or  '\n' avoid unnecesary spaces"
-    )
+def plan_command(command, model="koesn/mistral-7b-instruct", tools=tools, locations=locations_names):
+    prompt = f"""
+    You are a strict robot action planner. Only these actions exist exactly as defined:
+
+    {tools}
+
+    Known locations:
+    {locations}
+
+    Assumptions:
+    - The robot always starts at "start_location" facing the user.
+    - The user issuing the command is always at "start_location".
+    - The word "me" in the command means the user at "start_location".
+    - All required objects and people exist at expected locations.
+    - Your output must always be a valid plan, no error handling needed.
+    - Use exact Python syntax with double quotes for strings.
+    - Output ONLY the plan variable in this exact format:
+
+    plan = [
+        # sequence of actions
+    ]
+
+    Important rules:
+    - If the command includes "me" or implies the user, the robot must give the object to "user" at "start_location" using GiveObjectToPerson("user").
+    - If the command names a different person or location as recipient, use GiveObjectToPerson(recipient) or GiveObject(location) accordingly.
+    - Always navigate back to "start_location" after completing the main task unless the command explicitly states otherwise.
+    - If the command involves reporting an attribute, usually a tell me action, answering a question, or stating a result (e.g., counting people), the robot must first gather the required information, then return to start_location to report it to the user.
+    - The user is always at start_location, so there is no need to LocatePerson("user") or ask the user for help locating things.
+    - Your plan must be a static sequence of actions, **no conditional statements, no if/else blocks, or branching logic inside the plan.**
+
+    Examples:
+
+    command = Get me a bowl from the kitchen
+    plan = [
+        Navigate("kitchen"),
+        FindObject(object_name="bowl"),
+        PickObject("bowl"),
+        Navigate("start_location"),
+        GiveObjectToPerson("user")
+    ]
+
+    command = Deliver the book on the table to Alex in the living_room
+    plan = [
+        Navigate("table"),
+        FindObject(object_name="book"),
+        PickObject("book"),
+        Navigate("living_room"),
+        GiveObjectToPerson("Alex"),
+        Navigate("start_location")
+    ]
+
+    command = Tell me how many people in the bedroom are wearing orange sweaters
+    plan = [
+        Navigate("bedroom"),
+        CountObjects(object_type="person wearing orange sweater"),
+        Navigate("start_location"),
+        ReportNumberOfPeopleWithAttribute("wearing orange sweaters")
+    ]
+
+    Now, provide ONLY the plan for this command:
+
+    User command: {command}
+    """
 
     messages = [
-        {"role": "tool", "content": prompt_1},
-        {"role": "tool", "content": plan_yaml},
-        {"role": "tool", "content": prompt_2},
+        {"role": "system", "content": "You are a strict robot action planner."},
+        {"role": "user", "content": prompt}
     ]
-    response2 = chat(model, messages=messages)
-    plan_list = response2['message']['content']
-    #print(plan_list) 
 
-    return plan_list
+    response = chat(model, messages=messages)
+    plan = response["message"]["content"]
+    print("Raw plan from model:", plan)
+    return plan
+
     
 
 
@@ -387,17 +421,25 @@ def action_planner(req):
             plan=plan_command(command)
             ########################
             print(plan,'plan \n')
-            response.plan.data = plan
-            start = plan.find("[") + 1
-            end = plan.rfind("]")
-            inner = plan[start:end]
-            ##########################
-            nxt_action= next_action(plan)
-            print(nxt_action,'action \n')
-            action,param,state=parse_llm_step_response(nxt_action)
-            print (f'action,param,state{action,param,state}')
-            response.next_action.data = action
-            response.next_param.data = param
+            
+
+            # Use regex to match function calls like FunctionName(arg1, arg2, ...)
+            pattern = re.compile(r'(\w+)\((.*?)\)', re.DOTALL)
+
+            actions = []
+            params = []
+
+            for match in pattern.finditer(plan):
+                action_name = match.group(1).strip()
+                arguments = match.group(2).strip()
+                actions.append(action_name)
+                params.append(arguments)
+
+            # Output result
+            for a, p in zip(actions, params):
+                print(f"Action: {a}, Params: {p}")
+            response.next_action.data =  ','.join(actions)
+            response.next_param.data  =  '|'.join(params)
 
 
 
