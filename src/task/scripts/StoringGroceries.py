@@ -15,6 +15,7 @@ def categorize_objs(name):
     balls= ['softball','tennis_ball','a_mini_soccer_ball', 'racquetball', 'golf_ball', 'baseball'  ]
     fruits= ['apple','banana', 'lemon','pear','plum','orange','strawberry','peach']
     food =['chips_can','mustard_bottle','potted_meat_can','tomato_soup_can','tuna_fish_can','master_chef_can','sugar_box','pudding_box','cracker_box', 'gelatin_box']
+    
     if name in kitchen: return 'kitchen'
     elif name in tools: return 'tools'
     elif name in balls: return 'balls'
@@ -410,9 +411,12 @@ class Place_shelf(smach.State):
         self.tries += 1
         print(f'shelves_cats{shelves_cats}, object picked up cat {cat}')
         ###########################################
-        high_shelf_place=[0.669, -1.44, 0.292,  -0.01729,-0.338, 0.0]
-        mid_shelf_place= [0.276, -1.581, 0.15, 0.0621, -0.1234, 0.0]
-        low_shelf_place= [0.05, -2.09, 0.0, 0.455, -0.004, 0.0]
+        high_shelf_place=[0.632, -1.150, 0.029,  -0.365,0.0, 0.0]        
+        mid_shelf_place= [0.232, -1.150, 0.029,  -0.365,0.0, 0.0]
+        low_shelf_place= [0.011, -1.666, 0.0, 0.137, 0.0, 0.0]
+        #high_shelf_place=[0.669, -1.44, 0.292,  -0.01729,-0.338, 0.0]
+        #mid_shelf_place= [0.276, -1.581, 0.15, 0.0621, -0.1234, 0.0]
+        #low_shelf_place= [0.05, -2.09, 0.0, 0.455, -0.004, 0.0]
         low_shelf,mid_shelf,top_shelf,=False,False,False
         ###########################################
         string_list=regions_df['shelves']['z'].split(',')
@@ -458,7 +462,7 @@ class Place_shelf(smach.State):
 
         
 
-        base_grasp_D(tf_name='placing_area',d_x=1.25, d_y=0.0,timeout=10)
+        base_grasp_D(tf_name='placing_area',d_x=1.0, d_y=0.0,timeout=10)
         succ=arm.go(placing_pose)
         if succ == False :
             omni_base.tiny_move( velX=-0.1,std_time=1.0) 
@@ -566,6 +570,8 @@ class Scan_shelf(smach.State):
         global shelves_cats, objs_shelves
         self.tries += 1
 
+
+
         # Debugging placeholders for category and target object
         #global cat, target_object
         #cat = 'balls'
@@ -598,14 +604,29 @@ class Scan_shelf(smach.State):
         else:
             rospy.loginfo('State: Scanning_shelf')
             clear_octo_client()
+            if self.tries==5:
+                x, y = np.mean(area_box, axis=0)
+                xy_place=[x,y]
+                z_place = 0.64
+                # Publish TF and move arm
+                tf_man.pub_static_tf(pos=[xy_place[0], xy_place[1], z_place + 0.05], point_name='placing_area')
+                head.set_joint_values([0, 0])
+                rospy.sleep(3)
+                arm.set_named_target('go')
+                arm.go()
+                return 'succ'
+
+
             talk('Scanning shelf')
+            
             if self.tries == 1:
                 rospack = rospkg.RosPack()
                 if "objs_shelves" not in globals():
                     objs_shelves = pd.DataFrame(columns=['x', 'y', 'z', 'obj_name', 'shelf_section', 'category'])
                 head.set_joint_values([0.0, 0.0])
                 av = arm.get_current_joint_values()
-                av[0] = 0.67
+                #av[0] = 0.67
+                av[0] = 0.6
                 av[1] = -0.4
                 arm.go(av)
                 head.set_joint_values([-np.pi/2, -0.4])
@@ -729,7 +750,7 @@ class Scan_shelf(smach.State):
         if free_grid.size == 0:
             x, y = np.mean(area_box, axis=0)
             xy_place=[x,y]
-            z_place = 0.44
+            z_place = 0.64
             print(f'No free space in {corresponding_key} shelf, using default pose.{x,y}')
         else:
             distances = [np.linalg.norm(pt - occupied_pts, axis=1).sum() for pt in free_grid]

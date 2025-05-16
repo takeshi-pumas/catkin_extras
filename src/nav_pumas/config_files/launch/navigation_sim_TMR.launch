@@ -9,8 +9,10 @@
 
   <!--arg name="static_map_file"       default="$(find config_files)/prohibition_maps/robocup_2023/map.yaml"/-->
   <!--arg name="prohibition_map_file"  default="$(find config_files)/prohibition_maps/robocup_2023/map.yaml"/-->
-  <arg name="static_map_file"       default="$(find config_files)/prohibition_maps/TMR_2024/map.yaml"/>
-  <arg name="prohibition_map_file"  default="$(find config_files)/prohibition_maps/TMR_2024/map.yaml"/>
+  <!--arg name="static_map_file"       default="$(find config_files)/prohibition_maps/TMR_2024/map.yaml"/-->
+  <!--arg name="prohibition_map_file"  default="$(find config_files)/prohibition_maps/TMR_2024/map.yaml"/-->
+  <arg name="static_map_file"       default="$(find config_files)/prohibition_maps/TMR_2025/map.yaml"/>
+  <arg name="prohibition_map_file"  default="$(find config_files)/prohibition_maps/TMR_2025/map.yaml"/>
   <arg name="initial_pose_x" default="8.0"/>
   <arg name="initial_pose_y" default="0.0"/>
   <arg name="initial_pose_a" default="3.1416"/>
