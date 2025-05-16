@@ -11,4 +11,6 @@ src/navigation_pumas/config_files/receptionist_knowledge2.yaml~Stashed changes
 src/images_repos/src/*.jpg
 src/navigation_pumas/config_files/faces_for_recognition/*
 src/navigation_pumas/config_files/receptionist_knowledge.yaml
+src/hsrb_moveit-v0.6.0-community/hsrb_moveit_config/launch/moveit.rviz
+
 
