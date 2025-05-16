@@ -16,6 +16,7 @@ from ros_whisper_vosk.srv import GetSpeech
 from face_recog.msg import *
 from face_recog.srv import *
 #import face_recognition 
+from scipy.spatial import distance
 import cv2  
 import rospy 
 import numpy as np
@@ -422,6 +423,71 @@ def detect_human_to_tf():
         succ=tf_man.change_ref_frame_tf('human')
         return succ
 #------------------------------------------------------
+def check_bag_hand_camera(imagen, x=160, y=240, w=40, h=10, bins=12):
+    print("hand_camera checking")
+    
+    # Recortar la región seleccionada
+    recorte = imagen[y:y+h, x:x+w]
+
+    # Calcular y cuantizar histogramas
+    histogramas = {}
+    colores = ('b', 'g', 'r')
+    bin_size = 256 // bins
+
+    for i, color in enumerate(colores):
+        hist = cv2.calcHist([recorte], [i], None, [256], [0, 256])
+        
+        # Cuantización a 12 dimensiones
+        hist_cuantizado = [
+            int(sum(hist[j:j+bin_size])) 
+            for j in range(0, 256, bin_size)
+        ]
+
+        # Asegúrate de que siempre tenga exactamente 12 elementos
+        if len(hist_cuantizado) > bins:
+            hist_cuantizado = hist_cuantizado[:bins]
+
+        histogramas[color] = hist_cuantizado
+
+    print(histogramas)  # Verifica que siempre sean 12 elementos
+    return histogramas
+#------------------------------------------------------
+def comparar_histogramas(hist_actual, umbral=0.6):
+    print("Comparing...")
+    hist_mano_vacia = {
+        'b': [0, 18, 17, 15, 252, 15, 15, 20, 26, 21, 1, 0],
+        'g': [0, 18, 17, 15, 252, 14, 14, 19, 28, 21, 2, 0],
+        'r': [0, 18, 17, 15, 251, 14, 11, 12, 31, 24, 7, 0]
+    }
+
+    total_similaridad = 0
+    total_canales = 0
+
+    for color in ('b', 'g', 'r'):
+        vacio = np.array(hist_mano_vacia[color]).astype(float)
+        actual = np.array(hist_actual[color]).astype(float)
+
+        # Verifica que ambos tengan 12 elementos
+        if len(vacio) != 12 or len(actual) != 12:
+            print(f"❌ Error: Los histogramas para '{color}' no tienen 12 elementos")
+            return "Error en los histogramas"
+
+        # Calcular la similaridad
+        similaridad = 1 - distance.cosine(vacio, actual)
+        print(f"✅ Similaridad para {color}: {similaridad:.4f}")
+
+        total_similaridad += similaridad
+        total_canales += 1
+
+    promedio_similaridad = total_similaridad / total_canales
+    print(f"📊 Promedio de similaridad: {promedio_similaridad:.4f}")
+
+    # Decisión basada en el umbral
+    if promedio_similaridad > umbral:
+        return False  # Mano sin objeto
+    else:
+        return True  # Mano con objeto
+    #------------------------------------------------------
 
 def get_keywords_speech(timeout=5):
     try:
