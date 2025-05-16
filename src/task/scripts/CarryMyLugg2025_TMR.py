@@ -62,6 +62,7 @@ class Wait_push_hand(smach.State):
         if succ:
             head.set_joint_values([ 0.0, 0.0])# Looking ahead
             talk('Starting Carry my luggage task')
+            talk("Please stand in front of me, so I can start folow you")
             return 'succ'
         else:
             return 'failed'
@@ -147,7 +148,7 @@ class Find_human(smach.State):
         hum_pos,_=tf_man.getTF('human')
         talk('Ok')
         rospy.sleep(0.8)
-        threshold_bag_to_human=2.0  
+        threshold_bag_to_human=3.0  
         userdata.second_pointing=False
         ################################################################
         ########################################################
@@ -476,9 +477,9 @@ class Pickup_two(smach.State):
         brazo.set_named_target('go')         
         head.to_tf('bagpca')
         rospy.sleep(3.0)
-        succ = check_carry_bag()
+        #succ = check_carry_bag()
         #succ=brazo.check_grasp()
-        
+        succ = True
         if succ:
             return 'succ'
         talk("I think I missed the object, I will retry")
@@ -539,16 +540,18 @@ class Deliver_Luggage(smach.State):
             rospy.loginfo("State : Deliver luggage to floor")
             self.tries += 1
             #deliver_position = [0.25, -0.32, -0.069, -1.25, 0.0] to person
-            deliver_position = [0.0, 0.0, -1.57, -1.57, 0.0]
+            deliver_position = [0.19, -1.52, -0.82, -1.58,  1.54]
             rospy.sleep(1)
             #talk("Please take the luggage")
+            talk("placing bag")
             brazo.set_joint_values(joint_values = deliver_position)
-            talk("Releasing in three")
-            rospy.sleep(0.7)
-            talk("Two")
-            rospy.sleep(0.7)
-            talk("One")
-            rospy.sleep(0.7)
+            rospy.sleep(1.5)
+            # talk("placing bag")
+            # rospy.sleep(0.7)
+            # talk("Two")
+            # rospy.sleep(0.7)
+            # talk("One")
+            # rospy.sleep(0.7)
             gripper.steady()
             #talk('Push my hand when you have taken the bag')
             brazo.set_named_target('go') 
