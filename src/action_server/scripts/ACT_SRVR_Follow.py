@@ -115,7 +115,7 @@ class Find_legs(smach.State):
         enable_legs.publish(msg_bool)
         enable_follow.publish(msg_bool)
         ############################
-        talk('Leg finder activated')
+        talk('Detecting Human')
         print ('Leg finder activated ')
         
         timeout=2
@@ -149,6 +149,7 @@ class Goto_human(smach.State):
         self.last_legs=[]
     def execute(self, userdata):
         rospy.loginfo('STATE : Human_found,Navigating to last know position')
+        talk('Ready to follow, please start walking')
         tf_man.pub_static_tf(np.asarray((1.0,0.0,0.0)),np.asarray((0.0,0.0,1.0,0.0)) ,point_name='move_base_goal', ref='human')
         rospy.sleep(0.25)
         _,quat= tf_man.getTF('move_base_goal')
@@ -178,7 +179,7 @@ class Follow_human(smach.State):
         rospy.loginfo('STATE : Legs_found,following')
         self.tries+=1
         if self.tries == 1: 
-            print('Legs Found, Following')
+            print('Found, ready to follow, please start walking')
             talk('Human found, Following')
 
         try :
@@ -193,16 +194,18 @@ class Follow_human(smach.State):
         print(np.linalg.norm(np.asarray(self.last_legs).mean(axis=0)))
         if len (self.last_legs)>=26:
             #if (np.var(self.last_legs,axis=0).mean() < 0.001):
-            if (np.linalg.norm(np.asarray(self.last_legs).mean(axis=0)) < 1.0):
+            if (np.linalg.norm(np.asarray(self.last_legs).mean(axis=0)) < 2.0):
                 print ('legs stopped... Are we there yet?')#,   np.var(self.last_legs,axis=0).mean()   )    
-                talk ('are we there yet ?')
-                print ('are we there yet ?')                
-                speech = get_keywords_speech(10)
+                talk ('are we there yet? ')
+                print ('are we there yet ?') 
+                rospy.sleep(1)               
+                speech = get_keywords_speech(5)
                 speech = speech.split(' ')
                 confirmation_list=['yes','jack','juice', 'takeshi yes','yeah']
                 confirm = any(word in confirmation_list for word in speech)
                 
-                print (speech,"#################################################",confirm)               
+                print (speech,"#################################################",confirm)      
+                        
                 if confirm:
                     talk ('arrival confirmed, exiting action')
                     print ('We are athere')
@@ -212,7 +215,7 @@ class Follow_human(smach.State):
                     enable_follow.publish(msg_bool)
                     return 'arrived' 
                     
-                talk ('ok then ,  I will continue to follow you')
+                talk ('ok, keep following')
                 print('ok I will continue to follow you')
             self.last_legs.pop(0)
         print ('legs moving... Cruising',   np.var(self.last_legs,axis=0).mean()   )          #if (np.var(last_legs,axis=0).mean() < 0.0001):

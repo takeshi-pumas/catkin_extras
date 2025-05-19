@@ -8,7 +8,7 @@
   <!-- MAP IS STORED IN ROBOT-->
   
 
-  <arg name="prohibition_map_file"  default="$(find config_files)/prohibition_maps/TMR_2025/map.yaml"/>
+  <arg name="prohibition_map_file"  default="$(find config_files)/prohibition_maps/map_lab_2024/map.yaml"/>
   <!--arg name="prohibition_map_file"  default="$(find config_files)/prohibition_maps/blank/map.yaml"/-->
 
   <arg name="initial_pose_x" default="-5.7"/>
@@ -95,11 +95,7 @@
     <param name="point_cloud_topic2" value="$(arg point_cloud_topic2)"/>
     <param name="laser_scan_topic" value="$(arg laser_scan_topic)"/>
     <param name="cloud_downsampling" value="$(arg cloud_downsampling)"/>
-<<<<<<< Updated upstream
-    <param name="inflation_radius" value="0.05"/>
-=======
     <param name="inflation_radius" value="0.1"/>
->>>>>>> Stashed changes
     <param name="cost_radius" value="0.1"/>
     <param name="max_x" value="$(arg max_x)"/>
     <param name="min_x" value="$(arg min_x)"/>
