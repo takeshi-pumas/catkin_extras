@@ -468,11 +468,10 @@ class Pickup_two(smach.State):
         #floor_pose=[0.05,-1.6,0.0,-1.41,0.0,0.0]
 
         floor_pose=[pose[2]*2.5,-1.6,0.0,-1.41,wrist_adjust,0.0]
-        userdata.floor_pose=floor_pose
         arm.set_joint_value_target(floor_pose)
         arm.go()
         floor_pose=[max(pose[2]-0.05,0.1),-1.6,0.0,-1.41,wrist_adjust,0.0]
-        print (f'floor_pose{floor_pose}')
+        userdata.floor_pose=floor_pose
         arm.set_joint_value_target(floor_pose)
         arm.go()
         rospy.sleep(1.0)
@@ -544,14 +543,14 @@ class Deliver_Luggage(smach.State):
             rospy.loginfo("State : Deliver luggage to floor")
             self.tries += 1
             #deliver_position = [0.25, -0.32, -0.069, -1.25, 0.0] to person
-            deliver_position =  [0.01, -1.61, 0.0    , -1.57, 0.00, 0.0]
+            #deliver_position =  [0.01, -1.61, 0.0    , -1.57, 0.00, 0.0]
 
             rospy.sleep(1)
             #talk("Please take the luggage")
             talk("placing bag")
-            arm.set_joint_value_target(deliver_position)
+            #arm.set_joint_value_target(deliver_position)
+            arm.set_joint_value_target(userdata.floor_pose)
             print (f' pose floor {userdata.floor_pose}\n \n')
-            #arm.set_joint_value_target(userdata.pose_floor)
             arm.go()
             rospy.sleep(3.0)
             # talk("placing bag")
