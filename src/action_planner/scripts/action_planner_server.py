@@ -12,8 +12,10 @@ from cv_bridge import CvBridge
 from ollama import chat
 import re #regex
 ################
-locations_names="""bed (p) 
+locations_names="""
+bed (p) 
 bedside table (p) 
+side tables (p)
 shelf (p) | cleaning supplies 
 trashbin 
 dishwasher (p) 
@@ -421,25 +423,9 @@ def action_planner(req):
             plan=plan_command(command)
             ########################
             print(plan,'plan \n')
+            response.plan.data = plan
             
 
-            # Use regex to match function calls like FunctionName(arg1, arg2, ...)
-            pattern = re.compile(r'(\w+)\((.*?)\)', re.DOTALL)
-
-            actions = []
-            params = []
-
-            for match in pattern.finditer(plan):
-                action_name = match.group(1).strip()
-                arguments = match.group(2).strip()
-                actions.append(action_name)
-                params.append(arguments)
-
-            # Output result
-            for a, p in zip(actions, params):
-                print(f"Action: {a}, Params: {p}")
-            response.next_action.data =  ','.join(actions)
-            response.next_param.data  =  '|'.join(params)
 
 
 

@@ -391,8 +391,10 @@ class Pre_pickup(smach.State):
 #########################################################################################################
 class Pickup_two(smach.State):
     def __init__(self):
+
         smach.State.__init__(
-            self, outcomes=['succ', 'failed', 'tries'])
+            self, outcomes=['succ', 'failed', 'tries'], output_keys=['floor_pose'])
+        
         self.tries = 0
         self.target='bag'    
     def execute(self, userdata):
@@ -469,6 +471,7 @@ class Pickup_two(smach.State):
         arm.set_joint_value_target(floor_pose)
         arm.go()
         floor_pose=[max(pose[2]-0.05,0.1),-1.6,0.0,-1.41,wrist_adjust,0.0]
+        userdata.floor_pose=floor_pose
         arm.set_joint_value_target(floor_pose)
         arm.go()
         rospy.sleep(1.0)
@@ -477,9 +480,8 @@ class Pickup_two(smach.State):
         brazo.set_named_target('go')         
         head.to_tf('bagpca')
         rospy.sleep(3.0)
-        #succ = check_carry_bag()
+        succ = check_carry_bag()
         #succ=brazo.check_grasp()
-        succ = True
         if succ:
             return 'succ'
         talk("I think I missed the object, I will retry")
@@ -533,19 +535,24 @@ class Post_Pickup(smach.State):
 #########################################################################################################
 class Deliver_Luggage(smach.State):
     def __init__(self):
-        smach.State.__init__(self, outcomes=['succ', 'failed'])
+        smach.State.__init__(self, outcomes=['succ', 'failed'], input_keys=['floor_pose'])
+        
         self.tries = 0
     def execute(self, userdata):
         try:
             rospy.loginfo("State : Deliver luggage to floor")
             self.tries += 1
             #deliver_position = [0.25, -0.32, -0.069, -1.25, 0.0] to person
-            deliver_position = [0.19, -1.52, -0.82, -1.58,  1.54]
+            #deliver_position =  [0.01, -1.61, 0.0    , -1.57, 0.00, 0.0]
+
             rospy.sleep(1)
             #talk("Please take the luggage")
             talk("placing bag")
-            brazo.set_joint_values(joint_values = deliver_position)
-            rospy.sleep(1.5)
+            #arm.set_joint_value_target(deliver_position)
+            arm.set_joint_value_target(userdata.floor_pose)
+            print (f' pose floor {userdata.floor_pose}\n \n')
+            arm.go()
+            rospy.sleep(3.0)
             # talk("placing bag")
             # rospy.sleep(0.7)
             # talk("Two")
@@ -579,7 +586,7 @@ class Return_Living_Room(smach.State):
     def execute(self, userdata):
         self.tries += 1
         talk("I will return to start location")
-        res = omni_base.move_base(known_location='56////8', time_out=200)
+        res = omni_base.move_base(known_location='start_location', time_out=200)
         print(res)
         if self.tries==3:
             self.tries=0

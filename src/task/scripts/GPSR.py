@@ -126,12 +126,13 @@ class Wait_command(smach.State):
         print('Ready for GPSR, waiting for comand using QR')   
         
         #plan="plan=['FindObject(EndTable)', 'Navigate(EndTable)', 'IdentifyObject(largest_object)', 'ReportObjectAttribute(size)']" #Example Desired PLAN
-        plan="[ navigate('kitchen_table') , FindObject('apple'), PickObject('apple')]"        
-        #req = ActionPlannerRequest()
-        #req.timeout=10
-        #command=action_planner_server(req)
-        #print(f'command.plan.data{command.plan.data}.')
-        #if command.plan.data== 'timed out':return 'failed'
+        #plan="[ navigate('dinning_table') , FindObject('potted_meat_can'), PickObject('potted_meat_can'), navigate('start_location')]"        
+        req = ActionPlannerRequest()
+        req.timeout=10
+        command=action_planner_server(req)
+        print(f'command.plan.data{command.plan.data}.')
+        plan=command.plan.data
+        if command.plan.data== 'timed out':return 'failed'
         ########################
         #plan=command.plan.data
         print(plan,'plan \n')
@@ -144,8 +145,9 @@ class Wait_command(smach.State):
 
         for match in pattern.finditer(plan):
             action_name = match.group(1).strip()
-            arguments = match.group(2).strip()
+            arguments = match.group(2).strip().strip('\'"').strip()
             actions.append(action_name)
+            if action_name == "Navigate":arguments = arguments.replace(" ", "_")
             params.append(arguments)
 
         # Output result
@@ -153,7 +155,7 @@ class Wait_command(smach.State):
             print(f"Action: {a}, Params: {p}")
 
 
-
+        print (actions, params)
         userdata.actions=actions
         userdata.params=params
         if len (actions)>0:return 'succ'
@@ -217,7 +219,7 @@ class Locate_person(smach.State):
     def execute(self, userdata):
 
         rospy.loginfo('STATE : find human in current location')
-        print(f'Navigating to,{userdata.params[0].strip("\"'")} ')        
+        print(f'Navigating to,{userdata.params[0]}')        
         if self.tries==1:
             talk('Scanning the room for humans')
             rospy.loginfo('Scanning the room for humans')
@@ -238,6 +240,29 @@ class Locate_person(smach.State):
             talk('Navigation Failed, retrying')
             return 'failed'
 ##########################################################
+class ReportResult(smach.State):  
+    def __init__(self):
+        smach.State.__init__(self, outcomes=['succ', 'failed'], output_keys=['actions','params'], input_keys=['actions','params','result'])
+        
+    def execute(self, userdata):
+
+        rospy.loginfo('STATE : Navigate to known location')
+        location = userdata.params[0].strip('\'"')
+        print(f"Navigating to: {location}")
+
+        #talk('Navigating to, pickup')        
+        res = omni_base.move_base(known_location='start_location', time_out=40)
+        print(res)
+
+        if res:
+            talk (f'the result is {userdata.result}')
+            print(f'the result is {userdata.result}')
+            userdata.actions.pop(0)
+            userdata.params.pop(0)
+            return 'succ'
+        else:
+            talk('Navigation Failed, retrying')
+            return 'failed'
 ##########################################################
 class Navigate(smach.State):  
     def __init__(self):
@@ -246,10 +271,12 @@ class Navigate(smach.State):
     def execute(self, userdata):
 
         rospy.loginfo('STATE : Navigate to known location')
-        print(f'Navigating to,{userdata.params[0]} ')        
+        location = userdata.params[0].strip('\'"')
+        print(f"Navigating to: {location}")
+
         #talk('Navigating to, pickup')        
-        res = omni_base.move_base(known_location=userdata.params[0], time_out=40)
-        res = omni_base.move_base(known_location=userdata.params[0], time_out=40)
+        res = omni_base.move_base(known_location=location, time_out=40)
+        res = omni_base.move_base(known_location=location, time_out=40)
         print(res)
 
         if res:
@@ -319,41 +346,23 @@ class Find_objects(smach.State):
             userdata.actions.pop(0)
             userdata.params.pop(0)
             return 'succ'
-
-class Scan_table(smach.State):
+###################################################################################
+class CountObjects(smach.State):
+    
     def __init__(self):
         smach.State.__init__(
-            self, outcomes=['succ', 'failed','tries'])
-        self.tries = 0
-        self.scanned=False   
-        #self.pickup_plane_z  =0.65 ############REAL
+            self, outcomes=['succ', 'failed'], output_keys=['actions','params','result'], input_keys=['actions','params'])
+    
     def execute(self, userdata):
-        rospy.loginfo('State : Scanning_table')
+        rospy.loginfo('State : Counting Objects')
         
-        if self.tries==0:talk('Scanning Table')
-        if self.tries==3: return 'tries'
-        #self.tries+=1
-        global objs
-        #if  self.scanned:return'succ'
-        rospack = rospkg.RosPack()        
-        file_path = rospack.get_path('config_files') 
-        objs = pd.read_csv (file_path+'/objects.csv') #EMPTY DATAFRAME
-        objs=objs.drop(columns='Unnamed: 0')
+        if self.tries==0:
+            talk(f'Counting {userdata.params[0]}')
+            head.set_joint_values([ 0.0, -0.5])
+        if self.tries==3:
+             talk( 'I could not find more objects, ask for human assistance')
+             return 0  #TODO  escape and ask
         
-        
-        pickup_plane_z=regions_df['pickup']['z']
-        
-        #############################AUTOMATIC PLANE HEIGHT DETECTION
-        #request= segmentation_server.request_class()   ### Very nice and all but better done offline
-        #request.height.data=-1.0   # autodetect planes   # SEGEMENTATION SERVICE
-        #res_seg=segmentation_server.call(request)
-        #print (f'Planes candidates{res_seg.planes.data}')
-        #pickup_plane_z= res_seg.planes.data[0]
-        #print (f'Height if max area plane{pickup_plane_z}')
-        ########################################################3
-        
-        
-        head.set_joint_values([ 0.0, -0.5])
         rospy.sleep(5.0)                        
         img_msg  = bridge.cv2_to_imgmsg( cv2.cvtColor(rgbd.get_image(), cv2.COLOR_RGB2BGR))### GAZEBO BGR!?!??!
         req      = classify_client.request_class()
@@ -361,51 +370,20 @@ class Scan_table(smach.State):
         res      = classify_client(req)
         objects, poses=detect_object_yolo('all',res)   
         if len (objects)!=0 :
-            _,quat_base= tf_man.getTF('base_link')  
-            #print (regions, self.pickup_plane_z)
-            #area_box=regions['pickup']
-            #print (area_box)
-            
-            area_bo_x=regions_df['pickup'][['x_min','x_max']].values
-            area_bo_y=regions_df['pickup'][['y_min','y_max']].values
-            area_box=np.concatenate((area_bo_x,area_bo_y)).reshape((2,2)).T
-            #
-            print (area_box)
-            def is_inside(x,y,z):return ((area_box[:,1].max() > y) and (area_box[:,1].min() < y)) and ((area_box[:,0].max() > x) and (area_box[0,0].min() < x)) and (pickup_plane_z<z)  
-            for i in range(len(res.poses)):
-               
-                position = [poses[i].position.x ,poses[i].position.y,poses[i].position.z]
-               
-                ##########################################################
-
-                object_point = PointStamped()
-                object_point.header.frame_id = "head_rgbd_sensor_rgb_frame"
-                object_point.point.x = position[0]
-                object_point.point.y = position[1]
-                object_point.point.z = position[2]
-                position_map = tfBuffer.transform(object_point, "map", timeout=rospy.Duration(1))
-                print ('position_map',position_map,'name' ,res.names[i].data[4:])
-                if is_inside(position_map.point.x,position_map.point.y,position_map.point.z): 
-                    tf_man.pub_static_tf(pos= [position_map.point.x,position_map.point.y,position_map.point.z], rot=quat_base, ref="map", point_name=res.names[i].data[4:] )
-                    new_row = {'x': position_map.point.x, 'y': position_map.point.y, 'z': position_map.point.z, 'obj_name': res.names[i].data[4:]}
-                    objs.loc[len(objs)] = new_row
-                    ###########################################################
+            cats=[]
+            for name in objects:cats.append(categorize_objs(name))
+            count = cats.count(userdata.params[0])
+            print(count) 
+            userdata.result=count  
+            userdata.actions.pop(0)
+            userdata.params.pop(0)         
+            return 'succ'
         else:
-            print('Objects list empty')
-            talk( 'I could not find more objects')
+            print('Objects list empty')            
             self.tries+=1
             return 'failed'
         
         
-        in_region=[]
-        for index, row in objs[['x','y','z']].iterrows():in_region.append(is_inside(row.x, row.y,row.z))
-        objs['pickup']=pd.Series(in_region)
-        cats=[]
-        for name in objs['obj_name']:cats.append(categorize_objs(name))
-        objs['category'] = cats    
-        objs.dropna(inplace=True)
-        self.tries=0 
-        return 'succ'
 #########################################################################################################
 
 class Pickup(smach.State):   
