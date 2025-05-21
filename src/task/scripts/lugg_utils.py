@@ -881,7 +881,7 @@ def get_luggage_tf():
                     np.nanmean(points['y'][y_min:y_max, x_min:x_max]),
                     np.nanmean(points['z'][y_min:y_max, x_min:x_max])
                 ]
-                print(cc)
+                print(f'{cc}\n\n\n')
                 tf_man.pub_static_tf(pos= cc , rot=[0,0,0,1], ref="head_rgbd_sensor_rgb_frame", point_name=prompt )   # Just Bounding Box Mask
                 ###########PCA######################
 
@@ -895,6 +895,7 @@ def get_luggage_tf():
                 cent=np.asarray(   ((  np.nanmean(corrected['x'][np.where(mask==1)]) ,np.nanmean(corrected['y'][np.where(mask==1)]),np.nanmean(corrected['z'][np.where(mask==1)])       ))      )
                 print ( points_c.shape)
                 E_R=points_to_PCA(points_c.transpose())
+                #if  E_R ==np.eye((4,4)): return debug_image,False
                 e_ER=tf.transformations.euler_from_matrix(E_R)
                 #quat_pca= tf. transformations.quaternion_from_euler(e_ER[0],e_ER[1],e_ER[2])
                 quat_pca= tf. transformations.quaternion_from_euler(0,0,e_ER[2])
@@ -977,7 +978,8 @@ def points_to_PCA(points):
     df=pd.DataFrame(points)
     df.columns=[['x','y','z']]
     threshold= df['z'].min().values[0]*0.998
-    print (threshold)
+    print (f' threshsold{threshold}')
+    if threshold == np.nan :return False
     rslt_df = df.loc[df[df['z'] > threshold].index]
     points=rslt_df[['x','y','z']].dropna().values
     Pca=PCA(n_components=3)

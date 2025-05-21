@@ -236,7 +236,7 @@ def wait_for_face(timeout=10 , name=''):
 #        else:return res , img
 ##------------------------------------------------------
 def wait_for_push_hand(time=10):
-
+    talk ('push for stop')
     start_time = rospy.get_time()
     time= 10
     print('timeout will be ',time,'seconds')
@@ -245,7 +245,7 @@ def wait_for_push_hand(time=10):
         if np.abs(torque[1])>1.0:
             print(' Hand Pused Ready TO start')
             #takeshi_talk_pub.publish(string_to_Voice())
-            #talk('Im ready to start')
+            talk('Hand Pushed')
             return True
             break
 

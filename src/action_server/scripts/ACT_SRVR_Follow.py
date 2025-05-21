@@ -24,7 +24,7 @@ class Initial(smach.State):
         rospy.loginfo('STATE : INITIAL')
         print('Robot neutral pose')
         self.tries += 1
-        
+        #set_grammar(['yup','yes','jack','juice', 'ye','yeah', 'Jess'])
         head.set_named_target('neutral')
         #print('head listo')
         #brazo.set_named_target('go')
@@ -173,12 +173,12 @@ class Follow_human(smach.State):
         smach.State.__init__(self, outcomes=['succ', 'arrived', 'lost'])
         self.tries = 0
         self.last_legs=[]
-
+        self.last_pose= [0,0]
     def execute(self, userdata):
 
         rospy.loginfo('STATE : Legs_found,following')
-        self.tries+=1
-        if self.tries == 1: 
+        
+        if self.tries == 0: 
             print('Found, ready to follow, please start walking')
             talk('You can start to walk, Following')
 
@@ -189,13 +189,14 @@ class Follow_human(smach.State):
             print ('legs _lost')
             talk( 'I lost you, please stand in front of me')
             return 'lost'
-        x,y=punto.point.x,    punto.point.y        
+        x,y=punto.point.x,    punto.point.y   
+        self.last_pose=[x,y]     
         self.last_legs.append((x,y))
         print (f'xy {x},{y}')
         print(np.linalg.norm(np.asarray(self.last_legs).mean(axis=0)))
         if len (self.last_legs)>=26:
-            #if (np.var(self.last_legs,axis=0).mean() < 0.001):
-            if (np.linalg.norm(np.asarray(self.last_legs).var(axis=0)) < 0.10):
+            self.last_legs.pop(0)
+            if (np.linalg.norm(np.asarray(self.last_legs).var(axis=0)) < 0.00051):
                 msg_bool=Bool()
                 msg_bool.data= False
                 enable_legs.publish(msg_bool)
@@ -203,25 +204,47 @@ class Follow_human(smach.State):
                 print ('legs stopped... Are we there yet?')#,   np.var(self.last_legs,axis=0).mean()   )    
                 talk ('are we there yet? ')#Push my hand to confirm ')
                 print ('are we there yet? Push my hand to confirm ') 
-                rospy.sleep(0.5)
+                #rospy.sleep(1.5)  
                 speech = get_keywords_speech(5)
                 speech = speech.split(' ')
-                confirmation_list=['yes yes','yup','yes','jack','juice', 'takeshi yes','yeah', 'Jess']
+                confirmation_list=['yup','yes','jack','juice', 'takeshi yes','yeah', 'Jess']
                 confirm = any(word in confirmation_list for word in speech)
-                confirm_hand =wait_for_push_hand(5)
-                print (speech,"#################################################",confirm, confirm_hand)                              
-                if confirm or confirm_hand:
+                #confirm_hand =wait_for_push_hand(0.5)
+                #print (speech,"#################################################",confirm, confirm_hand)      
+
+                if confirm:# or confirm_hand:
                     talk ('arrival confirmed, exiting action')
                     print ('We are athere')                    
                     return 'arrived' 
-                    
+                
+
+
+                if self.last_pose==[x,y]:
+                    self.tries+=1
+                    print(f'TRIES {self.tries} \n\n\n')
+                else:
+                    self.tries=0 
+                    print(f'TRIES {self.tries} \n\n\n')
+                
+
+
+
+                if self.tries>=3: 
+                    self.tries=0
+                    talk ('We are there ')
+                    print ('We are there')                    
+                    return 'arrived' 
+
+
+
+
+                self.last_legs=[]
                 talk ('ok, keep following')
                 print('ok I will continue to follow you')
                 msg_bool=Bool()
                 msg_bool.data= True
                 enable_legs.publish(msg_bool)
                 enable_follow.publish(msg_bool)
-            self.last_legs.pop(0)
         print ('legs moving... Cruising',   np.var(self.last_legs,axis=0)   )          #if (np.var(last_legs,axis=0).mean() < 0.0001):
         return 'succ'
 

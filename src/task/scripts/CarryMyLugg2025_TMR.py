@@ -190,7 +190,7 @@ class Find_human(smach.State):
         rospy.sleep(0.8)
         print ('no pointing ')
         self.tries = 0
-        talk('Please stand in front of me')
+        #talk('Please stand in front of me')
         return 'failed'
 
 #########################################################################################################
@@ -480,9 +480,9 @@ class Pickup_two(smach.State):
         brazo.set_named_target('go')         
         head.to_tf('bagpca')
         rospy.sleep(3.0)
-        #succ = check_carry_bag()
-        hand_img = cv2.cvtColor(hand_rgb.get_image(), cv2.COLOR_BGR2RGB)
-        succ = check_bag_hand_camera(hand_img)
+        succ = check_carry_bag()
+        #hand_img = cv2.cvtColor(hand_rgb.get_image(), cv2.COLOR_BGR2RGB)
+        #succ = check_bag_hand_camera(hand_img)
         #succ=brazo.check_grasp()
         if succ:
             return 'succ'
@@ -563,8 +563,10 @@ class Deliver_Luggage(smach.State):
             # rospy.sleep(0.7)
             gripper.steady()
             #talk('Push my hand when you have taken the bag')
-            brazo.set_named_target('go') 
-            rospy.sleep(2)
+            #brazo.set_named_target('go') 
+            arm.set_named_target('go') 
+            arm.go()
+            
             talk("Task completed")
             return 'succ'
         except rospy.ServiceException as e:

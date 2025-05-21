@@ -571,27 +571,29 @@ Visualization Manager:
       Filter (whitelist): ""
       Frame Timeout: 15
       Frames:
-        009_gelatin_box:
+        002_master_chef_can:
+          Value: true
+        006_mustard_bottle:
+          Value: true
+        007_tuna_fish_can:
           Value: true
         010_potted_meat_can:
           Value: true
         013_apple:
           Value: true
-        022_windex_bottle:
+        026_sponge:
           Value: true
-        025_mug:
+        054_softball:
           Value: true
-        029_plate:
+        055_baseball:
           Value: true
-        033_spatula:
+        056_tennis_ball:
           Value: true
-        050_medium_clamp:
+        062_dice:
           Value: true
-        070-a_colored_wood_blocks:
+        071_nine_hole_peg_test:
           Value: true
         All Enabled: false
-        apple:
-          Value: true
         arm_flex_link:
           Value: false
         arm_lift_link:
@@ -639,8 +641,6 @@ Visualization Manager:
         door_lab:
           Value: true
         entrance:
-          Value: true
-        gelatin_box:
           Value: true
         goal_for_grasp:
           Value: true
@@ -690,10 +690,14 @@ Visualization Manager:
           Value: false
         head_pan_link:
           Value: false
+        head_r_stereo_camera_frame:
+          Value: true
         head_r_stereo_camera_gazebo_frame:
           Value: false
         head_r_stereo_camera_link:
           Value: false
+        head_rgbd_sensor_depth_frame:
+          Value: true
         head_rgbd_sensor_gazebo_frame:
           Value: false
         head_rgbd_sensor_link:
@@ -708,9 +712,7 @@ Visualization Manager:
           Value: true
         map:
           Value: true
-        medium_clamp:
-          Value: true
-        mug:
+        master_chef_can:
           Value: true
         odom:
           Value: true
@@ -723,6 +725,8 @@ Visualization Manager:
         prubea:
           Value: true
         shelf:
+          Value: true
+        softball:
           Value: true
         torso_lift_link:
           Value: false
@@ -742,8 +746,6 @@ Visualization Manager:
       Show Names: true
       Tree:
         map:
-          apple:
-            {}
           bedroom:
             {}
           breakfast:
@@ -753,8 +755,6 @@ Visualization Manager:
           door_lab:
             {}
           entrance:
-            {}
-          gelatin_box:
             {}
           goal_for_grasp:
             {}
@@ -766,9 +766,7 @@ Visualization Manager:
             {}
           living_room:
             {}
-          medium_clamp:
-            {}
-          mug:
+          master_chef_can:
             {}
           odom:
             base_footprint:
@@ -829,33 +827,42 @@ Visualization Manager:
                           {}
                       head_l_stereo_camera_link:
                         head_l_stereo_camera_frame:
-                          head_rgbd_sensor_rgb_frame:
-                            009_gelatin_box:
-                              {}
-                            010_potted_meat_can:
-                              {}
-                            013_apple:
-                              {}
-                            022_windex_bottle:
-                              {}
-                            025_mug:
-                              {}
-                            029_plate:
-                              {}
-                            033_spatula:
-                              {}
-                            050_medium_clamp:
-                              {}
-                            070-a_colored_wood_blocks:
-                              {}
+                          {}
                         head_l_stereo_camera_gazebo_frame:
                           {}
                       head_r_stereo_camera_link:
+                        head_r_stereo_camera_frame:
+                          {}
                         head_r_stereo_camera_gazebo_frame:
                           {}
                       head_rgbd_sensor_link:
+                        head_rgbd_sensor_depth_frame:
+                          {}
                         head_rgbd_sensor_gazebo_frame:
                           {}
+                        head_rgbd_sensor_rgb_frame:
+                          002_master_chef_can:
+                            {}
+                          006_mustard_bottle:
+                            {}
+                          007_tuna_fish_can:
+                            {}
+                          010_potted_meat_can:
+                            {}
+                          013_apple:
+                            {}
+                          026_sponge:
+                            {}
+                          054_softball:
+                            {}
+                          055_baseball:
+                            {}
+                          056_tennis_ball:
+                            {}
+                          062_dice:
+                            {}
+                          071_nine_hole_peg_test:
+                            {}
             base_footprint_wheel:
               {}
           pickup:
@@ -867,6 +874,8 @@ Visualization Manager:
           prubea:
             {}
           shelf:
+            {}
+          softball:
             {}
       Update Interval: 0
       Value: true
@@ -1044,17 +1053,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 0.7903976440429688
-        Y: -1.6491289138793945
+        X: -0.9110892415046692
+        Y: -1.2036190032958984
         Z: -2.114375092787668e-06
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.9397962689399719
+      Pitch: 1.3047959804534912
       Target Frame: base_footprint
-      Yaw: 6.126346111297607
+      Yaw: 3.108161211013794
     Saved: ~
 Window Geometry:
   Displays:
