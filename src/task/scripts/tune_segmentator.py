@@ -128,19 +128,15 @@ def callback(points_msg):
             gripper.open()
             rospy.sleep(1)
             hand_img = cv2.cvtColor(hand_rgb.get_image(), cv2.COLOR_BGR2RGB)  
-            hist_actual = check_bag_hand_camera(hand_img)
-            print(hist_actual)
-            resultado = comparar_histogramas(hist_actual,0.5)
+            resultado = check_bag_hand_camera(hand_img)
             print("Mano abierta" if resultado else "Mano cerrada")
 
         elif key=='x':
             gripper.close(0.04)
             rospy.sleep(1)
             hand_img = cv2.cvtColor(hand_rgb.get_image(), cv2.COLOR_BGR2RGB)  
-            hist_actual = check_bag_hand_camera(hand_img)
-            print(hist_actual)
-            resultado = comparar_histogramas(hist_actual, 0.5)
-            print("Mano cabierta" if resultado else "Mano cerrada")
+            resultado = check_bag_hand_camera(hand_img)
+            print("Mano con bolsa" if resultado else "Mano sin bolsa")
         elif key=='y':
             print ('#############YOLO SERVICE YCB REQUESTED')
             img_msg  = bridge.cv2_to_imgmsg(image)

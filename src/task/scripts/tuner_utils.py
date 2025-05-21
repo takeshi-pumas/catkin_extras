@@ -423,14 +423,14 @@ def detect_human_to_tf():
         succ=tf_man.change_ref_frame_tf('human')
         return succ
 #------------------------------------------------------
-def check_bag_hand_camera(imagen, x=160, y=240, w=40, h=10, bins=12):
+def check_bag_hand_camera(imagen, x=220, y=265, w=45, h=15, bins=12,umbral = 0.99):
     print("hand_camera checking")
     
     # Recortar la región seleccionada
     recorte = imagen[y:y+h, x:x+w]
 
-    # Calcular y cuantizar histogramas
-    histogramas = {}
+    # Calcular y cuantizar hist_actual
+    hist_actual = {}
     colores = ('b', 'g', 'r')
     bin_size = 256 // bins
 
@@ -447,17 +447,49 @@ def check_bag_hand_camera(imagen, x=160, y=240, w=40, h=10, bins=12):
         if len(hist_cuantizado) > bins:
             hist_cuantizado = hist_cuantizado[:bins]
 
-        histogramas[color] = hist_cuantizado
-
-    print(histogramas)  # Verifica que siempre sean 12 elementos
-    return histogramas
-#------------------------------------------------------
-def comparar_histogramas(hist_actual, umbral=0.6):
+        hist_actual[color] = hist_cuantizado
     print("Comparing...")
     hist_mano_vacia = {
-        'b': [0, 18, 17, 15, 252, 15, 15, 20, 26, 21, 1, 0],
-        'g': [0, 18, 17, 15, 252, 14, 14, 19, 28, 21, 2, 0],
-        'r': [0, 18, 17, 15, 251, 14, 11, 12, 31, 24, 7, 0]
+        'b': [580, 50, 44, 51, 25, 0, 0, 0, 0, 0, 0, 0], 
+        'g': [569, 59, 53, 69, 0, 0, 0, 0, 0, 0, 0, 0], 
+        'r': [556, 70, 61, 63, 0, 0, 0, 0, 0, 0, 0, 0]
+
+    }
+    total_similaridad = 0
+    total_canales = 0
+
+    for color in ('b', 'g', 'r'):
+        vacio = np.array(hist_mano_vacia[color]).astype(float)
+        actual = np.array(hist_actual[color]).astype(float)
+
+        # Verifica que ambos tengan 12 elementos
+        if len(vacio) != 12 or len(actual) != 12:
+            print(f"❌ Error: Los hist_actual para '{color}' no tienen 12 elementos")
+            return "Error en los hist_actual"
+
+        # Calcular la similaridad
+        similaridad = 1 - distance.cosine(vacio, actual)
+        print(f"✅ Similaridad para {color}: {similaridad:.4f}")
+
+        total_similaridad += similaridad
+        total_canales += 1
+
+    promedio_similaridad = total_similaridad / total_canales
+    print(f"📊 Promedio de similaridad: {promedio_similaridad:.4f}")
+
+    # Decisión basada en el umbral
+    if promedio_similaridad > umbral:
+        return False  # Mano sin objeto
+    else:
+        return True  # Mano con objeto
+#------------------------------------------------------
+def comparar_hist_actual(hist_actual, umbral=0.9):
+    print("Comparing...")
+    hist_mano_vacia = {
+        'b': [580, 50, 44, 51, 25, 0, 0, 0, 0, 0, 0, 0], 
+        'g': [569, 59, 53, 69, 0, 0, 0, 0, 0, 0, 0, 0], 
+        'r': [556, 70, 61, 63, 0, 0, 0, 0, 0, 0, 0, 0]
+
     }
 
     total_similaridad = 0
@@ -469,8 +501,8 @@ def comparar_histogramas(hist_actual, umbral=0.6):
 
         # Verifica que ambos tengan 12 elementos
         if len(vacio) != 12 or len(actual) != 12:
-            print(f"❌ Error: Los histogramas para '{color}' no tienen 12 elementos")
-            return "Error en los histogramas"
+            print(f"❌ Error: Los hist_actual para '{color}' no tienen 12 elementos")
+            return "Error en los hist_actual"
 
         # Calcular la similaridad
         similaridad = 1 - distance.cosine(vacio, actual)
