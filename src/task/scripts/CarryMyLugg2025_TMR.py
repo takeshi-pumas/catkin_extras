@@ -480,7 +480,9 @@ class Pickup_two(smach.State):
         brazo.set_named_target('go')         
         head.to_tf('bagpca')
         rospy.sleep(3.0)
-        succ = check_carry_bag()
+        #succ = check_carry_bag()
+        hand_img = cv2.cvtColor(hand_rgb.get_image(), cv2.COLOR_BGR2RGB)
+        succ = check_bag_hand_camera(hand_img)
         #succ=brazo.check_grasp()
         if succ:
             return 'succ'

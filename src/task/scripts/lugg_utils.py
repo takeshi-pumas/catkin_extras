@@ -58,7 +58,7 @@ from utils.nav_utils import *
 
 global listener, broadcaster, tfBuffer, tf_static_broadcaster, scene, rgbd, head,train_new_face, wrist, human_detect_server, line_detector, clothes_color , head_mvit
 global clear_octo_client, goal,navclient,segmentation_server  , tf_man , omni_base, brazo, speech_recog_server, bridge, map_msg, pix_per_m, analyze_face , arm , set_grammar
-global recognize_action , classify_client,pointing_detect_server ,placing_finder_server,action_planner_server, classify_client_dino ,Pca
+global recognize_action , classify_client,pointing_detect_server ,placing_finder_server,action_planner_server, classify_client_dino ,Pca, hand_rgb
 rospy.init_node('smach', anonymous=True)
 logger = logging.getLogger('rosout')
 logger.setLevel(logging.ERROR)
@@ -115,6 +115,7 @@ omni_base=OMNIBASE()        #  NAV ACTION
 wrist= WRIST_SENSOR()
 head = GAZE()
 brazo = ARM()
+hand_rgb = HAND_RGB()
 line_detector = LineDetector()
 # arm =  moveit_commander.MoveGroupCommander('arm')
 
@@ -909,8 +910,67 @@ def get_luggage_tf():
 
     except rospy.ServiceException as e:
         print(f"Service call failed: {e}")
+#-----------------------------------------------------------------
 
+def check_bag_hand_camera(imagen, x=220, y=265, w=45, h=15, bins=12,umbral = 0.99):
+    print("hand_camera checking")
+    
+    # Recortar la región seleccionada
+    recorte = imagen[y:y+h, x:x+w]
 
+    # Calcular y cuantizar hist_actual
+    hist_actual = {}
+    colores = ('b', 'g', 'r')
+    bin_size = 256 // bins
+
+    for i, color in enumerate(colores):
+        hist = cv2.calcHist([recorte], [i], None, [256], [0, 256])
+        
+        # Cuantización a 12 dimensiones
+        hist_cuantizado = [
+            int(sum(hist[j:j+bin_size])) 
+            for j in range(0, 256, bin_size)
+        ]
+
+        # Asegúrate de que siempre tenga exactamente 12 elementos
+        if len(hist_cuantizado) > bins:
+            hist_cuantizado = hist_cuantizado[:bins]
+
+        hist_actual[color] = hist_cuantizado
+    print("Comparing...")
+    hist_mano_vacia = {
+        'b': [580, 50, 44, 51, 25, 0, 0, 0, 0, 0, 0, 0], 
+        'g': [569, 59, 53, 69, 0, 0, 0, 0, 0, 0, 0, 0], 
+        'r': [556, 70, 61, 63, 0, 0, 0, 0, 0, 0, 0, 0]
+
+    }
+    total_similaridad = 0
+    total_canales = 0
+
+    for color in ('b', 'g', 'r'):
+        vacio = np.array(hist_mano_vacia[color]).astype(float)
+        actual = np.array(hist_actual[color]).astype(float)
+
+        # Verifica que ambos tengan 12 elementos
+        if len(vacio) != 12 or len(actual) != 12:
+            print(f"❌ Error: Los hist_actual para '{color}' no tienen 12 elementos")
+            return "Error en los hist_actual"
+
+        # Calcular la similaridad
+        similaridad = 1 - distance.cosine(vacio, actual)
+        print(f"✅ Similaridad para {color}: {similaridad:.4f}")
+
+        total_similaridad += similaridad
+        total_canales += 1
+
+    promedio_similaridad = total_similaridad / total_canales
+    print(f"📊 Promedio de similaridad: {promedio_similaridad:.4f}")
+
+    # Decisión basada en el umbral
+    if promedio_similaridad > umbral:
+        return False  # Mano sin objeto
+    else:
+        return True  # Mano con objeto
 #-----------------------------------------------------------------
 def points_to_PCA(points):
     df=pd.DataFrame(points)
