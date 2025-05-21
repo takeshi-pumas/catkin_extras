@@ -46,6 +46,7 @@ from nav_msgs.msg import OccupancyGrid
 from hri_msgs.msg import RecognizedSpeech
 from rospy.exceptions import ROSException
 from vision_msgs.srv import *
+from scipy.spatial import distance
 from sklearn.decomposition import PCA
 #from act_recog.srv import Recognize,RecognizeResponse,RecognizeRequest
 from ros_whisper_vosk.srv import SetGrammarVosk
