@@ -173,12 +173,11 @@ class Follow_human(smach.State):
         smach.State.__init__(self, outcomes=['succ', 'arrived', 'lost'])
         self.tries = 0
         self.last_legs=[]
-        self.last_pose= [0,0]
     def execute(self, userdata):
 
         rospy.loginfo('STATE : Legs_found,following')
-        
-        if self.tries == 0: 
+        self.tries+=1
+        if self.tries == 1: 
             print('Found, ready to follow, please start walking')
             talk('You can start to walk, Following')
 
@@ -193,7 +192,7 @@ class Follow_human(smach.State):
         self.last_pose=[x,y]     
         self.last_legs.append((x,y))
         print (f'xy {x},{y}')
-        print(np.linalg.norm(np.asarray(self.last_legs).mean(axis=0)))
+        print(f'Var{np.linalg.norm(np.asarray(self.last_legs).var(axis=0))}')
         if len (self.last_legs)>=26:
             self.last_legs.pop(0)
             if (np.linalg.norm(np.asarray(self.last_legs).var(axis=0)) < 0.00051):
@@ -201,13 +200,14 @@ class Follow_human(smach.State):
                 msg_bool.data= False
                 enable_legs.publish(msg_bool)
                 enable_follow.publish(msg_bool)
-                print ('legs stopped... Are we there yet?')#,   np.var(self.last_legs,axis=0).mean()   )    
-                talk ('are we there yet? ')#Push my hand to confirm ')
+                print ('legs stopped... Did we arrive')#,   np.var(self.last_legs,axis=0).mean()   )    
+                talk ('Have we arrived?')#Push my hand to confirm ')
                 print ('are we there yet? Push my hand to confirm ') 
-                #rospy.sleep(1.5)  
-                speech = get_keywords_speech(5)
+                rospy.sleep(2.0)  
+                speech = get_keywords_speech(10)
                 speech = speech.split(' ')
-                confirmation_list=['yup','yes','jack','juice', 'takeshi yes','yeah', 'Jess']
+                print (f'SPEECH{speech}\n\n\n')
+                confirmation_list=['yup','yes','jack','juice', 'takeshi yes','yeah', 'jess' , 'jet' , 'robot yes' , 'jeff', 'guess']
                 confirm = any(word in confirmation_list for word in speech)
                 #confirm_hand =wait_for_push_hand(0.5)
                 #print (speech,"#################################################",confirm, confirm_hand)      
@@ -219,26 +219,14 @@ class Follow_human(smach.State):
                 
 
 
-                if self.last_pose==[x,y]:
-                    self.tries+=1
-                    print(f'TRIES {self.tries} \n\n\n')
-                else:
-                    self.tries=0 
-                    print(f'TRIES {self.tries} \n\n\n')
-                
-
-
-
-                if self.tries>=3: 
-                    self.tries=0
-                    talk ('We are there ')
-                    print ('We are there')                    
-                    return 'arrived' 
-
+                                                
+                                                
+                                                  
 
 
 
                 self.last_legs=[]
+                self.last_legs.append((0,0))
                 talk ('ok, keep following')
                 print('ok I will continue to follow you')
                 msg_bool=Bool()
