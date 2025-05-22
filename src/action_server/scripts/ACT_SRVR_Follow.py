@@ -200,7 +200,8 @@ class Follow_human(smach.State):
                 msg_bool.data= False
                 enable_legs.publish(msg_bool)
                 enable_follow.publish(msg_bool)
-                print ('legs stopped... Did we arrive')#,   np.var(self.last_legs,axis=0).mean()   )    
+                print ('legs stopped... Did we arrive')#,   np.var(self.last_legs,axis=0).mean()
+                #TODO: rectificar el tries y que no se quede siempre preguntando.    
                 talk ('Have we arrived?')#Push my hand to confirm ')
                 print ('are we there yet? Push my hand to confirm ') 
                 rospy.sleep(2.0)  

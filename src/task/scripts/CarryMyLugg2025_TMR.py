@@ -62,7 +62,7 @@ class Wait_push_hand(smach.State):
         if succ:
             head.set_joint_values([ 0.0, 0.0])# Looking ahead
             talk('Starting Carry my luggage task')
-            talk("Please stand in front of me, so I can start folow you")
+            talk("I gonna start folow you")
             return 'succ'
         else:
             return 'failed'
@@ -201,7 +201,7 @@ class Scan_floor(smach.State):
         
 
     def execute(self, userdata):
-
+        #TODO: offset para acercar mas la tf de la bolsa.
         rospy.loginfo('STATE : Scan estimated pointing area')
         self.tries+=1 
         if self.tries==1:
@@ -497,10 +497,11 @@ class Give_to_me(smach.State):
         self.tries = 0
     def execute(self, userdata):
         rospy.loginfo("State: Give to me")
+        #TODO: guardar una pose generica para el placing
         brazo.set_named_target("neutral")
-        talk("I failed, , please give the luggage to me")
+        talk("I failed, please give the luggage to me")
         gripper.open()
-        rospy.sleep(1.0)
+        rospy.sleep(2.0)
         talk("In three...")
         rospy.sleep(0.4)
         talk("Two...")

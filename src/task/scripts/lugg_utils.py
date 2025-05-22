@@ -888,12 +888,14 @@ def get_luggage_tf():
 
                 mask = np.zeros_like(corrected['z']) 
                 mask_bb=cv2.rectangle(mask,(x_min,y_min),(x_max, y_max), (255,255,255), -1)
-                mask_z= corrected['z']>0.01
+                #mask_z= corrected['z']>0.01
                 mask = (mask_bb == 255) & (corrected['z'] > 0.01)
                 cent=np.asarray(   ((  np.nanmean(corrected['x'][np.where(mask==1)]) ,np.nanmean(corrected['y'][np.where(mask==1)]),np.nanmean(corrected['z'][np.where(mask==1)])       ))      )
                 points_c=np.asarray((corrected['x'][np.where(mask==1)],corrected['y'][np.where(mask==1)],corrected['z'][np.where(mask==1)]))
-                cent=np.asarray(   ((  np.nanmean(corrected['x'][np.where(mask==1)]) ,np.nanmean(corrected['y'][np.where(mask==1)]),np.nanmean(corrected['z'][np.where(mask==1)])       ))      )
+                #cent=np.asarray(   ((  np.nanmean(corrected['x'][np.where(mask==1)]) ,np.nanmean(corrected['y'][np.where(mask==1)]),np.nanmean(corrected['z'][np.where(mask==1)])       ))      )
                 print ( points_c.shape)
+                if points_c.shape == (3, 0):
+                    return debug_image,False
                 E_R=points_to_PCA(points_c.transpose())
                 #if  E_R ==np.eye((4,4)): return debug_image,False
                 e_ER=tf.transformations.euler_from_matrix(E_R)
