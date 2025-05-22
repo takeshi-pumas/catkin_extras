@@ -981,7 +981,13 @@ def points_to_PCA(points):
     df.columns=[['x','y','z']]
     threshold= df['z'].min().values[0]*0.998
     print (f' threshsold{threshold}')
-    if threshold == np.nan :return False
+    if np.isnan(threshold):
+        print('no points por PCA: abort, reeturn eye for zero rotation')
+        E_R= np.eye(4)
+        return E_R #Homogeneous coordinate  of zero rotation zero translation 
+
+
+    
     rslt_df = df.loc[df[df['z'] > threshold].index]
     points=rslt_df[['x','y','z']].dropna().values
     Pca=PCA(n_components=3)
