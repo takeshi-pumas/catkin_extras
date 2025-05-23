@@ -481,8 +481,10 @@ class Pickup_two(smach.State):
         head.to_tf('bagpca')
         rospy.sleep(3.0)
         succ = check_carry_bag()
-        #hand_img = cv2.cvtColor(hand_rgb.get_image(), cv2.COLOR_BGR2RGB)
-        #succ = check_bag_hand_camera(hand_img)
+        hand_img = cv2.cvtColor(hand_rgb.get_image(), cv2.COLOR_BGR2RGB)
+        succ = check_bag_hand_camera(hand_img)
+        if not succ: 
+            succ = check_carry_bag()
         #succ=brazo.check_grasp()
         if succ:
             return 'succ'
@@ -493,11 +495,12 @@ class Pickup_two(smach.State):
 #########################################################################################################
 class Give_to_me(smach.State):
     def __init__(self):
-        smach.State.__init__(self, outcomes=['succ', 'failed'])
+        smach.State.__init__(self, outcomes=['succ', 'failed'],output_keys=['floor_pose'])
         self.tries = 0
     def execute(self, userdata):
         rospy.loginfo("State: Give to me")
-        #TODO: guardar una pose generica para el placing
+        floor_pose=[0.25,-2.43,0.002,0.863,0.002,0.0]
+        userdata.floor_pose=floor_pose
         brazo.set_named_target("neutral")
         talk("I failed, please give the luggage to me")
         gripper.open()
@@ -562,7 +565,7 @@ class Deliver_Luggage(smach.State):
             # rospy.sleep(0.7)
             # talk("One")
             # rospy.sleep(0.7)
-            gripper.steady()
+            gripper.open()
             #talk('Push my hand when you have taken the bag')
             #brazo.set_named_target('go') 
             arm.set_named_target('go') 

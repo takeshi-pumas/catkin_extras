@@ -916,7 +916,7 @@ def get_luggage_tf():
         print(f"Service call failed: {e}")
 #-----------------------------------------------------------------
 
-def check_bag_hand_camera(imagen, x=220, y=265, w=45, h=15, bins=12,umbral = 0.99):
+def check_bag_hand_camera(imagen, x=220, y=265, w=45, h=15, bins=12,umbral = 0.97):
     print("hand_camera checking")
     
     # Recortar la región seleccionada

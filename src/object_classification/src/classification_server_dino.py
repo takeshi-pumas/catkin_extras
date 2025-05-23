@@ -109,7 +109,7 @@ def handle_detection(req):
             image=processed_image,
             caption=prompt_text,
             box_threshold=0.4,
-            text_threshold=0.6
+            text_threshold=0.4
         )
 
         # Si no se detectaron objetos

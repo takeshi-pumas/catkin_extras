@@ -170,23 +170,23 @@ class Goto_human(smach.State):
 
 class Follow_human(smach.State):
     def __init__(self):
-        smach.State.__init__(self, outcomes=['succ', 'arrived', 'lost'])
+        smach.State.__init__(self, outcomes=['succ', 'arrived', 'lost','tries'])
         self.tries = 0
         self.last_legs=[]
     def execute(self, userdata):
-
         rospy.loginfo('STATE : Legs_found,following')
-        self.tries+=1
-        if self.tries == 1: 
+        if self.tries == 0:
+            rospy.sleep(2.0)
             print('Found, ready to follow, please start walking')
             talk('You can start to walk, Following')
-
+        self.tries+=1
         try :
             punto=rospy.wait_for_message("/hri/leg_finder/leg_pose", PointStamped , timeout=2.0)
             pub_goal.publish(punto)
         except Exception:            
             print ('legs _lost')
             talk( 'I lost you, please stand in front of me')
+            self.tries = 1
             return 'lost'
         x,y=punto.point.x,    punto.point.y   
         self.last_pose=[x,y]     
@@ -203,6 +203,7 @@ class Follow_human(smach.State):
                 print ('legs stopped... Did we arrive')#,   np.var(self.last_legs,axis=0).mean()
                 #TODO: rectificar el tries y que no se quede siempre preguntando.    
                 talk ('Have we arrived?')#Push my hand to confirm ')
+                self.tries += 1
                 print ('are we there yet? Push my hand to confirm ') 
                 rospy.sleep(2.0)  
                 speech = get_keywords_speech(10)
@@ -234,6 +235,8 @@ class Follow_human(smach.State):
                 msg_bool.data= True
                 enable_legs.publish(msg_bool)
                 enable_follow.publish(msg_bool)
+        if self.tries == 2:
+            return 'tries'
         print ('legs moving... Cruising',   np.var(self.last_legs,axis=0)   )          #if (np.var(last_legs,axis=0).mean() < 0.0001):
         return 'succ'
 
@@ -260,7 +263,7 @@ if __name__ == '__main__':
         smach.StateMachine.add("FIND_HUMAN", Find_human(), transitions={'failed': 'FIND_HUMAN', 'succ': 'GOTO_HUMAN', 'tries': 'failed'})
         smach.StateMachine.add("FIND_LEGS", Find_legs(), transitions={'failed': 'FIND_LEGS', 'succ': 'FOLLOW_HUMAN', 'tries': 'failed'})
         smach.StateMachine.add("GOTO_HUMAN", Goto_human(), transitions={'failed': 'FIND_HUMAN', 'succ': 'succeeded', 'tries': 'failed'})
-        smach.StateMachine.add("FOLLOW_HUMAN", Follow_human(), transitions={'arrived': 'succeeded', 'succ': 'FOLLOW_HUMAN', 'lost': 'FIND_LEGS'})
+        smach.StateMachine.add("FOLLOW_HUMAN", Follow_human(), transitions={'arrived': 'succeeded', 'succ': 'FOLLOW_HUMAN', 'lost': 'FIND_LEGS','tries': 'succeeded'})
 
     asw = ActionServerWrapper(
         'follow_server', FollowAction,
