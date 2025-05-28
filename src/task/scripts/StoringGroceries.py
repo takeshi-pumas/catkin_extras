@@ -231,6 +231,7 @@ class Scan_table(smach.State):
         for name in objs['obj_name']:cats.append(categorize_objs(name))
         objs['category'] = cats    
         objs.dropna(inplace=True)
+        objs.to_csv('pickup_objs.csv')
         self.tries=0 
         return 'succ'
 #########################################################################################################
@@ -764,7 +765,7 @@ class Scan_shelf(smach.State):
         rospy.sleep(3)
         arm.set_named_target('go')
         arm.go()
-
+        objs_shelves.to_csv('shelf_objs.csv')
         return 'succ'
 
 #######################################################################################################################################################################        

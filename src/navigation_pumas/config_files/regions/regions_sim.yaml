@@ -1,14 +1,14 @@
 pickup:
- x_min: 6.79
- x_max: 7.35
- y_min: -2.7
- y_max: -2.4
+ x_min: 5.3
+ x_max: 6.35
+ y_min: 2.17
+ y_max: 2.62
  z: 0.77
 shelves:
- x_min: 5.2
- x_max: 6.8
- y_min: -1.5
- y_max: -1.2
+ x_min: 4.45
+ x_max: 4.6
+ y_min: 0.58
+ y_max: 1.41
  z: 1.0,0.6,0.3
  quat_w: 0.0
  quat_x: 0.0
