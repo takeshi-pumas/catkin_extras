@@ -8,7 +8,7 @@
   <param name="file_name" value="/known_locations_storing.yaml"/>
   
   <!-- FOR SIMULATION -->
-  <!--param name="file_name" value="/known_locations_storingTMR.yaml"/-->
+  <!--param name="file_name" value="/known_locations_storing_sim_TMR.yaml"/-->
 
   <node pkg="hmm_navigation"  name="pumas_nav" type="pumas_nav.py" output="screen" />
   <node pkg="known_locations_tf_server"  name="known_locs" type="known_locs_node.py" output="screen" />
