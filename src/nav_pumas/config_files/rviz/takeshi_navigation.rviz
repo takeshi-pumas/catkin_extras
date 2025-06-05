@@ -357,18 +357,6 @@ Visualization Manager:
           Value: false
         base_roll_link:
           Value: false
-        breakfast:
-          Value: true
-        dining_room:
-          Value: true
-        door_lab:
-          Value: true
-        entrance:
-          Value: true
-        hallway_1:
-          Value: true
-        hallway_2:
-          Value: true
         hand_camera_frame:
           Value: false
         hand_camera_gazebo_frame:
@@ -423,22 +411,10 @@ Visualization Manager:
           Value: false
         head_tilt_link:
           Value: false
-        kitchen:
-          Value: true
-        living_room:
-          Value: true
         map:
           Value: true
         odom:
           Value: false
-        pickup:
-          Value: true
-        place_shelf:
-          Value: true
-        prubea:
-          Value: true
-        shelf:
-          Value: true
         torso_lift_link:
           Value: false
         wrist_flex_link:
@@ -457,22 +433,6 @@ Visualization Manager:
       Show Names: true
       Tree:
         map:
-          breakfast:
-            {}
-          dining_room:
-            {}
-          door_lab:
-            {}
-          entrance:
-            {}
-          hallway_1:
-            {}
-          hallway_2:
-            {}
-          kitchen:
-            {}
-          living_room:
-            {}
           odom:
             base_footprint:
               base_link:
@@ -544,14 +504,6 @@ Visualization Manager:
                           {}
             base_footprint_wheel:
               {}
-          pickup:
-            {}
-          place_shelf:
-            {}
-          prubea:
-            {}
-          shelf:
-            {}
       Update Interval: 0
       Value: true
     - Alpha: 1
@@ -721,7 +673,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 10.352256774902344
+      Distance: 14.544175148010254
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -729,17 +681,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: -0.46469199657440186
-        Y: -0.8515757322311401
-        Z: -6.131955623626709
+        X: 0.47286510467529297
+        Y: 0.558491051197052
+        Z: -6.005092144012451
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.5497963428497314
+      Pitch: 1.5347963571548462
       Target Frame: <Fixed Frame>
-      Yaw: 3.0372164249420166
+      Yaw: 4.662221431732178
     Saved: ~
 Window Geometry:
   Displays:
@@ -758,4 +710,4 @@ Window Geometry:
     collapsed: true
   Width: 1386
   X: 447
-  Y: 50
+  Y: 27

@@ -233,7 +233,7 @@ class Place(smach.State):
         ######################################################################
         else:                           #if current_target== 'cereal_box' or current_target== 'milk'  :
             string_msg.data='pour'               # Offset relative to object tf            
-            offset_point=[-0.04,-0.05,0.40]           # Offset relative to object tf#
+            offset_point=[-0.04,0.05,0.10]           # Offset relative to object tf#
             # LOOK FOR OBJECT current target
             if current_target== 'cereal_box':
                 rospy.loginfo('STATE : POUR CEREAL')            
@@ -339,7 +339,7 @@ class Pickup(smach.State):
             pos, quat = tf_man.getTF(target_frame = target_object, ref_frame = 'map')
             print (f'target_object {target_object}, mode {string_msg.data}')
             ####################
-            offset_point=[-0.09,0.0,0.01]          # Offset relative to object tf
+            offset_point=[-0.09,0.0,0.025]          # Offset relative to object tf
             ####################                        
         if target_object=='spoon':
             pos, quat = tf_man.getTF(target_frame = target_object, ref_frame = 'map')

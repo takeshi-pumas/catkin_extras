@@ -62,7 +62,7 @@ class Wait_push_hand(smach.State):
 # --------------------------------------------------
 
 
-class Find_human(smach.State):
+"""class Find_human(smach.State):
     def __init__(self):
         smach.State.__init__(
             self, outcomes=['succ', 'failed', 'tries'])
@@ -96,7 +96,7 @@ class Find_human(smach.State):
             head.to_tf('human')
             print ('human tf published')
             return 'succ'    
-
+"""
 class Find_legs(smach.State):
     def __init__(self):
         smach.State.__init__(
@@ -142,7 +142,7 @@ class Find_legs(smach.State):
             return 'failed'    
 
 #########################################################################################################
-class Goto_human(smach.State):
+"""class Goto_human(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed', 'tries'])
         self.tries = 0
@@ -162,7 +162,7 @@ class Goto_human(smach.State):
         print (res)
         if res:
             return 'succ'
-
+"""
 
 
 
@@ -204,7 +204,7 @@ class Follow_human(smach.State):
                 print ('legs stopped... Did we arrive?')#,   np.var(self.last_legs,axis=0).mean()   )    
                 talk ('Did We arrive? ')#Push my hand to confirm ')
                 print ('are we there yet? Push my hand to confirm ') 
-                rospy.sleep(2.5)  
+                rospy.sleep(3.5)  
                 speech = get_keywords_speech(7.0)
                 speech = speech.split(' ')
                 confirmation_list=['yup','yes','jack','juice', 'takeshi yes','yeah', 'Jess','Jeff' ]
@@ -214,7 +214,7 @@ class Follow_human(smach.State):
 
                 if confirm or confirm_hand:
                     talk ('arrival confirmed, exiting action')
-                    print ('We are athere')                    
+                    print ('We are athere')                     
                     return 'arrived' 
 
                 self.last_legs=[]
@@ -247,9 +247,9 @@ if __name__ == '__main__':
         # Other states
         smach.StateMachine.add("INITIAL", Initial(), transitions={'failed': 'INITIAL', 'succ': 'FIND_LEGS'})
         smach.StateMachine.add("WAIT_PUSH_HAND", Wait_push_hand(), transitions={'failed': 'WAIT_PUSH_HAND', 'succ': 'FIND_LEGS', 'tries': 'failed'})
-        smach.StateMachine.add("FIND_HUMAN", Find_human(), transitions={'failed': 'FIND_HUMAN', 'succ': 'GOTO_HUMAN', 'tries': 'failed'})
+        #smach.StateMachine.add("FIND_HUMAN", Find_human(), transitions={'failed': 'FIND_HUMAN', 'succ': 'GOTO_HUMAN', 'tries': 'failed'})
         smach.StateMachine.add("FIND_LEGS", Find_legs(), transitions={'failed': 'FIND_LEGS', 'succ': 'FOLLOW_HUMAN', 'tries': 'failed'})
-        smach.StateMachine.add("GOTO_HUMAN", Goto_human(), transitions={'failed': 'FIND_HUMAN', 'succ': 'succeeded', 'tries': 'failed'})
+        #smach.StateMachine.add("GOTO_HUMAN", Goto_human(), transitions={'failed': 'FIND_HUMAN', 'succ': 'succeeded', 'tries': 'failed'})
         smach.StateMachine.add("FOLLOW_HUMAN", Follow_human(), transitions={'arrived': 'succeeded', 'succ': 'FOLLOW_HUMAN', 'lost': 'FIND_LEGS'})
 
     asw = ActionServerWrapper(

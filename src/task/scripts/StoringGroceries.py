@@ -49,9 +49,9 @@ class Initial(smach.State):
         
         
         ###############################################
-        #o=read_yaml('/regions/regions.yaml')#REAL
+        o=read_yaml('/regions/regions.yaml')#REAL
         ############################################
-        o=read_yaml('/regions/regions_sim.yaml')#SIM
+        #o=read_yaml('/regions/regions_sim.yaml')#SIM
         ###############################################
         regions_df=pd.DataFrame.from_dict(o)
         ############################
@@ -359,8 +359,12 @@ class Goto_shelf(smach.State):
             return 'tries'
         #omni_base.tiny_move( velX=-0.2,std_time=4.2) 
         #if self.tries == 1: talk('Navigating to, shelf')
-        res = omni_base.move_base(known_location='shelf', time_out=20)
-        print(res)
+        res = omni_base.move_base(known_location='shelf', time_out=60)
+        print(res,'res1')
+        res = omni_base.move_base(known_location='shelf', time_out=60)
+
+        #res = omni_base.move_base(known_location='shelf', time_out=20)
+        print(res,'res2')
 
         if res:
             self.tries=0
