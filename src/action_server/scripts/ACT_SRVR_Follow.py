@@ -20,7 +20,7 @@ class Initial(smach.State):
         self.tries = 0
 
     def execute(self, userdata):
-
+        set_pushed_false()
         rospy.loginfo('STATE : INITIAL')
         print('Robot neutral pose')
         self.tries += 1
@@ -175,7 +175,14 @@ class Follow_human(smach.State):
         self.last_legs=[]
         self.last_pose= [0,0]
     def execute(self, userdata):
-
+        if is_pushed():
+                    talk ('arrival confirmed, exiting action')
+                    msg_bool=Bool()
+                    msg_bool.data= False
+                    enable_legs.publish(msg_bool)
+                    enable_follow.publish(msg_bool)
+                    print ('We are athere')                     
+                    return 'arrived' 
         rospy.loginfo('STATE : Legs_found,following')
         self.tries+=1
         if self.tries == 1: 
@@ -197,28 +204,34 @@ class Follow_human(smach.State):
         if len (self.last_legs)>=26:
             self.last_legs.pop(0)
             if (np.linalg.norm(np.asarray(self.last_legs).var(axis=0)) < 0.00051):
-                msg_bool=Bool()
-                msg_bool.data= False
-                enable_legs.publish(msg_bool)
-                enable_follow.publish(msg_bool)
+                # msg_bool=Bool()
+                # msg_bool.data= False
+                # enable_legs.publish(msg_bool)
+                # enable_follow.publish(msg_bool)
                 print ('legs stopped... Did we arrive?')#,   np.var(self.last_legs,axis=0).mean()   )    
-                talk ('Did We arrive? ')#Push my hand to confirm ')
-                print ('are we there yet? Push my hand to confirm ') 
-                rospy.sleep(3.5)  
-                speech = get_keywords_speech(7.0)
-                speech = speech.split(' ')
-                confirmation_list=['yup','yes','jack','juice', 'takeshi yes','yeah', 'Jess','Jeff' ]
-                confirm = any(word in confirmation_list for word in speech)
-                confirm_hand =wait_for_push_hand(2.0)
-                print (speech,"################################################# \n \n",confirm, confirm_hand)      
+                talk ('Push my hand when we have arrived')#Push my hand to confirm ')
+                
+                # print ('are we there yet? Push my hand to confirm ') 
+                # rospy.sleep(3.5)  
+                # speech = get_keywords_speech(7.0)
+                # speech = speech.split(' ')
+                # confirmation_list=['yup','yes','jack','juice', 'takeshi yes','yeah', 'Jess','Jeff' ]
+                # confirm = any(word in confirmation_list for word in speech)
+                # confirm_hand =wait_for_push_hand(2.0)
+                # print (speech,"################################################# \n \n",confirm, confirm_hand)      
 
-                if confirm or confirm_hand:
-                    talk ('arrival confirmed, exiting action')
-                    print ('We are athere')                     
-                    return 'arrived' 
+                # if confirm or confirm_hand:
+                # if is_pushed():
+                #     talk ('arrival confirmed, exiting action')
+                #     msg_bool=Bool()
+                #     msg_bool.data= False
+                #     enable_legs.publish(msg_bool)
+                #     enable_follow.publish(msg_bool)
+                #     print ('We are athere')                     
+                #     return 'arrived' 
 
                 self.last_legs=[]
-                talk ('ok, keep following')
+                #talk ('ok, keep following')
                 print('ok I will continue to follow you')
                 msg_bool=Bool()
                 msg_bool.data= True
