@@ -571,7 +571,35 @@ Visualization Manager:
       Filter (whitelist): ""
       Frame Timeout: 15
       Frames:
+        004_sugar_box:
+          Value: true
+        008_pudding_box:
+          Value: true
+        010_potted_meat_can:
+          Value: true
+        019-a_pitcher_base:
+          Value: true
+        020_pitcher_lid:
+          Value: true
+        021_bleach_cleanser:
+          Value: true
+        022_windex_bottle:
+          Value: true
+        024_bowl:
+          Value: true
+        033_spatula:
+          Value: true
+        052_extra_large_clamp:
+          Value: true
+        059_chain:
+          Value: true
+        063-a_marbles:
+          Value: true
+        071_nine_hole_peg_test:
+          Value: true
         All Enabled: false
+        a_marbles:
+          Value: true
         arm_flex_link:
           Value: false
         arm_lift_link:
@@ -610,6 +638,20 @@ Visualization Manager:
           Value: false
         base_roll_link:
           Value: false
+        bowl:
+          Value: true
+        breakfast:
+          Value: true
+        cereal_box:
+          Value: true
+        chain:
+          Value: true
+        extra_large_clamp:
+          Value: true
+        goal_for_grasp:
+          Value: true
+        goal_for_place:
+          Value: true
         hand_camera_frame:
           Value: false
         hand_camera_gazebo_frame:
@@ -652,14 +694,10 @@ Visualization Manager:
           Value: false
         head_pan_link:
           Value: false
-        head_r_stereo_camera_frame:
-          Value: true
         head_r_stereo_camera_gazebo_frame:
           Value: false
         head_r_stereo_camera_link:
           Value: false
-        head_rgbd_sensor_depth_frame:
-          Value: true
         head_rgbd_sensor_gazebo_frame:
           Value: false
         head_rgbd_sensor_link:
@@ -672,7 +710,19 @@ Visualization Manager:
           Value: true
         odom:
           Value: true
+        pickup:
+          Value: true
+        pitcher_lid:
+          Value: true
+        place_shelf:
+          Value: true
         placing_area:
+          Value: true
+        shelf:
+          Value: true
+        spatula:
+          Value: true
+        start:
           Value: true
         torso_lift_link:
           Value: false
@@ -692,6 +742,20 @@ Visualization Manager:
       Show Names: true
       Tree:
         map:
+          a_marbles:
+            {}
+          bowl:
+            {}
+          breakfast:
+            {}
+          cereal_box:
+            {}
+          chain:
+            {}
+          extra_large_clamp:
+            {}
+          goal_for_grasp:
+            {}
           odom:
             base_footprint:
               base_link:
@@ -751,24 +815,58 @@ Visualization Manager:
                           {}
                       head_l_stereo_camera_link:
                         head_l_stereo_camera_frame:
-                          {}
+                          head_rgbd_sensor_rgb_frame:
+                            004_sugar_box:
+                              {}
+                            008_pudding_box:
+                              {}
+                            010_potted_meat_can:
+                              {}
+                            019-a_pitcher_base:
+                              {}
+                            020_pitcher_lid:
+                              {}
+                            021_bleach_cleanser:
+                              {}
+                            022_windex_bottle:
+                              {}
+                            024_bowl:
+                              {}
+                            033_spatula:
+                              {}
+                            052_extra_large_clamp:
+                              {}
+                            059_chain:
+                              {}
+                            063-a_marbles:
+                              {}
+                            071_nine_hole_peg_test:
+                              {}
                         head_l_stereo_camera_gazebo_frame:
                           {}
                       head_r_stereo_camera_link:
-                        head_r_stereo_camera_frame:
-                          {}
                         head_r_stereo_camera_gazebo_frame:
                           {}
                       head_rgbd_sensor_link:
-                        head_rgbd_sensor_depth_frame:
-                          {}
                         head_rgbd_sensor_gazebo_frame:
-                          {}
-                        head_rgbd_sensor_rgb_frame:
                           {}
             base_footprint_wheel:
               {}
+            goal_for_place:
+              {}
+          pickup:
+            {}
+          pitcher_lid:
+            {}
+          place_shelf:
+            {}
           placing_area:
+            {}
+          shelf:
+            {}
+          spatula:
+            {}
+          start:
             {}
       Update Interval: 0
       Value: true
@@ -976,5 +1074,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1386
-  X: 1992
-  Y: 10
+  X: 534
+  Y: 27

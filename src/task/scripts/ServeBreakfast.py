@@ -457,11 +457,15 @@ class Place_post_pour(smach.State):
         #    userdata.target_object='spoon'
 
         _,quat=tf_man.getTF('placing_area')
+
+
+        print  (userdata.target_object)
+        
         line_up_TF('placing_area')                   
         string_msg= String()  #mode mesge new instance
         rospy.loginfo('STATE : PLACE AFTER POUR')            
         print ('STATE : PLACE AFTER POUR')                       
-        if userdata.target_object=='cereal_box':offset_point=[0.0,-0.45,-0.00]          # Offset relative to object tf#
+        if userdata.target_object=='cereal_box':offset_point=[0.0,-0.45,0.1]          # Offset relative to object tf#
         else:offset_point=[0.0,-0.25,-0.04 ]
         omni_base.tiny_move(velY =-0.2, std_time=4.2)
         string_msg.data='frontal'
