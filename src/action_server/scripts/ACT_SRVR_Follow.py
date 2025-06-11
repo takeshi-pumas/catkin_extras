@@ -209,7 +209,7 @@ class Follow_human(smach.State):
                 # enable_legs.publish(msg_bool)
                 # enable_follow.publish(msg_bool)
                 print ('legs stopped... Did we arrive?')#,   np.var(self.last_legs,axis=0).mean()   )    
-                talk ('Push my hand when we have arrived')#Push my hand to confirm ')
+                talk ('Push my hand when we have arrived, otherwise keep walking')#Push my hand to confirm ')
                 
                 # print ('are we there yet? Push my hand to confirm ') 
                 # rospy.sleep(3.5)  

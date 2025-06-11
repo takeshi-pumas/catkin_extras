@@ -62,7 +62,7 @@ class Wait_push_hand(smach.State):
         if succ:
             head.set_joint_values([ 0.0, 0.0])# Looking ahead
             talk('Starting Carry my luggage task')
-            talk("I gonna start folow you")
+            talk("I gonna start follow you")
             return 'succ'
         else:
             return 'failed'
