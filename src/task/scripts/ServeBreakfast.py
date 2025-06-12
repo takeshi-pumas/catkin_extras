@@ -22,6 +22,7 @@ class Initial(smach.State):
         global arm ,  hand_rgb     ,regions_df    
         #userdata.target_object='spoon'
         userdata.target_object='cereal_box'   #Strategy. pickup bowl first
+        
         #userdata.target_object='milk'
         #userdata.target_object='bowl'
         hand_rgb = HAND_RGB()        
@@ -29,31 +30,21 @@ class Initial(smach.State):
         file_path = rospack.get_path('config_files')+'/regions'         
         
         
-        #######################################
-        #x,y,z= 5.8 , 1.3, 0.47   #SIM TMR  table plane
-        #quat=[0.0,0.0,0.0,1.0]
-        #o=read_yaml('/regions/regions_sim.yaml')#SIM (TMR WORLD)
-        ##########################################
                 
         #####################################
-        x,y,z= -0.5 , -2.9, 0.8   #REAL LAB
-        quat=[0.0,0.0,0.707,-0.707]
-        o=read_yaml('/regions/regions.yaml')#REAL
-        ###############################################
-
-
-        regions_df=pd.DataFrame.from_dict(o)
-
-        userdata.placing_area=[x,y,z]
+        x,y,z= -2.04 , -0.29, 0.8   #REAL LAB
+        quat=[0.0,0.0,1.0,0.0]
+        userdata.placing_area=[x,y,z]   ## FALLBACK CASE; 
         userdata.placing_area_quat=quat
         tf_man.pub_static_tf(pos=[x,y,z], rot=quat,point_name='placing_area') ### Ideal  coordinates to place Bowl
+        ###############################################
         
         arm = moveit_commander.MoveGroupCommander('arm')
-        head.set_named_target('neutral')
-        rospy.sleep(0.8)
-        arm.set_named_target('go')
-        arm.go()
-        rospy.sleep(0.3)
+        #head.set_named_target('neutral')
+        #rospy.sleep(0.8)
+        #arm.set_named_target('go')
+        #arm.go()
+        #rospy.sleep(0.3)
         return 'succ'
 
 #########################################################################################################
@@ -162,16 +153,9 @@ class Scan_table(smach.State):
             common_misids.append('fork')
             common_misids.append('knife')
             common_misids.append('large_marker')
-        
+               
         #####################
-        area_bo_x=regions_df['pickup'][['x_min','x_max']].values
-        area_bo_y=regions_df['pickup'][['y_min','y_max']].values
-        pickup_plane_z=regions_df['pickup']['z']
-
-        area_box=np.concatenate((area_bo_x,area_bo_y)).reshape((2,2)).T
-        print (area_box)
-        #####################
-        def is_inside(x,y,z):return ((area_box[:,1].max() > y) and (area_box[:,1].min() < y)) and ((area_box[:,0].max() > x) and (area_box[0,0].min() < x)) #and (pickup_plane_z<z)  
+        #def is_inside(x,y,z):return ((area_box[:,1].max() > y) and (area_box[:,1].min() < y)) and ((area_box[:,0].max() > x) and (area_box[0,0].min() < x)) #and (pickup_plane_z<z)  
         if len (objects)!=0 :
             _,quat_base= tf_man.getTF('base_link')  #  For grasping purposes object is orientated in front of base link.
             
@@ -187,12 +171,12 @@ class Scan_table(smach.State):
                         object_point.point.y = position[1]
                         object_point.point.z = position[2]
                         position_map = tfBuffer.transform(object_point, "map", timeout=rospy.Duration(1))
-                        print ('position_map',position_map,'name' ,res.names[i].data[4:],is_inside(position_map.point.x,position_map.point.y,position_map.point.z))
-                        if is_inside(position_map.point.x,position_map.point.y,position_map.point.z): 
-                            tf_man.pub_static_tf(pos= [position_map.point.x,position_map.point.y,position_map.point.z], rot=quat_base, ref="map", point_name=userdata.target_object)#res.names[i].data[4:] )
-                            self.tries=0
-                            talk(f'{userdata.target_object} found , grasping')
-                            return 'succ'
+                        print ('position_map',position_map,'name' ,res.names[i].data[4:])
+                        #if is_inside(position_map.point.x,position_map.point.y,position_map.point.z): 
+                        tf_man.pub_static_tf(pos= [position_map.point.x,position_map.point.y,position_map.point.z], rot=quat_base, ref="map", point_name=userdata.target_object)#res.names[i].data[4:] )
+                        self.tries=0
+                        talk(f'{userdata.target_object} found , grasping')
+                        return 'succ'
                         ###########################################################                
         print(f'Couldnt find {userdata.target_object}, will retry.')
         talk(f'Couldnt find {userdata.target_object}, will retry.')
@@ -433,43 +417,36 @@ class Goto_place_breakfast(smach.State):
 
 class Place_post_pour(smach.State):
     def __init__(self):
-        smach.State.__init__(self, outcomes=['succ', 'continue'], input_keys =['target_object','placing_area','placing_area_quat','mode'], output_keys=['target_pose','target_object','mode'] )
+        smach.State.__init__(self, outcomes=['succ', 'continue','tries'], input_keys =['target_object','placing_area','placing_area_quat'], output_keys=['target_pose','target_object','mode'] )
         
-
+        self.tries=0
     def execute(self, userdata):
-        print (userdata.mode)
         
-        if userdata.mode.data   != 'pour':
-            gripper.steady()
-            brazo.set_named_target('go')
-            rospy.sleep(2.0) # BRAZO FACE PALM AVOIDANCE
-            print ('## CONTINUE TO NEXT OBJECT')
-            return 'continue'
+        
+        #gripper.steady()
+        #brazo.set_named_target('go')
+        #rospy.sleep(2.0) # BRAZO FACE PALM AVOIDANCE
+    
         rospy.loginfo('STATE : PLACE POST POUR')
         print('STATE : PLACE POST POUR')
         
-        target_object=userdata.target_object
-        #if userdata.target_object=='cereal_box':
-        #    pose_target[0]+=-0.35
-        #    userdata.target_object='milk'
-        #if userdata.target_object=='milk':
-        #    pose_target[0]+=-0.45
-        #    userdata.target_object='spoon'
-
-        _,quat=tf_man.getTF('placing_area')
-
-
-        print  (userdata.target_object)
+        #target_object=userdata.target_object
+        #print  (userdata.target_object)
         
-        line_up_TF('placing_area')                   
+
+        #_,quat=tf_man.getTF('placing_area')
+        #line_up_TF('placing_area')                   
+        if self.tries>=1:return 'tries'
         string_msg= String()  #mode mesge new instance
         rospy.loginfo('STATE : PLACE AFTER POUR')            
         print ('STATE : PLACE AFTER POUR')                       
-        if userdata.target_object=='cereal_box':offset_point=[0.0,-0.45,0.1]          # Offset relative to object tf#
-        else:offset_point=[0.0,-0.25,-0.04 ]
-        omni_base.tiny_move(velY =-0.2, std_time=4.2)
+        #if userdata.target_object=='cereal_box':offset_point=[0.0,-0.3,0.05]          # Offset relative to object tf#
+        #else:offset_point=[0.0,-0.25,-0.04 ]
+        #omni_base.tiny_move(velY =-0.2, std_time=4.2)
         string_msg.data='frontal'
-        userdata.mode=string_msg             
+        userdata.mode=string_msg  
+        pos, quat = tf_man.getTF(target_frame = 'goal_for_grasp')          
+        offset_point=[0.15,0.0,0.05]
         ###################
         #####################APPLY OFFSET
         object_point = PointStamped()
@@ -479,9 +456,10 @@ class Place_post_pour(smach.State):
         object_point.point.z = offset_point[2]
         transformed_object_point = tfBuffer.transform(object_point, "map", timeout=rospy.Duration(1))
         tf_man.pub_static_tf(pos=[transformed_object_point.point.x,transformed_object_point.point.y,transformed_object_point.point.z],rot=quat,point_name='goal_for_place')
-        ##################################################################3
+        ###################################################################3
         rospy.sleep(0.5)
         pos, quat = tf_man.getTF(target_frame = 'goal_for_place', ref_frame = 'odom')
+        print (f'transalted_point-<{pos,quat}')    
         pose_goal=np.concatenate((pos,quat))
         print (f'transalted_point-<{pose_goal}')    
         target_pose = Float32MultiArray()
@@ -493,8 +471,8 @@ class Place_post_pour(smach.State):
         ###################
         head.set_named_target('neutral')
         rospy.sleep(0.5)       
-        clear_octo_client()     
-        
+        clear_octo_client()  
+        self.tries+=1   
         return 'succ'
         
 
@@ -724,6 +702,7 @@ if __name__ == '__main__':
     with sm:
         # State machine STICKLER
         smach.StateMachine.add("INITIAL",           Initial(),              transitions={'failed': 'INITIAL',           
+                                                                                         #'succ': 'PLACE_POST_POUR',   
                                                                                          'succ': 'GOTO_PICKUP',   
                                                                                          'tries': 'END'})
         smach.StateMachine.add("WAIT_PUSH_HAND",    Wait_push_hand(),       transitions={'failed': 'WAIT_PUSH_HAND',    
@@ -766,8 +745,8 @@ if __name__ == '__main__':
         
         
         smach.StateMachine.add("PLACE_POST_POUR",    Place_post_pour(),       transitions={'continue': 'GOTO_PICKUP',    
-                                                                                         'succ': 'PLACE_GOAL'})
-                
+                                                                                         'succ': 'PLACE_GOAL',
+                                                                                         'tries':'END'})
         ###################################################################################################################################################################
         
 

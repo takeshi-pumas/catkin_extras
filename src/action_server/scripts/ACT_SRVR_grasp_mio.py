@@ -18,6 +18,8 @@ from tf.transformations import euler_from_quaternion, quaternion_from_euler, qua
 
 from utils import grasp_utils
 global clear_octo_client
+from std_msgs.msg import Float64MultiArray
+
 
 clear_octo_client = rospy.ServiceProxy('/clear_octomap', Empty)
 #from utils.grasp_utils import *
@@ -35,6 +37,7 @@ class PlacingStateMachine:
         self.listener = tf2_ros.TransformListener(self.tf2_buffer)
         
 
+        self.joint_pub = rospy.Publisher('/grasp_server/last_arm_joint_values', Float64MultiArray, queue_size=10)
         # Inicializar MoveIt
         moveit_commander.roscpp_initialize(sys.argv)
         self.robot = moveit_commander.RobotCommander()
@@ -155,8 +158,14 @@ class PlacingStateMachine:
         joint_values[0] -= 0.09
         self.brazo.set_joint_values(joint_values)
         rospy.sleep(1.0)
+        ######################################
+        joint_vals=self.whole_body.get_current_joint_values()
+        msg = Float64MultiArray()
+        msg.data = joint_vals
+        self.joint_pub.publish(msg)
+        ###########################################
 
-        
+
         if self.grasp_approach == "frontal" or self.grasp_approach == "pour":
             self.base.tiny_move(velX=0.07, std_time=0.5, MAX_VEL=0.7)
             rospy.sleep(0.5)
