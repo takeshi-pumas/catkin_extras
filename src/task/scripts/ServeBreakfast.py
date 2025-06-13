@@ -446,7 +446,7 @@ class Place_post_pour(smach.State):
         string_msg.data='frontal'
         userdata.mode=string_msg  
         pos, quat = tf_man.getTF(target_frame = 'goal_for_grasp')          
-        offset_point=[0.15,0.0,0.05]
+        offset_point=[0.0,0.15,0.03]
         ###################
         #####################APPLY OFFSET
         object_point = PointStamped()

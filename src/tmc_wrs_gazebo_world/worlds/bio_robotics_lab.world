@@ -1363,7 +1363,7 @@
     <state world_name='default'>
       <sim_time>0 0</sim_time>
       <real_time>0 0</real_time>
-      <wall_time>1734044229 911107189</wall_time>
+      <wall_time>1749853851 989526801</wall_time>
       <iterations>0</iterations>
       <model name='Desk_01'>
         <pose>4.60448 -0.497618 0 0 -0 1.57832</pose>
@@ -1406,23 +1406,13 @@
         </link>
       </model>
       <model name='Dumpster'>
-        <pose>-6.51407 15.1223 0 0 -0 0</pose>
+        <pose>-6.51561 15.1278 0.001376 0 -1e-06 0.00264</pose>
         <scale>1 1 1</scale>
         <link name='link'>
-          <pose>-6.51407 15.1223 0 0 -0 0</pose>
+          <pose>-6.51561 15.1278 0.001376 0 -1e-06 0.00264</pose>
           <velocity>0 0 0 0 -0 0</velocity>
-          <acceleration>0 0 0 0 -0 0</acceleration>
-          <wrench>0 0 0 0 -0 0</wrench>
-        </link>
-      </model>
-      <model name='Lab_Floor'>
-        <pose>0 0 0.005 0 -0 0</pose>
-        <scale>1 1 1</scale>
-        <link name='link_0'>
-          <pose>-0 0 0.005 0 -0 0</pose>
-          <velocity>0 0 0 0 -0 0</velocity>
-          <acceleration>0 0 0 0 -0 0</acceleration>
-          <wrench>0 0 0 0 -0 0</wrench>
+          <acceleration>0.001276 -0.0096 0.002306 -0.27399 0.055363 -0.003042</acceleration>
+          <wrench>0.001276 -0.0096 0.002306 0 -0 0</wrench>
         </link>
       </model>
       <model name='Lab_Mesh'>
@@ -1536,13 +1526,13 @@
         </link>
       </model>
       <model name='cardboard_box'>
-        <pose>-5.62651 14.2132 0.15 0 -0 0</pose>
+        <pose>-5.62597 14.2116 0.149743 0.00377 3e-06 0.002638</pose>
         <scale>1 1 1</scale>
         <link name='link'>
-          <pose>-5.62651 14.2132 0.15 0 -0 0</pose>
+          <pose>-5.62597 14.2116 0.149743 0.00377 3e-06 0.002638</pose>
           <velocity>0 0 0 0 -0 0</velocity>
-          <acceleration>0 0 0 0 -0 0</acceleration>
-          <wrench>0 0 0 0 -0 0</wrench>
+          <acceleration>0.004403 0.270926 0.515942 -1.79698 0.019112 -0.004871</acceleration>
+          <wrench>0.008806 0.541852 1.03188 0 -0 0</wrench>
         </link>
       </model>
       <model name='figurine_1'>
@@ -1656,23 +1646,23 @@
         </link>
       </model>
       <model name='person_standing'>
-        <pose>-6.42541 -15.2385 0 0 -0 0</pose>
+        <pose>-6.42541 -15.2385 -0.003869 -0 -0 -0</pose>
         <scale>1 1 1</scale>
         <link name='link'>
-          <pose>-6.42541 -15.2385 0 0 -0 0</pose>
-          <velocity>0 0 0 0 -0 0</velocity>
-          <acceleration>0 0 0 0 -0 0</acceleration>
-          <wrench>0 0 0 0 -0 0</wrench>
+          <pose>-6.42541 -15.2385 -0.003869 -0 -0 -0</pose>
+          <velocity>-0 0 -0.183653 0 -0 0</velocity>
+          <acceleration>0 -0 0 0 -0 0</acceleration>
+          <wrench>0 -0 0 0 -0 0</wrench>
         </link>
       </model>
       <model name='person_walking'>
-        <pose>-6.99356 -15.1841 0 0 -0 0</pose>
+        <pose>-6.99367 -15.1841 -0.00427 3.5e-05 -0.024394 2e-06</pose>
         <scale>1 1 1</scale>
         <link name='link'>
-          <pose>-6.99356 -15.1841 0 0 -0 0</pose>
-          <velocity>0 0 0 0 -0 0</velocity>
-          <acceleration>0 0 0 0 -0 0</acceleration>
-          <wrench>0 0 0 0 -0 0</wrench>
+          <pose>-6.99367 -15.1841 -0.00427 3.5e-05 -0.024394 2e-06</pose>
+          <velocity>-7.3e-05 1.1e-05 -0.198557 0.003018 -0.027626 0.000121</velocity>
+          <acceleration>0.231052 0.748326 -1.80886 -0.784379 0.289381 0.194811</acceleration>
+          <wrench>18.4842 59.8661 -144.709 0 -0 0</wrench>
         </link>
       </model>
       <model name='picture_frame_large_1'>
@@ -1773,6 +1763,26 @@
           <velocity>0 0 0 0 -0 0</velocity>
           <acceleration>0 0 0 0 -0 0</acceleration>
           <wrench>0 0 0 0 -0 0</wrench>
+        </link>
+      </model>
+      <model name='ycb_010_potted_meat_can'>
+        <pose>4.37542 -0.32665 0.758275 0.03076 -0.005497 -0.005667</pose>
+        <scale>1 1 1</scale>
+        <link name='body'>
+          <pose>4.37542 -0.32665 0.758275 0.03076 -0.005497 -0.005667</pose>
+          <velocity>0 0 0 0 -0 0</velocity>
+          <acceleration>0 0 -9.8 -1.7e-05 -6e-06 0.000177</acceleration>
+          <wrench>0 0 -4.68516 0 -0 0</wrench>
+        </link>
+      </model>
+      <model name='ycb_024_bowl'>
+        <pose>4.36135 -0.558836 0.75549 -0.000731 -0.00285 -0.001918</pose>
+        <scale>1 1 1</scale>
+        <link name='body'>
+          <pose>4.36135 -0.558836 0.75549 -0.000731 -0.00285 -0.001918</pose>
+          <velocity>0 0 0 0 -0 0</velocity>
+          <acceleration>0 0 -9.8 -1e-05 -1.5e-05 -1.7e-05</acceleration>
+          <wrench>0 0 -0.441329 0 -0 0</wrench>
         </link>
       </model>
       <light name='inner_point_white1'>
@@ -1990,48 +2000,9 @@
       <allow_auto_disable>1</allow_auto_disable>
       <pose>1.49956 0.009852 0 0 -0 0</pose>
     </model>
-    <model name='Lab_Floor'>
-      <link name='link_0'>
-        <inertial>
-          <mass>1</mass>
-          <inertia>
-            <ixx>0.166667</ixx>
-            <ixy>0</ixy>
-            <ixz>0</ixz>
-            <iyy>0.166667</iyy>
-            <iyz>0</iyz>
-            <izz>0.166667</izz>
-          </inertia>
-          <pose>0 0 0 0 -0 0</pose>
-        </inertial>
-        <pose>0 0 0 0 -0 0</pose>
-        <gravity>1</gravity>
-        <self_collide>0</self_collide>
-        <kinematic>0</kinematic>
-        <enable_wind>0</enable_wind>
-        <visual name='visual'>
-          <pose>0 0 0 0 -0 0</pose>
-          <geometry>
-            <mesh>
-              <uri>model://BioRoboticsLab/meshes/Lab_Floor.dae</uri>
-              <scale>1 1 1</scale>
-            </mesh>
-          </geometry>
-          <material>
-            <lighting>1</lighting>
-            <shader type='pixel'/>
-          </material>
-          <transparency>0</transparency>
-          <cast_shadows>1</cast_shadows>
-        </visual>
-      </link>
-      <static>1</static>
-      <allow_auto_disable>1</allow_auto_disable>
-      <pose>0.335619 -0.31913 0 0 -0 0</pose>
-    </model>
     <gui fullscreen='0'>
       <camera name='user_camera'>
-        <pose>-9.08288 4.12104 29.5852 0 1.56179 0.314781</pose>
+        <pose>-0.167581 -1.17423 4.63835 0 0.960632 0.15856</pose>
         <view_controller>orbit</view_controller>
         <projection_type>perspective</projection_type>
       </camera>
@@ -3777,6 +3748,104 @@
         <kinematic>0</kinematic>
       </link>
       <pose>-6.51407 15.1223 0 0 -0 0</pose>
+    </model>
+    <model name='ycb_010_potted_meat_can'>
+      <link name='body'>
+        <inertial>
+          <mass>0.478078</mass>
+          <pose>-0.03284 -0.026353 0.037831 0 -0 0</pose>
+          <inertia>
+            <ixx>0.000337231</ixx>
+            <ixy>-1.33095e-05</ixy>
+            <ixz>-7.42394e-07</ixz>
+            <iyy>0.000578045</iyy>
+            <iyz>1.50001e-06</iyz>
+            <izz>0.000435804</izz>
+          </inertia>
+        </inertial>
+        <visual name='ycb_010_potted_meat_can_visual'>
+          <pose>0 0 0 0 -0 0</pose>
+          <geometry>
+            <mesh>
+              <uri>model://ycb_010_potted_meat_can/meshes/textured.dae</uri>
+            </mesh>
+          </geometry>
+        </visual>
+        <collision name='ycb_010_potted_meat_can_collision'>
+          <pose>0 0 0 0 -0 0</pose>
+          <geometry>
+            <mesh>
+              <uri>model://ycb_010_potted_meat_can/meshes/nontextured.stl</uri>
+            </mesh>
+          </geometry>
+          <max_contacts>10</max_contacts>
+          <surface>
+            <contact>
+              <ode/>
+            </contact>
+            <bounce/>
+            <friction>
+              <torsional>
+                <ode/>
+              </torsional>
+              <ode/>
+            </friction>
+          </surface>
+        </collision>
+        <self_collide>0</self_collide>
+        <enable_wind>0</enable_wind>
+        <kinematic>0</kinematic>
+      </link>
+      <pose>4.46808 -0.516785 0 0 -0 0</pose>
+    </model>
+    <model name='ycb_024_bowl'>
+      <link name='body'>
+        <inertial>
+          <mass>0.0450336</mass>
+          <pose>-0.014272 -0.045728 0.026772 0 -0 0</pose>
+          <inertia>
+            <ixx>0.00010601</ixx>
+            <ixy>1.6838e-06</ixy>
+            <ixz>-1.52702e-09</ixz>
+            <iyy>0.000103807</iyy>
+            <iyz>1.57324e-06</iyz>
+            <izz>0.000176981</izz>
+          </inertia>
+        </inertial>
+        <visual name='ycb_024_bowl_visual'>
+          <pose>0 0 0 0 -0 0</pose>
+          <geometry>
+            <mesh>
+              <uri>model://ycb_024_bowl/meshes/textured.dae</uri>
+            </mesh>
+          </geometry>
+        </visual>
+        <collision name='ycb_024_bowl_collision'>
+          <pose>0 0 0 0 -0 0</pose>
+          <geometry>
+            <mesh>
+              <uri>model://ycb_024_bowl/meshes/nontextured.stl</uri>
+            </mesh>
+          </geometry>
+          <max_contacts>10</max_contacts>
+          <surface>
+            <contact>
+              <ode/>
+            </contact>
+            <bounce/>
+            <friction>
+              <torsional>
+                <ode/>
+              </torsional>
+              <ode/>
+            </friction>
+          </surface>
+        </collision>
+        <self_collide>0</self_collide>
+        <enable_wind>0</enable_wind>
+        <kinematic>0</kinematic>
+      </link>
+      <pose>4.45459 -0.681785 0 0 -0 0</pose>
     </model>
   </world>
 </sdf>
