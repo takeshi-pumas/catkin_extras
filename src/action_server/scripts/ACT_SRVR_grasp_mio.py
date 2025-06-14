@@ -73,8 +73,8 @@ class PlacingStateMachine:
                                    transitions={'success':'GRASP', 'failed':'APPROACH', 'cancel':'failure' })
             smach.StateMachine.add('GRASP', smach.CBState(self.grasp, outcomes=['success', 'failed']),
                                    transitions={'success':'RETREAT', 'failed': 'GRASP'})
-            smach.StateMachine.add('RETREAT', smach.CBState(self.retreat, outcomes=['success', 'failed']),
-                                   transitions={'success':'NEUTRAL_POSE', 'failed': 'RETREAT'})
+            smach.StateMachine.add('RETREAT', smach.CBState(self.retreat, outcomes=['success', 'failed','hold']),
+                                   transitions={'success':'NEUTRAL_POSE', 'failed': 'RETREAT', 'hold':'succeeded'})
             smach.StateMachine.add('NEUTRAL_POSE', smach.CBState(self.neutral_pose, outcomes=['success', 'failed']),
                         transitions={'success':'succeeded', 'failed': 'NEUTRAL_POSE'})
 
@@ -196,7 +196,7 @@ class PlacingStateMachine:
         self.brazo.set_joint_values(joint_values)
         self.base.tiny_move(velX=-0.07, std_time=2.5, MAX_VEL=0.7)
         clear_octo_client()
-
+        if self.grasp_approach=='pour':return 'hold'
         #self.whole_body.set_joint_value_target(self.safe_pose)
         #self.whole_body.go()
         #self.scene.remove_world_object('bound_left')
@@ -244,11 +244,11 @@ class PlacingStateMachine:
         position_constraint = PositionConstraint()
         position_constraint.header.frame_id = "base_link"
         position_constraint.link_name = "base_link"
-        position_constraint.target_point_offset.x = 1.4
+        position_constraint.target_point_offset.x = 0.0
         position_constraint.target_point_offset.y = 0.0
         position_constraint.target_point_offset.z = 0.0
-        position_constraint.constraint_region.primitives.append(SolidPrimitive(type=SolidPrimitive.BOX, dimensions=[3.0, 0.75, 2.0]))
-        position_constraint.constraint_region.primitive_poses.append(Pose(position=Point(x=0.0, y=0.0, z=0.0), orientation=Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)))
+        position_constraint.constraint_region.primitives.append(SolidPrimitive(type=SolidPrimitive.BOX, dimensions=[1.6, 0.75, 2.0]))
+        position_constraint.constraint_region.primitive_poses.append(Pose(position=Point(x=0.6, y=0.0, z=0.0), orientation=Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)))
         position_constraint.weight = 1.0
         # Add the position constraint to the spatial constraint
         constraint.position_constraints.append(position_constraint)

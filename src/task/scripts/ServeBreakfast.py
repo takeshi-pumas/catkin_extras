@@ -40,11 +40,11 @@ class Initial(smach.State):
         ###############################################
         
         arm = moveit_commander.MoveGroupCommander('arm')
-        #head.set_named_target('neutral')
-        #rospy.sleep(0.8)
-        #arm.set_named_target('go')
-        #arm.go()
-        #rospy.sleep(0.3)
+        head.set_named_target('neutral')
+        rospy.sleep(0.8)
+        arm.set_named_target('go')
+        arm.go()
+        rospy.sleep(0.3)
         return 'succ'
 
 #########################################################################################################
@@ -130,7 +130,9 @@ class Scan_table(smach.State):
         
         print ('scanNING TABLE')
 
-        
+        found_target = False
+        found_bowl = False
+
         rospy.sleep(3.0)                        
         img_msg  = bridge.cv2_to_imgmsg( cv2.cvtColor(rgbd.get_image(), cv2.COLOR_RGB2BGR))### Using Yolo to find [bowl,milk,cereal , spoon]
         req      = classify_client.request_class()
@@ -176,8 +178,27 @@ class Scan_table(smach.State):
                         tf_man.pub_static_tf(pos= [position_map.point.x,position_map.point.y,position_map.point.z], rot=quat_base, ref="map", point_name=userdata.target_object)#res.names[i].data[4:] )
                         self.tries=0
                         talk(f'{userdata.target_object} found , grasping')
-                        return 'succ'
+                        found_target=True
+                    if res.names[i].data[4:] == 'bowl' or res.names[i].data[4:] == 'plate':
+
+                        position = [res.poses[i].position.x ,res.poses[i].position.y,res.poses[i].position.z]
+                        object_point = PointStamped()
+                        object_point.header.frame_id = "head_rgbd_sensor_rgb_frame"
+                        object_point.point.x = position[0]
+                        object_point.point.y = position[1]
+                        object_point.point.z = position[2]
+                        position_map = tfBuffer.transform(object_point, "map", timeout=rospy.Duration(1))
+                        print ('position_map',position_map,'name' ,res.names[i].data[4:])
+                        #if is_inside(position_map.point.x,position_map.point.y,position_map.point.z): 
+                        tf_man.pub_static_tf(pos= [position_map.point.x,position_map.point.y,position_map.point.z], rot=quat_base, ref="map", point_name='bowl')#res.names[i].data[4:] )
+                        found_bowl = True
+
+                        #return 'succ'
                         ###########################################################                
+        if found_target and found_bowl:
+            talk(f'{userdata.target_object} and bowl found, grasping')
+            self.tries = 0
+            return 'succ'
         print(f'Couldnt find {userdata.target_object}, will retry.')
         talk(f'Couldnt find {userdata.target_object}, will retry.')
         return 'failed'        
@@ -201,7 +222,6 @@ class Place(smach.State):
                 
         string_msg= String()  #mode mesge new instance
         print (f'placing {current_target}')
-
         #current_target='bowl'
         common_misids=[]
         #################################################
@@ -210,10 +230,6 @@ class Place(smach.State):
             print ('STATE : PLACE BOWL')                       
             offset_point=[0.04,-0.05,-0.031]          # Offset relative to object tf#                       
             string_msg.data='frontal'       
-        elif current_target== 'spoon':
-            string_msg.data='pour'               # Offset relative to object tf            
-
-
         ######################################################################
         else:                           #if current_target== 'cereal_box' or current_target== 'milk'  :
             string_msg.data='pour'               # Offset relative to object tf            
@@ -221,49 +237,23 @@ class Place(smach.State):
             # LOOK FOR OBJECT current target
             if current_target== 'cereal_box':
                 rospy.loginfo('STATE : POUR CEREAL')            
-                print ('STATE : POUR CEREAL')
+                print ('STATE : PLACE.-> POUR CEREAL')
                 talk( 'pouring cereal')     
             elif current_target== 'milk':
                 rospy.loginfo('STATE : POUR MILK')            
                 print ('STATE : POUR MILK')
-                talk( 'pouring cereal')    
+                talk( 'pouring milk')    
             head.set_named_target('neutral')
             rospy.sleep(0.5)       
             common_misids.append('plate')           #grasp_type 
             talk ('looking for bowl')
             rospy.sleep(3.0)  
-                                 
-            img_msg  = bridge.cv2_to_imgmsg( cv2.cvtColor(rgbd.get_image(), cv2.COLOR_RGB2BGR))### Using Yolo to find [bowl,milk,cereal , spoon]
-            req      = classify_client.request_class()
-            req.in_.image_msgs.append(img_msg)
-            res      = classify_client(req)
-            objects=detect_object_yolo('all',res)   
-            print (objects)            
-            if len (objects)!=0 :
-                _,quat_base= tf_man.getTF('base_link')  
-                for i in range(len(res.poses)):
-                        if res.names[i].data[4:]== 'bowl' or  res.names[i].data[4:] in  common_misids:
-                            #tf_man.getTF("head_rgbd_sensor_rgb_frame")
-                            position = [res.poses[i].position.x ,res.poses[i].position.y,res.poses[i].position.z]
-                            #print ('position,name',position,res.names[i].data[4:])
-                            ##########################################################
-                            object_point = PointStamped()
-                            object_point.header.frame_id = "head_rgbd_sensor_rgb_frame"
-                            object_point.point.x = position[0]
-                            object_point.point.y = position[1]
-                            object_point.point.z = position[2]
-                            position_map = tfBuffer.transform(object_point, "map", timeout=rospy.Duration(1))
-                            #print ('position_map',position_map)
-                            tf_man.pub_static_tf(pos= [position_map.point.x,position_map.point.y,position_map.point.z], rot=quat_base, ref="map", point_name="placing_area")  #res.names[i].data[4:] )
-                            rospy.sleep(0.5)
-                            pos, quat = tf_man.getTF(target_frame = 'placing_area', ref_frame = 'odom')                  
-                            talk('bowl found. pouring')   
-                            line_up_TF('placing_area')
-
+        pos, quat = tf_man.getTF(target_frame = 'bowl', ref_frame = 'odom')                  
+        talk('bowl found. pouring')   
+        line_up_TF('bowl')
         #####################################################################
         userdata.mode=string_msg 
-            ####################
-            
+        ####################
         print (f'target_object(placng){current_target} , mode {string_msg.data}')
         translated_point = np.array(tf.transformations.quaternion_multiply(quat, offset_point + [0]))[:3] + np.array(pos)
         pose_goal=np.concatenate((translated_point,quat))
@@ -278,9 +268,6 @@ class Place(smach.State):
         rospy.sleep(0.5)       
         clear_octo_client()     
         self.tries+=1  
-
-
-        
         return 'succ'
         
 #########################################################################################################
@@ -421,32 +408,19 @@ class Place_post_pour(smach.State):
         
         self.tries=0
     def execute(self, userdata):
-        
-        
-        #gripper.steady()
-        #brazo.set_named_target('go')
-        #rospy.sleep(2.0) # BRAZO FACE PALM AVOIDANCE
-    
+               
+
         rospy.loginfo('STATE : PLACE POST POUR')
         print('STATE : PLACE POST POUR')
-        
-        #target_object=userdata.target_object
-        #print  (userdata.target_object)
-        
-
-        #_,quat=tf_man.getTF('placing_area')
-        #line_up_TF('placing_area')                   
-        if self.tries>=1:return 'tries'
+        if self.tries>=1:
+            arm.set_named_target('neutral')
+            arm.go()
+            return 'tries'
         string_msg= String()  #mode mesge new instance
-        rospy.loginfo('STATE : PLACE AFTER POUR')            
-        print ('STATE : PLACE AFTER POUR')                       
-        #if userdata.target_object=='cereal_box':offset_point=[0.0,-0.3,0.05]          # Offset relative to object tf#
-        #else:offset_point=[0.0,-0.25,-0.04 ]
-        #omni_base.tiny_move(velY =-0.2, std_time=4.2)
         string_msg.data='frontal'
         userdata.mode=string_msg  
         pos, quat = tf_man.getTF(target_frame = 'goal_for_grasp')          
-        offset_point=[0.0,0.15,0.03]
+        offset_point=[0.0,0.15, -0.03]
         ###################
         #####################APPLY OFFSET
         object_point = PointStamped()
@@ -734,7 +708,7 @@ if __name__ == '__main__':
                                                                                          'succ': 'GOTO_BREAKFAST',
                                                                                          'tries': 'GOTO_PICKUP'})
         smach.StateMachine.add("GRASP_GOAL", SimpleActionState('grasp_server', GraspAction, goal_slots={'target_pose': 'target_pose', 'mode': 'mode'}),                      
-                        transitions={'preempted': 'END', 'succeeded': 'CHECK_GRASP', 'aborted': 'CHECK_GRASP'})
+                        transitions={'preempted': 'END', 'succeeded': 'PLACE', 'aborted': 'CHECK_GRASP'})
         
         smach.StateMachine.add("PLACE",    Place(),       transitions={'failed': 'PLACE',    
                                                                                          'succ': 'PLACE_GOAL',

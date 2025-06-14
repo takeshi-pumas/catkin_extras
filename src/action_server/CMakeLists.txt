@@ -72,6 +72,7 @@ find_package(catkin REQUIRED COMPONENTS
    Grasp.action
    IdentifyPerson.action
    PickPlace.action
+   PourCereal.action
  )
 
 ## Generate added messages and services with any dependencies listed here
