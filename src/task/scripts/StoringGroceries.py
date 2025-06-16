@@ -128,7 +128,7 @@ class Wait_door_opened(smach.State):
 ##########################################################
 class Goto_pickup(smach.State):  
     def __init__(self):
-        smach.State.__init__(self, outcomes=['succ', 'failed'])
+        smach.State.__init__(self, outcomes=['succ', 'failed'],input_keys=['placed_objs'])
         
     def execute(self, userdata):
 
@@ -149,7 +149,7 @@ class Goto_pickup(smach.State):
 class Scan_table(smach.State):
     def __init__(self):
         smach.State.__init__(
-            self, outcomes=['succ', 'failed','tries'])
+            self, outcomes=['succ', 'failed','tries', 'pour_cereal'], input_keys=['placed_objs'])
         self.tries = 0
         self.scanned=False   
         #self.pickup_plane_z  =0.65 ############REAL    
@@ -178,8 +178,6 @@ class Scan_table(smach.State):
         #pickup_plane_z= res_seg.planes.data[0]
         #print (f'Height if max area plane{pickup_plane_z}')
         ########################################################3
-        
-        
         head.set_joint_values([ 0.0, -0.5])
         rospy.sleep(5.0)
         img_msg  = bridge.cv2_to_imgmsg( cv2.cvtColor(rgbd.get_image(), cv2.COLOR_RGB2BGR))### GAZEBO BGR!?!??!
@@ -222,23 +220,33 @@ class Scan_table(smach.State):
             talk( 'I could not find more objects')
             self.tries+=1
             return 'failed'
-        
-        
+        self.tries=0 
         in_region=[]
         for index, row in objs[['x','y','z']].iterrows():in_region.append(is_inside(row.x, row.y,row.z))
         objs['pickup']=pd.Series(in_region)
         cats=[]
+        ######################################################################  Pour Cereal action?
         for name in objs['obj_name']:cats.append(categorize_objs(name))
         objs['category'] = cats    
         objs.dropna(inplace=True)
         objs.to_csv('pickup_objs.csv')
-        self.tries=0 
+        detected_names = objs['obj_name'].tolist()
+        bowl_aliases = ['bowl', 'plate']
+        cereal_aliases = ['cereal_box', 'master_chef_can', 'potted_meat_can', 'pudding_box']
+        found_bowl = any(name in detected_names for name in bowl_aliases)
+        found_cereal = any(name in detected_names for name in cereal_aliases)
+        print (f'FOUND CEREAL{found_cereal} FOUND BOWL{found_bowl}: \n\n\n\n')
+        if found_bowl and found_cereal and userdata.placed_objs >= 2:
+            talk("I found the bowl and the cereal, and I already placed a few groceries. Time to pour some cereal.")
+            rospy.loginfo("Both bowl and cereal detected — triggering pour cereal action.")
+            return 'pour_cereal'
+        #########################################################################
         return 'succ'
 #########################################################################################################
 
 class Pickup(smach.State):   
     def __init__(self):
-        smach.State.__init__(self, output_keys=['target_pose','mode'], input_keys =['target_object'],outcomes=['succ', 'failed'])
+        smach.State.__init__(self, output_keys=['target_pose','mode'], input_keys =['target_object'],outcomes=['succ', 'failed',])
         
 
     def execute(self, userdata):
@@ -408,7 +416,8 @@ class Goto_place_shelf(smach.State):
 #########################################################################################################
 class Place_shelf(smach.State):  
     def __init__(self):
-        smach.State.__init__(self, outcomes=['succ', 'failed'])
+        smach.State.__init__(self, outcomes=['succ', 'failed'],input_keys=['placed_objs'],
+                                                              output_keys=['placed_objs'])
         self.tries = 0
     def execute(self, userdata):
         head.set_joint_values([0,0])
@@ -417,7 +426,7 @@ class Place_shelf(smach.State):
         print(f'shelves_cats{shelves_cats}, object picked up cat {cat}')
         ###########################################
         high_shelf_place=[0.632, -1.150, 0.029,  -0.365,0.0, 0.0]        
-        mid_shelf_place= [0.232, -1.150, 0.029,  -0.365,0.0, 0.0]
+        mid_shelf_place= [0.132, -1.150, 0.029,  -0.365,0.0, 0.0]
         low_shelf_place= [0.011, -1.666, 0.0, 0.137, 0.0, 0.0]
         #high_shelf_place=[0.669, -1.44, 0.292,  -0.01729,-0.338, 0.0]
         #mid_shelf_place= [0.276, -1.581, 0.15, 0.0621, -0.1234, 0.0]
@@ -493,6 +502,7 @@ class Place_shelf(smach.State):
         #rospy.sleep(1.0)
         #gripper.steady()
         if succ:
+            userdata.placed_objs += 1
             self.tries=0
             return'succ'
         return'failed'
@@ -609,7 +619,8 @@ class Scan_shelf(smach.State):
         else:
             rospy.loginfo('State: Scanning_shelf')
             clear_octo_client()
-            if self.tries==5:
+            if self.tries==4:  # Too high maybe?
+                talk ('Some info is missing, I will move on')
                 x, y = np.mean(area_box, axis=0)
                 xy_place=[x,y]
                 z_place = 0.64
@@ -619,6 +630,7 @@ class Scan_shelf(smach.State):
                 rospy.sleep(3)
                 arm.set_named_target('go')
                 arm.go()
+                self.tries=0
                 return 'succ'
 
 
@@ -628,11 +640,27 @@ class Scan_shelf(smach.State):
                 rospack = rospkg.RosPack()
                 if "objs_shelves" not in globals():
                     objs_shelves = pd.DataFrame(columns=['x', 'y', 'z', 'obj_name', 'shelf_section', 'category'])
+                
                 head.set_joint_values([0.0, 0.0])
-                av = arm.get_current_joint_values()
-                #av[0] = 0.67
-                av[0] = 0.6
+                MAX_RETRIES = 10
+                av = []
+
+                for i in range(MAX_RETRIES):   ### BELIEVE ITS A GAZEBO ISSUE; but it could happen in real robot
+                    av = arm.get_current_joint_values()
+                    if av and len(av) >= 2:  # Make sure you can safely assign av[0] and av[1]
+                        break
+                    rospy.logwarn(f"[WAITING] Could not get valid joint values (try {i+1}/{MAX_RETRIES})")
+                    rospy.sleep(0.2)
+
+                if not av or len(av) < 2:
+                    rospy.logerr("ERROR: get_current_joint_values() failed — robot state is likely unavailable.")
+                    return 'failed'
+
+                # Now safe to use
+                av[0] = 0.4
                 av[1] = -0.4
+
+                rospy.sleep(0.5)
                 arm.go(av)
                 head.set_joint_values([-np.pi/2, -0.2])
                 #rospy.sleep(5)
@@ -724,7 +752,14 @@ class Scan_shelf(smach.State):
                     missing_shelves.append(shelf)
             objs_shelves.to_csv("objs_shelves_debug.csv", index=False)
             print(f'shelves_cats, cat{shelves_cats , cat} missing shelves {missing_shelves}')
-            if missing_shelves:               
+            print(f'type shelves_cats, cat{shelves_cats.values(),type(cat) } ')
+            skip_missing_check = False
+            if cat in shelves_cats.values():
+                print (print(f'shelves_cats, cat{shelves_cats , cat} EVEN TO missing shelves {missing_shelves}'))
+                self.tries=0
+                skip_missing_check = True
+
+            if missing_shelves and not skip_missing_check :               
                 talk(f'{missing_shelves[0]} shelf missing, scanning again')
                 userdata.missing_shelves=missing_shelves
                 return 'failed'
@@ -770,6 +805,7 @@ class Scan_shelf(smach.State):
         arm.set_named_target('go')
         arm.go()
         objs_shelves.to_csv('shelf_objs.csv')
+        self.tries=0
         return 'succ'
 
 #######################################################################################################################################################################        
@@ -785,6 +821,7 @@ if __name__ == '__main__':
     init("takeshi_smach")
     # State machine, final state "END"
     sm = smach.StateMachine(outcomes=['END'])
+    sm.userdata.placed_objs = 0  # initialize placed object countarm=
     # sm.userdata.clear = False
     sis = smach_ros.IntrospectionServer('SMACH_VIEW_SERVER', sm, '/SM_STORING')
     sis.start()
@@ -806,6 +843,7 @@ if __name__ == '__main__':
         smach.StateMachine.add("SCAN_TABLE",    Scan_table(),           transitions={'failed': 'SCAN_TABLE',    
                                                                                          'succ': 'PICKUP',
                                                                                          'tries': 'GOTO_PICKUP',      
+                                                                                         'pour_cereal': 'POUR_CEREAL_GOAL'
                                                                                          })        
         smach.StateMachine.add("GOTO_SHELF",    Goto_shelf(),           transitions={'failed': 'GOTO_SHELF',    
                                                                                          'succ': 'SCAN_SHELF',       
@@ -820,7 +858,7 @@ if __name__ == '__main__':
         smach.StateMachine.add("SCAN_SHELF",    Scan_shelf(),           transitions={'failed': 'SCAN_SHELF',    
                                                                                          'succ': 'GOTO_PLACE_SHELF',       
                                                                                          'tries': 'GOTO_SHELF'})        
-        smach.StateMachine.add("PICKUP",    Pickup(),                   transitions={'failed': 'PICKUP',    
+        smach.StateMachine.add("PICKUP",    Pickup(),                   transitions={'failed': 'GOTO_PICKUP',    
                                                                                          'succ': 'GRASP_GOAL'})
         smach.StateMachine.add("CHECK_GRASP",    Check_grasp(),         transitions={'failed': 'GOTO_PICKUP',    
                                                                                          'succ': 'GOTO_SHELF',
@@ -836,6 +874,10 @@ if __name__ == '__main__':
         smach.StateMachine.add("PLACE_GOAL", SimpleActionState('place_server', GraspAction, goal_slots=['target_pose']),              
                         transitions={'preempted': 'PLACE_SHELF', 'succeeded': 'CHECK_GRASP', 'aborted': 'PLACE_SHELF'})
         
+        smach.StateMachine.add("POUR_CEREAL_GOAL", SimpleActionState('pour_cereal', PourCerealAction),
+                        transitions={'preempted': 'END', 'succeeded': 'END', 'aborted': 'END'})
+
+
         ###################################################################################################################################################################
         
 
