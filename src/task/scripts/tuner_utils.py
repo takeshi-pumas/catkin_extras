@@ -2,7 +2,8 @@
 
 import smach
 import smach_ros
-from geometry_msgs.msg import PoseStamped, Point , PointStamped , Quaternion , TransformStamped , Twist
+from geometry_msgs.msg import PoseStamped, Point  , Quaternion , TransformStamped , Twist
+from tf2_geometry_msgs import PointStamped
 from std_srvs.srv import Trigger, TriggerResponse 
 import moveit_commander
 import moveit_msgs.msg
@@ -552,6 +553,19 @@ def check_room_px(px_pose,living_room_px_region,kitchen_px_region,bedroom_px_reg
             print (f'in  {region}')
             return region
 
+def detect_object_yolo(object_name,res):
+    # find object_name in the response message from object_classification service (Yolo)
+    objs=[]
+    poses=[]
+    for i,name in enumerate(res.names):
+        if res.poses[i].position.x is not np.nan :
+            objs.append(name.data[4:])
+            poses.append(res.poses[i])
+        if name.data[4:]==object_name:return name.data[4:], res.poses[i]
+    if object_name=='all':
+        print (objs, poses)
+        return objs , poses
+    return [],[]
 
 #-----------------------------------------------------------------
 def save_image(img,name='',dirName=''):

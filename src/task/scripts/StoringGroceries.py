@@ -45,6 +45,7 @@ class Initial(smach.State):
         
         grasping_dict = pd.read_csv (file_path+'/GraspingDict.csv')
         print (pd.read_csv (file_path+'/GraspingDict.csv'))
+        file_path = rospack.get_path('config_files')
         file_path = rospack.get_path('config_files')+'/regions'         
         
         
@@ -573,7 +574,28 @@ class Check_grasp(smach.State):
             objs.drop(approx_coords.index, inplace=True)
 
         self.tries = 0
-        return'succ'                
+        return'succ'       
+    #########################################################################################################
+class Pickup_failed(smach.State):  
+    def __init__(self):
+        smach.State.__init__(self, outcomes=['succ'])
+        self.tries = 0
+
+    def execute(self, userdata):
+
+        rospy.loginfo('STATE : PICKUP FAILED')
+
+        print(f'Try {self.tries} of 3 attempts')
+        self.tries += 1
+        if self.tries == 3:
+            return 'tries'
+        arm.set_named_target('neutral')    
+        arm.set_named_target('go')    
+        arm.go()
+        rospy.sleep(3)
+        print(res)
+        if res:
+            return 'succ'
         
 #########################################################################################################   
 class Scan_shelf(smach.State):
@@ -585,8 +607,18 @@ class Scan_shelf(smach.State):
         global shelves_cats, objs_shelves
         self.tries += 1
 
-
-
+        rospack = rospkg.RosPack() 
+        file_path = rospack.get_path('config_files')
+        file_path = rospack.get_path('config_files')+'/regions'         
+        
+        
+        ###############################################
+        o=read_yaml('/regions/regions.yaml')#REAL
+        ############################################
+        #o=read_yaml('/regions/regions_sim.yaml')#SIM
+        ###############################################
+        regions_df=pd.DataFrame.from_dict(o)
+        ############################
         # Debugging placeholders for category and target object
         #global cat, target_object
         #cat = 'balls'
@@ -867,15 +899,18 @@ if __name__ == '__main__':
                                                                                          'succ': 'PLACE_GOAL',
                                                                                          'tries': 'GOTO_PLACE_SHELF'})
         
-        smach.StateMachine.add("GRASP_GOAL", SimpleActionState('grasp_server', GraspAction, goal_slots={'target_pose': 'target_pose', 'mode': 'mode'}),                      
+        smach.StateMachine.add("PICKUP_FAILED",    Pickup_failed(),                   transitions={ 'succ': 'GOTO_PICKUP'})
         
-                               transitions={'preempted': 'END', 'succeeded': 'CHECK_GRASP', 'aborted': 'SCAN_TABLE'})
+        
+        smach.StateMachine.add("GRASP_GOAL", SimpleActionState('grasp_server', GraspAction
+                                                               , goal_slots={'target_pose': 'target_pose', 'mode': 'mode'}),                     
+                                       transitions={'preempted': 'END', 'succeeded': 'CHECK_GRASP', 'aborted': 'SCAN_TABLE'})
         
         smach.StateMachine.add("PLACE_GOAL", SimpleActionState('place_server', GraspAction, goal_slots=['target_pose']),              
-                        transitions={'preempted': 'PLACE_SHELF', 'succeeded': 'CHECK_GRASP', 'aborted': 'PLACE_SHELF'})
+                        transitions={'preempted': 'PLACE_SHELF', 'succeeded': 'CHECK_GRASP', 'aborted': 'GOTO_SHELF'})
         
         smach.StateMachine.add("POUR_CEREAL_GOAL", SimpleActionState('pour_cereal', PourCerealAction),
-                        transitions={'preempted': 'END', 'succeeded': 'END', 'aborted': 'END'})
+                        transitions={'preempted': 'END', 'succeeded': 'GOTO_PLACE_SHELF', 'aborted': 'END'})
 
 
         ###################################################################################################################################################################

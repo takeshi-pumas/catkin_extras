@@ -143,13 +143,35 @@ def callback(points_msg):
             req      = classify_client.request_class()
             req.in_.image_msgs.append(img_msg)
             res      = classify_client(req)
-            for i in range(len(res.poses)):
-                tf_man.getTF("head_rgbd_sensor_rgb_frame")
-                position = [res.poses[i].position.x ,res.poses[i].position.y,res.poses[i].position.z]
-                print(position )
-                tf_man.pub_static_tf(pos= position, rot=[0,0,0,1], ref="head_rgbd_sensor_rgb_frame", point_name=res.names[i].data[4:] )   
-                rospy.sleep(0.3)
-                tf_man.change_ref_frame_tf(res.names[i].data[4:])
+            objects, poses=detect_object_yolo('all',res) 
+            map_poses=[]
+            if len (objects)!=0 :
+                _,quat_base= tf_man.getTF('base_link')  
+                for i in range(len(res.poses)):                
+                    position = [poses[i].position.x ,poses[i].position.y,poses[i].position.z]                
+                    ##########################################################
+                    object_point = PointStamped()
+                    object_point.header.frame_id = "head_rgbd_sensor_rgb_frame"
+                    object_point.point.x = position[0]
+                    object_point.point.y = position[1]
+                    object_point.point.z = position[2]
+                    position_map = tfBuffer.transform(object_point, "map", timeout=rospy.Duration(1))
+                    print ('position_map',position_map,'name' ,res.names[i].data[4:])
+                    tf_man.pub_static_tf(pos= [position_map.point.x,position_map.point.y,position_map.point.z], rot=quat_base, ref="map", point_name=res.names[i].data[4:] )
+                    map_poses.append(np.asarray((position_map.point.x,position_map.point.y,position_map.point.z)))
+
+                    
+
+            #for i in range(len(res.poses)):
+            #    tf_man.getTF("head_rgbd_sensor_rgb_frame")
+            #    position = [res.poses[i].position.x ,res.poses[i].position.y,res.poses[i].position.z]
+            #    print(position )
+            #    tf_man.pub_static_tf(pos= position, rot=[0,0,0,1], ref="head_rgbd_sensor_rgb_frame", point_name=res.names[i].data[4:] )   
+            #    rospy.sleep(0.3)
+            #    tf_man.change_ref_frame_tf(res.names[i].data[4:])
+            
+            map_poses_array=np.asarray((map_poses))
+            print(map_poses_array)
             debug_image=bridge.imgmsg_to_cv2(res.debug_image.image_msgs[0])
             cv2.imshow('our of res'  , debug_image)
             save_image(debug_image,name="yolo_result")

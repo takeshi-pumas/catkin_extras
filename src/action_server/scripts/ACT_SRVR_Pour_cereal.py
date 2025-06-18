@@ -416,36 +416,36 @@ class Place_post_pour(smach.State):
             arm.set_named_target('neutral')
             arm.go()
             return 'tries'
-        string_msg= String()  #mode mesge new instance
-        string_msg.data='frontal'
-        userdata.mode=string_msg  
-        pos, quat = tf_man.getTF(target_frame = 'goal_for_grasp')          
-        offset_point=[0.0,0.15, -0.03]
-        ###################
-        #####################APPLY OFFSET
-        object_point = PointStamped()
-        object_point.header.frame_id = "placing_area"    ##userdata.target_object#"base_link"
-        object_point.point.x = offset_point[0]
-        object_point.point.y = offset_point[1]
-        object_point.point.z = offset_point[2]
-        transformed_object_point = tfBuffer.transform(object_point, "map", timeout=rospy.Duration(1))
-        tf_man.pub_static_tf(pos=[transformed_object_point.point.x,transformed_object_point.point.y,transformed_object_point.point.z],rot=quat,point_name='goal_for_place')
-        ###################################################################3
-        rospy.sleep(0.5)
-        pos, quat = tf_man.getTF(target_frame = 'goal_for_place', ref_frame = 'odom')
-        print (f'transalted_point-<{pos,quat}')    
-        pose_goal=np.concatenate((pos,quat))
-        print (f'transalted_point-<{pose_goal}')    
-        target_pose = Float32MultiArray()
-        target_pose.data = pose_goal#pos
-        #tf_man.pub_static_tf(pos= translated_point, rot=tf.transformations.quaternion_multiply(quat, [0,0,1,0]), ref="odom", point_name='goal_for_grasp' )   
-        rospy.sleep(0.5)
-        userdata.target_pose = target_pose
-        print (f'transalted_point-<{target_pose.data}')    
-        ###################
-        head.set_named_target('neutral')
-        rospy.sleep(0.5)       
-        clear_octo_client()  
+       #string_msg= String()  #mode mesge new instance
+       #string_msg.data='frontal'
+       #userdata.mode=string_msg  
+       #pos, quat = tf_man.getTF(target_frame = 'goal_for_grasp')          
+       #offset_point=[0.0,0.15, -0.03]
+       ####################
+       ######################APPLY OFFSET
+       #object_point = PointStamped()
+       #object_point.header.frame_id = "placing_area"    ##userdata.target_object#"base_link"
+       #object_point.point.x = offset_point[0]
+       #object_point.point.y = offset_point[1]
+       #object_point.point.z = offset_point[2]
+       #transformed_object_point = tfBuffer.transform(object_point, "map", timeout=rospy.Duration(1))
+       #tf_man.pub_static_tf(pos=[transformed_object_point.point.x,transformed_object_point.point.y,transformed_object_point.point.z],rot=quat,point_name='goal_for_place')
+       ####################################################################3
+       #rospy.sleep(0.5)
+       #pos, quat = tf_man.getTF(target_frame = 'goal_for_place', ref_frame = 'odom')
+       #print (f'transalted_point-<{pos,quat}')    
+       #pose_goal=np.concatenate((pos,quat))
+       #print (f'transalted_point-<{pose_goal}')    
+       #target_pose = Float32MultiArray()
+       #target_pose.data = pose_goal#pos
+       ##tf_man.pub_static_tf(pos= translated_point, rot=tf.transformations.quaternion_multiply(quat, [0,0,1,0]), ref="odom", point_name='goal_for_grasp' )   
+       #rospy.sleep(0.5)
+       #userdata.target_pose = target_pose
+       #print (f'transalted_point-<{target_pose.data}')    
+       ####################
+       #head.set_named_target('neutral')
+       #rospy.sleep(0.5)       
+       #clear_octo_client()  
         self.tries+=1   
         return 'succ'
         
