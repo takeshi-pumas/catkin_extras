@@ -44,6 +44,7 @@ from cv_bridge import CvBridge, CvBridgeError
 from nav_msgs.msg import OccupancyGrid
 from hri_msgs.msg import RecognizedSpeech
 from rospy.exceptions import ROSException
+from scipy.spatial import distance
 from vision_msgs.srv import *
 #from act_recog.srv import Recognize,RecognizeResponse,RecognizeRequest
 from ros_whisper_vosk.srv import SetGrammarVosk
@@ -242,6 +243,67 @@ def seg_res_tf_pointing(res):
     return succ
 
 #------------------------------------------------------
+def check_bag_hand_camera(imagen, x=220, y=265, w=45, h=15, bins=12,umbral = 0.7):
+    print("hand_camera checking")
+    
+    # Recortar la región seleccionada
+    recorte = imagen[y:y+h, x:x+w]
+
+    # Calcular y cuantizar hist_actual
+    hist_actual = {}
+    colores = ('b', 'g', 'r')
+    bin_size = 256 // bins
+
+    for i, color in enumerate(colores):
+        hist = cv2.calcHist([recorte], [i], None, [256], [0, 256])
+        
+        # Cuantización a 12 dimensiones
+        hist_cuantizado = [
+            int(sum(hist[j:j+bin_size])) 
+            for j in range(0, 256, bin_size)
+        ]
+
+        # Asegúrate de que siempre tenga exactamente 12 elementos
+        if len(hist_cuantizado) > bins:
+            hist_cuantizado = hist_cuantizado[:bins]
+
+        hist_actual[color] = hist_cuantizado
+    print("Comparing...")
+    hist_mano_vacia = {
+        'b': [580, 50, 44, 51, 25, 0, 0, 0, 0, 0, 0, 0], 
+        'g': [569, 59, 53, 69, 0, 0, 0, 0, 0, 0, 0, 0], 
+        'r': [556, 70, 61, 63, 0, 0, 0, 0, 0, 0, 0, 0]
+
+    }
+    total_similaridad = 0
+    total_canales = 0
+
+    for color in ('b', 'g', 'r'):
+        vacio = np.array(hist_mano_vacia[color]).astype(float)
+        actual = np.array(hist_actual[color]).astype(float)
+
+        # Verifica que ambos tengan 12 elementos
+        if len(vacio) != 12 or len(actual) != 12:
+            print(f"❌ Error: Los hist_actual para '{color}' no tienen 12 elementos")
+            return "Error en los hist_actual"
+
+        # Calcular la similaridad
+        similaridad = 1 - distance.cosine(vacio, actual)
+        print(f"✅ Similaridad para {color}: {similaridad:.4f}")
+
+        total_similaridad += similaridad
+        total_canales += 1
+
+    promedio_similaridad = total_similaridad / total_canales
+    print(f"📊 Promedio de similaridad: {promedio_similaridad:.4f}")
+
+    # Decisión basada en el umbral
+    if promedio_similaridad > umbral:
+        return False  # Mano sin objeto
+    else:
+        return True  # Mano con objeto
+#------------------------------------------------------
+
 def find_placing_area (plane_height=-1):
     #head.set_joint_values([-1.5,-0.65])
     #rospy.sleep(0.5)
