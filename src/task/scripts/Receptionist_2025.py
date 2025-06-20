@@ -42,7 +42,7 @@ class Initial(smach.State):
         #names = ['my name is', 'i am','john', 'jack', 'paris', 'charlie', 'simone', 'robin', 'jane', 'jules']
         confirmation = ['yes','no', 'robot yes', 'robot no','not','now','nope','yeah']                     
         gram = drinks + names + confirmation + interest  
-        scarlett=cv2.imread('/home/angel/Downloads/scarlett.jpg')                                                                             
+        scarlett=cv2.imread('/home/takeshi/catkin_extras/src/navigation_pumas/config_files/faces_for_recognition/scarlett/scarlett.png')                                                                             
         _description=analyze_face_from_image(scarlett,"scarlett")
         if self.tries == 1:
             set_grammar(gram)  ##PRESET DRINKS
