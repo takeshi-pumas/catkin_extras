@@ -411,9 +411,7 @@ class Find_drink(smach.State):
         head.set_joint_values([0.0, -0.22])
         rospy.sleep(3)
 
-        #res,position = get_favorite_drink_location(favorite_drink)
-        res = True
-        position = "center"
+        res,position = get_favorite_drink_location(favorite_drink)
         if res:
             self.tries = 0
             voice.talk(f"I found a {favorite_drink} on the {position}, take it please.")
