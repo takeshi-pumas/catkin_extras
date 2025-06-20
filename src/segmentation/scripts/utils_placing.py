@@ -106,6 +106,59 @@ def read_tf(t):
     
     return pose, quat
 #-----------------------------------------------------------------    
+def save_auto_plane_region(inlier_points, output_name='auto_plane'):
+    import os
+    import yaml
+    import numpy as np
+
+    mean_inlier = np.mean(inlier_points, axis=0)
+    #x_vals = inlier_points[:, 0]
+    #y_vals = inlier_points[:, 1]
+    #x_min, x_max = float(x_vals.min()), float(x_vals.max())
+    #y_min, y_max = float(y_vals.min()), float(y_vals.max())
+    z = float(mean_inlier[2])
+    def clip_outliers(values, lower=5, upper=95):
+        return np.percentile(values, lower), np.percentile(values, upper)
+
+    x_vals = inlier_points[:, 0]
+    y_vals = inlier_points[:, 1]
+    x_min, x_max = map(float, clip_outliers(x_vals))
+    y_min, y_max = map(float, clip_outliers(y_vals))
+
+    quat = [0.0, 0.0, 0.707, 0.707]
+
+    auto_region = {
+        output_name: {
+            'x_min': x_min,
+            'x_max': x_max,
+            'y_min': y_min,
+            'y_max': y_max,
+            'z': z,
+            'quat_w': quat[3],
+            'quat_x': quat[0],
+            'quat_y': quat[1],
+            'quat_z': quat[2]
+        }
+    }
+
+    file_path = rospack.get_path('segmentation') + f'/config_files/{output_name}.yaml'
+    with open(file_path, 'w') as outfile:
+        yaml.dump(auto_region, outfile, default_flow_style=False)
+
+    print(f"Saved auto region YAML to {file_path}")
+    corners = {
+        f"{output_name}_corner_1": (x_min, y_min, z),
+        f"{output_name}_corner_2": (x_max, y_min, z),
+        f"{output_name}_corner_3": (x_min, y_max, z),
+        f"{output_name}_corner_4": (x_max, y_max, z),
+    }
+    for frame_id, position in corners.items():
+        tf_msg = write_tf(position, quat, child_frame=frame_id, parent_frame="map")
+        broadcaster.sendTransform(tf_msg)
+        rospy.loginfo(f"Published TF for {frame_id}")
+
+
+#-----------------------------------------------------------------    
 def read_yaml(yaml_file = '/segmentation_params.yaml'):
     
     file_path = rospack.get_path('segmentation')+'/config_files'  + yaml_file

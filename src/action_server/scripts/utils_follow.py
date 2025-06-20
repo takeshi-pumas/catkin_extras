@@ -39,6 +39,7 @@ from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 from utils.grasp_utils import *
 from utils.misc_utils import *
 from utils.nav_utils import *
+from geometry_msgs.msg import WrenchStamped
 global listener, broadcaster, tfBuffer, tf_static_broadcaster, scene, rgbd, head,train_new_face, wrist, human_detect_server, line_detector, clothes_color , head_mvit
 global clear_octo_client, goal,navclient,segmentation_server  , tf_man , omni_base, brazo, speech_recog_server, bridge, map_msg, pix_per_m, analyze_face , arm , set_grammar
 global recognize_action , classify_client,pointing_detect_server  , hand_cam , pub_goal
@@ -69,8 +70,15 @@ train_new_face = rospy.ServiceProxy('new_face', RecognizeFace)                  
 analyze_face = rospy.ServiceProxy('analyze_face', RecognizeFace)    ###DEEP FACE ONLY
 recognize_action = rospy.ServiceProxy('recognize_act', Recognize) 
 classify_client = rospy.ServiceProxy('/classify', Classify)
+global hand_pushed
+hand_pushed = False
+def hand_callback(msg):
+    global hand_pushed
+    torque = msg.wrench.torque.y
+    if np.abs(torque)>1.0:
+        hand_pushed = True
 
-
+hand_suscriber = rospy.Subscriber("/hsrb/wrist_wrench/compensated", WrenchStamped, hand_callback)
 
 enable_mic_pub = rospy.Publisher('/talk_now', Bool, queue_size=10)
 #map_msg= rospy.wait_for_message('/augmented_map', OccupancyGrid , 20)####WAIT for nav pumas map .. 
@@ -94,6 +102,15 @@ line_detector = LineDetector()
 # arm =  moveit_commander.MoveGroupCommander('arm')
 
 
+
+#------------------------------------------------------
+def set_pushed_false():
+    global hand_pushed
+    hand_pushed = False
+#------------------------------------------------------
+def is_pushed():
+    global hand_pushed
+    return hand_pushed
 #------------------------------------------------------
 def get_robot_px():
     trans, rot=tf_man.getTF('base_link')

@@ -18,6 +18,8 @@ from tf.transformations import euler_from_quaternion, quaternion_from_euler, qua
 
 from utils import grasp_utils
 global clear_octo_client
+from std_msgs.msg import Float64MultiArray
+
 
 clear_octo_client = rospy.ServiceProxy('/clear_octomap', Empty)
 #from utils.grasp_utils import *
@@ -35,6 +37,7 @@ class PlacingStateMachine:
         self.listener = tf2_ros.TransformListener(self.tf2_buffer)
         
 
+        self.joint_pub = rospy.Publisher('/grasp_server/last_arm_joint_values', Float64MultiArray, queue_size=10)
         # Inicializar MoveIt
         moveit_commander.roscpp_initialize(sys.argv)
         self.robot = moveit_commander.RobotCommander()
@@ -70,8 +73,8 @@ class PlacingStateMachine:
                                    transitions={'success':'GRASP', 'failed':'APPROACH', 'cancel':'failure' })
             smach.StateMachine.add('GRASP', smach.CBState(self.grasp, outcomes=['success', 'failed']),
                                    transitions={'success':'RETREAT', 'failed': 'GRASP'})
-            smach.StateMachine.add('RETREAT', smach.CBState(self.retreat, outcomes=['success', 'failed']),
-                                   transitions={'success':'NEUTRAL_POSE', 'failed': 'RETREAT'})
+            smach.StateMachine.add('RETREAT', smach.CBState(self.retreat, outcomes=['success', 'failed','hold']),
+                                   transitions={'success':'NEUTRAL_POSE', 'failed': 'RETREAT', 'hold':'succeeded'})
             smach.StateMachine.add('NEUTRAL_POSE', smach.CBState(self.neutral_pose, outcomes=['success', 'failed']),
                         transitions={'success':'succeeded', 'failed': 'NEUTRAL_POSE'})
 
@@ -155,8 +158,14 @@ class PlacingStateMachine:
         joint_values[0] -= 0.09
         self.brazo.set_joint_values(joint_values)
         rospy.sleep(1.0)
+        ######################################
+        joint_vals=self.whole_body.get_current_joint_values()
+        msg = Float64MultiArray()
+        msg.data = joint_vals
+        self.joint_pub.publish(msg)
+        ###########################################
 
-        
+
         if self.grasp_approach == "frontal" or self.grasp_approach == "pour":
             self.base.tiny_move(velX=0.07, std_time=0.5, MAX_VEL=0.7)
             rospy.sleep(0.5)
@@ -187,7 +196,7 @@ class PlacingStateMachine:
         self.brazo.set_joint_values(joint_values)
         self.base.tiny_move(velX=-0.07, std_time=2.5, MAX_VEL=0.7)
         clear_octo_client()
-
+        if self.grasp_approach=='pour':return 'hold'
         #self.whole_body.set_joint_value_target(self.safe_pose)
         #self.whole_body.go()
         #self.scene.remove_world_object('bound_left')
@@ -235,11 +244,11 @@ class PlacingStateMachine:
         position_constraint = PositionConstraint()
         position_constraint.header.frame_id = "base_link"
         position_constraint.link_name = "base_link"
-        position_constraint.target_point_offset.x = 1.4
+        position_constraint.target_point_offset.x = 0.0
         position_constraint.target_point_offset.y = 0.0
         position_constraint.target_point_offset.z = 0.0
-        position_constraint.constraint_region.primitives.append(SolidPrimitive(type=SolidPrimitive.BOX, dimensions=[3.0, 0.75, 2.0]))
-        position_constraint.constraint_region.primitive_poses.append(Pose(position=Point(x=0.0, y=0.0, z=0.0), orientation=Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)))
+        position_constraint.constraint_region.primitives.append(SolidPrimitive(type=SolidPrimitive.BOX, dimensions=[1.6, 0.75, 2.0]))
+        position_constraint.constraint_region.primitive_poses.append(Pose(position=Point(x=0.6, y=0.0, z=0.0), orientation=Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)))
         position_constraint.weight = 1.0
         # Add the position constraint to the spatial constraint
         constraint.position_constraints.append(position_constraint)

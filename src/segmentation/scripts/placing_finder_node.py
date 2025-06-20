@@ -62,6 +62,7 @@ def trigger_response(request):
                 ransac_mask= np.zeros(corrected['z'].shape)#mask
                 inlier_points = np.asarray(pcd.points)[inliers]
                 mean_inlier = np.mean(inlier_points, axis=0)  # Mean across the points (axis=0 means mean of each coordinate)
+                save_auto_plane_region(inlier_points)
                 print("Mean of inliers:", mean_inlier)
                 
                 

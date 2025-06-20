@@ -1363,13 +1363,13 @@
     <state world_name='default'>
       <sim_time>0 0</sim_time>
       <real_time>0 0</real_time>
-      <wall_time>1749853851 989526801</wall_time>
+      <wall_time>1750256590 380177875</wall_time>
       <iterations>0</iterations>
       <model name='Desk_01'>
-        <pose>4.60448 -0.497618 0 0 -0 1.57832</pose>
+        <pose>4.67554 -0.449189 0 0 -0 1.57832</pose>
         <scale>1 1 1</scale>
         <link name='link_0'>
-          <pose>4.60448 -0.497618 0 0 -0 1.57832</pose>
+          <pose>4.67554 -0.449189 0 0 -0 1.57832</pose>
           <velocity>0 0 0 0 -0 0</velocity>
           <acceleration>0 0 0 0 -0 0</acceleration>
           <wrench>0 0 0 0 -0 0</wrench>
@@ -1406,13 +1406,13 @@
         </link>
       </model>
       <model name='Dumpster'>
-        <pose>-6.51561 15.1278 0.001376 0 -1e-06 0.00264</pose>
+        <pose>-6.51577 15.1284 0.001376 0 -1e-06 0.002927</pose>
         <scale>1 1 1</scale>
         <link name='link'>
-          <pose>-6.51561 15.1278 0.001376 0 -1e-06 0.00264</pose>
-          <velocity>0 0 0 0 -0 0</velocity>
-          <acceleration>0.001276 -0.0096 0.002306 -0.27399 0.055363 -0.003042</acceleration>
-          <wrench>0.001276 -0.0096 0.002306 0 -0 0</wrench>
+          <pose>-6.51577 15.1284 0.001376 0 -1e-06 0.002927</pose>
+          <velocity>0 0 1.3e-05 -1e-06 7e-06 -0</velocity>
+          <acceleration>0 0 -0 0 -0 0</acceleration>
+          <wrench>0 0 -0 0 -0 0</wrench>
         </link>
       </model>
       <model name='Lab_Mesh'>
@@ -1436,10 +1436,10 @@
         </link>
       </model>
       <model name='Shelf_02'>
-        <pose>3.52676 -1.55433 0 0 0 -0.028397</pose>
+        <pose>3.32909 -1.27451 0 0 0 -0.028397</pose>
         <scale>1 1 1</scale>
         <link name='link_0'>
-          <pose>3.52676 -1.55433 0 0 -0 -0.028397</pose>
+          <pose>3.32909 -1.27451 0 0 0 -0.028397</pose>
           <velocity>0 0 0 0 -0 0</velocity>
           <acceleration>0 0 0 0 -0 0</acceleration>
           <wrench>0 0 0 0 -0 0</wrench>
@@ -1510,7 +1510,7 @@
         <scale>1 1 1</scale>
         <link name='link_0'>
           <pose>0.40181 2.21925 -0.000909 0.001337 -1e-06 3.11468</pose>
-          <velocity>0 0 0 0 -0 0</velocity>
+          <velocity>-1e-06 -1.9e-05 -0.038763 -0.025526 0.000724 0</velocity>
           <acceleration>-0 0 -0 0 -0 0</acceleration>
           <wrench>-0 0 -0 0 -0 0</wrench>
         </link>
@@ -1526,13 +1526,13 @@
         </link>
       </model>
       <model name='cardboard_box'>
-        <pose>-5.62597 14.2116 0.149743 0.00377 3e-06 0.002638</pose>
+        <pose>-5.626 14.212 0.148995 0 -0 0.002925</pose>
         <scale>1 1 1</scale>
         <link name='link'>
-          <pose>-5.62597 14.2116 0.149743 0.00377 3e-06 0.002638</pose>
-          <velocity>0 0 0 0 -0 0</velocity>
-          <acceleration>0.004403 0.270926 0.515942 -1.79698 0.019112 -0.004871</acceleration>
-          <wrench>0.008806 0.541852 1.03188 0 -0 0</wrench>
+          <pose>-5.626 14.212 0.148995 0 -0 0.002925</pose>
+          <velocity>-0 -0 3.5e-05 0 -0 0</velocity>
+          <acceleration>-0 -0 0 0 -0 0</acceleration>
+          <wrench>-0 -0 0 0 -0 0</wrench>
         </link>
       </model>
       <model name='figurine_1'>
@@ -1645,24 +1645,34 @@
           <wrench>0 0 0 0 -0 0</wrench>
         </link>
       </model>
-      <model name='person_standing'>
-        <pose>-6.42541 -15.2385 -0.003869 -0 -0 -0</pose>
+      <model name='grey_wall_clone_clone'>
+        <pose>5.45988 -0.114623 0 0 0 -1.56968</pose>
         <scale>1 1 1</scale>
         <link name='link'>
-          <pose>-6.42541 -15.2385 -0.003869 -0 -0 -0</pose>
-          <velocity>-0 0 -0.183653 0 -0 0</velocity>
-          <acceleration>0 -0 0 0 -0 0</acceleration>
-          <wrench>0 -0 0 0 -0 0</wrench>
+          <pose>5.45988 -0.114623 1.4 0 0 -1.56968</pose>
+          <velocity>0 0 0 0 -0 0</velocity>
+          <acceleration>0 0 0 0 -0 0</acceleration>
+          <wrench>0 0 0 0 -0 0</wrench>
+        </link>
+      </model>
+      <model name='person_standing'>
+        <pose>-6.42541 -15.2385 -0.003869 0 -0 0</pose>
+        <scale>1 1 1</scale>
+        <link name='link'>
+          <pose>-6.42541 -15.2385 -0.003869 0 -0 0</pose>
+          <velocity>-0 -0 -0.183653 0 -0 0</velocity>
+          <acceleration>-0 0 0 0 -0 0</acceleration>
+          <wrench>-0 0 0 0 -0 0</wrench>
         </link>
       </model>
       <model name='person_walking'>
-        <pose>-6.99367 -15.1841 -0.00427 3.5e-05 -0.024394 2e-06</pose>
+        <pose>-6.99771 -15.1841 -0.004268 -4.3e-05 -0.024396 7.3e-05</pose>
         <scale>1 1 1</scale>
         <link name='link'>
-          <pose>-6.99367 -15.1841 -0.00427 3.5e-05 -0.024394 2e-06</pose>
-          <velocity>-7.3e-05 1.1e-05 -0.198557 0.003018 -0.027626 0.000121</velocity>
-          <acceleration>0.231052 0.748326 -1.80886 -0.784379 0.289381 0.194811</acceleration>
-          <wrench>18.4842 59.8661 -144.709 0 -0 0</wrench>
+          <pose>-6.99771 -15.1841 -0.004268 -4.3e-05 -0.024396 7.3e-05</pose>
+          <velocity>-6.5e-05 -1.8e-05 -0.20823 0.001722 -0.02604 -8.9e-05</velocity>
+          <acceleration>0.254796 -0.761893 -1.46773 0.80309 0.266919 -0.09399</acceleration>
+          <wrench>20.3837 -60.9514 -117.419 0 -0 0</wrench>
         </link>
       </model>
       <model name='picture_frame_large_1'>
@@ -1745,6 +1755,16 @@
           <wrench>0 0 0 0 -0 0</wrench>
         </link>
       </model>
+      <model name='unit_box'>
+        <pose>5.88899 2.60331 0.21834 0 -0 0.005946</pose>
+        <scale>0.663462 0.157585 0.436684</scale>
+        <link name='link'>
+          <pose>5.88899 2.60331 0.21834 0 -0 0.005946</pose>
+          <velocity>0 0 2e-05 0 -0 0</velocity>
+          <acceleration>-0 0 0 0 -0 0</acceleration>
+          <wrench>-0 0 0 0 -0 0</wrench>
+        </link>
+      </model>
       <model name='vase_large_3'>
         <pose>-5.33523 4.3512 0 0 -0 0</pose>
         <scale>1 1 1</scale>
@@ -1766,23 +1786,113 @@
         </link>
       </model>
       <model name='ycb_010_potted_meat_can'>
-        <pose>4.37542 -0.32665 0.758275 0.03076 -0.005497 -0.005667</pose>
+        <pose>4.52409 -0.327387 0.820843 -0.00438 0.178239 -3.11187</pose>
         <scale>1 1 1</scale>
         <link name='body'>
-          <pose>4.37542 -0.32665 0.758275 0.03076 -0.005497 -0.005667</pose>
-          <velocity>0 0 0 0 -0 0</velocity>
-          <acceleration>0 0 -9.8 -1.7e-05 -6e-06 0.000177</acceleration>
-          <wrench>0 0 -4.68516 0 -0 0</wrench>
+          <pose>4.52409 -0.327387 0.820843 -0.00438 0.178239 -3.11187</pose>
+          <velocity>4e-06 -1e-06 1.1e-05 -6.1e-05 -0.000247 0</velocity>
+          <acceleration>-0 -0 0 0 -0 0</acceleration>
+          <wrench>-0 -0 0 0 -0 0</wrench>
         </link>
       </model>
-      <model name='ycb_024_bowl'>
-        <pose>4.36135 -0.558836 0.75549 -0.000731 -0.00285 -0.001918</pose>
+      <model name='ycb_013_apple'>
+        <pose>3.45316 -1.2303 1.00808 0.026444 -0.03259 -2.72676</pose>
         <scale>1 1 1</scale>
         <link name='body'>
-          <pose>4.36135 -0.558836 0.75549 -0.000731 -0.00285 -0.001918</pose>
+          <pose>3.45316 -1.2303 1.00808 0.026444 -0.03259 -2.72676</pose>
+          <velocity>3.2e-05 6.5e-05 0.004447 0.038617 0.104135 0.004445</velocity>
+          <acceleration>3.53357 -2.60156 11.4224 2.20677 -0.393925 2.70368</acceleration>
+          <wrench>1.17634 -0.866069 3.80256 0 -0 0</wrench>
+        </link>
+      </model>
+      <model name='ycb_013_apple_clone_clone'>
+        <pose>4.47369 0.651224 0.755078 0.026591 -0.032622 1.09853</pose>
+        <scale>1 1 1</scale>
+        <link name='body'>
+          <pose>4.47369 0.651224 0.755078 0.026591 -0.032622 1.09853</pose>
+          <velocity>4e-06 3e-06 -0.000708 9.7e-05 0.077517 0.000349</velocity>
+          <acceleration>2.04787 0.730775 -1.71892 -0.372395 0.332079 -0.075347</acceleration>
+          <wrench>0.681744 0.243278 -0.572235 0 -0 0</wrench>
+        </link>
+      </model>
+      <model name='ycb_013_apple_clone_clone_clone_0'>
+        <pose>4.35752 -0.484637 0.75507 0.026469 -0.032575 1.09853</pose>
+        <scale>1 1 1</scale>
+        <link name='body'>
+          <pose>4.35752 -0.484637 0.75507 0.026469 -0.032575 1.09853</pose>
           <velocity>0 0 0 0 -0 0</velocity>
-          <acceleration>0 0 -9.8 -1e-05 -1.5e-05 -1.7e-05</acceleration>
+          <acceleration>0 0 0 0 -0 0</acceleration>
+          <wrench>0 0 0 0 -0 0</wrench>
+        </link>
+      </model>
+      <model name='ycb_017_orange'>
+        <pose>3.22976 -1.31726 1.00812 0.004546 0.013836 0.291621</pose>
+        <scale>1 1 1</scale>
+        <link name='body'>
+          <pose>3.22976 -1.31726 1.00812 0.004546 0.013836 0.291621</pose>
+          <velocity>-0.000205 3.1e-05 -0.000947 -0.033517 0.010288 0.006456</velocity>
+          <acceleration>0.538925 2.29932 -0.555135 -1.335 0.935073 2.61074</acceleration>
+          <wrench>0.147491 0.629269 -0.151927 0 -0 0</wrench>
+        </link>
+      </model>
+      <model name='ycb_024_bowl_clone'>
+        <pose>4.58792 -0.525642 0.75549 -0.000761 -0.002836 -0.443176</pose>
+        <scale>1 1 1</scale>
+        <link name='body'>
+          <pose>4.58792 -0.525642 0.75549 -0.000761 -0.002836 -0.443176</pose>
+          <velocity>-5e-06 -1e-06 -0.000667 0.001674 -0.010813 0</velocity>
+          <acceleration>0 0 -9.8 -3e-06 -1e-06 -1e-06</acceleration>
           <wrench>0 0 -0.441329 0 -0 0</wrench>
+        </link>
+      </model>
+      <model name='ycb_055_baseball_clone'>
+        <pose>4.75521 0.707518 0.754795 -0.005847 0.011022 0.583841</pose>
+        <scale>1 1 1</scale>
+        <link name='body'>
+          <pose>4.75521 0.707518 0.754795 -0.005847 0.011022 0.583841</pose>
+          <velocity>-0.000117 -4.6e-05 -0.009932 -0.005097 -0.001443 0.002546</velocity>
+          <acceleration>0 0 -9.8 0 -0 0</acceleration>
+          <wrench>0 0 -2.68235 0 -0 0</wrench>
+        </link>
+      </model>
+      <model name='ycb_055_baseball_clone_0'>
+        <pose>3.14072 -1.19752 0.56316 1.52174 0.877136 0.663296</pose>
+        <scale>1 1 1</scale>
+        <link name='body'>
+          <pose>3.14072 -1.19752 0.56316 1.52174 0.877136 0.663296</pose>
+          <velocity>7.3e-05 0.000117 0.002999 -0.002395 -0.00087 -0.002256</velocity>
+          <acceleration>0.252245 -0.340126 3.14582 3.07652 0.808482 -0.242885</acceleration>
+          <wrench>0.069042 -0.093096 0.861041 0 -0 0</wrench>
+        </link>
+      </model>
+      <model name='ycb_055_baseball_clone_clone'>
+        <pose>3.51091 -1.34822 0.501885 -0.044615 0.232947 -1.13099</pose>
+        <scale>1 1 1</scale>
+        <link name='body'>
+          <pose>3.51091 -1.34822 0.501885 -0.044615 0.232947 -1.13099</pose>
+          <velocity>-0.000119 8.9e-05 -0.000965 -0.002628 0.023506 0.002266</velocity>
+          <acceleration>0.183926 -0.178324 0.19233 -1.36599 -1.20054 0.279313</acceleration>
+          <wrench>0.050342 -0.048809 0.052643 0 -0 0</wrench>
+        </link>
+      </model>
+      <model name='ycb_055_baseball_clone_clone_1'>
+        <pose>4.41363 -0.335896 0.754795 -0.00585 0.011018 0.583828</pose>
+        <scale>1 1 1</scale>
+        <link name='body'>
+          <pose>4.41363 -0.335896 0.754795 -0.00585 0.011018 0.583828</pose>
+          <velocity>0 0 0 0 -0 0</velocity>
+          <acceleration>0 0 0 0 -0 0</acceleration>
+          <wrench>0 0 0 0 -0 0</wrench>
+        </link>
+      </model>
+      <model name='ycb_056_tennis_ball'>
+        <pose>3.33403 -1.18975 0.504339 -0.014357 -0.013326 0.207627</pose>
+        <scale>1 1 1</scale>
+        <link name='body'>
+          <pose>3.33403 -1.18975 0.504339 -0.014357 -0.013326 0.207627</pose>
+          <velocity>1.5e-05 8e-06 -0.000214 0.003655 -0.001804 -0.000333</velocity>
+          <acceleration>0 0 -9.8 -0 -0 -0</acceleration>
+          <wrench>0 0 -2.06346 0 -0 0</wrench>
         </link>
       </model>
       <light name='inner_point_white1'>
@@ -2002,7 +2112,7 @@
     </model>
     <gui fullscreen='0'>
       <camera name='user_camera'>
-        <pose>-0.167581 -1.17423 4.63835 0 0.960632 0.15856</pose>
+        <pose>-3.39373 4.75747 20.6248 -0 1.2058 -1.52787</pose>
         <view_controller>orbit</view_controller>
         <projection_type>perspective</projection_type>
       </camera>
@@ -3798,7 +3908,403 @@
       </link>
       <pose>4.46808 -0.516785 0 0 -0 0</pose>
     </model>
-    <model name='ycb_024_bowl'>
+    <model name='ycb_013_apple'>
+      <link name='body'>
+        <inertial>
+          <mass>0.332904</mass>
+          <pose>0.001311 -0.003861 0.036337 0 -0 0</pose>
+          <inertia>
+            <ixx>0.000203481</ixx>
+            <ixy>3.3313e-07</ixy>
+            <ixz>5.6696e-07</ixz>
+            <iyy>0.000206798</iyy>
+            <iyz>-7.01394e-07</iyz>
+            <izz>0.00020589</izz>
+          </inertia>
+        </inertial>
+        <visual name='ycb_013_apple_visual'>
+          <pose>0 0 0 0 -0 0</pose>
+          <geometry>
+            <mesh>
+              <uri>model://ycb_013_apple/meshes/textured.dae</uri>
+            </mesh>
+          </geometry>
+        </visual>
+        <collision name='ycb_013_apple_collision'>
+          <pose>0 0 0 0 -0 0</pose>
+          <geometry>
+            <mesh>
+              <uri>model://ycb_013_apple/meshes/nontextured.stl</uri>
+            </mesh>
+          </geometry>
+          <max_contacts>10</max_contacts>
+          <surface>
+            <contact>
+              <ode/>
+            </contact>
+            <bounce/>
+            <friction>
+              <torsional>
+                <ode/>
+              </torsional>
+              <ode/>
+            </friction>
+          </surface>
+        </collision>
+        <self_collide>0</self_collide>
+        <enable_wind>0</enable_wind>
+        <kinematic>0</kinematic>
+      </link>
+      <pose>4.39898 -0.621621 0 0 -0 0</pose>
+    </model>
+    <model name='ycb_056_tennis_ball'>
+      <link name='body'>
+        <inertial>
+          <mass>0.210557</mass>
+          <pose>0.008233 -0.044192 0.032887 0 -0 0</pose>
+          <inertia>
+            <ixx>9.38738e-05</ixx>
+            <ixy>6.89005e-10</ixy>
+            <ixz>-2.04254e-07</ixz>
+            <iyy>9.38297e-05</iyy>
+            <iyz>-9.49225e-08</iyz>
+            <izz>9.40926e-05</izz>
+          </inertia>
+        </inertial>
+        <visual name='ycb_056_tennis_ball_visual'>
+          <pose>0 0 0 0 -0 0</pose>
+          <geometry>
+            <mesh>
+              <uri>model://ycb_056_tennis_ball/meshes/textured.dae</uri>
+            </mesh>
+          </geometry>
+        </visual>
+        <collision name='ycb_056_tennis_ball_collision'>
+          <pose>0 0 0 0 -0 0</pose>
+          <geometry>
+            <mesh>
+              <uri>model://ycb_056_tennis_ball/meshes/nontextured.stl</uri>
+            </mesh>
+          </geometry>
+          <max_contacts>10</max_contacts>
+          <surface>
+            <contact>
+              <ode/>
+            </contact>
+            <bounce/>
+            <friction>
+              <torsional>
+                <ode/>
+              </torsional>
+              <ode/>
+            </friction>
+          </surface>
+        </collision>
+        <self_collide>0</self_collide>
+        <enable_wind>0</enable_wind>
+        <kinematic>0</kinematic>
+      </link>
+      <pose>3.9431 -1.44879 0 0 -0 0</pose>
+    </model>
+    <model name='ycb_055_baseball_clone'>
+      <link name='body'>
+        <inertial>
+          <mass>0.273709</mass>
+          <pose>-0.009948 -0.048116 0.035927 0 -0 0</pose>
+          <inertia>
+            <ixx>0.000145341</ixx>
+            <ixy>-8.12589e-08</ixy>
+            <ixz>-2.39003e-08</ixz>
+            <iyy>0.000145708</iyy>
+            <iyz>-6.1434e-07</iyz>
+            <izz>0.00014531</izz>
+          </inertia>
+        </inertial>
+        <visual name='ycb_055_baseball_visual'>
+          <pose>0 0 0 0 -0 0</pose>
+          <geometry>
+            <mesh>
+              <uri>model://ycb_055_baseball/meshes/textured.dae</uri>
+            </mesh>
+          </geometry>
+        </visual>
+        <collision name='ycb_055_baseball_collision'>
+          <pose>0 0 0 0 -0 0</pose>
+          <geometry>
+            <mesh>
+              <uri>model://ycb_055_baseball/meshes/nontextured.stl</uri>
+            </mesh>
+          </geometry>
+          <max_contacts>10</max_contacts>
+          <surface>
+            <contact>
+              <ode/>
+            </contact>
+            <bounce/>
+            <friction>
+              <torsional>
+                <ode/>
+              </torsional>
+              <ode/>
+            </friction>
+          </surface>
+        </collision>
+        <self_collide>0</self_collide>
+        <enable_wind>0</enable_wind>
+        <kinematic>0</kinematic>
+      </link>
+      <pose>4.77905 0.714148 0.754805 -0.005839 0.011032 0.037356</pose>
+    </model>
+    <model name='ycb_055_baseball_clone_0'>
+      <link name='body'>
+        <inertial>
+          <mass>0.273709</mass>
+          <pose>-0.009948 -0.048116 0.035927 0 -0 0</pose>
+          <inertia>
+            <ixx>0.000145341</ixx>
+            <ixy>-8.12589e-08</ixy>
+            <ixz>-2.39003e-08</ixz>
+            <iyy>0.000145708</iyy>
+            <iyz>-6.1434e-07</iyz>
+            <izz>0.00014531</izz>
+          </inertia>
+        </inertial>
+        <visual name='ycb_055_baseball_visual'>
+          <pose>0 0 0 0 -0 0</pose>
+          <geometry>
+            <mesh>
+              <uri>model://ycb_055_baseball/meshes/textured.dae</uri>
+            </mesh>
+          </geometry>
+        </visual>
+        <collision name='ycb_055_baseball_collision'>
+          <pose>0 0 0 0 -0 0</pose>
+          <geometry>
+            <mesh>
+              <uri>model://ycb_055_baseball/meshes/nontextured.stl</uri>
+            </mesh>
+          </geometry>
+          <max_contacts>10</max_contacts>
+          <surface>
+            <contact>
+              <ode/>
+            </contact>
+            <bounce/>
+            <friction>
+              <torsional>
+                <ode/>
+              </torsional>
+              <ode/>
+            </friction>
+          </surface>
+        </collision>
+        <self_collide>0</self_collide>
+        <enable_wind>0</enable_wind>
+        <kinematic>0</kinematic>
+      </link>
+      <pose>4.39285 -0.303879 0.754805 -0.005839 0.011032 0.037356</pose>
+    </model>
+    <model name='ycb_013_apple_clone_clone'>
+      <link name='body'>
+        <inertial>
+          <mass>0.332904</mass>
+          <pose>0.001311 -0.003861 0.036337 0 -0 0</pose>
+          <inertia>
+            <ixx>0.000203481</ixx>
+            <ixy>3.3313e-07</ixy>
+            <ixz>5.6696e-07</ixz>
+            <iyy>0.000206798</iyy>
+            <iyz>-7.01394e-07</iyz>
+            <izz>0.00020589</izz>
+          </inertia>
+        </inertial>
+        <visual name='ycb_013_apple_visual'>
+          <pose>0 0 0 0 -0 0</pose>
+          <geometry>
+            <mesh>
+              <uri>model://ycb_013_apple/meshes/textured.dae</uri>
+            </mesh>
+          </geometry>
+        </visual>
+        <collision name='ycb_013_apple_collision'>
+          <pose>0 0 0 0 -0 0</pose>
+          <geometry>
+            <mesh>
+              <uri>model://ycb_013_apple/meshes/nontextured.stl</uri>
+            </mesh>
+          </geometry>
+          <max_contacts>10</max_contacts>
+          <surface>
+            <contact>
+              <ode/>
+            </contact>
+            <bounce/>
+            <friction>
+              <torsional>
+                <ode/>
+              </torsional>
+              <ode/>
+            </friction>
+          </surface>
+        </collision>
+        <self_collide>0</self_collide>
+        <enable_wind>0</enable_wind>
+        <kinematic>0</kinematic>
+      </link>
+      <pose>4.47916 0.658084 0.755078 0.026458 -0.032621 -0.04734</pose>
+    </model>
+    <model name='ycb_017_orange'>
+      <link name='body'>
+        <inertial>
+          <mass>0.273676</mass>
+          <pose>-0.007142 -0.018368 0.033634 0 -0 0</pose>
+          <inertia>
+            <ixx>0.000147548</ixx>
+            <ixy>-5.08682e-07</ixy>
+            <ixz>1.0469e-06</ixz>
+            <iyy>0.000144018</iyy>
+            <iyz>-4.35032e-07</iyz>
+            <izz>0.000145352</izz>
+          </inertia>
+        </inertial>
+        <visual name='ycb_017_orange_visual'>
+          <pose>0 0 0 0 -0 0</pose>
+          <geometry>
+            <mesh>
+              <uri>model://ycb_017_orange/meshes/textured.dae</uri>
+            </mesh>
+          </geometry>
+        </visual>
+        <collision name='ycb_017_orange_collision'>
+          <pose>0 0 0 0 -0 0</pose>
+          <geometry>
+            <mesh>
+              <uri>model://ycb_017_orange/meshes/nontextured.stl</uri>
+            </mesh>
+          </geometry>
+          <max_contacts>10</max_contacts>
+          <surface>
+            <contact>
+              <ode/>
+            </contact>
+            <bounce/>
+            <friction>
+              <torsional>
+                <ode/>
+              </torsional>
+              <ode/>
+            </friction>
+          </surface>
+        </collision>
+        <self_collide>0</self_collide>
+        <enable_wind>0</enable_wind>
+        <kinematic>0</kinematic>
+      </link>
+      <pose>3.17007 -1.07394 0 0 -0 0</pose>
+    </model>
+    <model name='ycb_055_baseball_clone_clone'>
+      <link name='body'>
+        <inertial>
+          <mass>0.273709</mass>
+          <pose>-0.009948 -0.048116 0.035927 0 -0 0</pose>
+          <inertia>
+            <ixx>0.000145341</ixx>
+            <ixy>-8.12589e-08</ixy>
+            <ixz>-2.39003e-08</ixz>
+            <iyy>0.000145708</iyy>
+            <iyz>-6.1434e-07</iyz>
+            <izz>0.00014531</izz>
+          </inertia>
+        </inertial>
+        <visual name='ycb_055_baseball_visual'>
+          <pose>0 0 0 0 -0 0</pose>
+          <geometry>
+            <mesh>
+              <uri>model://ycb_055_baseball/meshes/textured.dae</uri>
+            </mesh>
+          </geometry>
+        </visual>
+        <collision name='ycb_055_baseball_collision'>
+          <pose>0 0 0 0 -0 0</pose>
+          <geometry>
+            <mesh>
+              <uri>model://ycb_055_baseball/meshes/nontextured.stl</uri>
+            </mesh>
+          </geometry>
+          <max_contacts>10</max_contacts>
+          <surface>
+            <contact>
+              <ode/>
+            </contact>
+            <bounce/>
+            <friction>
+              <torsional>
+                <ode/>
+              </torsional>
+              <ode/>
+            </friction>
+          </surface>
+        </collision>
+        <self_collide>0</self_collide>
+        <enable_wind>0</enable_wind>
+        <kinematic>0</kinematic>
+      </link>
+      <pose>4.5492 -0.086216 0.754796 -0.005839 0.011035 0.236784</pose>
+    </model>
+    <model name='unit_box'>
+      <pose>6.27395 -1.2487 0.5 0 -0 0</pose>
+      <link name='link'>
+        <inertial>
+          <mass>1</mass>
+          <inertia>
+            <ixx>0.166667</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>0.166667</iyy>
+            <iyz>0</iyz>
+            <izz>0.166667</izz>
+          </inertia>
+          <pose>0 0 0 0 -0 0</pose>
+        </inertial>
+        <collision name='collision'>
+          <geometry>
+            <box>
+              <size>1 1 1</size>
+            </box>
+          </geometry>
+          <max_contacts>10</max_contacts>
+          <surface>
+            <contact>
+              <ode/>
+            </contact>
+            <bounce/>
+            <friction>
+              <torsional>
+                <ode/>
+              </torsional>
+              <ode/>
+            </friction>
+          </surface>
+        </collision>
+        <visual name='visual'>
+          <geometry>
+            <box>
+              <size>1 1 1</size>
+            </box>
+          </geometry>
+          <material>
+            <script>
+              <name>Gazebo/Grey</name>
+              <uri>file://media/materials/scripts/gazebo.material</uri>
+            </script>
+          </material>
+        </visual>
+        <self_collide>0</self_collide>
+        <enable_wind>0</enable_wind>
+        <kinematic>0</kinematic>
+      </link>
+    </model>
+    <model name='ycb_024_bowl_clone'>
       <link name='body'>
         <inertial>
           <mass>0.0450336</mass>
@@ -3845,7 +4351,150 @@
         <enable_wind>0</enable_wind>
         <kinematic>0</kinematic>
       </link>
-      <pose>4.45459 -0.681785 0 0 -0 0</pose>
+      <pose>4.95183 -0.929671 0.756125 2.39844 -1.20958 2.37998</pose>
+    </model>
+    <model name='grey_wall_clone_clone'>
+      <static>1</static>
+      <link name='link'>
+        <pose>0 0 1.4 0 -0 0</pose>
+        <collision name='collision'>
+          <geometry>
+            <box>
+              <size>7.5 0.2 2.8</size>
+            </box>
+          </geometry>
+          <max_contacts>10</max_contacts>
+          <surface>
+            <contact>
+              <ode/>
+            </contact>
+            <bounce/>
+            <friction>
+              <torsional>
+                <ode/>
+              </torsional>
+              <ode/>
+            </friction>
+          </surface>
+        </collision>
+        <visual name='visual'>
+          <cast_shadows>0</cast_shadows>
+          <geometry>
+            <box>
+              <size>7.5 0.2 2.8</size>
+            </box>
+          </geometry>
+          <material>
+            <script>
+              <uri>model://grey_wall/materials/scripts</uri>
+              <uri>model://grey_wall/materials/textures</uri>
+              <name>vrc/grey_wall</name>
+            </script>
+          </material>
+        </visual>
+        <self_collide>0</self_collide>
+        <enable_wind>0</enable_wind>
+        <kinematic>0</kinematic>
+      </link>
+      <pose>5.45988 -0.114623 0 0 0 -1.55264</pose>
+    </model>
+    <model name='ycb_055_baseball_clone_clone_1'>
+      <link name='body'>
+        <inertial>
+          <mass>0.273709</mass>
+          <pose>-0.009948 -0.048116 0.035927 0 -0 0</pose>
+          <inertia>
+            <ixx>0.000145341</ixx>
+            <ixy>-8.12589e-08</ixy>
+            <ixz>-2.39003e-08</ixz>
+            <iyy>0.000145708</iyy>
+            <iyz>-6.1434e-07</iyz>
+            <izz>0.00014531</izz>
+          </inertia>
+        </inertial>
+        <visual name='ycb_055_baseball_visual'>
+          <pose>0 0 0 0 -0 0</pose>
+          <geometry>
+            <mesh>
+              <uri>model://ycb_055_baseball/meshes/textured.dae</uri>
+            </mesh>
+          </geometry>
+        </visual>
+        <collision name='ycb_055_baseball_collision'>
+          <pose>0 0 0 0 -0 0</pose>
+          <geometry>
+            <mesh>
+              <uri>model://ycb_055_baseball/meshes/nontextured.stl</uri>
+            </mesh>
+          </geometry>
+          <max_contacts>10</max_contacts>
+          <surface>
+            <contact>
+              <ode/>
+            </contact>
+            <bounce/>
+            <friction>
+              <torsional>
+                <ode/>
+              </torsional>
+              <ode/>
+            </friction>
+          </surface>
+        </collision>
+        <self_collide>0</self_collide>
+        <enable_wind>0</enable_wind>
+        <kinematic>0</kinematic>
+      </link>
+      <pose>4.34996 -0.357952 0.754795 -0.00585 0.011018 0.583828</pose>
+    </model>
+    <model name='ycb_013_apple_clone_clone_clone_0'>
+      <link name='body'>
+        <inertial>
+          <mass>0.332904</mass>
+          <pose>0.001311 -0.003861 0.036337 0 -0 0</pose>
+          <inertia>
+            <ixx>0.000203481</ixx>
+            <ixy>3.3313e-07</ixy>
+            <ixz>5.6696e-07</ixz>
+            <iyy>0.000206798</iyy>
+            <iyz>-7.01394e-07</iyz>
+            <izz>0.00020589</izz>
+          </inertia>
+        </inertial>
+        <visual name='ycb_013_apple_visual'>
+          <pose>0 0 0 0 -0 0</pose>
+          <geometry>
+            <mesh>
+              <uri>model://ycb_013_apple/meshes/textured.dae</uri>
+            </mesh>
+          </geometry>
+        </visual>
+        <collision name='ycb_013_apple_collision'>
+          <pose>0 0 0 0 -0 0</pose>
+          <geometry>
+            <mesh>
+              <uri>model://ycb_013_apple/meshes/nontextured.stl</uri>
+            </mesh>
+          </geometry>
+          <max_contacts>10</max_contacts>
+          <surface>
+            <contact>
+              <ode/>
+            </contact>
+            <bounce/>
+            <friction>
+              <torsional>
+                <ode/>
+              </torsional>
+              <ode/>
+            </friction>
+          </surface>
+        </collision>
+        <self_collide>0</self_collide>
+        <enable_wind>0</enable_wind>
+        <kinematic>0</kinematic>
+      </link>
+      <pose>4.37066 -0.528071 0.75507 0.026469 -0.032575 1.09853</pose>
     </model>
   </world>
 </sdf>

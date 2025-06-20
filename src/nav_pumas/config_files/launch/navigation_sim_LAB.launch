@@ -81,27 +81,7 @@
   <node name="map_server" pkg="map_server" type="map_server" output="screen" args="$(arg static_map_file)"/>
 
   
-<!--##########################################################################################################-->
 
-<param name="file_name" value="/known_locations.yaml"/>
-  <node pkg="hmm_navigation"  name="pumas_nav" type="pumas_nav.py" output="screen" />
-  <node pkg="known_locations_tf_server"  name="known_locs" type="known_locs_node.py" output="screen" />
-  <node pkg="object_classification"  name="objs_reco" type="classification_server.py"  />  
-  <node pkg="segmentation"  name="segmentation" type="segment_node.py"  />  
-  <node pkg="segmentation"  name="placing_finder" type="placing_finder_node.py"  />  
-  <node pkg="human_detector"  name="human_detector" type="pointing_detector_server.py"/>  
-  <node pkg="leg_finder"  name="leg_finder_node" type="leg_finder_node"/>  
-  <node pkg="human_follower"  name="human_follower_node" type="human_follower_node"/>  
-  <node pkg="point_cloud"  name="point_cloud_filter_node" type="passthrough_filter"/>  
-  <node pkg="action_server"  name="action_server_pick" type="ACT_SRVR_grasp.py"/>
-  <node pkg="action_server"  name="action_server_place" type="ACT_SRVR_place.py"/>   
-  <node pkg="smach_viewer"  name="smach_viewer" type="smach_viewer.py"  />  
-  
-
-  <include file="$(find hsrb_moveit_config)/launch/hsrb_demo_with_controller.launch"> 
-  <arg name="use_gui" value="true"/> 
-</include>
-<!--##########################################################################################################-->
 
 
   
