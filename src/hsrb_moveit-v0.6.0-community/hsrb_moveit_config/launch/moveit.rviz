@@ -12,6 +12,8 @@ Panels:
         - /MotionPlanning1/Planning Metrics1
         - /TF1
         - /TF1/Frames1
+        - /TF1/Frames1/top_corner_01
+        - /TF1/Frames1/top_corner_01/Position1
         - /MarkerArray3
         - /PointStamped6
       Splitter Ratio: 0.7425600290298462
@@ -320,7 +322,7 @@ Visualization Manager:
         Goal State Color: 250; 128; 0
         Interactive Marker Size: 0
         Joint Violation Color: 255; 0; 255
-        Planning Group: head
+        Planning Group: arm
         Query Goal State: false
         Query Start State: false
         Show Workspace: false
@@ -571,35 +573,7 @@ Visualization Manager:
       Filter (whitelist): ""
       Frame Timeout: 15
       Frames:
-        004_sugar_box:
-          Value: true
-        008_pudding_box:
-          Value: true
-        010_potted_meat_can:
-          Value: true
-        019-a_pitcher_base:
-          Value: true
-        020_pitcher_lid:
-          Value: true
-        021_bleach_cleanser:
-          Value: true
-        022_windex_bottle:
-          Value: true
-        024_bowl:
-          Value: true
-        033_spatula:
-          Value: true
-        052_extra_large_clamp:
-          Value: true
-        059_chain:
-          Value: true
-        063-a_marbles:
-          Value: true
-        071_nine_hole_peg_test:
-          Value: true
         All Enabled: false
-        a_marbles:
-          Value: true
         arm_flex_link:
           Value: false
         arm_lift_link:
@@ -638,19 +612,7 @@ Visualization Manager:
           Value: false
         base_roll_link:
           Value: false
-        bowl:
-          Value: true
         breakfast:
-          Value: true
-        cereal_box:
-          Value: true
-        chain:
-          Value: true
-        extra_large_clamp:
-          Value: true
-        goal_for_grasp:
-          Value: true
-        goal_for_place:
           Value: true
         hand_camera_frame:
           Value: false
@@ -694,10 +656,14 @@ Visualization Manager:
           Value: false
         head_pan_link:
           Value: false
+        head_r_stereo_camera_frame:
+          Value: true
         head_r_stereo_camera_gazebo_frame:
           Value: false
         head_r_stereo_camera_link:
           Value: false
+        head_rgbd_sensor_depth_frame:
+          Value: true
         head_rgbd_sensor_gazebo_frame:
           Value: false
         head_rgbd_sensor_link:
@@ -706,13 +672,35 @@ Visualization Manager:
           Value: false
         head_tilt_link:
           Value: false
+        low_corner_0:
+          Value: true
+        low_corner_1:
+          Value: true
+        low_corner_2:
+          Value: true
+        low_corner_3:
+          Value: true
         map:
+          Value: true
+        mid_corner_0:
+          Value: true
+        mid_corner_1:
+          Value: true
+        mid_corner_2:
+          Value: true
+        mid_corner_3:
           Value: true
         odom:
           Value: true
         pickup:
           Value: true
-        pitcher_lid:
+        pickup_corner_0:
+          Value: true
+        pickup_corner_1:
+          Value: true
+        pickup_corner_2:
+          Value: true
+        pickup_corner_3:
           Value: true
         place_shelf:
           Value: true
@@ -720,9 +708,15 @@ Visualization Manager:
           Value: true
         shelf:
           Value: true
-        spatula:
-          Value: true
         start:
+          Value: true
+        top_corner_0:
+          Value: true
+        top_corner_1:
+          Value: true
+        top_corner_2:
+          Value: true
+        top_corner_3:
           Value: true
         torso_lift_link:
           Value: false
@@ -742,19 +736,23 @@ Visualization Manager:
       Show Names: true
       Tree:
         map:
-          a_marbles:
-            {}
-          bowl:
-            {}
           breakfast:
             {}
-          cereal_box:
+          low_corner_0:
             {}
-          chain:
+          low_corner_1:
             {}
-          extra_large_clamp:
+          low_corner_2:
             {}
-          goal_for_grasp:
+          low_corner_3:
+            {}
+          mid_corner_0:
+            {}
+          mid_corner_1:
+            {}
+          mid_corner_2:
+            {}
+          mid_corner_3:
             {}
           odom:
             base_footprint:
@@ -815,48 +813,32 @@ Visualization Manager:
                           {}
                       head_l_stereo_camera_link:
                         head_l_stereo_camera_frame:
-                          head_rgbd_sensor_rgb_frame:
-                            004_sugar_box:
-                              {}
-                            008_pudding_box:
-                              {}
-                            010_potted_meat_can:
-                              {}
-                            019-a_pitcher_base:
-                              {}
-                            020_pitcher_lid:
-                              {}
-                            021_bleach_cleanser:
-                              {}
-                            022_windex_bottle:
-                              {}
-                            024_bowl:
-                              {}
-                            033_spatula:
-                              {}
-                            052_extra_large_clamp:
-                              {}
-                            059_chain:
-                              {}
-                            063-a_marbles:
-                              {}
-                            071_nine_hole_peg_test:
-                              {}
+                          {}
                         head_l_stereo_camera_gazebo_frame:
                           {}
                       head_r_stereo_camera_link:
+                        head_r_stereo_camera_frame:
+                          {}
                         head_r_stereo_camera_gazebo_frame:
                           {}
                       head_rgbd_sensor_link:
+                        head_rgbd_sensor_depth_frame:
+                          {}
                         head_rgbd_sensor_gazebo_frame:
+                          {}
+                        head_rgbd_sensor_rgb_frame:
                           {}
             base_footprint_wheel:
               {}
-            goal_for_place:
-              {}
           pickup:
             {}
-          pitcher_lid:
+          pickup_corner_0:
+            {}
+          pickup_corner_1:
+            {}
+          pickup_corner_2:
+            {}
+          pickup_corner_3:
             {}
           place_shelf:
             {}
@@ -864,9 +846,15 @@ Visualization Manager:
             {}
           shelf:
             {}
-          spatula:
-            {}
           start:
+            {}
+          top_corner_0:
+            {}
+          top_corner_1:
+            {}
+          top_corner_2:
+            {}
+          top_corner_3:
             {}
       Update Interval: 0
       Value: true
@@ -1036,7 +1024,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 3.3139355182647705
+      Distance: 3.4528210163116455
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -1044,17 +1032,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: -1.2316133975982666
-        Y: 0.6078664660453796
+        X: 0.1602613925933838
+        Y: 0.04447615146636963
         Z: -2.114375092787668e-06
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.3047959804534912
+      Pitch: 1.5697963237762451
       Target Frame: base_footprint
-      Yaw: 3.108161211013794
+      Yaw: 4.768160343170166
     Saved: ~
 Window Geometry:
   Displays:

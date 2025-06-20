@@ -409,10 +409,11 @@ class Place_post_pour(smach.State):
         self.tries=0
     def execute(self, userdata):
                
-
+        self.tries+=1   
         rospy.loginfo('STATE : PLACE POST POUR')
         print('STATE : PLACE POST POUR')
         if self.tries>=1:
+            omni_base.tiny_move( velX=-0.3,std_time=7.2) 
             arm.set_named_target('neutral')
             arm.go()
             return 'tries'
@@ -446,8 +447,7 @@ class Place_post_pour(smach.State):
        #head.set_named_target('neutral')
        #rospy.sleep(0.5)       
        #clear_octo_client()  
-        self.tries+=1   
-        return 'succ'
+       #return 'succ'
         
 
         

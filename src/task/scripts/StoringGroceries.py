@@ -65,7 +65,63 @@ class Initial(smach.State):
         z=mid[0]
         shelf_quat=[regions_df['shelves']['quat_w'],regions_df['shelves']['quat_x'],regions_df['shelves']['quat_y'],regions_df['shelves']['quat_z']]
         tf_man.pub_static_tf(pos=[x,y,z],rot=shelf_quat,point_name='placing_area') ### IF a real placing area is found this tf will be updated
-        ############################
+        ################################
+        ##########################################
+        # Publish all region corner TFs (pickup + shelves)
+        ##########################################
+        quat = [
+            regions_df['shelves']['quat_w'],
+            regions_df['shelves']['quat_x'],
+            regions_df['shelves']['quat_y'],
+            regions_df['shelves']['quat_z']
+        ]
+        # Region definitions
+        region_defs = {
+            'pickup': {
+                'x_min': regions_df['pickup']['x_min'],
+                'x_max': regions_df['pickup']['x_max'],
+                'y_min': regions_df['pickup']['y_min'],
+                'y_max': regions_df['pickup']['y_max'],
+                'z': regions_df['pickup']['z']
+            },
+            'top': {
+                'x_min': regions_df['shelves']['x_min'],
+                'x_max': regions_df['shelves']['x_max'],
+                'y_min': regions_df['shelves']['y_min'],
+                'y_max': regions_df['shelves']['y_max'],
+                'z': float(regions_df['shelves']['z'].split(',')[0])  # top
+            },
+            'mid': {
+                'x_min': regions_df['shelves']['x_min'],
+                'x_max': regions_df['shelves']['x_max'],
+                'y_min': regions_df['shelves']['y_min'],
+                'y_max': regions_df['shelves']['y_max'],
+                'z': float(regions_df['shelves']['z'].split(',')[1])  # mid
+            },
+            'low': {
+                'x_min': regions_df['shelves']['x_min'],
+                'x_max': regions_df['shelves']['x_max'],
+                'y_min': regions_df['shelves']['y_min'],
+                'y_max': regions_df['shelves']['y_max'],
+                'z': float(regions_df['shelves']['z'].split(',')[2])  # low
+            }
+        }
+
+        for region, vals in region_defs.items():
+            corners = [
+                (vals['x_min'], vals['y_min']),
+                (vals['x_max'], vals['y_min']),
+                (vals['x_max'], vals['y_max']),
+                (vals['x_min'], vals['y_max'])
+            ]
+            for i, (x, y) in enumerate(corners):
+                tf_man.pub_static_tf(
+                    pos=[x, y, vals['z']],
+                    rot=quat,
+                    point_name=f'{region}_corner_{i}'
+                )
+
+        ################################
         arm = moveit_commander.MoveGroupCommander('arm')
         head.set_named_target('neutral')
         rospy.sleep(0.8)
