@@ -106,7 +106,7 @@ def classify_server():
     broadcaster = tf2_ros.TransformBroadcaster()
 
     # Ruta del modelo YOLOv8
-    model_path = "/home/angel/runs/detect/train12/weights/best.pt"
+    model_path = "/home/angel/ANGEL/Angel_YOLO/yolo_11.pt"
     model = YOLO(model_path)
     rospy.loginfo(f"Loaded YOLOv8 model from {model_path}")
 
