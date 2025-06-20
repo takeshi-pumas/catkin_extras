@@ -577,61 +577,71 @@ class Check_grasp(smach.State):
             self.tries=0
             
         rospy.loginfo('STATE : Check Grasp')
-        succ=brazo.check_grasp()
-        print ( f'brazo check grap result{succ}')
-        
-
+        hand_img = cv2.cvtColor(hand_rgb.get_image(), cv2.COLOR_BGR2RGB)
         arm.set_named_target('go')
-
         arm.go()
-        head.to_tf(target_object)
-        rospy.sleep(1.0)
-        region_name = "shelf_area"
-        #segmented_img = segment_region(region_name = region_name) 
-        #
-        #img_msg  = bridge.cv2_to_imgmsg( cv2.cvtColor(segmented_img, cv2.COLOR_RGB2BGR))### GAZEBO BGR!?!??!
-        img_msg  = bridge.cv2_to_imgmsg( cv2.cvtColor(rgbd.get_image(), cv2.COLOR_RGB2BGR))### GAZEBO BGR!?!??!
-        req      = classify_client.request_class()
-        req.in_.image_msgs.append(img_msg)
-        res      = classify_client(req)
-        objects=detect_object_yolo('all',res)   
-
-        def check_if_grasped(pose_target,test_pt,tolerance=0.05):return np.linalg.norm(pose_target-test_pt)<tolerance
-        ##############################
-        pose_target,_=tf_man.getTF(target_object)
-        #########################
-
-        if len (objects)!=0 :
-            for i in range(len(res.poses)):                
-                position = [res.poses[i].position.x ,res.poses[i].position.y,res.poses[i].position.z]                
-                object_point = PointStamped()
-                object_point.header.frame_id = "head_rgbd_sensor_rgb_frame"
-                object_point.point.x = position[0]
-                object_point.point.y = position[1]
-                object_point.point.z = position[2]
-                position_map = tfBuffer.transform(object_point, "map", timeout=rospy.Duration(1))                
-                tf_man.pub_static_tf(pos= [position_map.point.x,position_map.point.y,position_map.point.z], rot=[0,0,0,1], ref="map", point_name=res.names[i].data[4:] )
-                new_row = {'x': position_map.point.x, 'y': position_map.point.y, 'z': position_map.point.z, 'obj_name': res.names[i].data[4:]}
-                objs.loc[len(objs)] = new_row                
-                test_pt=np.asarray((position_map.point.x,position_map.point.y,position_map.point.z))
-                #print (np.linalg.norm(pose_target-test_pt))
-                if check_if_grasped(pose_target,test_pt):
-                    print (f'Centroid found in area {test_pt}, obj_name: {res.names[i].data[4:]}')
-                    print ('Grasping May have failed')
-                    talk ('Grasping May have failed')
-                    return 'failed'
+        rospy.sleep(3)
+        succ = check_bag_hand_camera(hand_img)
+        if succ:
+            return 'succ' 
+        else: 
+            return 'failed'
+     
+#         succ=brazo.check_grasp()
+#         print ( f'brazo check grap result{succ}')
         
-        obj_rows = objs[objs['obj_name'] == target_object]
 
-        if not obj_rows.empty:
-            approx_coords = objs[(objs['x'].round(1) == obj_rows.iloc[0]['x'].round(1)) &
-                                 (objs['y'].round(1) == obj_rows.iloc[0]['y'].round(1)) &
-                                 (objs['z'].round(1) == obj_rows.iloc[0]['z'].round(1))]
-            objs.drop(approx_coords.index, inplace=True)
+#         arm.set_named_target('go')
 
-        self.tries = 0
-        return'succ'       
-    #########################################################################################################
+#         arm.go()
+#         head.to_tf(target_object)
+#         rospy.sleep(1.0)
+#         region_name = "shelf_area"
+#         #segmented_img = segment_region(region_name = region_name) 
+#         #
+#         #img_msg  = bridge.cv2_to_imgmsg( cv2.cvtColor(segmented_img, cv2.COLOR_RGB2BGR))### GAZEBO BGR!?!??!
+#         img_msg  = bridge.cv2_to_imgmsg( cv2.cvtColor(rgbd.get_image(), cv2.COLOR_RGB2BGR))### GAZEBO BGR!?!??!
+#         req      = classify_client.request_class()
+#         req.in_.image_msgs.append(img_msg)
+#         res      = classify_client(req)
+#         objects=detect_object_yolo('all',res)   
+
+#         def check_if_grasped(pose_target,test_pt,tolerance=0.05):return np.linalg.norm(pose_target-test_pt)<tolerance
+#         ##############################
+#         pose_target,_=tf_man.getTF(target_object)
+#         #########################
+
+#         if len (objects)!=0 :
+#             for i in range(len(res.poses)):                
+#                 position = [res.poses[i].position.x ,res.poses[i].position.y,res.poses[i].position.z]                
+#                 object_point = PointStamped()
+#                 object_point.header.frame_id = "head_rgbd_sensor_rgb_frame"
+#                 object_point.point.x = position[0]
+#                 object_point.point.y = position[1]
+#                 object_point.point.z = position[2]
+#                 position_map = tfBuffer.transform(object_point, "map", timeout=rospy.Duration(1))                
+#                 tf_man.pub_static_tf(pos= [position_map.point.x,position_map.point.y,position_map.point.z], rot=[0,0,0,1], ref="map", point_name=res.names[i].data[4:] )
+#                 new_row = {'x': position_map.point.x, 'y': position_map.point.y, 'z': position_map.point.z, 'obj_name': res.names[i].data[4:]}
+#                 objs.loc[len(objs)] = new_row                
+#                 test_pt=np.asarray((position_map.point.x,position_map.point.y,position_map.point.z))
+#                 #print (np.linalg.norm(pose_target-test_pt))
+#                 if check_if_grasped(pose_target,test_pt):
+#                     print (f'Centroid found in area {test_pt}, obj_name: {res.names[i].data[4:]}')
+#                     print ('Grasping May have failed')
+#                     talk ('Grasping May have failed')
+#                     return 'failed'
+        
+#         obj_rows = objs[objs['obj_name'] == target_object]
+
+#         if not obj_rows.empty:
+#             approx_coords = objs[(objs['x'].round(1) == obj_rows.iloc[0]['x'].round(1)) &
+#                                  (objs['y'].round(1) == obj_rows.iloc[0]['y'].round(1)) &
+#                                  (objs['z'].round(1) == obj_rows.iloc[0]['z'].round(1))]
+#             objs.drop(approx_coords.index, inplace=True)
+
+#         self.tries = 0
+#         return'succ'       
+#     #########################################################################################################
 class Pickup_failed(smach.State):  
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ'])

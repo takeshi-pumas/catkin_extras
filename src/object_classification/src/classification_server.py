@@ -117,7 +117,8 @@ def classify_server():
     device = select_device('')
     rospack= rospkg.RosPack()
     file_path = rospack.get_path('object_classification')
-    ycb_yolo_path=file_path+'/src/weights/ycb.pt'
+    #ycb_yolo_path=file_path+'/src/weights/ycb.pt'
+    ycb_yolo_path=file_path+"/home/angel/ANGEL/Angel_YOLO/yolov5_11.pt"
     #ycb_yolo_path=file_path+'/src/weights/yolov5s.pt'
     #model=attempt_load('/home/roboworks/catkin_extras/src/yolov5_ros/scripts/yolov5/ycb.pt',device)
     model=attempt_load(ycb_yolo_path,device)
