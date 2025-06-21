@@ -267,7 +267,7 @@ class Get_drink(smach.State):
     def execute(self, userdata):
         self.tries += 1
         rospy.loginfo('STATE : GET DRINK')
-        if self.tries == 1:# NO DINO INFERENCE (4)
+        if self.tries == 3:# NO DINO INFERENCE (4)
             voice.talk ('I am having trouble understanding you, lets keep going')
             drink = 'something'
             self.tries=0
