@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 from smach_utils_receptionist import *
+from task.scripts.smach_utils_receptionist_y8 import get_favorite_drink_location_yolo
+
 
 
 # Initial STATE: task setup (grammar, knowledge, robot position, ...)
@@ -411,8 +413,8 @@ class Find_drink(smach.State):
         head.set_joint_values([0.0, -0.22])
         rospy.sleep(3)
 
-        #res,position = get_favorite_drink_location(favorite_drink)
-        res = True
+        res,position = get_favorite_drink_location_yolo(favorite_drink)
+        #res = True
         position = "center"
         if res:
             self.tries = 0
