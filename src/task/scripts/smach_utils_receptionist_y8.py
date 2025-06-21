@@ -12,7 +12,6 @@ from human_detector.srv import Human_detector ,Human_detectorResponse
 from ros_whisper_vosk.srv import GetSpeech
 from face_recog.msg import *
 from face_recog.srv import *
-from task.scripts.smach_utils_receptionist_y8 import get_favorite_drink_location_yolo
 #import face_recognition 
 import cv2  
 import rospy 
