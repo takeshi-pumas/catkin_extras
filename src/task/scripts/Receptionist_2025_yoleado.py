@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-from smach_utils_receptionist import *
-from task.scripts.smach_utils_receptionist_y8 import get_favorite_drink_location_yolo
+from smach_utils_receptionist_y8 import *
 
 
 
