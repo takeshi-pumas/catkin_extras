@@ -106,8 +106,15 @@ def classify_server():
     broadcaster = tf2_ros.TransformBroadcaster()
 
     # Ruta del modelo YOLOv8
-    model_path = "/home/angel/ANGEL/Angel_YOLO/yolo_11.pt"
-    model = YOLO(model_path)
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    rospack= rospkg.RosPack()
+    file_path = rospack.get_path('object_classification')
+    ycb_yolo_path=file_path+'/src/weights/yolo_11.pt'
+
+    model=YOLO(ycb_yolo_path)
+    rospy.loginfo(f"YOLOv8 model loaded on {device}")
+    #model_path = "/home/angel/ANGEL/Angel_YOLO/yolo_11.pt"
+    #model = YOLO(model_path)
     rospy.loginfo(f"Loaded YOLOv8 model from {model_path}")
 
     service = rospy.Service('classify', Classify, callback)
