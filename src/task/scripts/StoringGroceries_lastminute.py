@@ -546,12 +546,6 @@ class Place_shelf(smach.State):
         arm.go()
         rospy.sleep(1.5)
 
-
- 
-
-        #base_grasp_D(tf_name='placing_area',d_x=0.6, d_y=0.0,timeout=30)
-        #rospy.sleep(1.0)
-        #gripper.steady()
         if succ:
             userdata.placed_objs += 1
             self.tries=0
@@ -752,10 +746,10 @@ class Scan_shelf(smach.State):
                 av[0] = 0.4
                 av[1] = -0.4
 
-                rospy.sleep(0.5)
+                
                 arm.go(av)
                 head.set_joint_values([-np.pi/2, -0.2])
-                #rospy.sleep(5)
+                rospy.sleep(5)
             elif self.tries == 2:
                 print(f"gazing already{userdata.missing_shelves}")
                 head.set_joint_values([-np.pi/2, -0.7])
@@ -868,29 +862,8 @@ class Scan_shelf(smach.State):
         # Get the placing area by checking the shelf_section
         occupied_pts = objs_shelves[objs_shelves['shelf_section'] == corresponding_key][['x', 'y']].values
         print(f'Objects on {corresponding_key} shelf: {occupied_pts}')
-
-        # Define grid points
-        y_range = np.arange(area_box[0, 1] + 0.05, area_box[1, 1] - 0.05, 0.06)
-        x_range = np.arange(area_box[0, 0] + 0.12, area_box[1, 0] - 0.12, 0.06)
-        grid_points = np.array(np.meshgrid(x_range, y_range)).T.reshape(-1, 2)
-
-        # Remove occupied points
-        free_grid = [pt for pt in grid_points if all(np.linalg.norm(pt - obj) >= 0.08 for obj in occupied_pts)]
-        free_grid = np.array(free_grid)
-
-        # Determine placing point
-        if free_grid.size == 0:
-            x, y = np.mean(area_box, axis=0)
-            xy_place=[x,y]
-            z_place = 0.64
-            print(f'No free space in {corresponding_key} shelf, using default pose.{x,y}')
-        else:
-            distances = [np.linalg.norm(pt - occupied_pts, axis=1).sum() for pt in free_grid]
-            xy_place = free_grid[np.argmax(distances)]
-            z_place = shelf_heights[corresponding_key] + 0.1
-            print(f'Placing at {xy_place} on {corresponding_key} shelf, height {z_place}')
-
-        # Publish TF and move arm
+        z_place = shelf_heights[corresponding_key] + 0.1
+        xy_place = choose_placing_point(area_box, shelf_quat, occupied_pts)
         tf_man.pub_static_tf(pos=[xy_place[0], xy_place[1], z_place + 0.05], point_name='placing_area')
         head.set_joint_values([0, 0])
         rospy.sleep(3)

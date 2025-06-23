@@ -849,6 +849,51 @@ def get_robot_person_coords(pose,fileName=''):
                                dining_room_px_region)
     return room_robot,room_human
 #------------------------------------------------------
+def choose_placing_point(area_box,shelf_quat,occupied_pts):
+    buffer = 0.06  # Edge buffer in meters
+    shelf = 'top'  # for title
+    # Classify shelf facing direction
+    facing = classify_shelf_facing(shelf_quat)
+    print(f"Shelf is facing: {facing}")
+    # Adjust grid range based on facing
+    x_min, y_min = area_box[0]
+    x_max, y_max = area_box[1]
+    if facing in ['+x', '-x']:
+        x_range = np.arange(x_min + buffer, x_max - buffer, 0.06)  # Avoid sides
+        y_range = np.arange(y_min + buffer, y_max, 0.06)           # Full depth
+    elif facing in ['+y', '-y']:
+        x_range = np.arange(x_min + buffer, x_max - buffer, 0.06)
+        y_range = np.arange(y_min + buffer, y_max - buffer, 0.06)  # Avoid front/back
+    else:
+        x_range = np.arange(x_min, x_max, 0.06)
+        y_range = np.arange(y_min, y_max, 0.06)
+    grid_points = np.array(np.meshgrid(x_range, y_range)).T.reshape(-1, 2)
+    free_grid = np.array([
+        pt for pt in grid_points
+        if all(np.linalg.norm(pt - obj) >= 0.05 for obj in occupied_pts)
+    ]).reshape(-1, 2)
+    neighborhood_radius = 0.08
+    scores = []
+    for pt in free_grid:
+        distances = np.linalg.norm(free_grid - pt, axis=1)
+        count = np.sum(distances < neighborhood_radius) - 1  # exclude self
+        scores.append(count)
+    best_idx = np.argmax(scores)
+    placing_point = free_grid[best_idx]
+    return placing_point
+#------------------------------------------------------
+def classify_shelf_facing(quat, tol=0.01):
+    known_facings = {
+        '+y': np.array([0, 0, 0, 1]),
+        '-y': np.array([0, 0, 1, 0]),
+        '+x': np.array([0, 0, 0.707, 0.707]),
+        '-x': np.array([0, 0, -0.707, 0.707])
+    }
+    for direction, ref_quat in known_facings.items():
+        if np.allclose(quat, ref_quat, atol=tol):
+            return direction
+    return 'unknown'
+#------------------------------------------------------
 def detect_human_to_pt_st(dist = 6,remove_bkg = True):
     req = Human_detectorRequest()
     req.dist = dist
