@@ -110,7 +110,9 @@ class PlacingStateMachine:
 
         self.approach_count += 1
         if self.approach_limit == self.approach_count:
-            return 'cancel'
+            rospy.logwarn("Too many grasp attempts, aborting.")
+            self._as.set_aborted(result, "Too many grasp attempts")
+            return
         goal = self.sm.userdata.goal.target_pose.data
         self.grasp_approach=self.sm.userdata.goal.mode.data
         print(f'self.sm.userdata.goal -> {self.sm.userdata.goal.target_pose.data}')
