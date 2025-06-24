@@ -12,8 +12,6 @@ Panels:
         - /MotionPlanning1/Planning Metrics1
         - /TF1
         - /TF1/Frames1
-        - /TF1/Frames1/top_corner_01
-        - /TF1/Frames1/top_corner_01/Position1
         - /MarkerArray3
         - /PointStamped6
       Splitter Ratio: 0.7425600290298462
@@ -573,13 +571,67 @@ Visualization Manager:
       Filter (whitelist): ""
       Frame Timeout: 15
       Frames:
+        001_chips_can:
+          Value: true
+        002_master_chef_can:
+          Value: true
+        005_tomato_soup_can:
+          Value: true
+        007_tuna_fish_can:
+          Value: true
+        008_pudding_box:
+          Value: true
+        010_potted_meat_can:
+          Value: true
+        011_banana:
+          Value: true
+        015_peach:
+          Value: true
+        019-b_pitcher_base_v2:
+          Value: true
+        020_pitcher_lid:
+          Value: true
+        021_bleach_cleanser:
+          Value: true
+        022_windex_bottle:
+          Value: true
+        024_bowl:
+          Value: true
+        025_mug:
+          Value: true
+        033_spatula:
+          Value: true
+        052_extra_large_clamp:
+          Value: true
+        055_baseball:
+          Value: true
+        056_tennis_ball:
+          Value: true
+        059_chain:
+          Value: true
+        061_foam_brick:
+          Value: true
+        062_dice:
+          Value: true
+        063-a_marbles:
+          Value: true
+        071_nine_hole_peg_test:
+          Value: true
+        072-a_toy_airplane:
+          Value: true
         All Enabled: false
+        a_marbles:
+          Value: true
         arm_flex_link:
           Value: false
         arm_lift_link:
           Value: false
         arm_roll_link:
           Value: false
+        b_pitcher_base_v2:
+          Value: true
+        banana:
+          Value: true
         base_b_bumper_link:
           Value: false
         base_f_bumper_link:
@@ -612,7 +664,25 @@ Visualization Manager:
           Value: false
         base_roll_link:
           Value: false
-        breakfast:
+        baseball:
+          Value: true
+        bleach_cleanser:
+          Value: true
+        bowl:
+          Value: true
+        cereal_box:
+          Value: true
+        chain:
+          Value: true
+        chips_can:
+          Value: true
+        dice:
+          Value: true
+        extra_large_clamp:
+          Value: true
+        goal_for_grasp:
+          Value: true
+        goal_for_place:
           Value: true
         hand_camera_frame:
           Value: false
@@ -656,14 +726,10 @@ Visualization Manager:
           Value: false
         head_pan_link:
           Value: false
-        head_r_stereo_camera_frame:
-          Value: true
         head_r_stereo_camera_gazebo_frame:
           Value: false
         head_r_stereo_camera_link:
           Value: false
-        head_rgbd_sensor_depth_frame:
-          Value: true
         head_rgbd_sensor_gazebo_frame:
           Value: false
         head_rgbd_sensor_link:
@@ -682,6 +748,8 @@ Visualization Manager:
           Value: true
         map:
           Value: true
+        master_chef_can:
+          Value: true
         mid_corner_0:
           Value: true
         mid_corner_1:
@@ -690,7 +758,11 @@ Visualization Manager:
           Value: true
         mid_corner_3:
           Value: true
+        mug:
+          Value: true
         odom:
+          Value: true
+        peach:
           Value: true
         pickup:
           Value: true
@@ -706,9 +778,15 @@ Visualization Manager:
           Value: true
         placing_area:
           Value: true
+        potted_meat_can:
+          Value: true
         shelf:
           Value: true
+        spatula:
+          Value: true
         start:
+          Value: true
+        tomato_soup_can:
           Value: true
         top_corner_0:
           Value: true
@@ -720,6 +798,10 @@ Visualization Manager:
           Value: true
         torso_lift_link:
           Value: false
+        tuna_fish_can:
+          Value: true
+        windex_bottle:
+          Value: true
         wrist_flex_link:
           Value: false
         wrist_ft_sensor_frame:
@@ -736,7 +818,29 @@ Visualization Manager:
       Show Names: true
       Tree:
         map:
-          breakfast:
+          a_marbles:
+            {}
+          b_pitcher_base_v2:
+            {}
+          banana:
+            {}
+          baseball:
+            {}
+          bleach_cleanser:
+            {}
+          bowl:
+            {}
+          cereal_box:
+            {}
+          chain:
+            {}
+          chips_can:
+            {}
+          dice:
+            {}
+          extra_large_clamp:
+            {}
+          goal_for_grasp:
             {}
           low_corner_0:
             {}
@@ -746,6 +850,8 @@ Visualization Manager:
             {}
           low_corner_3:
             {}
+          master_chef_can:
+            {}
           mid_corner_0:
             {}
           mid_corner_1:
@@ -753,6 +859,8 @@ Visualization Manager:
           mid_corner_2:
             {}
           mid_corner_3:
+            {}
+          mug:
             {}
           odom:
             base_footprint:
@@ -813,23 +921,69 @@ Visualization Manager:
                           {}
                       head_l_stereo_camera_link:
                         head_l_stereo_camera_frame:
-                          {}
+                          head_rgbd_sensor_rgb_frame:
+                            001_chips_can:
+                              {}
+                            002_master_chef_can:
+                              {}
+                            005_tomato_soup_can:
+                              {}
+                            007_tuna_fish_can:
+                              {}
+                            008_pudding_box:
+                              {}
+                            010_potted_meat_can:
+                              {}
+                            011_banana:
+                              {}
+                            015_peach:
+                              {}
+                            019-b_pitcher_base_v2:
+                              {}
+                            020_pitcher_lid:
+                              {}
+                            021_bleach_cleanser:
+                              {}
+                            022_windex_bottle:
+                              {}
+                            024_bowl:
+                              {}
+                            025_mug:
+                              {}
+                            033_spatula:
+                              {}
+                            052_extra_large_clamp:
+                              {}
+                            055_baseball:
+                              {}
+                            056_tennis_ball:
+                              {}
+                            059_chain:
+                              {}
+                            061_foam_brick:
+                              {}
+                            062_dice:
+                              {}
+                            063-a_marbles:
+                              {}
+                            071_nine_hole_peg_test:
+                              {}
+                            072-a_toy_airplane:
+                              {}
                         head_l_stereo_camera_gazebo_frame:
                           {}
                       head_r_stereo_camera_link:
-                        head_r_stereo_camera_frame:
-                          {}
                         head_r_stereo_camera_gazebo_frame:
                           {}
                       head_rgbd_sensor_link:
-                        head_rgbd_sensor_depth_frame:
-                          {}
                         head_rgbd_sensor_gazebo_frame:
-                          {}
-                        head_rgbd_sensor_rgb_frame:
                           {}
             base_footprint_wheel:
               {}
+            goal_for_place:
+              {}
+          peach:
+            {}
           pickup:
             {}
           pickup_corner_0:
@@ -844,9 +998,15 @@ Visualization Manager:
             {}
           placing_area:
             {}
+          potted_meat_can:
+            {}
           shelf:
             {}
+          spatula:
+            {}
           start:
+            {}
+          tomato_soup_can:
             {}
           top_corner_0:
             {}
@@ -855,6 +1015,10 @@ Visualization Manager:
           top_corner_2:
             {}
           top_corner_3:
+            {}
+          tuna_fish_can:
+            {}
+          windex_bottle:
             {}
       Update Interval: 0
       Value: true
