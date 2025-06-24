@@ -78,8 +78,8 @@ def handle_detection(req):
     return ClassifyResponse(result=String(data=best_position))
 
 def yolo_detection_server():
-    rospy.init_node('classification_server')
-    rospy.Service('classify', Classify, handle_detection)
+    rospy.init_node('yolo_detection_server')
+    rospy.Service('classify_yolov8', Classify_yolo_receptionist, handle_detection)
     rospy.loginfo("YOLOv8 detection service is running...")
     rospy.spin()
 
