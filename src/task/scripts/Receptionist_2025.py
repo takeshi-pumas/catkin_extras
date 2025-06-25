@@ -42,7 +42,10 @@ class Initial(smach.State):
         #names = ['my name is', 'i am','john', 'jack', 'paris', 'charlie', 'simone', 'robin', 'jane', 'jules']
         confirmation = ['yes','no', 'robot yes', 'robot no','not','now','nope','yeah']                     
         gram = drinks + names + confirmation + interest  
-        scarlett=cv2.imread('/home/takeshi/catkin_extras/src/navigation_pumas/config_files/faces_for_recognition/scarlett/scarlett.png')                                                                             
+        rospack = rospkg.RosPack()        
+        file_path = rospack.get_path('config_files') 
+        scarlett=cv2.imread(file_path+'/faces_for_recognition/scarlett/scarlett.png') #JOEL LAP 
+        print (type(scarlett))
         _description=analyze_face_from_image(scarlett,"scarlett")
         if self.tries == 1:
             set_grammar(gram)  ##PRESET DRINKS
