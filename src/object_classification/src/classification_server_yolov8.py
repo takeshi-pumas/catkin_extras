@@ -4,7 +4,8 @@ from cv_bridge import CvBridge
 from sensor_msgs.msg import PointCloud2
 from geometry_msgs.msg import Pose
 from std_msgs.msg import String
-from object_classification.srv import Classify, ClassifyResponse
+#from object_classification.srv import Classify, ClassifyResponse
+from object_classification.srv import Classify_yolo_receptionist, Classify_yolo_receptionistResponse
 from object_classification.msg import Floats, Ints
 import ros_numpy
 import rospkg
@@ -12,6 +13,7 @@ import tf2_ros
 import tf
 import cv2
 import numpy as np
+import torch
 
 from ultralytics import YOLO 
 
@@ -19,7 +21,7 @@ from utils_srv import RGBD, save_image, write_tf
 
 def callback(req):
     rospy.loginfo(f"Received {len(req.in_.image_msgs)} images")
-    res = ClassifyResponse()
+    res = Classify_yolo_receptionistResponse()
     images = []
     for msg in req.in_.image_msgs:
         image = bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
@@ -115,9 +117,9 @@ def classify_server():
     rospy.loginfo(f"YOLOv8 model loaded on {device}")
     #model_path = "/home/angel/ANGEL/Angel_YOLO/yolo_11.pt"
     #model = YOLO(model_path)
-    rospy.loginfo(f"Loaded YOLOv8 model from {model_path}")
+    rospy.loginfo(f"Loaded YOLOv8 model from {model}")
 
-    service = rospy.Service('classify', Classify, callback)
+    service = rospy.Service('classify_yolov8', Classify_yolo_receptionist, callback)
     rospy.loginfo("classification_service (YOLOv8) ready.")
     rospy.spin()
 

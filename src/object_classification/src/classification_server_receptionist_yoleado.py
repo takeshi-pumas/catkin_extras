@@ -8,7 +8,7 @@ from std_msgs.msg import String
 import rospkg
 import os
 #from object_classification.srv import Classify_dino_receptionist, Classify_dino_receptionistResponse
-from object_classification.srv import Classify, ClassifyResponse
+from object_classification.srv import Classify_yolo_receptionist, Classify_yolo_receptionistResponse
 from ultralytics import YOLO
 import numpy as np
 
@@ -47,7 +47,7 @@ def handle_detection(req):
 
     if not boxes:
         rospy.logwarn("No detections with confidence above threshold.")
-        return ClassifyResponse(result=String(data="not found"))
+        return Classify_yolo_receptionistResponse(result=String(data="not found"))
 
     # centro x de cada caja para ordenar
     centers_x = [ (b[0]+b[2])/2 for b in boxes ]
@@ -75,7 +75,7 @@ def handle_detection(req):
     rospy.loginfo(f"Detection positions: {labeled_positions}")
     rospy.loginfo(f"Best detection at position: {best_position} with confidence {confidences[max_conf_idx]:.2f}")
 
-    return ClassifyResponse(result=String(data=best_position))
+    return Classify_yolo_receptionistResponse(result=String(data=best_position))
 
 def yolo_detection_server():
     rospy.init_node('yolo_detection_server')
