@@ -22,10 +22,11 @@ import clip
 from PIL import Image
 import cv_bridge
 from cv_bridge import CvBridge
+from ultralytics import YOLO
 
-bridge = CvBridge()  
-device = "cuda" if torch.cuda.is_available() else "cpu"
-model, preprocess = clip.load("ViT-B/32", device=device)
+##bridge = CvBridge()  
+##device = "cuda" if torch.cuda.is_available() else "cpu"
+##model, preprocess = clip.load("ViT-B/32", device=device)
 print ('bridge',bridge)
 first= True
 rospack = rospkg.RosPack()
@@ -49,11 +50,11 @@ def callback(points_msg):
     global first , rospack , file_path , bridge
     #print('got imgs msgs')
     points_data = ros_numpy.numpify(points_msg)    
-    image_data = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]   #JUST TO MANTAIN DISPLAY
-    image=cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
+    ##image_data = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]   #JUST TO MANTAIN DISPLAY
+    ##image=cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
 
-    img=rgbd.get_image()
-    img=cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    ##img=rgbd.get_image()
+    ##img=cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
    
     #cv2.imshow('xtion rgb' , image)
      
@@ -139,9 +140,9 @@ def callback(points_msg):
         elif key=='a':
             print('############# YOLOv8 SERVICE YCB REQUESTED')
             img_msg = bridge.cv2_to_imgmsg(image, encoding="bgr8")
-            req = classify_client_yolo.request_class()
+            req = classify_client.request_class()
             req.in_.image_msgs.append(img_msg)
-            res = classify_client_yolo(req)
+            res = classify_client(req)
             for i in range(len(res.poses)):
                 tf_man.getTF("head_rgbd_sensor_rgb_frame")
                 position = [
@@ -164,26 +165,51 @@ def callback(points_msg):
 
         elif key=='w':
             print ('############Clasification drinks receptionist###############')
-            img_msg = bridge.cv2_to_imgmsg(image, encoding="bgr8")
-            #img_msg = ("/home/angel/Downloads/drinks.jpg")
-            req = classify_client_yolo.request_class()
-            req.in_.image_msgs.append(img_msg)
-            res = classify_client_yolo(req)
 
             bebida_deseada = "lipton"
-            # Ejecutar modelo YOLO
-            results = model(img_msg)
+            image_path = "/home/angel/Downloads/drinks.jpg" 
+
+            image = cv2.imread(image_path)
+            if image is None:
+                print(f"Error al cargar imagen: {image_path}")
+                return
+
+            bridge = CvBridge()
+
+            # Carga modelo YOLOv8 
+            device = "cuda" if torch.cuda.is_available() else "cpu"
+            rospack= rospkg.RosPack()
+            file_path = rospack.get_path('object_classification')
+            ycb_yolo_path=file_path+'/src/weights/yolo_11.pt'
+
+            model=YOLO(ycb_yolo_path)
+
+            rospy.loginfo(f"YOLOv8 model loaded on {device}")
+
+            CONFIDENCE_THRESHOLD = 0.3  
+
+            img_msg = bridge.cv2_to_imgmsg(image, encoding="bgr8")
+            #img_msg = ("/home/angel/Downloads/drinks.jpg")
+            #img_msg = cv2.VideoCapture(0)  
+            req = Classify_yolo_receptionistRequest()
+            #req = classify_client_yolo.request_class()
+            req.image = img_msg
+            req.prompt = String(data=bebida_deseada)
+            res = classify_client_yolo(req)
+
+            results = model(image)
+            r = results[0] 
 
             boxes = []
             confidences = []
             class_names = []
-            for r in results:
-                for box, conf, cls in zip(r.boxes.xyxy.cpu().numpy(), r.boxes.conf.cpu().numpy(), r.boxes.cls.cpu().numpy()):
-                    nombre_clase = model.names[int(cls)].lower()
-                    if conf >= 0.5 and bebida_deseada in nombre_clase:
-                        boxes.append(box)  # [x1,y1,x2,y2]
-                        confidences.append(conf)
-                        class_names.append(nombre_clase)
+            
+            for box, conf, cls in zip(r.boxes.xyxy.cpu().numpy(), r.boxes.conf.cpu().numpy(), r.boxes.cls.cpu().numpy()):
+                nombre_clase = model.names[int(cls)].lower()
+                if conf >= 0.5 and bebida_deseada in nombre_clase:
+                     boxes.append(box)  # [x1,y1,x2,y2]
+                     confidences.append(conf)
+                     class_names.append(nombre_clase)
 
             if not boxes:
                 print(f"No se detectó la bebida '{bebida_deseada}'")
@@ -196,15 +222,21 @@ def callback(points_msg):
             boxes = [boxes[i] for i in sorted_indices]
             confidences = [confidences[i] for i in sorted_indices]
 
+            img_width = image.shape[1]
+
             labeled_positions = []
-            for i in range(len(boxes)):
-                if i == 0:
-                     pos = "left"
-                elif i == len(boxes)-1:
-                     pos = "right"
-                else:
-                     pos = "center"
-                labeled_positions.append(pos)
+            for cx in centers_x:
+                 if cx < img_width * 0.2:
+                      pos = "izquierda"
+                 elif cx < img_width * 0.4:
+                      pos = "centro izquierda"
+                 elif cx < img_width * 0.6:
+                      pos = "centro"
+                 elif cx < img_width * 0.8:
+                      pos = "centro derecha"
+                 else:
+                      pos = "derecha"
+                 labeled_positions.append(pos)
 
             # Mejor detección
             max_conf_idx = np.argmax(confidences)
@@ -219,7 +251,8 @@ def callback(points_msg):
             cv2.rectangle(bebida_deseada, (x1, y1), (x2, y2), (0, 255, 0), 2)
             cv2.putText(bebida_deseada, f"{best_name} - {best_position}", (x1, y1 - 10),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
-            cv2.imshow("Detección bebida", bebida_deseada)
+            cv2.imshow("Detección bebida", image)
+
 
             
         elif key=='p':

@@ -262,7 +262,7 @@ def get_favorite_drink_location_yolo(favorite_drink):
     prompt_msg = String()
     prompt_msg.data = favorite_drink
 
-    rospy.wait_for_service('classify')
+    rospy.wait_for_service('classify_yolov8')
     try:
         response = classify_client_yolo(ros_image, prompt_msg)
         print("Result:", response.result.data,"for drink:",favorite_drink)

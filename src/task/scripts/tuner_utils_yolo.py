@@ -81,7 +81,7 @@ train_new_face = rospy.ServiceProxy('new_face', RecognizeFace)                  
 analyze_face = rospy.ServiceProxy('analyze_face', RecognizeFace)    ###DEEP FACE ONLY
 recognize_action = rospy.ServiceProxy('recognize_act', Recognize) 
 classify_client = rospy.ServiceProxy('/classify', Classify)
-classify_client_yolo = rospy.ServiceProxy('classify', Classify)
+classify_client_yolo = rospy.ServiceProxy('classify_yolov8', Classify_yolo_receptionist)
 segment_service = rospy.ServiceProxy("segment_region", SegmentRegion)
 
 
