@@ -24,9 +24,9 @@ import cv_bridge
 from cv_bridge import CvBridge
 from ultralytics import YOLO
 
-##bridge = CvBridge()  
-##device = "cuda" if torch.cuda.is_available() else "cpu"
-##model, preprocess = clip.load("ViT-B/32", device=device)
+bridge = CvBridge()  
+device = "cuda" if torch.cuda.is_available() else "cpu"
+model, preprocess = clip.load("ViT-B/32", device=device)
 print ('bridge',bridge)
 first= True
 rospack = rospkg.RosPack()
@@ -50,11 +50,11 @@ def callback(points_msg):
     global first , rospack , file_path , bridge
     #print('got imgs msgs')
     points_data = ros_numpy.numpify(points_msg)    
-    ##image_data = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]   #JUST TO MANTAIN DISPLAY
-    ##image=cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
+    image_data = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]   #JUST TO MANTAIN DISPLAY
+    image=cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
 
-    ##img=rgbd.get_image()
-    ##img=cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    img=rgbd.get_image()
+    img=cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
    
     #cv2.imshow('xtion rgb' , image)
      
@@ -176,7 +176,7 @@ def callback(points_msg):
 
             bridge = CvBridge()
 
-            # Carga modelo YOLOv8 
+            # model YOLOv8 
             device = "cuda" if torch.cuda.is_available() else "cpu"
             rospack= rospkg.RosPack()
             file_path = rospack.get_path('object_classification')
@@ -216,7 +216,6 @@ def callback(points_msg):
                 return
 
 
-            # Clasificación de posición
             centers_x = [(b[0] + b[2]) / 2 for b in boxes]
             sorted_indices = np.argsort(centers_x)
             boxes = [boxes[i] for i in sorted_indices]
@@ -238,7 +237,6 @@ def callback(points_msg):
                       pos = "derecha"
                  labeled_positions.append(pos)
 
-            # Mejor detección
             max_conf_idx = np.argmax(confidences)
             best_box = boxes[max_conf_idx]
             best_position = labeled_positions[max_conf_idx]
@@ -246,7 +244,6 @@ def callback(points_msg):
 
             print(f"Se detectó '{best_name}' en la zona: {best_position} (confianza: {confidences[max_conf_idx]:.2f})")
 
-            # Dibujar caja y texto
             x1, y1, x2, y2 = map(int, best_box)
             cv2.rectangle(bebida_deseada, (x1, y1), (x2, y2), (0, 255, 0), 2)
             cv2.putText(bebida_deseada, f"{best_name} - {best_position}", (x1, y1 - 10),
