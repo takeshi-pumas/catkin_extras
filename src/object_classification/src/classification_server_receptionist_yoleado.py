@@ -18,7 +18,7 @@ bridge = CvBridge()
 device = "cuda" if torch.cuda.is_available() else "cpu"
 rospack= rospkg.RosPack()
 file_path = rospack.get_path('object_classification')
-ycb_yolo_path=file_path+'/src/weights/yolo_11.pt'
+ycb_yolo_path=file_path+'/src/weights/modelYV8_TMR2025.pt'
 
 model=YOLO(ycb_yolo_path)
 #model_path = "/home/angel/ANGEL/Angel_YOLO/yolo_11.pt"
@@ -52,20 +52,24 @@ def handle_detection(req):
     # centro x de cada caja para ordenar
     centers_x = [ (b[0]+b[2])/2 for b in boxes ]
     sorted_indices = np.argsort(centers_x)
-
-    
     boxes = [boxes[i] for i in sorted_indices]
     confidences = [confidences[i] for i in sorted_indices]
 
 
     labeled_positions = []
-    for i in range(len(boxes)):
-        if i == 0:
+    img_width = image.shape[1]
+    for box in boxes:
+        cx = (box[0] + box[2]) / 2
+        if cx < img_width * 0.2:
             pos = "left"
-        elif i == len(boxes)-1:
-            pos = "right"
-        else:
+        elif cx < img_width * 0.4:
+            pos = "center left"
+        elif cx < img_width * 0.5:
             pos = "center"
+        elif cx < img_width * 0.6:
+            pos = "center right"
+        else:
+            pos = "right"
         labeled_positions.append(pos)
 
     

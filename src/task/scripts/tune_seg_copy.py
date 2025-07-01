@@ -166,13 +166,7 @@ def callback(points_msg):
         elif key=='w':
             print ('############Clasification drinks receptionist###############')
 
-            bebida_deseada = "lipton"
-            image_path = "/home/angel/Downloads/drinks.jpg" 
-
-            image = cv2.imread(image_path)
-            if image is None:
-                print(f"Error al cargar imagen: {image_path}")
-                return
+            bebida_deseada = "013_apple"
 
             bridge = CvBridge()
 
@@ -180,7 +174,7 @@ def callback(points_msg):
             device = "cuda" if torch.cuda.is_available() else "cpu"
             rospack= rospkg.RosPack()
             file_path = rospack.get_path('object_classification')
-            ycb_yolo_path=file_path+'/src/weights/yolo_11.pt'
+            ycb_yolo_path=file_path+'/src/weights/modelYV8_TMR2025.pt'
 
             model=YOLO(ycb_yolo_path)
 
@@ -189,8 +183,6 @@ def callback(points_msg):
             CONFIDENCE_THRESHOLD = 0.3  
 
             img_msg = bridge.cv2_to_imgmsg(image, encoding="bgr8")
-            #img_msg = ("/home/angel/Downloads/drinks.jpg")
-            #img_msg = cv2.VideoCapture(0)  
             req = Classify_yolo_receptionistRequest()
             #req = classify_client_yolo.request_class()
             req.image = img_msg
@@ -225,16 +217,16 @@ def callback(points_msg):
 
             labeled_positions = []
             for cx in centers_x:
-                 if cx < img_width * 0.2:
-                      pos = "izquierda"
-                 elif cx < img_width * 0.4:
-                      pos = "centro izquierda"
-                 elif cx < img_width * 0.6:
-                      pos = "centro"
-                 elif cx < img_width * 0.8:
-                      pos = "centro derecha"
+                 if cx < img_width * 0.20:
+                      pos = "left"
+                 elif cx < img_width * 0.40:
+                      pos = "center left"
+                 elif cx < img_width * 0.50:
+                      pos = "center"
+                 elif cx < img_width * 0.60:
+                      pos = "center right"
                  else:
-                      pos = "derecha"
+                      pos = "right"
                  labeled_positions.append(pos)
 
             max_conf_idx = np.argmax(confidences)
@@ -245,11 +237,14 @@ def callback(points_msg):
             print(f"Se detectó '{best_name}' en la zona: {best_position} (confianza: {confidences[max_conf_idx]:.2f})")
 
             x1, y1, x2, y2 = map(int, best_box)
-            cv2.rectangle(bebida_deseada, (x1, y1), (x2, y2), (0, 255, 0), 2)
-            cv2.putText(bebida_deseada, f"{best_name} - {best_position}", (x1, y1 - 10),
+            cv2.rectangle(image, (x1, y1), (x2, y2), (0, 255, 0), 2)
+            cv2.putText(image, f"{best_name} - {best_position}", (x1, y1 - 10),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
+            cv2.namedWindow("Detección bebida", cv2.WINDOW_NORMAL)
+            cv2.resizeWindow("Detección bebida", 480, 640)
             cv2.imshow("Detección bebida", image)
-
+            cv2.waitKey(0)
+            cv2.destroyWindow()
 
             
         elif key=='p':
