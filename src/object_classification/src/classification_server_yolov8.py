@@ -5,6 +5,7 @@ from sensor_msgs.msg import PointCloud2
 from geometry_msgs.msg import Pose
 from std_msgs.msg import String
 from object_classification.srv import Classify, ClassifyResponse
+#from object_classification.srv import Classify_yolo_receptionist, Classify_yolo_receptionistResponse
 from object_classification.msg import Floats, Ints
 import ros_numpy
 import rospkg
@@ -12,6 +13,7 @@ import tf2_ros
 import tf
 import cv2
 import numpy as np
+import torch
 
 from ultralytics import YOLO 
 
@@ -115,7 +117,7 @@ def classify_server():
     rospy.loginfo(f"YOLOv8 model loaded on {device}")
     #model_path = "/home/angel/ANGEL/Angel_YOLO/yolo_11.pt"
     #model = YOLO(model_path)
-    rospy.loginfo(f"Loaded YOLOv8 model from {model_path}")
+    rospy.loginfo(f"Loaded YOLOv8 model from {model}")
 
     service = rospy.Service('classify', Classify, callback)
     rospy.loginfo("classification_service (YOLOv8) ready.")

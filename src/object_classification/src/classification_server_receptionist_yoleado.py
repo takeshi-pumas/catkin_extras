@@ -8,7 +8,7 @@ from std_msgs.msg import String
 import rospkg
 import os
 #from object_classification.srv import Classify_dino_receptionist, Classify_dino_receptionistResponse
-from object_classification.srv import Classify, ClassifyResponse
+from object_classification.srv import Classify_yolo_receptionist, Classify_yolo_receptionistResponse
 from ultralytics import YOLO
 import numpy as np
 
@@ -18,7 +18,7 @@ bridge = CvBridge()
 device = "cuda" if torch.cuda.is_available() else "cpu"
 rospack= rospkg.RosPack()
 file_path = rospack.get_path('object_classification')
-ycb_yolo_path=file_path+'/src/weights/yolo_11.pt'
+ycb_yolo_path=file_path+'/src/weights/modelYV8_TMR2025.pt'
 
 model=YOLO(ycb_yolo_path)
 #model_path = "/home/angel/ANGEL/Angel_YOLO/yolo_11.pt"
@@ -47,25 +47,29 @@ def handle_detection(req):
 
     if not boxes:
         rospy.logwarn("No detections with confidence above threshold.")
-        return ClassifyResponse(result=String(data="not found"))
+        return Classify_yolo_receptionistResponse(result=String(data="not found"))
 
     # centro x de cada caja para ordenar
     centers_x = [ (b[0]+b[2])/2 for b in boxes ]
     sorted_indices = np.argsort(centers_x)
-
-    
     boxes = [boxes[i] for i in sorted_indices]
     confidences = [confidences[i] for i in sorted_indices]
 
 
     labeled_positions = []
-    for i in range(len(boxes)):
-        if i == 0:
+    img_width = image.shape[1]
+    for box in boxes:
+        cx = (box[0] + box[2]) / 2
+        if cx < img_width * 0.2:
             pos = "left"
-        elif i == len(boxes)-1:
-            pos = "right"
-        else:
+        elif cx < img_width * 0.4:
+            pos = "center left"
+        elif cx < img_width * 0.5:
             pos = "center"
+        elif cx < img_width * 0.6:
+            pos = "center right"
+        else:
+            pos = "right"
         labeled_positions.append(pos)
 
     
@@ -75,11 +79,11 @@ def handle_detection(req):
     rospy.loginfo(f"Detection positions: {labeled_positions}")
     rospy.loginfo(f"Best detection at position: {best_position} with confidence {confidences[max_conf_idx]:.2f}")
 
-    return ClassifyResponse(result=String(data=best_position))
+    return Classify_yolo_receptionistResponse(result=String(data=best_position))
 
 def yolo_detection_server():
-    rospy.init_node('classification_server')
-    rospy.Service('classify', Classify, handle_detection)
+    rospy.init_node('yolo_detection_server')
+    rospy.Service('classify_yolov8', Classify_yolo_receptionist, handle_detection)
     rospy.loginfo("YOLOv8 detection service is running...")
     rospy.spin()
 

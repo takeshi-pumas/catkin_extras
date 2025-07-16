@@ -57,7 +57,7 @@ set_grammar = rospy.ServiceProxy('set_grammar_vosk', SetGrammarVosk)            
 recognize_face = rospy.ServiceProxy('recognize_face', RecognizeFace)                    #FACE RECOG
 train_new_face = rospy.ServiceProxy('new_face', RecognizeFace)                          #FACE RECOG
 analyze_face = rospy.ServiceProxy('analyze_face', RecognizeFace)    ###DEEP FACE ONLY
-classify_client_yolo = rospy.ServiceProxy('classify',Classify) #beverage recognition
+classify_client_yolo = rospy.ServiceProxy('classify_yolov8', Classify_yolo_receptionist) #beverage recognition
 segment_service = rospy.ServiceProxy("segment_region", SegmentRegion) # Beverage area segmentation
 
 
@@ -262,7 +262,7 @@ def get_favorite_drink_location_yolo(favorite_drink):
     prompt_msg = String()
     prompt_msg.data = favorite_drink
 
-    rospy.wait_for_service('classify')
+    rospy.wait_for_service('classify_yolov8')
     try:
         response = classify_client_yolo(ros_image, prompt_msg)
         print("Result:", response.result.data,"for drink:",favorite_drink)
