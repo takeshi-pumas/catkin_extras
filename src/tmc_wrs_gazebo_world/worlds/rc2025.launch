@@ -24,7 +24,7 @@
 
 
 
-    <arg name="world_name" value="$(find tmc_wrs_gazebo_worlds)/worlds/rc2025_populated.world"/>
+    <arg name="world_name" value="$(find tmc_wrs_gazebo_worlds)/worlds/rc2025_ff.world"/>
 	  <arg name="robot_pos" value="-x 0.0 -y -1.5 -z 0.0 -Y 0.0" />
 
 
