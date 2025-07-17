@@ -131,8 +131,7 @@ def handle_detection(req):
 
     # Asignar posiciones
     labeled_boxes = []
-    if len(abs_boxes)==1:
-        return "center"
+    
     for i, box in enumerate(abs_boxes):
         pos = "center"  # Por defecto "center"
         if i == 0:

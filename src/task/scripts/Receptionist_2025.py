@@ -412,10 +412,12 @@ class Find_drink(smach.State):
         brazo.set_joint_values([0.49 , -0.688, -1.566,-1.57, 0.0])
         # head.set_joint_values([0.0, -0.5])
         head.set_joint_values([1.56, -0.20])
+        rospy.sleep(1)
         voice.talk('Scanning table')
-        rospy.sleep(0.5)
 
-        res,position = get_favorite_drink_location(favorite_drink)
+        #res,position = get_favorite_drink_location(favorite_drink)
+        res = True
+        position = "center"
         if res:
             self.tries = 0
             voice.talk(f"I found a {favorite_drink} on the {position}, take it please.")
@@ -657,8 +659,8 @@ if __name__ == '__main__':
                                transitions={'failed': 'INITIAL', 'succ': 'WAIT_PUSH_HAND'})
                                # 'succ': 'WAIT_PUSH_HAND'})
         smach.StateMachine.add("WAIT_PUSH_HAND", Wait_push_hand(),       
-                               transitions={'failed': 'WAIT_PUSH_HAND'   #, 'succ':'FIND_SITTING_PLACE'
-                               ,'succ':'GOTO_DOOR'
+                               transitions={'failed': 'WAIT_PUSH_HAND'   , 'succ':'SCAN_FACE'
+                               #,'succ':'GOTO_DOOR'
                                })
         smach.StateMachine.add("WAIT_DOOR_OPENED", Wait_door_opened(),     
                                transitions={'failed': 'WAIT_DOOR_OPENED', 'succ': 'SCAN_FACE'})
