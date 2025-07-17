@@ -287,17 +287,17 @@ class Navigate(smach.State):
             talk('Navigation Failed, retrying')
             return 'failed'
 ##########################################################
-class Answer_question(smach.State):  
+class Tell_joke(smach.State):  
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed'], output_keys=['actions','params'], input_keys=['actions','params'])
         
     def execute(self, userdata):
-
-        rospy.loginfo('STATE : Answering Question')
-        print(f'Question is,{userdata.params[0]} ')        
-        #answer_question(userdata.params[0])
-        res = True
-        print(res)
+        rospy.loginfo('STATE : Tell Joke')
+        req = ActionPlannerRequest()
+        req.command.data="tell Joke?"
+        command=action_planner_server(req)
+        print(f'command.plan.data{command.plan.data}.')
+        talk(command.plan.data)
 
         if res:
             userdata.actions.pop(0)
@@ -587,6 +587,7 @@ if __name__ == '__main__':
                                                                                         'navigate': 'NAVIGATE',
                                                                                         'follow'  :'FOLLOW_PERSON',
                                                                                         'answer'  :'ANSWER_QUESTION',
+                                                                                        'tell_joke'  :'TELL_JOKE',
                                                                                         'locate_person':'LOCATE_PERSON'
                                                                                          })
         smach.StateMachine.add("LOCATE_PERSON"               ,   Locate_person(),       transitions={'failed': 'LOCATE_PERSON',    
@@ -607,6 +608,12 @@ if __name__ == '__main__':
         smach.StateMachine.add("ANSWER_QUESTION"        ,   Answer_question(),     transitions={'failed': 'ANSWER_QUESTION',    
                                                                                          'succ': 'PLAN', 
                                                                                          })
+        
+        smach.StateMachine.add("TELL_JOKE"        ,   Tell_joke(),     transitions={'failed': 'TELL_JOKE',    
+                                                                                         'succ': 'PLAN', 
+                                                                                         })
+        
+
         
         smach.StateMachine.add("PICKUP",    Pickup(),                   transitions={'failed': 'PICKUP',    
                                                                                          'succ': 'GRASP_GOAL'})
