@@ -39,12 +39,13 @@ THRESHOLD = 0.28  # CLIP Similarity threshold (adjust as needed)
 
 # 🔹 Diccionario de descripciones personalizadas
 prompt_dict = {
-    "coke": "A coke's bottle with a red label.",
+    # coffe, fanta, coke, kuat, milk, orange_juice.
+    "coke": "A red coke's can.",
     "milk": "A white and brown milk box.",
-    "water": "A bottle of water with a sky blue label.",
+    "kuat": "A green kuat can.",
     "fanta": "A orange fanta can.",
-    "lipton": "A bottle with lipton label and amber drink.",
-    "fresca": "A yellow fresca can."
+    "coffee": "A brown coffe box.",
+    "orange juice": "A bottle with orange label and drink."
 }
 
 def preprocess_image(cv2_image, max_size=1333, stride=32):
@@ -130,13 +131,28 @@ def handle_detection(req):
 
     # Asignar posiciones
     labeled_boxes = []
+    if len(abs_boxes)==1:
+        return "center"
     for i, box in enumerate(abs_boxes):
         pos = "center"  # Por defecto "center"
         if i == 0:
             pos = "left"  # Más a la izquierda
         elif i == len(abs_boxes) - 1:
             pos = "right"  # Más a la derecha
-        
+        if len(abs_boxes) == 4 or len(abs_boxes) == 5:
+            if i == 1:
+                pos = " center left"  
+            elif i == len(abs_boxes) - 2:
+                pos = "center right"  
+        if len(abs_boxes) >= 6:
+            if i == 1:
+                pos = "second from left to right"  
+            if i == 2:
+                pos = "third from left to right"  
+            elif i == len(abs_boxes) - 2:
+                pos = "second from right to left" 
+            elif i == len(abs_boxes) - 3:
+                pos = "third from right to left"          
         labeled_boxes.append({"position": pos, "box": box})
 
     best_match = None
