@@ -405,7 +405,7 @@ class Find_drink(smach.State):
             voice.talk("This table has available drinks, please take whatever you want")
             return 'succ'
 
-        voice.talk('Scanning table')
+        #voice.talk('Scanning table')
         # av = arm.get_current_joint_values()
         # av[0]=0.16
         # arm.go(av)
@@ -415,9 +415,9 @@ class Find_drink(smach.State):
         rospy.sleep(1)
         voice.talk('Scanning table')
 
-        #res,position = get_favorite_drink_location(favorite_drink)
-        res = True
-        position = "center"
+        res,position = get_favorite_drink_location(favorite_drink)
+        #res = True
+        #position = "center"
         if res:
             self.tries = 0
             voice.talk(f"I found a {favorite_drink} on the {position}, take it please.")
@@ -442,6 +442,7 @@ class Lead_to_living_room(smach.State):
 
         voice.talk(f"{party.get_active_guest_name()}... Follow me to living room")
         # voice.talk('Navigating to ,living room')
+        head.set_joint_values([0, 0])
         brazo.set_named_target('neutral')
         rospy.sleep(0.5)
         res = omni_base.move_base(known_location='living_room')
@@ -657,10 +658,10 @@ if __name__ == '__main__':
         # Initial states routine
         smach.StateMachine.add("INITIAL", Initial(),              
                                transitions={'failed': 'INITIAL', 'succ': 'WAIT_PUSH_HAND'})
-                               # 'succ': 'WAIT_PUSH_HAND'})
+                                #'succ': 'SCAN_FACE'})
         smach.StateMachine.add("WAIT_PUSH_HAND", Wait_push_hand(),       
-                               transitions={'failed': 'WAIT_PUSH_HAND'   , 'succ':'SCAN_FACE'
-                               #,'succ':'GOTO_DOOR'
+                               transitions={'failed': 'WAIT_PUSH_HAND'   #, 'succ':'SCAN_FACE'
+                               ,'succ':'GOTO_DOOR'
                                })
         smach.StateMachine.add("WAIT_DOOR_OPENED", Wait_door_opened(),     
                                transitions={'failed': 'WAIT_DOOR_OPENED', 'succ': 'SCAN_FACE'})
