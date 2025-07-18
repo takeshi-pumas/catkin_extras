@@ -122,14 +122,16 @@ line_detector = LineDetector()
 # arm =  moveit_commander.MoveGroupCommander('arm')
 
 
+
+
+# FUNCIONES PARA DETECTAR TODOS ACCIONES CON POINTING
+#--------------------------------------
 usr_url=os.path.expanduser( '~' )
 protoFile = usr_url+"/openpose/models/pose/body_25/pose_deploy.prototxt"
 weightsFile = usr_url+"/openpose/models/pose/body_25/pose_iter_584000.caffemodel"
 net = cv2.dnn.readNetFromCaffe(protoFile, weightsFile)
 
 
-# FUNCIONES PARA DETECTAR TODOS ACCIONES CON POINTING
-#--------------------------------------
 def getKeypoints(output,inWidth, inHeight,numKeys=8):
     # se obtiene primero los keypoints, no deberia dar problemas
     keypoints=[]
@@ -202,7 +204,9 @@ def getconectionJoints(output,inHeight,inWidth,numKeyPoints = 8 ):
                 sk[i,k[3],0] = k[0]
                 sk[i,k[3],1] = k[1]
     return sk
-def get_keypoints(points_msg,dist = 20,remove_bkg= False):
+points_msg = rospy.wait_for_message("/hsrb/head_rgbd_sensor/depth_registered/rectified_points", PointCloud2)
+
+def get_keypoints(points_msg = points_msg,dist = 20,remove_bkg= False):
     #tf_man = TF_MANAGER()
     #res=Point_detectorResponse()
     points_data = ros_numpy.numpify(points_msg)
@@ -238,7 +242,6 @@ def get_keypoints(points_msg,dist = 20,remove_bkg= False):
 
 
 
-points_msg = rospy.wait_for_message("/hsrb/head_rgbd_sensor/depth_registered/rectified_points", PointCloud2)
 keypoints = get_keypoints(points_msg)
 
 def recognize_action(keypoints):
@@ -258,34 +261,29 @@ def recognize_action(keypoints):
         # Check for waving (left arm)
         # TODO: We need to look at waiving over time
         # if left_wrist[1] < left_elbow[1] and left_elbow[1] < left_shoulder[1]:
-        #     actions.append("Waving")
+        #     return "Waving")
 
         # Check for raising left arm
         if left_wrist[1] < left_elbow[1] and left_elbow[1] < left_shoulder[1]:
-            actions.append("Raising left arm")
+            return "Raising left arm"
         
         # Check for pointing to the left
         if left_wrist[0] < left_shoulder[0] and abs(left_wrist[1] - left_shoulder[1]) < 50:
-            actions.append("Pointing to the left")
+            return "Pointing to the left"
 
 
     elif right_wrist[0] != 0 or right_wrist[1]!= 0 or right_elbow[0] != 0 or right_elbow[1] != 0 or right_shoulder[0] != 0 or right_shoulder[1] != 0:
         # Check for waving (right arm)
         # if right_wrist[1] < right_elbow[1] and right_elbow[1] < right_shoulder[1]:
-        #     actions.append("Waving")
+        #     return "Waving")
 
         # Check for raising right arm
         if right_wrist[1] < right_elbow[1] and right_elbow[1] < right_shoulder[1]:
-            actions.append("Raising right arm")
+            return "Raising right arm"
 
         # Check for pointing to the right
         if right_wrist[0] > right_shoulder[0] and abs(right_wrist[1] - right_shoulder[1]) < 50:
-            actions.append("Pointing to the right")
-
-
-    if actions:
-        return actions
-    return 
+            return "Pointing to the right"
 
 def angle(shoulder, hip, knee):
     a = np.array([shoulder[0], shoulder[1]])
@@ -315,9 +313,9 @@ def recognize_posture(keypoints):
     right_ankle = keypoints[11, :2]
 
     if left_hip[0] == 0 or right_hip[0] == 0 or left_knee[0] == 0 or right_knee[0] == 0 or left_shoulder[0] == 0 or right_shoulder[0] == 0:
-        return
+        return False
     elif left_hip[1] == 0 or right_hip[1] == 0 or left_knee[1] == 0 or right_knee[1] == 0 or left_shoulder[1] == 0 or right_shoulder[1] == 0:
-        return
+        return False
 
     actions = []
 
@@ -339,7 +337,7 @@ def recognize_posture(keypoints):
                 return "Lying person"
 
 
-    return 
+    return False
 
 #------------------------------------------------------
 
