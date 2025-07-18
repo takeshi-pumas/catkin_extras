@@ -77,7 +77,7 @@ class Initial(smach.State):
 class Plan(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed', 'navigate','pick','place'
-                                            ,'find_objects','follow','answer' , 'locate_person'],
+                                            ,'find_objects','follow','answer' , 'locate_person', 'tell_joke'],
                                             output_keys=['actions','params','command_id'],input_keys=['actions','params'])
         self.tries = 0
 
@@ -99,7 +99,9 @@ class Plan(smach.State):
             elif current_action =='find_object':return'find_objects'
             elif current_action =='follow_person':return'follow'
             elif current_action =='answer_question':return'answer'
+            elif current_action =='tell_joke':return 'tell_joke'
             elif current_action in ['locate_person','identify_person','greet_person']:return 'locate_person'
+            elif current_action =='tell_joke':return 'tell_joke'
             
 
 
@@ -122,13 +124,13 @@ class Wait_command(smach.State):
         print(f'Try {self.tries} of 4 attempts')
         if self.tries == 4:
             return 'tries'
-        talk('Ready for GPSR, waiting for comand using QR')   
+        talk('Ready for GPSR, waiting for comand using QR please place it where I can see it.')   
         print('Ready for GPSR, waiting for comand using QR')   
         
         #plan="plan=['FindObject(EndTable)', 'Navigate(EndTable)', 'IdentifyObject(largest_object)', 'ReportObjectAttribute(size)']" #Example Desired PLAN
         #plan="[ navigate('dinning_table') , FindObject('potted_meat_can'), PickObject('potted_meat_can'), navigate('start_location')]"        
         req = ActionPlannerRequest()
-        req.timeout=10
+        req.timeout= 50
         command=action_planner_server(req)
         print(f'command.plan.data{command.plan.data}.')
         plan=command.plan.data
