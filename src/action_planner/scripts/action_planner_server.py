@@ -13,36 +13,23 @@ from ollama import chat
 import re #regex
 ################
 locations_names="""
-bed (p) 
-bedside table (p) 
-side tables (p)
-shelf (p) | cleaning supplies 
-trashbin 
-dishwasher (p) 
-potted plant 
-kitchen table (p) | dishes 
-chairs 
-pantry (p) | food 
-refrigerator (p) 
-sink (p) 
-cabinet (p) | drinks 
-coatrack 
-desk (p) | fruits 
-armchair 
-desk lamp 
-waste basket 
-tv stand (p) 
-storage rack (p) 
-lamp 
-side tables (p) | snacks 
-sofa (p) 
-bookshelf (p) | toys 
-entrance 
-exit 
-kitchen
-living_room
-dinning_room
-bedroom
+ bedside table (p) |
+ side table (p) | snacks |
+ bed (p) |
+ kitchen table (p) | dishes |
+ dishwasher (p) | cleaning supplies |
+ sink (p) |  |
+ microwave |
+ waste basket (p) |  
+ shelf (p) |  |
+ refrigerator (p) |
+ trash bin (p) | 
+ desk (p) | fruits |
+ bar (p) | drinks |
+ tv stand (p) |
+ cabinet (p) | foods |
+ sofa (p) |
+ seats |
 """
 tools = """
 def Navigate(target_location: str):
@@ -72,6 +59,13 @@ def TellJoke(person_name: str):
 
 def TellStatement(info_item: str):
     \"\"\"Share a fact or statement with a person.\"\"\"
+
+def RecoginzeAction(person_name: str):
+    \"\"\"Describe what action is the human performing, \"\"\"
+
+def RecognizePosture(person_name: str):
+    \"\"\"Describe what posture the human has, \"\"\"
+
 
 def FindObject(object_name: str = None, object_type: str = None):
     \"\"\"
@@ -122,6 +116,8 @@ def GiveObjectToPerson(person_location: str):
     '''
 def ReportResult(info: str):
     '''Verbally report the result of a previous query .'''
+
+    
 
 """
 
