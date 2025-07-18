@@ -77,7 +77,8 @@ class Initial(smach.State):
 class Plan(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed', 'navigate','pick','place'
-                                            ,'find_objects','follow','answer' , 'locate_person', 'tell_joke'],
+                                            ,'find_objects','follow' #,'answer',
+                                            ,'locate_person', 'tell_joke'],
                                             output_keys=['actions','params','command_id'],input_keys=['actions','params'])
         self.tries = 0
 
@@ -98,10 +99,10 @@ class Plan(smach.State):
             elif current_action =='place_object':return'place'
             elif current_action =='find_object':return'find_objects'
             elif current_action =='follow_person':return'follow'
-            elif current_action =='answer_question':return'answer'
+            #elif current_action =='answer_question':return'answer'
             elif current_action =='tell_joke':return 'tell_joke'
-            elif current_action =='recognize_action':return 'person_action'
-            elif current_action =='recognize_posture':return 'person_posture'
+            # elif current_action =='recognize_action':return 'person_action'
+            # elif current_action =='recognize_posture':return 'person_posture'
             elif current_action in ['locate_person','identify_person','greet_person']:return 'locate_person'
             elif current_action =='tell_joke':return 'tell_joke'
             
@@ -244,35 +245,35 @@ class Locate_person(smach.State):
             talk('Navigation Failed, retrying')
             return 'failed'
 ##########################################################
-class Recognize_action(smach.State):  
-    def __init__(self):
-        smach.State.__init__(self, outcomes=['succ', 'failed'], output_keys=['actions','params','result'], input_keys=['actions','params'])
+# class Recognize_action(smach.State):  
+#     def __init__(self):
+#         smach.State.__init__(self, outcomes=['succ', 'failed'], output_keys=['actions','params','result'], input_keys=['actions','params'])
         
-    def execute(self, userdata):
+#     def execute(self, userdata):
 
-        rospy.loginfo('STATE : recognize human action in current location')        
-        if self.tries==1:
-            talk('recognizing human action')
-            rospy.loginfo('Scanning the room for humans')
-            head.set_joint_values([ 0.0, 0.1])# Looking ahead
-        if self.tries==2:head.set_joint_values([ 0.5, 0.1])#looking left
-        if self.tries==3:head.set_joint_values([-0.5, 0.1])#looking right        
-        rospy.sleep(1.0)
-        keypoints = get_keypoints()
-        res=recognize_action(keypoints)
-        print (f'Res to recognize human action {res} , actions{userdata.actions}params{userdata.params}')
+#         rospy.loginfo('STATE : recognize human action in current location')        
+#         if self.tries==1:
+#             talk('recognizing human action')
+#             rospy.loginfo('Scanning the room for humans')
+#             head.set_joint_values([ 0.0, 0.1])# Looking ahead
+#         if self.tries==2:head.set_joint_values([ 0.5, 0.1])#looking left
+#         if self.tries==3:head.set_joint_values([-0.5, 0.1])#looking right        
+#         rospy.sleep(1.0)
+#         keypoints = get_keypoints()
+#         res=recognize_action(keypoints)
+#         print (f'Res to recognize human action {res} , actions{userdata.actions}params{userdata.params}')
 
 
 
-        if res:
-            userdata.actions.pop(0)
-            userdata.params.pop(0)
-            userdata.result = res
-            return 'succ'
-        else:
-            talk('recognition Failed, retrying')
-            return 'failed'
-##########################################################
+#         if res:
+#             userdata.actions.pop(0)
+#             userdata.params.pop(0)
+#             userdata.result = res
+#             return 'succ'
+#         else:
+#             talk('recognition Failed, retrying')
+#             return 'failed'
+# ##########################################################
 
 class Recognize_posture(smach.State):  
     def __init__(self):
@@ -653,11 +654,11 @@ if __name__ == '__main__':
                                                                                         'find_objects':'FIND_OBJECTS',  
                                                                                         'navigate': 'NAVIGATE',
                                                                                         'follow'  :'FOLLOW_PERSON',
-                                                                                        'answer'  :'ANSWER_QUESTION',
+                                                                                        #'answer'  :'ANSWER_QUESTION',
                                                                                         'tell_joke'  :'TELL_JOKE',
                                                                                         'locate_person':'LOCATE_PERSON',
-                                                                                        'recognize_action':'RECOGNIZE_ACTION',
-                                                                                        'recognize_posture':'RECOGNIZE_POSTURE'
+                                                                                        #'recognize_action':'RECOGNIZE_ACTION',
+                                                                                        #'recognize_posture':'RECOGNIZE_POSTURE'
                                                                                          })
         smach.StateMachine.add("LOCATE_PERSON"               ,   Locate_person(),       transitions={'failed': 'LOCATE_PERSON',    
                                                                                         'succ': 'PLAN', 
@@ -674,9 +675,9 @@ if __name__ == '__main__':
        
        
        
-        smach.StateMachine.add("ANSWER_QUESTION"        ,   Answer_question(),     transitions={'failed': 'ANSWER_QUESTION',    
-                                                                                         'succ': 'PLAN', 
-                                                                                         })
+        # smach.StateMachine.add("ANSWER_QUESTION"        ,   Answer_question(),     transitions={'failed': 'ANSWER_QUESTION',    
+        #                                                                                  'succ': 'PLAN', 
+        #                                                                                  })
         
         smach.StateMachine.add("TELL_JOKE"        ,   Tell_joke(),     transitions={'failed': 'TELL_JOKE',    
                                                                                          'succ': 'PLAN', 
@@ -689,12 +690,12 @@ if __name__ == '__main__':
         smach.StateMachine.add("PLACE",    Place(),                     transitions={'failed': 'PLACE',    
                                                                                          'succ': 'PLACE_GOAL',
                                                                                          'tries': 'PLAN'})
-        smach.StateMachine.add("RECOGNIZE_ACTION",    Recognize_action(),                     transitions={'failed': 'RECOGNIZE_ACTION',    
-                                                                                         'succ': 'PLAN',
-                                                                                         'tries': 'PLAN'})
-        smach.StateMachine.add("RECOGNIZE_POSTURE",    Recognize_posture(),                     transitions={'failed': 'RECOGNIZE_POSTURE',    
-                                                                                         'succ': 'PLAN',
-                                                                                         'tries': 'PLAN'})
+        # smach.StateMachine.add("RECOGNIZE_ACTION",    Recognize_action(),                     transitions={'failed': 'RECOGNIZE_ACTION',    
+        #                                                                                  'succ': 'PLAN',
+        #                                                                                  'tries': 'PLAN'})
+        # smach.StateMachine.add("RECOGNIZE_POSTURE",    Recognize_posture(),                     transitions={'failed': 'RECOGNIZE_POSTURE',    
+        #                                                                                  'succ': 'PLAN',
+        #                                                                                  'tries': 'PLAN'})
 
         smach.StateMachine.add("GRASP_GOAL", SimpleActionState('grasp_server', GraspAction, goal_slots={'target_pose': 'target_pose', 'mode': 'mode'}),                      
                                 transitions={'preempted': 'PLAN', 'succeeded': 'CHECK_GRASP', 'aborted': 'PLAN'})

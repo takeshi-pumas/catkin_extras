@@ -214,7 +214,7 @@ def get_keypoints(points_msg = points_msg,dist = 20,remove_bkg= False):
         image, masked_image = removeBackground(points_msg,distance = dist)
         save_image(masked_image,name="maskedImage")
     else:
-        
+        image = rgbd.get_image()
         image_data = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]   
         frame=cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
         save_image(frame,name="noMaskedImage")
@@ -223,12 +223,15 @@ def get_keypoints(points_msg = points_msg,dist = 20,remove_bkg= False):
     #pts= points_data
     
     inHeight = image.shape[0]
+    print(inHeight)
     inWidth = image.shape[1]
+    print(inWidth)
     # Prepare the frame to be fed to the network
-    inpBlob = cv2.dnn.blobFromImage(masked_image, 1.0 / 255, (inWidth, inHeight), (0, 0, 0), swapRB=False, crop=False)
+    inpBlob = cv2.dnn.blobFromImage(image, 1.0 / 255, (inWidth, inHeight), (0, 0, 0), swapRB=False, crop=False)
     # Set the prepared object as the input blob of the network
     net.setInput(inpBlob)
     output = net.forward()
+    print(output)
     try:
         # Logica para separar esqueletos en una imagen
         poses = getconectionJoints(output,inHeight,inWidth)
@@ -242,7 +245,7 @@ def get_keypoints(points_msg = points_msg,dist = 20,remove_bkg= False):
 
 
 
-keypoints = get_keypoints(points_msg)
+#keypoints = get_keypoints(points_msg)
 
 def recognize_action(keypoints):
     if keypoints is None: #or len(keypoints.shape) != 3:
