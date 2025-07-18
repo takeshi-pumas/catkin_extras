@@ -366,6 +366,40 @@ def detect_pointing(points_msg,dist = 6, remove_bkg= True):
         
     
     return res
+#-----------------------------------------------------------------
+def get_keypoints(points_msg,dist = 20,remove_bkg= False):
+    #tf_man = TF_MANAGER()
+    #res=Point_detectorResponse()
+    points_data = ros_numpy.numpify(points_msg)
+    if remove_bkg:
+        image, masked_image = removeBackground(points_msg,distance = dist)
+        save_image(masked_image,name="maskedImage")
+    else:
+        
+        image_data = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]   
+        frame=cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
+        save_image(frame,name="noMaskedImage")
+    #image_data = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]   
+    #image=cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
+    #pts= points_data
+    
+    inHeight = image.shape[0]
+    inWidth = image.shape[1]
+    # Prepare the frame to be fed to the network
+    inpBlob = cv2.dnn.blobFromImage(masked_image, 1.0 / 255, (inWidth, inHeight), (0, 0, 0), swapRB=False, crop=False)
+    # Set the prepared object as the input blob of the network
+    net.setInput(inpBlob)
+    output = net.forward()
+    try:
+        # Logica para separar esqueletos en una imagen
+        poses = getconectionJoints(output,inHeight,inWidth)
+        #imageDraw = drawSkeletons(image,poses,plot=False)
+        #save_image(imageDraw,name="maskedImageWithOPinOpenCV")
+        return poses
+    
+    except Exception as e:
+        print("Ocurrio un error al construir el esqueleto",e,type(e).__name__)
+        raise Exception("Ocurrio un error al construir el esqueleto ")
 
 #-----------------------------------------------------------------
 def detect_pointing2(points_msg,dist = 6,remove_bkg= True):
