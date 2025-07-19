@@ -195,10 +195,8 @@ class Goto_human(smach.State):
         self.tries += 1
         if self.tries == 3:
             return 'tries'
-        
         print('getting close to human')
         head.to_tf('human')
-
         res = omni_base.move_d_to(1.0,'human')
         
         human_pos,_=tf_man.getTF('human')

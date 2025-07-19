@@ -37,19 +37,8 @@ class Initial(smach.State):
         #drinks=['coke','juice','beer', 'water', 'soda', 'wine', 'i want a', 'i would like a']
         #drinks = ['coke','juice','milk', 'water', 'soda', 'wine', 
         #          'i want a', 'i would like a', 'tea', 'icedtea', 'cola', 'redwine', 'orangejuice', 'tropicaljuice']
-        drinks = ['kuat', 'coffee', 'coke', 'orange juice', 'fanta', 'milk']
-        interest = ['movies','music','food','cooking','programming','going out','sports','football', 'baseball', 'dancing', 'partying', 'poetry']
-        names = [' my name is' , 'i am','maria', 'ana', 'francisca', 
-                 'antonia', 'adriana', 'juliana', 'marcia', 'fernanda', 'patricia', 'aline', 'jose', 'joao','antonio','francisco','carlos','yoao']
-        confirmation = ['yes','no', 'robot yes', 'robot no','not','now','nope','yeah']                     
-        gram = drinks + names + confirmation + interest  
-        rospack = rospkg.RosPack()        
-        file_path = rospack.get_path('config_files') 
-        scarlett=cv2.imread(file_path+'/faces_for_recognition/scarlett/scarlett.png') #JOEL LAP 
-        print (type(scarlett))
+       
         if self.tries == 1:
-            set_grammar(gram)  ##PRESET DRINKS
-            rospy.sleep(0.2)
             return 'succ'
         elif self.tries == 3:
             return 'failed'
@@ -127,6 +116,43 @@ class Go_to_instruction_room(smach.State):
             return 'failed'
         
 # find operator to interact withs
+#class Wait_for_waving(smach.State):
+   """ def __init__(self):
+                 smach.State.__init__(
+                     self, outcomes=['succ', 'failed', 'tries'])
+                 self.tries = 0
+         
+             def execute(self, userdata):
+                 
+         
+                 rospy.loginfo('State : Find_human')
+                 talk('Scanning the room for humans')
+                 self.tries += 1
+                 if self.tries >= 4:
+                     self.tries = 0
+                     return'tries'
+         
+                 if self.tries==1:head.set_joint_values([ 0.0, 0.0])
+                 if self.tries==2:head.set_joint_values([ 0.3, 0.1])
+                 if self.tries==3:head.set_joint_values([-0.3, 0.1])
+         
+                 
+                 rospy.sleep(0.7)
+                 humanpose=detect_human_to_tf()
+         
+                 print('Detecting Humans ')
+         
+         
+                 if humanpose== False:
+                     print ('no human ')
+                     return 'failed'
+                 else : 
+                     talk('Human Found, Getting close ')
+                     head.to_tf('human')
+                     self.tries=0
+                     return 'succ'    
+         """
+
 class Wait_for_waving(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed','tries'])
@@ -134,22 +160,11 @@ class Wait_for_waving(smach.State):
         self.gaze = [[ 0.0, 0.05],[ 0.0, 0.05],[ -0.5, 0.15],[ 0.5, 0.15],[ 0.85, 0.2],[ -0.85, 0.2]]
     def execute(self, userdata):
         #req = RecognizeRequest()    # DOCKER
-        #req = RecognizeOPRequest() # NORMAL
+        req = RecognizeOPRequest() # NORMAL
 
-        humanpose=detect_human_to_tf()
-
-        print('Detecting Humans ')
-        
-        if humanpose:
-            talk('Human Found, Getting close ')
-            head.to_tf('human')
-            self.tries=0
-        return 0
-        img=rgbd.get_image()
-        print (img.shape    )
         # Guardo posicion para retornar
-        #trans, quat=tf_man.getTF('base_link')
-        #tf_man.pub_static_tf(pos=trans, rot =[0,0,0,1], point_name='INITIAL_PLACE')
+        trans, quat=tf_man.getTF('base_link')
+        tf_man.pub_static_tf(pos=trans, rot =[0,0,0,1], point_name='INITIAL_PLACE')
         rospy.loginfo('STATE : Wait for a person waving') 
         if self.tries < 6:self.tries += 1
         else: self.tries=0
@@ -176,7 +191,7 @@ class Wait_for_waving(smach.State):
         #rospy.sleep(1.0)
 
         #resAct=recognize_action_docker(req) # DOCKER
-        resAct=recognize_action(req)       # NORMAL #TODO: make sure this funtion is working on
+        resAct=recognize_action(req)       # NORMAL
         
         print("[WAITFORWAVING] RES OF SERVICE:",resAct.i_out)
 
@@ -197,14 +212,14 @@ class Wait_for_waving(smach.State):
         print('[WAITFORWAVING] Aproaching to the waving person')
         self.tries=0
         return 'succ'
-    
+#--------------------------------------------------
 class Goto_waving_person(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed','tries'])
         self.tries = 0
 
     def execute(self, userdata):
-        rospy.loginfo('STATE : Navigate to waving person')
+        rospy.loginfo('STATE : Navigate to forbidden room')
 
         print(f'[GOTOWAVINGPERSON] Try {self.tries} of 3 attempts')
         self.tries += 1
@@ -228,7 +243,7 @@ class Goto_waving_person(smach.State):
         else:
             print('[GOTOWAVINGPERSON] Navigation Failed, retrying')
             return 'failed'
-        
+
 class Grasp_object(smach.State):
     def __init__(self):
         smach.State.__init__(
@@ -405,10 +420,14 @@ if __name__ == '__main__':
         # Interaction
         smach.StateMachine.add("GO_TO_INSTRUCTION_ROOM", Go_to_instruction_room(),  
                                transitions={'failed': 'GO_TO_INSTRUCTION_ROOM', 'succ': 'WAIT_WAVING'})
-        smach.StateMachine.add("WAIT_WAVING", Wait_for_waving(),            
-                               transitions={'failed': 'WAIT_WAVING', 'succ': 'APPROACH_OPERATOR', 'tries': 'GO_TO_INSTRUCTION_ROOM'})
-        smach.StateMachine.add("APPROACH_OPERATOR", Goto_waving_person(),            
-                               transitions={'failed': 'APPROACH_OPERATOR', 'succ': 'GET_OBJECT','tries': 'GO_TO_INSTRUCTION_ROOM'})
+        
+        smach.StateMachine.add("WAITING_WAVING", Wait_for_waving(),            
+                               transitions={'failed': 'WAITING_WAVING', 'succ': 'GOTO_WAVING_PERSON', 'tries':'GO_TO_INSTRUCTION_ROOM'})
+        
+        
+        smach.StateMachine.add("GOTO_WAVING_PERSON", Goto_waving_person(),    
+                               transitions={'failed': 'GOTO_WAVING_PERSON', 'succ': 'GET_OBJECT','tries':'GO_TO_INSTRUCTION_ROOM'})
+        
         smach.StateMachine.add("GET_OBJECT", Grasp_object(),            
                                transitions={'failed': 'GET_OBJECT', 'grasped_item': 'GO_PLACE'})
         smach.StateMachine.add("GO_PLACE", Go_to_place_position(),            
