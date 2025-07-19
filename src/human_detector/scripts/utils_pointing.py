@@ -5,6 +5,8 @@ import rospy
 import tf2_ros                                    
 from human_detector.srv import Point_detector ,Point_detectorResponse 
 from human_detector.srv import Human_detector ,Human_detectorResponse 
+from human_detector.srv import Wrist_detector ,Wrist_detectorResponse 
+from human_detector.srv import Wave_detector ,Wave_detectorResponse 
 
 from cv_bridge import CvBridge
 from object_classification.srv import *
@@ -402,6 +404,258 @@ def get_keypoints(points_msg,dist = 20,remove_bkg= False):
         raise Exception("Ocurrio un error al construir el esqueleto ")
 
 #-----------------------------------------------------------------
+def detect_wrists(points_msg,dist = 6,remove_bkg= True):
+    #tf_man = TF_MANAGER()
+    res=Point_detectorResponse()
+    points_data = ros_numpy.numpify(points_msg)
+    if remove_bkg:
+        image, masked_image = removeBackground(points_msg,distance = dist)
+        save_image(masked_image,name="maskedImage")
+    else:
+        
+        image_data = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]   
+        frame=cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
+        save_image(frame,name="noMaskedImage")
+    #image_data = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]   
+    #image=cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
+    #pts= points_data
+    
+    inHeight = image.shape[0]
+    inWidth = image.shape[1]
+    # Prepare the frame to be fed to the network
+    inpBlob = cv2.dnn.blobFromImage(masked_image, 1.0 / 255, (inWidth, inHeight), (0, 0, 0), swapRB=False, crop=False)
+    # Set the prepared object as the input blob of the network
+    net.setInput(inpBlob)
+    output = net.forward()
+    try:
+        # Logica para separar esqueletos en una imagen
+        poses = getconectionJoints(output,inHeight,inWidth)
+        imageDraw = drawSkeletons(image,poses,plot=False)
+        save_image(imageDraw,name="maskedImageWithOPinOpenCV")
+    
+    except Exception as e:
+        print("Ocurrio un error al construir el esqueleto",e,type(e).__name__)
+        raise Exception("Ocurrio un error al construir el esqueleto ")
+
+    res.debug_image.append(bridge.cv2_to_imgmsg(imageDraw))
+    # HASTA AQUI NO REQUIERE NUBE DE PUNTOS
+
+    dists=[]
+    for i,pose in enumerate(poses):
+        if pose[0,0] != 0:
+            print(pose[0,0],pose[0,1],pose[0])
+            pose_xyz =[points_data['x'][int(pose[0,1]), int(pose[0,0])],
+                       points_data['y'][int(pose[0,1]), int(pose[0,0])],
+                       points_data['z'][int(pose[0,1]), int(pose[0,0])]]
+            if (pose_xyz == None).any():               # PENDIENTE DE TERMINAR Y PROBAR
+                raise Exception("Error al obtener datos de PointCloud")
+            dists.append(np.linalg.norm(pose_xyz)) 
+            t=write_tf((pose_xyz[0],pose_xyz[1],pose_xyz[2]),(0,0,0,1),'person_'+str(i),parent_frame='head_rgbd_sensor_rgb_frame')
+            b_st.sendTransform(t)
+            rospy.sleep(0.3)
+        elif pose[0,0] == 0 and pose[1,0] != 0:
+            print(pose[1,0],pose[1,1])
+            pose_xyz =[points_data['x'][int(pose[1,1]), int(pose[1,0])],
+                       points_data['y'][int(pose[1,1]), int(pose[1,0])],
+                       points_data['z'][int(pose[1,1]), int(pose[1,0])]]
+            if (pose_xyz == None).any():               # PENDIENTE DE TERMINAR Y PROBAR
+                raise Exception("Error al obtener datos de PointCloud")
+            dists.append(np.linalg.norm(pose_xyz))  
+            t=write_tf((pose_xyz[0],pose_xyz[1],pose_xyz[2]),(0,0,0,1),'person_'+str(i),parent_frame='head_rgbd_sensor_rgb_frame')
+            b_st.sendTransform(t)
+            rospy.sleep(0.3)
+        else:
+            print("NO HAY DATOS PARA PUBLICAR")   
+            # PENDIENTE DE TERMINAR Y PROBAR
+            #raise Exception("Error, datos en zero para TF")
+
+
+    print(np.min(dists),np.argmin(dists))
+    
+    # DE TODAS LAS DISTANCIAS OBTENGO EL INDICE DE LA MAS PEQUEÑA
+    k = np.argmin(dists) if len(dists)>1 else 0
+
+    # PUBLICO CODOS Y MANOS DE LA PERSONA k Y OBTENGO COORDENADAS RESPECTO A MAPA    
+    codoD =[points_data['x'][int(poses[k,3,1]), int(poses[k,3,0])],
+            points_data['y'][int(poses[k,3,1]), int(poses[k,3,0])],
+            points_data['z'][int(poses[k,3,1]), int(poses[k,3,0])]]
+    codoI =[points_data['x'][int(poses[k,6,1]), int(poses[k,6,0])],
+            points_data['y'][int(poses[k,6,1]), int(poses[k,6,0])],
+            points_data['z'][int(poses[k,6,1]), int(poses[k,6,0])]]
+    manoD =[points_data['x'][int(poses[k,4,1]), int(poses[k,4,0])],
+            points_data['y'][int(poses[k,4,1]), int(poses[k,4,0])],
+            points_data['z'][int(poses[k,4,1]), int(poses[k,4,0])]]
+    manoI =[points_data['x'][int(poses[k,7,1]), int(poses[k,7,0])],
+            points_data['y'][int(poses[k,7,1]), int(poses[k,7,0])],
+            points_data['z'][int(poses[k,7,1]), int(poses[k,7,0])]]
+            
+    if (codoD == None).any() or (manoD == None).any() or (codoI == None).any() or (manoI == None).any():   # PENDIENTE DE TERMINAR Y PROBAR
+        raise Exception("Error al publicar TF (empty)")
+    
+    t=write_tf((codoD[0],codoD[1],codoD[2]),(0,0,0,1),'codoD',parent_frame='head_rgbd_sensor_rgb_frame')
+    b_st.sendTransform(t)
+    rospy.sleep(0.3)
+    t=write_tf((manoD[0],manoD[1],manoD[2]),(0,0,0,1),'manoD',parent_frame='head_rgbd_sensor_rgb_frame')
+    b_st.sendTransform(t)
+    rospy.sleep(0.3)
+    #if (codoI == None).any() or (manoI == None).any():               # PENDIENTE DE TERMINAR Y PROBAR
+    #    raise Exception("Error al publicar TF (empty)")
+    t=write_tf((codoI[0],codoI[1],codoI[2]),(0,0,0,1),'codoI',parent_frame='head_rgbd_sensor_rgb_frame')
+    b_st.sendTransform(t)
+    rospy.sleep(0.3)
+    t=write_tf((manoI[0],manoI[1],manoI[2]),(0,0,0,1),'manoI',parent_frame='head_rgbd_sensor_rgb_frame')
+    b_st.sendTransform(t)
+    rospy.sleep(0.7)
+
+    change_ref_frame_tf(point_name='codoD')
+    change_ref_frame_tf(point_name='codoI')
+    change_ref_frame_tf(point_name='manoD')
+    change_ref_frame_tf(point_name='manoI')
+    rospy.sleep(0.7)
+
+    codoD, _ =getTF(target_frame='codoD')
+    codoI, _ =getTF(target_frame='codoI')
+    manoD, _ =getTF(target_frame='manoD')
+    manoI, _ =getTF(target_frame='manoI')
+    rospy.sleep(0.7)
+
+    if manoD[2] > manoI[2]:
+        res.x_r=manoD[0]
+        res.y_r=manoD[1]
+        res.z_r=manoD[2]
+    else:
+        res.x_r=manoI[0]
+        res.y_r=manoI[1]
+        res.z_r=manoI[2]
+
+    return res
+
+def detect_wave(points_msg,dist = 6,remove_bkg= True):
+    #tf_man = TF_MANAGER()
+    res=Point_detectorResponse()
+    points_data = ros_numpy.numpify(points_msg)
+    if remove_bkg:
+        image, masked_image = removeBackground(points_msg,distance = dist)
+        save_image(masked_image,name="maskedImage")
+    else:
+        
+        image_data = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]   
+        frame=cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
+        save_image(frame,name="noMaskedImage")
+    #image_data = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]   
+    #image=cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
+    #pts= points_data
+    
+    inHeight = image.shape[0]
+    inWidth = image.shape[1]
+    # Prepare the frame to be fed to the network
+    inpBlob = cv2.dnn.blobFromImage(masked_image, 1.0 / 255, (inWidth, inHeight), (0, 0, 0), swapRB=False, crop=False)
+    # Set the prepared object as the input blob of the network
+    net.setInput(inpBlob)
+    output = net.forward()
+    try:
+        # Logica para separar esqueletos en una imagen
+        poses = getconectionJoints(output,inHeight,inWidth)
+        imageDraw = drawSkeletons(image,poses,plot=False)
+        save_image(imageDraw,name="maskedImageWithOPinOpenCV")
+    
+    except Exception as e:
+        print("Ocurrio un error al construir el esqueleto",e,type(e).__name__)
+        raise Exception("Ocurrio un error al construir el esqueleto ")
+
+    res.debug_image.append(bridge.cv2_to_imgmsg(imageDraw))
+    # HASTA AQUI NO REQUIERE NUBE DE PUNTOS
+
+    dists=[]
+    for i,pose in enumerate(poses):
+        if pose[0,0] != 0:
+            print(pose[0,0],pose[0,1],pose[0])
+            pose_xyz =[points_data['x'][int(pose[0,1]), int(pose[0,0])],
+                       points_data['y'][int(pose[0,1]), int(pose[0,0])],
+                       points_data['z'][int(pose[0,1]), int(pose[0,0])]]
+            if (pose_xyz == None).any():               # PENDIENTE DE TERMINAR Y PROBAR
+                raise Exception("Error al obtener datos de PointCloud")
+            dists.append(np.linalg.norm(pose_xyz)) 
+            t=write_tf((pose_xyz[0],pose_xyz[1],pose_xyz[2]),(0,0,0,1),'person_'+str(i),parent_frame='head_rgbd_sensor_rgb_frame')
+            b_st.sendTransform(t)
+            rospy.sleep(0.3)
+        elif pose[0,0] == 0 and pose[1,0] != 0:
+            print(pose[1,0],pose[1,1])
+            pose_xyz =[points_data['x'][int(pose[1,1]), int(pose[1,0])],
+                       points_data['y'][int(pose[1,1]), int(pose[1,0])],
+                       points_data['z'][int(pose[1,1]), int(pose[1,0])]]
+            if (pose_xyz == None).any():               # PENDIENTE DE TERMINAR Y PROBAR
+                raise Exception("Error al obtener datos de PointCloud")
+            dists.append(np.linalg.norm(pose_xyz))  
+            t=write_tf((pose_xyz[0],pose_xyz[1],pose_xyz[2]),(0,0,0,1),'person_'+str(i),parent_frame='head_rgbd_sensor_rgb_frame')
+            b_st.sendTransform(t)
+            rospy.sleep(0.3)
+        else:
+            print("NO HAY DATOS PARA PUBLICAR")   
+            # PENDIENTE DE TERMINAR Y PROBAR
+            #raise Exception("Error, datos en zero para TF")
+
+
+    print(np.min(dists),np.argmin(dists))
+    
+    # DE TODAS LAS DISTANCIAS OBTENGO EL INDICE DE LA MAS PEQUEÑA
+    k = np.argmin(dists) if len(dists)>1 else 0
+
+    # PUBLICO CODOS Y MANOS DE LA PERSONA k Y OBTENGO COORDENADAS RESPECTO A MAPA    
+    codoD =[points_data['x'][int(poses[k,3,1]), int(poses[k,3,0])],
+            points_data['y'][int(poses[k,3,1]), int(poses[k,3,0])],
+            points_data['z'][int(poses[k,3,1]), int(poses[k,3,0])]]
+    codoI =[points_data['x'][int(poses[k,6,1]), int(poses[k,6,0])],
+            points_data['y'][int(poses[k,6,1]), int(poses[k,6,0])],
+            points_data['z'][int(poses[k,6,1]), int(poses[k,6,0])]]
+    manoD =[points_data['x'][int(poses[k,4,1]), int(poses[k,4,0])],
+            points_data['y'][int(poses[k,4,1]), int(poses[k,4,0])],
+            points_data['z'][int(poses[k,4,1]), int(poses[k,4,0])]]
+    manoI =[points_data['x'][int(poses[k,7,1]), int(poses[k,7,0])],
+            points_data['y'][int(poses[k,7,1]), int(poses[k,7,0])],
+            points_data['z'][int(poses[k,7,1]), int(poses[k,7,0])]]
+            
+    if (codoD == None).any() or (manoD == None).any() or (codoI == None).any() or (manoI == None).any():   # PENDIENTE DE TERMINAR Y PROBAR
+        raise Exception("Error al publicar TF (empty)")
+    
+    t=write_tf((codoD[0],codoD[1],codoD[2]),(0,0,0,1),'codoD',parent_frame='head_rgbd_sensor_rgb_frame')
+    b_st.sendTransform(t)
+    rospy.sleep(0.3)
+    t=write_tf((manoD[0],manoD[1],manoD[2]),(0,0,0,1),'manoD',parent_frame='head_rgbd_sensor_rgb_frame')
+    b_st.sendTransform(t)
+    rospy.sleep(0.3)
+    #if (codoI == None).any() or (manoI == None).any():               # PENDIENTE DE TERMINAR Y PROBAR
+    #    raise Exception("Error al publicar TF (empty)")
+    t=write_tf((codoI[0],codoI[1],codoI[2]),(0,0,0,1),'codoI',parent_frame='head_rgbd_sensor_rgb_frame')
+    b_st.sendTransform(t)
+    rospy.sleep(0.3)
+    t=write_tf((manoI[0],manoI[1],manoI[2]),(0,0,0,1),'manoI',parent_frame='head_rgbd_sensor_rgb_frame')
+    b_st.sendTransform(t)
+    rospy.sleep(0.7)
+
+    change_ref_frame_tf(point_name='codoD')
+    change_ref_frame_tf(point_name='codoI')
+    change_ref_frame_tf(point_name='manoD')
+    change_ref_frame_tf(point_name='manoI')
+    rospy.sleep(0.7)
+
+    codoD, _ =getTF(target_frame='codoD')
+    codoI, _ =getTF(target_frame='codoI')
+    manoD, _ =getTF(target_frame='manoD')
+    manoI, _ =getTF(target_frame='manoI')
+    rospy.sleep(0.7)
+
+    if manoD[2] > codoD[2]:
+        res.x_r=manoD[0]
+        res.y_r=manoD[1]
+        res.z_r=manoD[2]
+    else:
+        res.x_r=manoI[0]
+        res.y_r=manoI[1]
+        res.z_r=manoI[2]
+
+    return res
+
 def detect_pointing2(points_msg,dist = 6,remove_bkg= True):
     #tf_man = TF_MANAGER()
     res=Point_detectorResponse()

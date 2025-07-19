@@ -10,8 +10,8 @@
  <node name="killer_node" pkg="killer_node" type="killer_node.py" output="screen"/>
  <node name="fake_global" pkg="killer_node" type="fake_global_pose.py" output="screen"/>
 
+  <!--arg name="prohibition_map_file"  default="$(find config_files)/maps/map.yaml"/-->
   <arg name="prohibition_map_file"  default="$(find config_files)/prohibition_maps/rc25/map.yaml"/>
-  <!--arg name="prohibition_map_file"  default="$(find config_files)/prohibition_maps/blank/map.yaml"/-->
 
   <arg name="initial_pose_x" default="-5.7"/>
   <arg name="initial_pose_y" default="-6.0"/>
@@ -23,7 +23,7 @@
   <arg name="use_lidar" default="True"/>
   <arg name="use_sonars" default="False"/>
   <arg name="use_point_cloud" default="False"/>
-  <arg name="use_point_cloud2" value="False"/>
+  <arg name="use_point_cloud2" value="True"/>
   <arg name="use_bumper" default="False"/>
   <arg name="cloud_downsampling" default="5"/>
   <arg name="lidar_downsampling" default="1"/>

@@ -17,11 +17,12 @@ import tf2_ros
 import logging 
 import re
 from os import path
+import os
+from collections import Counter
 from glob import glob
 from pyzbar import pyzbar
 import ros_numpy
 from geometry_msgs.msg import PoseStamped, Point  , Quaternion , TransformStamped , Twist
-import tf2_geometry_msgs
 from tf2_geometry_msgs import PointStamped
 from std_msgs.msg import String,Float32MultiArray
 from std_srvs.srv import Trigger, TriggerResponse 
@@ -31,6 +32,10 @@ from object_classification.srv import *
 from segmentation.srv import *
 from human_detector.srv import Human_detector  ,Human_detectorRequest 
 from human_detector.srv import Point_detector ,Point_detectorRequest
+from human_detector.srv import Wrist_detector ,Wrist_detectorRequest
+from human_detector.srv import Wave_detector ,Wave_detectorResponse 
+
+
 from hmm_act_recog.srv import *
 from ros_whisper_vosk.srv import GetSpeech
 from object_classification.srv import *
@@ -45,21 +50,22 @@ from cv_bridge import CvBridge, CvBridgeError
 from nav_msgs.msg import OccupancyGrid
 from hri_msgs.msg import RecognizedSpeech
 from rospy.exceptions import ROSException
-from vision_msgs.srv import *
 from scipy.spatial import distance
-from sklearn.decomposition import PCA
+from vision_msgs.srv import *
 #from act_recog.srv import Recognize,RecognizeResponse,RecognizeRequest
 from ros_whisper_vosk.srv import SetGrammarVosk
-from action_server.msg import FollowActionGoal ,  FollowAction , IdentifyPersonAction , IdentifyPersonActionGoal
+from action_server.msg import FollowActionGoal ,  FollowAction , IdentifyPersonAction , IdentifyPersonActionGoal , GraspAction, PourCerealAction
+
 from utils.grasp_utils import *
 from utils.misc_utils import *
 from utils.nav_utils import *
-
 #from utils.know_utils import *
+import ast
+import re
 
 global listener, broadcaster, tfBuffer, tf_static_broadcaster, scene, rgbd, head,train_new_face, wrist, human_detect_server, line_detector, clothes_color , head_mvit
 global clear_octo_client, goal,navclient,segmentation_server  , tf_man , omni_base, brazo, speech_recog_server, bridge, map_msg, pix_per_m, analyze_face , arm , set_grammar
-global recognize_action , classify_client,pointing_detect_server ,placing_finder_server,action_planner_server, classify_client_dino ,Pca, hand_rgb
+global recognize_action , classify_client,wrist_detect_server,wave_detect_server,pointing_detect_server ,placing_finder_server,action_planner_server
 rospy.init_node('smach', anonymous=True)
 logger = logging.getLogger('rosout')
 logger.setLevel(logging.ERROR)
@@ -78,6 +84,8 @@ navclient=actionlib.SimpleActionClient('/navigate', NavigateAction)   ### PUMAS 
 clear_octo_client = rospy.ServiceProxy('/clear_octomap', Empty)   ###GRASPING OBSTACLE 
 human_detect_server = rospy.ServiceProxy('/detect_human' , Human_detector)  ####HUMAN FINDER OPPOSEBASED
 pointing_detect_server = rospy.ServiceProxy('/detect_pointing' , Point_detector)  ####HUMAN FINDER OPPOSEBASED
+wrist_detect_server = rospy.ServiceProxy('/detect_wrist' , Wrist_detector)  ####HUMAN FINDER OPPOSEBASED
+wave_detect_server = rospy.ServiceProxy('/detect_wave' , Wave_detector)  ####HUMAN FINDER OPPOSEBASED
 segmentation_server = rospy.ServiceProxy('/segment' , Segmentation)    ##### PLANE SEGMENTATION (PARALEL TO FLOOR)
 placing_finder_server = rospy.ServiceProxy('/placing_finder' , Segmentation)### WHERE TO PLACE THINGS IN SHELVES
 action_planner_server = rospy.ServiceProxy('/action_planner', ActionPlanner)  # Replace PlanAction with the appropriate service or action definition
@@ -90,18 +98,18 @@ analyze_face = rospy.ServiceProxy('analyze_face', RecognizeFace)    ###DEEP FACE
 classify_client = rospy.ServiceProxy('/classify', Classify)             #YOLO OBJ RECOG
 
 
-classify_client_dino = rospy.ServiceProxy('grounding_dino_detect', Classify_dino)
+
 classify_clnt_stickler = rospy.ServiceProxy('/classifystick', Classify)
 recognize_action = rospy.ServiceProxy('recognize_act',RecognizeOP)
-Pca=PCA()
+
 
 ####################################################################
-#map_msg= rospy.wait_for_message('/augmented_map', OccupancyGrid , 20)####WAIT for nav pumas map .. 
-#inflated_map= np.asarray(map_msg.data)
-#img_map=inflated_map.reshape((map_msg.info.width,map_msg.info.height))
-#pix_per_m=map_msg.info.resolution
-#contours, hierarchy = cv2.findContours(img_map.astype('uint8'),cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
-#contoured=cv2.drawContours(img_map.astype('uint8'), contours, 1, (255,255,255), 1)
+#smap_msg= rospy.wait_for_message('/augmented_map', OccupancyGrid , 20)####WAIT for nav pumas map .. 
+#sinflated_map= np.asarray(map_msg.data)
+#simg_map=inflated_map.reshape((map_msg.info.width,map_msg.info.height))
+#spix_per_m=map_msg.info.resolution
+#scontours, hierarchy = cv2.findContours(img_map.astype('uint8'),cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+#scontoured=cv2.drawContours(img_map.astype('uint8'), contours, 1, (255,255,255), 1)
 
 ####################################################################3
 
@@ -116,11 +124,305 @@ omni_base=OMNIBASE()        #  NAV ACTION
 wrist= WRIST_SENSOR()
 head = GAZE()
 brazo = ARM()
-hand_rgb = HAND_RGB()
 line_detector = LineDetector()
 # arm =  moveit_commander.MoveGroupCommander('arm')
 
+
+
+
+# FUNCIONES PARA DETECTAR TODOS ACCIONES CON POINTING
+#--------------------------------------
+usr_url=os.path.expanduser( '~' )
+protoFile = usr_url+"/openpose/models/pose/body_25/pose_deploy.prototxt"
+weightsFile = usr_url+"/openpose/models/pose/body_25/pose_iter_584000.caffemodel"
+net = cv2.dnn.readNetFromCaffe(protoFile, weightsFile)
+
+
+def getKeypoints(output,inWidth, inHeight,numKeys=8):
+    # se obtiene primero los keypoints, no deberia dar problemas
+    keypoints=[]
+    for i in range (numKeys):
+        probMap = output[0, i, :, :]
+        probMap = cv2.resize(probMap, (inWidth, inHeight))
+        mapSmooth = cv2.GaussianBlur(probMap,(3,3),0,0)
+        thresh =-256 if mapSmooth.max() < 0.1 else 256
+        minthresh = mapSmooth.max()*thresh/2 if thresh == 256 else mapSmooth.min()*thresh/2
+        if minthresh >15:
+            _,mapMask = cv2.threshold(mapSmooth*thresh,minthresh-12,255,cv2.THRESH_BINARY)
+        else:
+            _,mapMask = cv2.threshold(mapSmooth*thresh,minthresh-1,255,cv2.THRESH_BINARY)
+        contours,_ = cv2.findContours(np.uint8(mapMask), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        for cnt in contours:
+            blobMask = np.zeros(mapMask.shape)
+            blobMask = cv2.fillConvexPoly(blobMask, cnt, 1)
+            maskedProbMap = mapSmooth * blobMask
+            _, maxVal, _, maxLoc = cv2.minMaxLoc(maskedProbMap)
+            keypoints.append(maxLoc + (probMap[maxLoc[1], maxLoc[0]],) +(i,))
+    return keypoints
+
+def getGroups(output,conections,inHeight,inWidth):
+    
+    fullMAP=np.zeros((inHeight,inWidth),np.float32)
+    for con in conections:
+        probMap = output[0, con, :, :]
+        probMap = cv2.resize(probMap, (inWidth, inHeight))
+        mapSmooth = cv2.GaussianBlur(probMap,(3,3),0,0)
+        thresh =-256 if mapSmooth.max() < 0.1 else 256
+        minthresh = mapSmooth.max()*thresh/2 if thresh == 256 else mapSmooth.min()*thresh/2
+        if minthresh >15:
+            _,mapMask = cv2.threshold(mapSmooth*thresh,minthresh-12,255,cv2.THRESH_BINARY)
+        else:
+            _,mapMask = cv2.threshold(mapSmooth*thresh,minthresh-1,255,cv2.THRESH_BINARY)
+
+        fullMAP += mapMask
+    contours,_ = cv2.findContours(np.uint8(fullMAP), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    
+    listOfGroups=[]
+    for i in range(len(contours)):
+        tmpo=np.zeros((inHeight,inWidth),np.float32)
+        cv2.drawContours(tmpo, [contours[i]], -1, (255,255,0), thickness=cv2.FILLED)
+        listOfGroups.append(np.transpose(np.nonzero(tmpo == 255)))
+    return listOfGroups
+
+def get_placing_tf(prompt):
+    img=rgbd.get_image()
+    #cv2.imwrite('img.png',img)
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    # Convert image to ROS format
+    ros_image = bridge.cv2_to_imgmsg(img, encoding="bgr8")
+    points= rgbd.get_points()
+
+
+    points_msg=rospy.wait_for_message("/hsrb/head_rgbd_sensor/depth_registered/rectified_points",PointCloud2,timeout=5)
+    points_data = ros_numpy.numpify(points_msg)    
+    
+
+    #image_data = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]   
+    #image=cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
+    #image = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]
+    #rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)    
+    
+
+    # Create a proper ROS String message
+    prompt_msg = String()
+    prompt_msg.data = prompt
+    ######################################################
+    ################
+    #CORRECT POINTS###################
+    ################
+    try:
+            trans = tfBuffer.lookup_transform('map', 'head_rgbd_sensor_link', rospy.Time())
+                        
+            trans,rot=read_tf(trans)
+            #print ("############head",trans,rot)
+    except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
+            print ( 'No head TF FOUND')
+    t= write_tf(trans,rot)
+    cloud_out = do_transform_cloud(points_msg, t)
+    np_corrected=ros_numpy.numpify(cloud_out)
+    corrected=np_corrected.reshape(points_data.shape)
+
+    ######################################################
+    #rospy.wait_for_service('grounding_dino_detect')
+    try:
+        response = classify_client_dino(ros_image, prompt_msg)
+        if response.image is None or response.image.data == b'':
+            print("Error: Received an empty image response!")
+        else:
+            debug_image = bridge.imgmsg_to_cv2(response.image, desired_encoding="rgb8")
+
+            # Verificar si el bounding box está vacío
+            if len(response.bounding_boxes.data) == 0:
+                print("No se detectó ningún objeto.")
+                return debug_image,False
+            else:
+                print("Bounding box recibido:", response.bounding_boxes.data)
+                x_min, y_min, x_max, y_max = response.bounding_boxes.data
+                cv2.imwrite("debug_img.png",debug_image)
+                # Calcular el centroide 3D dentro del bounding box
+                cc = [
+                    np.nanmean(points['x'][y_min:y_max, x_min:x_max]),
+                    np.nanmean(points['y'][y_min:y_max, x_min:x_max]),
+                    np.nanmean(points['z'][y_min:y_max, x_min:x_max])
+                ]
+                print(f'{cc}\n\n\n')
+                tf_man.pub_static_tf(pos= cc , rot=[0,0,0,1], ref="head_rgbd_sensor_rgb_frame", point_name='placing_area' )   # Just Bounding Box Mask
+                return debug_image,True
+
+
+    except rospy.ServiceException as e:
+        print(f"Service call failed: {e}")
+
+def getconectionJoints(output,inHeight,inWidth,numKeyPoints = 8 ):
+    conections = [57,40,43,45,48,51,53] #,27,32,34,37]   # SOLO se utilzan 7 conexiones por simplicidad
+    # se obtiene primero los keypoints 
+    
+    keypoints = getKeypoints(output,inWidth, inHeight,numKeys = numKeyPoints)
+    # cuento max personas encontradas
+    conteo=Counter([i[-1] for i in keypoints])
+    # maxPeople = max(list(conteo.values()))
+    # avgPeople = round(sum(list(conteo.values()))/len(list(conteo.values())))
+    # if maxPeople > avgPeople :
+    #     maxPeople = avgPeople
+    
+    groups = getGroups(output,conections,inHeight,inWidth)
+    sk = np.zeros([len(groups),numKeyPoints,2])
+
+    #print(maxPeople,len(groups))
+    # if maxPeople != len(groups):
+    #     raise Exception("Distinto numero de KP que esqueletos detectados ")
+    
+    for k in keypoints:
+        for i, group in enumerate(groups):
+            if [True for item in group if (item == [k[1],k[0]]).all()]:     
+                sk[i,k[3],0] = k[0]
+                sk[i,k[3],1] = k[1]
+                print(sk)
+    return sk
+points_msg = rospy.wait_for_message("/hsrb/head_rgbd_sensor/depth_registered/rectified_points", PointCloud2)
+
+def get_keypoints(points_msg = points_msg,dist = 20,remove_bkg= False):
+    #tf_man = TF_MANAGER()
+    #res=Point_detectorResponse()
+    points_data = ros_numpy.numpify(points_msg)
+    if remove_bkg:
+        image, masked_image = removeBackground(points_msg,distance = dist)
+        save_image(masked_image,name="maskedImage")
+    else:
+        image = rgbd.get_image()
+        image_data = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]   
+        frame=cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
+        save_image(frame,name="noMaskedImage")
+    #image_data = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]   
+    #image=cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
+    #pts= points_data
+    
+    inHeight = image.shape[0]
+    print(inHeight)
+    inWidth = image.shape[1]
+    print(inWidth)
+    # Prepare the frame to be fed to the network
+    inpBlob = cv2.dnn.blobFromImage(image, 1.0 / 255, (inWidth, inHeight), (0, 0, 0), swapRB=False, crop=False)
+    # Set the prepared object as the input blob of the network
+    net.setInput(inpBlob)
+    output = net.forward()
+    print(output)
+    try:
+        # Logica para separar esqueletos en una imagen
+        poses = getconectionJoints(output,inHeight,inWidth)
+        #imageDraw = drawSkeletons(image,poses,plot=False)
+        #save_image(imageDraw,name="maskedImageWithOPinOpenCV")
+        return poses
+    
+    except Exception as e:
+        print("Ocurrio un error al construir el esqueleto",e,type(e).__name__)
+        raise Exception("Ocurrio un error al construir el esqueleto ")
+
+
+
+keypoints = get_keypoints(points_msg)
+
+def recognize_action(keypoints):
+    if keypoints is None: #or len(keypoints.shape) != 3:
+        return "No person detected"
+    
+    left_wrist = keypoints[7, :2]  # Left wrist
+    right_wrist = keypoints[4, :2]  # Right wrist
+    left_elbow = keypoints[6, :2]  # Left elbow
+    right_elbow = keypoints[3, :2]  # Right elbow
+    left_shoulder = keypoints[5, :2]  # Left shoulder
+    right_shoulder = keypoints[2, :2]  # Right shoulder
+
+    actions = []
+    
+    if left_wrist[0] != 0 or left_wrist[1] != 0 or left_elbow[0] != 0 or left_elbow[1] != 0 or left_shoulder[0] != 0 or left_shoulder[1] != 0:
+        # Check for waving (left arm)
+        # TODO: We need to look at waiving over time
+        # if left_wrist[1] < left_elbow[1] and left_elbow[1] < left_shoulder[1]:
+        #     return "Waving")
+
+        # Check for raising left arm
+        if left_wrist[1] < left_elbow[1] and left_elbow[1] < left_shoulder[1]:
+            return "Raising left arm"
+        
+        # Check for pointing to the left
+        if left_wrist[0] < left_shoulder[0] and abs(left_wrist[1] - left_shoulder[1]) < 50:
+            return "Pointing to the left"
+
+
+    elif right_wrist[0] != 0 or right_wrist[1]!= 0 or right_elbow[0] != 0 or right_elbow[1] != 0 or right_shoulder[0] != 0 or right_shoulder[1] != 0:
+        # Check for waving (right arm)
+        # if right_wrist[1] < right_elbow[1] and right_elbow[1] < right_shoulder[1]:
+        #     return "Waving")
+
+        # Check for raising right arm
+        if right_wrist[1] < right_elbow[1] and right_elbow[1] < right_shoulder[1]:
+            return "Raising right arm"
+
+        # Check for pointing to the right
+        if right_wrist[0] > right_shoulder[0] and abs(right_wrist[1] - right_shoulder[1]) < 50:
+            return "Pointing to the right"
+
+def angle(shoulder, hip, knee):
+    a = np.array([shoulder[0], shoulder[1]])
+    b = np.array([hip[0], hip[1]])
+    c = np.array([knee[0], knee[1]])
+
+    ba = a - b
+    bc = c - b
+
+    cosine_angle = np.dot(ba, bc) / (np.linalg.norm(ba) * np.linalg.norm(bc))
+    angle = np.arccos(cosine_angle)
+
+    print(np.degrees(angle))
+    return np.degrees(angle)
+
+def recognize_posture(keypoints):
+    if keypoints is None: #or len(keypoints.shape) != 3:
+        return "No person detected"
+    
+    left_hip = keypoints[12, :2]  # Left hip
+    right_hip = keypoints[9, :2]  # Right hip
+    left_knee = keypoints[13, :2]  # Left knee
+    right_knee = keypoints[10, :2]  # Right knee
+    left_shoulder = keypoints[5, :2]  # Left shoulder
+    right_shoulder = keypoints[2, :2]  # Right shoulder
+    left_ankle = keypoints[14, :2]
+    right_ankle = keypoints[11, :2]
+
+    if left_hip[0] == 0 or right_hip[0] == 0 or left_knee[0] == 0 or right_knee[0] == 0 or left_shoulder[0] == 0 or right_shoulder[0] == 0:
+        return False
+    elif left_hip[1] == 0 or right_hip[1] == 0 or left_knee[1] == 0 or right_knee[1] == 0 or left_shoulder[1] == 0 or right_shoulder[1] == 0:
+        return False
+
+    actions = []
+
+    posture_angle_left = angle(left_shoulder, left_hip, left_knee)
+    posture_angle_right = angle(right_shoulder, right_hip, right_knee)
+
+
+    if (posture_angle_left > 40 and posture_angle_right > 40) and (posture_angle_left < 110 and posture_angle_right < 110):
+        return "Sitting person"
+
+    if (posture_angle_left < 30 and posture_angle_right < 30) or (posture_angle_left > 130 and posture_angle_right > 130):
+
+        # Check for vertical vs horizontal
+
+        if((left_hip[1] < left_knee[1]) and (right_hip[1] < right_knee[1])):
+            return "Standing person"
+        if abs(left_hip[1] - right_hip[1]) < 30 and abs(left_knee[1] - right_knee[1]) < 30:
+            if abs(left_hip[1] - left_knee[1]) < 50:
+                return "Lying person"
+
+
+    return False
+
 #------------------------------------------------------
+
+#-----------------------------------------------------------------
+
+
+
 def camel_to_snake(name):
     # Converts camelCase or PascalCase to snake_case
     return re.sub('([a-z0-9])([A-Z])', r'\1_\2', name).lower()
@@ -202,9 +504,7 @@ def seg_res_tf_pointing(res):
     # Extract pose information from segmentation response an publish a tf... 
     # No rot is tf with pose relating to map  zero angles (robot facing)
     # the object_number tf is the PCA axis  orientation
-    
-
-    #origin_map_img=[round(img_map.shape[0]*0.5) ,round(img_map.shape[1]*0.5)]   
+    origin_map_img=[round(img_map.shape[0]*0.5) ,round(img_map.shape[1]*0.5)]   
     #brazo.set_named_target('go')
     if len(res.poses.data)==0:
         print('no objs')
@@ -246,6 +546,67 @@ def seg_res_tf_pointing(res):
     return succ
 
 #------------------------------------------------------
+def check_bag_hand_camera(imagen, x=220, y=265, w=45, h=15, bins=12,umbral = 0.7):
+    print("hand_camera checking")
+    
+    # Recortar la región seleccionada
+    recorte = imagen[y:y+h, x:x+w]
+
+    # Calcular y cuantizar hist_actual
+    hist_actual = {}
+    colores = ('b', 'g', 'r')
+    bin_size = 256 // bins
+
+    for i, color in enumerate(colores):
+        hist = cv2.calcHist([recorte], [i], None, [256], [0, 256])
+        
+        # Cuantización a 12 dimensiones
+        hist_cuantizado = [
+            int(sum(hist[j:j+bin_size])) 
+            for j in range(0, 256, bin_size)
+        ]
+
+        # Asegúrate de que siempre tenga exactamente 12 elementos
+        if len(hist_cuantizado) > bins:
+            hist_cuantizado = hist_cuantizado[:bins]
+
+        hist_actual[color] = hist_cuantizado
+    print("Comparing...")
+    hist_mano_vacia = {
+        'b': [580, 50, 44, 51, 25, 0, 0, 0, 0, 0, 0, 0], 
+        'g': [569, 59, 53, 69, 0, 0, 0, 0, 0, 0, 0, 0], 
+        'r': [556, 70, 61, 63, 0, 0, 0, 0, 0, 0, 0, 0]
+
+    }
+    total_similaridad = 0
+    total_canales = 0
+
+    for color in ('b', 'g', 'r'):
+        vacio = np.array(hist_mano_vacia[color]).astype(float)
+        actual = np.array(hist_actual[color]).astype(float)
+
+        # Verifica que ambos tengan 12 elementos
+        if len(vacio) != 12 or len(actual) != 12:
+            print(f"❌ Error: Los hist_actual para '{color}' no tienen 12 elementos")
+            return "Error en los hist_actual"
+
+        # Calcular la similaridad
+        similaridad = 1 - distance.cosine(vacio, actual)
+        print(f"✅ Similaridad para {color}: {similaridad:.4f}")
+
+        total_similaridad += similaridad
+        total_canales += 1
+
+    promedio_similaridad = total_similaridad / total_canales
+    print(f"📊 Promedio de similaridad: {promedio_similaridad:.4f}")
+
+    # Decisión basada en el umbral
+    if promedio_similaridad > umbral:
+        return False  # Mano sin objeto
+    else:
+        return True  # Mano con objeto
+#------------------------------------------------------
+
 def find_placing_area (plane_height=-1):
     #head.set_joint_values([-1.5,-0.65])
     #rospy.sleep(0.5)
@@ -791,6 +1152,51 @@ def get_robot_person_coords(pose,fileName=''):
                                dining_room_px_region)
     return room_robot,room_human
 #------------------------------------------------------
+def choose_placing_point(area_box,shelf_quat,occupied_pts):
+    buffer = 0.06  # Edge buffer in meters
+    shelf = 'top'  # for title
+    # Classify shelf facing direction
+    facing = classify_shelf_facing(shelf_quat)
+    print(f"Shelf is facing: {facing}")
+    # Adjust grid range based on facing
+    x_min, y_min = area_box[0]
+    x_max, y_max = area_box[1]
+    if facing in ['+x', '-x']:
+        x_range = np.arange(x_min + buffer, x_max - buffer, 0.06)  # Avoid sides
+        y_range = np.arange(y_min + buffer, y_max, 0.06)           # Full depth
+    elif facing in ['+y', '-y']:
+        x_range = np.arange(x_min + buffer, x_max - buffer, 0.06)
+        y_range = np.arange(y_min + buffer, y_max - buffer, 0.06)  # Avoid front/back
+    else:
+        x_range = np.arange(x_min, x_max, 0.06)
+        y_range = np.arange(y_min, y_max, 0.06)
+    grid_points = np.array(np.meshgrid(x_range, y_range)).T.reshape(-1, 2)
+    free_grid = np.array([
+        pt for pt in grid_points
+        if all(np.linalg.norm(pt - obj) >= 0.05 for obj in occupied_pts)
+    ]).reshape(-1, 2)
+    neighborhood_radius = 0.08
+    scores = []
+    for pt in free_grid:
+        distances = np.linalg.norm(free_grid - pt, axis=1)
+        count = np.sum(distances < neighborhood_radius) - 1  # exclude self
+        scores.append(count)
+    best_idx = np.argmax(scores)
+    placing_point = free_grid[best_idx]
+    return placing_point
+#------------------------------------------------------
+def classify_shelf_facing(quat, tol=0.01):
+    known_facings = {
+        '+y': np.array([0, 0, 0, 1]),
+        '-y': np.array([0, 0, 1, 0]),
+        '+x': np.array([0, 0, 0.707, 0.707]),
+        '-x': np.array([0, 0, -0.707, 0.707])
+    }
+    for direction, ref_quat in known_facings.items():
+        if np.allclose(quat, ref_quat, atol=tol):
+            return direction
+    return 'unknown'
+#------------------------------------------------------
 def detect_human_to_pt_st(dist = 6,remove_bkg = True):
     req = Human_detectorRequest()
     req.dist = dist
@@ -818,252 +1224,4 @@ def detect_human_to_pt_st(dist = 6,remove_bkg = True):
         pt_pub.publish(point_odom)
         return True
 
-#------------------------------------------------------                
-def get_luggage_tf():
-    prompt = "bag"     #put here favorite drink
-    img=rgbd.get_image()
-    #cv2.imwrite('img.png',img)
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    # Convert image to ROS format
-    ros_image = bridge.cv2_to_imgmsg(img, encoding="bgr8")
-    points= rgbd.get_points()
-
-
-    points_msg=rospy.wait_for_message("/hsrb/head_rgbd_sensor/depth_registered/rectified_points",PointCloud2,timeout=5)
-    points_data = ros_numpy.numpify(points_msg)    
-    
-
-    #image_data = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]   
-    #image=cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
-    #image = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]
-    #rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)    
-    
-
-    # Create a proper ROS String message
-    prompt_msg = String()
-    prompt_msg.data = prompt
-    ######################################################
-    ################
-    #CORRECT POINTS###################
-    ################
-    try:
-            trans = tfBuffer.lookup_transform('map', 'head_rgbd_sensor_link', rospy.Time())
-                        
-            trans,rot=read_tf(trans)
-            #print ("############head",trans,rot)
-    except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
-            print ( 'No head TF FOUND')
-    t= write_tf(trans,rot)
-    cloud_out = do_transform_cloud(points_msg, t)
-    np_corrected=ros_numpy.numpify(cloud_out)
-    corrected=np_corrected.reshape(points_data.shape)
-
-    ######################################################
-    #rospy.wait_for_service('grounding_dino_detect')
-    try:
-        response = classify_client_dino(ros_image, prompt_msg)
-        if response.image is None or response.image.data == b'':
-            print("Error: Received an empty image response!")
-        else:
-            debug_image = bridge.imgmsg_to_cv2(response.image, desired_encoding="rgb8")
-
-            # Verificar si el bounding box está vacío
-            if len(response.bounding_boxes.data) == 0:
-                print("No se detectó ningún objeto.")
-                return debug_image,False
-            else:
-                print("Bounding box recibido:", response.bounding_boxes.data)
-                x_min, y_min, x_max, y_max = response.bounding_boxes.data
-                cv2.imwrite("debug_img.png",debug_image)
-                # Calcular el centroide 3D dentro del bounding box
-                cc = [
-                    np.nanmean(points['x'][y_min:y_max, x_min:x_max]),
-                    np.nanmean(points['y'][y_min:y_max, x_min:x_max]),
-                    np.nanmean(points['z'][y_min:y_max, x_min:x_max])
-                ]
-                print(f'{cc}\n\n\n')
-                tf_man.pub_static_tf(pos= cc , rot=[0,0,0,1], ref="head_rgbd_sensor_rgb_frame", point_name=prompt )   # Just Bounding Box Mask
-                ###########PCA######################
-
-
-                mask = np.zeros_like(corrected['z']) 
-                mask_bb=cv2.rectangle(mask,(x_min,y_min),(x_max, y_max), (255,255,255), -1)
-                #mask_z= corrected['z']>0.01
-                mask = (mask_bb == 255) & (corrected['z'] > 0.01)
-                cent=np.asarray(   ((  np.nanmean(corrected['x'][np.where(mask==1)]) ,np.nanmean(corrected['y'][np.where(mask==1)]),np.nanmean(corrected['z'][np.where(mask==1)])       ))      )
-                points_c=np.asarray((corrected['x'][np.where(mask==1)],corrected['y'][np.where(mask==1)],corrected['z'][np.where(mask==1)]))
-                #cent=np.asarray(   ((  np.nanmean(corrected['x'][np.where(mask==1)]) ,np.nanmean(corrected['y'][np.where(mask==1)]),np.nanmean(corrected['z'][np.where(mask==1)])       ))      )
-                print ( points_c.shape)
-                if points_c.shape == (3, 0):
-                    return debug_image,False
-                E_R=points_to_PCA(points_c.transpose())
-                #if  E_R ==np.eye((4,4)): return debug_image,False
-                e_ER=tf.transformations.euler_from_matrix(E_R)
-                #quat_pca= tf. transformations.quaternion_from_euler(e_ER[0],e_ER[1],e_ER[2])
-                quat_pca= tf. transformations.quaternion_from_euler(0,0,e_ER[2])
-                print("ANGLE:",tf.transformations.euler_from_matrix(E_R)," Degrees:",np.rad2deg(tf.transformations.euler_from_matrix(E_R)))
-
-                #######################################
-                tf_man.pub_static_tf(pos= cent , rot=quat_pca,  point_name=prompt+'pca' )   # quat  PCA Bounding box and floor mask
-
-                rospy.sleep(0.5)
-                #tf_man.change_ref_frame_tf(prompt+'pca')
-                tf_man.change_ref_frame_tf(prompt)
-                return debug_image,True
-
-
-    except rospy.ServiceException as e:
-        print(f"Service call failed: {e}")
-#-----------------------------------------------------------------
-
-def check_bag_hand_camera(imagen, x=220, y=265, w=45, h=15, bins=12,umbral = 0.9):
-    print("hand_camera checking")
-    
-    # Recortar la región seleccionada
-    recorte = imagen[y:y+h, x:x+w]
-
-    # Calcular y cuantizar hist_actual
-    hist_actual = {}
-    colores = ('b', 'g', 'r')
-    bin_size = 256 // bins
-
-    for i, color in enumerate(colores):
-        hist = cv2.calcHist([recorte], [i], None, [256], [0, 256])
-        
-        # Cuantización a 12 dimensiones
-        hist_cuantizado = [
-            int(sum(hist[j:j+bin_size])) 
-            for j in range(0, 256, bin_size)
-        ]
-
-        # Asegúrate de que siempre tenga exactamente 12 elementos
-        if len(hist_cuantizado) > bins:
-            hist_cuantizado = hist_cuantizado[:bins]
-
-        hist_actual[color] = hist_cuantizado
-    print("Comparing...")
-    hist_mano_vacia = {
-        'b': [580, 50, 44, 51, 25, 0, 0, 0, 0, 0, 0, 0], 
-        'g': [569, 59, 53, 69, 0, 0, 0, 0, 0, 0, 0, 0], 
-        'r': [556, 70, 61, 63, 0, 0, 0, 0, 0, 0, 0, 0]
-
-    }
-    total_similaridad = 0
-    total_canales = 0
-
-    for color in ('b', 'g', 'r'):
-        vacio = np.array(hist_mano_vacia[color]).astype(float)
-        actual = np.array(hist_actual[color]).astype(float)
-
-        # Verifica que ambos tengan 12 elementos
-        if len(vacio) != 12 or len(actual) != 12:
-            print(f"❌ Error: Los hist_actual para '{color}' no tienen 12 elementos")
-            return "Error en los hist_actual"
-
-        # Calcular la similaridad
-        similaridad = 1 - distance.cosine(vacio, actual)
-        print(f"✅ Similaridad para {color}: {similaridad:.4f}")
-
-        total_similaridad += similaridad
-        total_canales += 1
-
-    promedio_similaridad = total_similaridad / total_canales
-    print(f"📊 Promedio de similaridad: {promedio_similaridad:.4f}")
-
-    # Decisión basada en el umbral
-    if promedio_similaridad > umbral:
-        return False  # Mano sin objeto
-    else:
-        return True  # Mano con objeto
-#-----------------------------------------------------------------
-def points_to_PCA(points):
-    df=pd.DataFrame(points)
-    df.columns=[['x','y','z']]
-    threshold= df['z'].min().values[0]*0.998
-    print (f' threshsold{threshold}')
-    if np.isnan(threshold):
-        print('no points por PCA: abort, reeturn eye for zero rotation')
-        E_R= np.eye(4)
-        return E_R #Homogeneous coordinate  of zero rotation zero translation 
-
-
-    
-    rslt_df = df.loc[df[df['z'] > threshold].index]
-    points=rslt_df[['x','y','z']].dropna().values
-    Pca=PCA(n_components=3)
-    Pca.fit(points)
-    print('Pca.explained_variance_',Pca.explained_variance_)
-    ref=np.eye(3)
-    pcas=Pca.components_
-    R=[]
-    R.append(np.dot(pcas[0],ref))
-    R.append(np.dot(pcas[1],ref))
-    R.append(np.dot(pcas[2],ref))
-    R=np.asarray(R)
-    ## HOMOGENEUS
-    E_R= np.zeros((4,4))
-    E_R[:3,:3]+=R
-    E_R[-1,-1]=1
-    return     E_R
-
-
-#-----------------------------------------------------------------
-def write_tf(pose, q, child_frame="" , parent_frame='map'):
-    #  pose = trans  q = quaternion  , childframe =""
-    # format  write the transformstampled message
-    t= TransformStamped()
-    t.header.stamp = rospy.Time.now()
-    #t.header.stamp = rospy.Time(0)
-    t.header.frame_id =parent_frame
-    t.child_frame_id =  child_frame
-    t.transform.translation.x = pose[0]
-    t.transform.translation.y = pose[1]
-    t.transform.translation.z = pose[2]
-    #q = tf.transformations.quaternion_from_euler(eu[0], eu[1], eu[2])
-    t.transform.rotation.x = q[0]
-    t.transform.rotation.y = q[1]
-    t.transform.rotation.z = q[2]
-    t.transform.rotation.w = q[3]
-    return t
-    
-#-----------------------------------------------------------------
-def read_tf(t):
-    # trasnform message to np arrays
-    pose=np.asarray((
-        t.transform.translation.x,
-        t.transform.translation.y,
-        t.transform.translation.z
-        ))
-    quat=np.asarray((
-        t.transform.rotation.x,
-        t.transform.rotation.y,
-        t.transform.rotation.z,
-        t.transform.rotation.w
-        ))
-    
-    return pose, quat
-#-----------------------------------------------------------------    
-def check_carry_bag():
-            head.to_tf('bag')
-            _,obj = get_luggage_tf()
-            return not obj
-#-----------------------------------------------------------------    
-def ransac_laser():
-    msg= rospy.wait_for_message("/hsrb/base_scan",LaserScan)    
-    ranges = np.array(msg.ranges)
-    angles = np.linspace(msg.angle_min, msg.angle_max, len(ranges))
-    mask = np.isfinite(ranges)
-    ranges = ranges[mask]
-    angles = angles[mask]
-    # Polar to Cartesian
-    xs = ranges * np.cos(angles)
-    ys = ranges * np.sin(angles)
-    points = np.vstack((xs, ys)).T
-    pca = PCA(n_components=2)
-    pca.fit(points)
-    direction = pca.components_[0]
-    theta = np.arctan2(direction[1], direction[0])  # angle of the line w.r.t. sensor's x-axis
-    x0, y0 = pca.mean_  # approximate center of the detected line
-    return x0,y0,theta
-#-----------------------------------------------------------------    
-
+       

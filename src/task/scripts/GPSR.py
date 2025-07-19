@@ -77,7 +77,7 @@ class Initial(smach.State):
 class Plan(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['succ', 'failed', 'navigate','pick','place'
-                                            ,'find_objects','follow' #,'answer',
+                                            ,'find_objects','follow' ,'answer'
                                             ,'locate_person', 'tell_joke'],
                                             output_keys=['actions','params','command_id'],input_keys=['actions','params'])
         self.tries = 0
@@ -99,7 +99,7 @@ class Plan(smach.State):
             elif current_action =='place_object':return'place'
             elif current_action =='find_object':return'find_objects'
             elif current_action =='follow_person':return'follow'
-            #elif current_action =='answer_question':return'answer'
+            elif current_action =='answer_question':return'answer'
             elif current_action =='tell_joke':return 'tell_joke'
             # elif current_action =='recognize_action':return 'person_action'
             # elif current_action =='recognize_posture':return 'person_posture'
@@ -373,6 +373,28 @@ class Tell_joke(smach.State):
             return 'succ'
         else:
             return 'failed'
+
+
+class Answer_question(smach.State):  
+    def __init__(self):
+        smach.State.__init__(self, outcomes=['succ', 'failed'], output_keys=['actions','params'], input_keys=['actions','params'])
+        
+    def execute(self, userdata):
+        rospy.loginfo('STATE : Tell Joke')
+        req = ActionPlannerRequest()
+        req.command.data[0].strip('\'"') + "?"
+        command=action_planner_server(req)
+        print(f'command.plan.data{command.plan.data}.')
+        talk(command.plan.data)
+
+        if res:
+            userdata.actions.pop(0)
+            userdata.params.pop(0)
+            return 'succ'
+        else:
+            return 'failed'
+
+
 
 class Find_objects(smach.State):
     def __init__(self):
@@ -654,7 +676,7 @@ if __name__ == '__main__':
                                                                                         'find_objects':'FIND_OBJECTS',  
                                                                                         'navigate': 'NAVIGATE',
                                                                                         'follow'  :'FOLLOW_PERSON',
-                                                                                        #'answer'  :'ANSWER_QUESTION',
+                                                                                        'answer'  :'ANSWER_QUESTION',
                                                                                         'tell_joke'  :'TELL_JOKE',
                                                                                         'locate_person':'LOCATE_PERSON',
                                                                                         #'recognize_action':'RECOGNIZE_ACTION',
@@ -675,9 +697,9 @@ if __name__ == '__main__':
        
        
        
-        # smach.StateMachine.add("ANSWER_QUESTION"        ,   Answer_question(),     transitions={'failed': 'ANSWER_QUESTION',    
-        #                                                                                  'succ': 'PLAN', 
-        #                                                                                  })
+        smach.StateMachine.add("ANSWER_QUESTION"        ,   Answer_question(),     transitions={'failed': 'ANSWER_QUESTION',    
+                                                                                         'succ': 'PLAN', 
+                                                                                         })
         
         smach.StateMachine.add("TELL_JOKE"        ,   Tell_joke(),     transitions={'failed': 'TELL_JOKE',    
                                                                                          'succ': 'PLAN', 

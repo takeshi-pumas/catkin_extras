@@ -54,6 +54,14 @@ dishwasher:
 - qy: 0.0
 - qz: -0.734
 - qw: 0.678
+instruction_point:
+- x: 2.8
+- y: 5.5
+- theta: 2.073
+- qx: 0.0
+- qy: 0.0
+- qz: 0.999
+- qw: 0.034
 kitchen_table:
 - x: 2.841
 - y: 6.948
