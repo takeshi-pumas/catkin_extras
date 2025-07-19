@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-from smach_utils_give_me_a_hand import *
+from restaurant_utils import *
+#from smach_utils_give_me_a_hand import *
 from smach_ros import SimpleActionState
 from action_server.msg import GraspAction
 from std_msgs.msg import Float32MultiArray
@@ -415,7 +416,7 @@ if __name__ == '__main__':
                                ,'succ':'WAIT_DOOR_OPENED'
                                })
         smach.StateMachine.add("WAIT_DOOR_OPENED", Wait_door_opened(),     
-                               transitions={'failed': 'WAIT_DOOR_OPENED', 'succ': 'WAITING_WAVING'})#'succ': 'GO_TO_INSTRUCTION_ROOM'})
+                               transitions={'failed': 'WAIT_DOOR_OPENED','succ': 'GO_TO_INSTRUCTION_ROOM'})
 
         # Interaction
         smach.StateMachine.add("GO_TO_INSTRUCTION_ROOM", Go_to_instruction_room(),  
