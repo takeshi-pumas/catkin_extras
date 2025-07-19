@@ -117,7 +117,7 @@ class Go_to_instruction_room(smach.State):
         
 # find operator to interact withs
 #class Wait_for_waving(smach.State):
-   """ def __init__(self):
+""" def __init__(self):
                  smach.State.__init__(
                      self, outcomes=['succ', 'failed', 'tries'])
                  self.tries = 0
