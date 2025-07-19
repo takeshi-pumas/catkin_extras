@@ -393,14 +393,14 @@ if __name__ == '__main__':
 
         # Initial states routine
         smach.StateMachine.add("INITIAL", Initial(),              
-                               transitions={'failed': 'INITIAL','succ': 'GO_TO_INSTRUCTION_ROOM'})# 'succ': 'WAIT_PUSH_HAND'})
+                               transitions={'failed': 'INITIAL', 'succ': 'WAIT_PUSH_HAND'})
                                 #'succ': 'SCAN_FACE'})
         smach.StateMachine.add("WAIT_PUSH_HAND", Wait_push_hand(),       
                                transitions={'failed': 'WAIT_PUSH_HAND'   #, 'succ':'SCAN_FACE'
-                               ,'succ':'GO_TO_INSTRUCTION_ROOM'
+                               ,'succ':'WAIT_DOOR_OPENED'
                                })
         smach.StateMachine.add("WAIT_DOOR_OPENED", Wait_door_opened(),     
-                               transitions={'failed': 'WAIT_DOOR_OPENED', 'succ': 'GO_TO_INSTRUCTION_ROOM'})
+                               transitions={'failed': 'WAIT_DOOR_OPENED', 'succ': 'WAIT_WAVING'})#'succ': 'GO_TO_INSTRUCTION_ROOM'})
 
         # Interaction
         smach.StateMachine.add("GO_TO_INSTRUCTION_ROOM", Go_to_instruction_room(),  
