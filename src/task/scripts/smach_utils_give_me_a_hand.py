@@ -33,7 +33,7 @@ from segmentation.srv import *
 from human_detector.srv import Human_detector  ,Human_detectorRequest 
 from human_detector.srv import Point_detector ,Point_detectorRequest
 from human_detector.srv import Wrist_detector ,Wrist_detectorRequest
-from human_detector.srv import Wave_detector ,Wave_detectorResponse 
+#from human_detector.srv import Wave_detector ,Wave_detectorResponse 
 
 
 from hmm_act_recog.srv import *
@@ -85,7 +85,7 @@ clear_octo_client = rospy.ServiceProxy('/clear_octomap', Empty)   ###GRASPING OB
 human_detect_server = rospy.ServiceProxy('/detect_human' , Human_detector)  ####HUMAN FINDER OPPOSEBASED
 pointing_detect_server = rospy.ServiceProxy('/detect_pointing' , Point_detector)  ####HUMAN FINDER OPPOSEBASED
 wrist_detect_server = rospy.ServiceProxy('/detect_wrist' , Wrist_detector)  ####HUMAN FINDER OPPOSEBASED
-wave_detect_server = rospy.ServiceProxy('/detect_wave' , Wave_detector)  ####HUMAN FINDER OPPOSEBASED
+#wave_detect_server = rospy.ServiceProxy('/detect_wave' , Wave_detector)  ####HUMAN FINDER OPPOSEBASED
 segmentation_server = rospy.ServiceProxy('/segment' , Segmentation)    ##### PLANE SEGMENTATION (PARALEL TO FLOOR)
 placing_finder_server = rospy.ServiceProxy('/placing_finder' , Segmentation)### WHERE TO PLACE THINGS IN SHELVES
 action_planner_server = rospy.ServiceProxy('/action_planner', ActionPlanner)  # Replace PlanAction with the appropriate service or action definition

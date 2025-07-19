@@ -136,7 +136,15 @@ class Wait_for_waving(smach.State):
         #req = RecognizeRequest()    # DOCKER
         #req = RecognizeOPRequest() # NORMAL
 
+        humanpose=detect_human_to_tf()
+
+        print('Detecting Humans ')
         
+        if humanpose:
+            talk('Human Found, Getting close ')
+            head.to_tf('human')
+            self.tries=0
+        return 0
         img=rgbd.get_image()
         print (img.shape    )
         # Guardo posicion para retornar
