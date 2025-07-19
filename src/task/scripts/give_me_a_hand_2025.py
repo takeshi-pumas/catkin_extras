@@ -408,18 +408,18 @@ if __name__ == '__main__':
 
         # Initial states routine
         smach.StateMachine.add("INITIAL", Initial(),              
-                               transitions={'failed': 'INITIAL','succ': 'GO_TO_INSTRUCTION_ROOM'})# 'succ': 'WAIT_PUSH_HAND'})
+                               transitions={'failed': 'INITIAL', 'succ': 'WAIT_PUSH_HAND'})
                                 #'succ': 'SCAN_FACE'})
         smach.StateMachine.add("WAIT_PUSH_HAND", Wait_push_hand(),       
                                transitions={'failed': 'WAIT_PUSH_HAND'   #, 'succ':'SCAN_FACE'
-                               ,'succ':'GO_TO_INSTRUCTION_ROOM'
+                               ,'succ':'WAIT_DOOR_OPENED'
                                })
         smach.StateMachine.add("WAIT_DOOR_OPENED", Wait_door_opened(),     
-                               transitions={'failed': 'WAIT_DOOR_OPENED', 'succ': 'GO_TO_INSTRUCTION_ROOM'})
+                               transitions={'failed': 'WAIT_DOOR_OPENED', 'succ': 'WAITING_WAVING'})#'succ': 'GO_TO_INSTRUCTION_ROOM'})
 
         # Interaction
         smach.StateMachine.add("GO_TO_INSTRUCTION_ROOM", Go_to_instruction_room(),  
-                               transitions={'failed': 'GO_TO_INSTRUCTION_ROOM', 'succ': 'WAIT_WAVING'})
+                               transitions={'failed': 'GO_TO_INSTRUCTION_ROOM', 'succ': 'WAITING_WAVING'})
         
         smach.StateMachine.add("WAITING_WAVING", Wait_for_waving(),            
                                transitions={'failed': 'WAITING_WAVING', 'succ': 'GOTO_WAVING_PERSON', 'tries':'GO_TO_INSTRUCTION_ROOM'})
@@ -433,7 +433,7 @@ if __name__ == '__main__':
         smach.StateMachine.add("GO_PLACE", Go_to_place_position(),            
                                transitions={'failed': 'GO_PLACE', 'succ': 'GET_PLACING_TF'})
         smach.StateMachine.add("PLACE_OBJECT", Go_to_place_position(),            
-                               transitions={'failed': 'PLACE_OBJECT', 'succ': 'APPROACH_OPERATOR'})
+                               transitions={'failed': 'PLACE_OBJECT', 'succ': 'GO_TO_INSTRUCTION_ROOM'})
         smach.StateMachine.add("GET_PLACING_TF", GetPlacingTF(),            
                                transitions={'failed': 'GO_TO_INSTRUCTION_ROOM', 'succ': 'PLACE', 'tries': 'GO_TO_INSTRUCTION_ROOM'})
         smach.StateMachine.add("PLACE",    Place(),                     transitions={'failed': 'GET_PLACING_TF',    

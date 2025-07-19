@@ -369,6 +369,204 @@ def detect_pointing(points_msg,dist = 6, remove_bkg= True):
     
     return res
 #-----------------------------------------------------------------
+def detect_wrist(points_msg,dist = 6, remove_bkg= True):
+    """points_data = ros_numpy.numpify(points_msg)    
+    image_data = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]   
+    image=cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
+    
+    print (image.shape)
+    """
+    pts= ros_numpy.numpify(points_msg)  
+    #---
+    #human, _ =getTF(target_frame='human',ref_frame='head_rgbd_sensor_rgb_frame') 
+    
+    #print(human)
+    #distToTF = np.linalg.norm(human) if human[0] else 2
+
+    #print("DISTANCIA AL HUMANO ",distToTF)
+
+    # <<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    # HARDCODEADA LA DISTANCIA A 2 METROS (+ 0.3 m) 
+    # NECESARIO MODIFICAR PARA PRUEBAS EN ROBOCUP DE ACUERDO A ESPACIOS Y 
+    # DISTANCIAS DE LA PRUEBA 
+    # SE IBA A UTILIZAR -> distToTF DE ACUERDO A LA TF DE LA PERSONA DETECTADA
+    # PERO NO ES MUY EXACTO
+    # <<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    if remove_bkg:
+        image, frame = removeBackground(points_msg, dist)
+        save_image(frame,name="maskedImage")
+    else:
+        image_data = pts['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]   
+        frame=cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
+        save_image(frame,name="noMaskedImage")
+
+    #---
+    
+    inHeight = frame.shape[0]
+    inWidth = frame.shape[1]
+    # Prepare the frame to be fed to the network
+    inpBlob = cv2.dnn.blobFromImage(frame, 1.0 / 255, (inWidth, inHeight), (0, 0, 0), swapRB=False, crop=False)
+    # Set the prepared object as the input blob of the network
+    net.setInput(inpBlob)
+    output = net.forward()
+    thresh= 0.45
+    poses=[]
+    deb_imgr=frame[:,:,0]
+    deb_imgg=frame[:,:,1]
+    deb_imgb=frame[:,:,2]
+    res=Point_detectorResponse()
+    for i in np.asarray((3,4,6,7)):
+        probMap = output[0, i, :, :]
+        probMap = cv2.resize(probMap, (inWidth, inHeight))
+        if len(np.where(probMap>=thresh)[0]) ==0: pose=[0,0,0]  
+        else:pose=  [np.nanmean(pts['x'][np.where(probMap>=thresh)]),
+                     np.nanmean(pts['y'][np.where(probMap>=thresh)]),
+                     np.nanmean(pts['z'][np.where(probMap>=thresh)])]
+        poses.append(pose)
+        #deb_img= probMap+ deb_img*0.3  #DEBUG IMAGE
+        deb_imgr[np.where(probMap>=thresh)]= 255
+        deb_imgg[np.where(probMap>=thresh)]= 255
+        deb_imgb[np.where(probMap>=thresh)]= 255
+    deb_img_rgb=cv2.merge((deb_imgr, deb_imgg, deb_imgb))
+    res.debug_image.append(bridge.cv2_to_imgmsg(deb_img_rgb))
+    save_image(deb_img_rgb,name="debugImgDetectPointing_1")
+    #right elbow       ####
+    # right wrist      ####
+    # left elbow
+    # left wrist
+    ##############################
+    try:
+            tt = tfBuffer.lookup_transform('map', 'head_rgbd_sensor_link', rospy.Time())
+                        
+            trans,rot=read_tf(tt)
+            #print ("############head",trans,rot)
+    except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
+            print ( 'No head TF FOUND')
+
+    found_joints={}
+    for i, name in enumerate(['right_elbow','right_wrist','left_elbow','left_wrist']):
+        if np.sum(np.asarray(poses[i]))==0:print(f'no {name} points')
+        else:           
+            print (poses[i],f' {name} pose wrt head')
+            found_joints[name]=poses[i]
+            
+    print("FOUND JOINTS: ",found_joints)
+    vd=[0,0,0]
+    if 'right_wrist' in found_joints.keys() and 'right_elbow' in found_joints.keys():
+        
+        pc_np_array = np.array([(found_joints['right_elbow'][0], found_joints['right_elbow'][1], found_joints['right_elbow'][2]),
+                                 (found_joints['right_wrist'][0],found_joints['right_wrist'][1],found_joints['right_wrist'][2])]
+         , dtype=[('x', 'f4'), ('y', 'f4'), ('z', 'f4')])
+        #pc_np_array = np.array([found_joints['right_elbow'], found_joints['right_wrist'], (0.0, 0.0, 0.0)], dtype=[('x', 'f4'), ('y', 'f4'), ('z', 'f4')])
+        points_msg=ros_numpy.msgify(PointCloud2,pc_np_array,rospy.Time.now(),'head_rgbd_sensor_rgb_frame')
+        cloud_out = do_transform_cloud(points_msg, tt)
+        np_corrected=ros_numpy.numpify(cloud_out)
+        corrected=np_corrected.reshape(pc_np_array.shape)
+        print(corrected,'########################### Left', found_joints)
+        #t=write_tf((corrected['x'][0],corrected['y'][0],corrected['z'][0]),(0,0,0,1),'right_elbow')
+        #print (t)
+        #b_st.sendTransform(t)
+        #t=write_tf((corrected['x'][1],corrected['y'][1],corrected['z'][1]),(0,0,0,1),'right_wrist')
+        #print (t)
+        #b_st.sendTransform(t)
+        elbow_xyz,wrist_xyz=[corrected['x'][0],corrected['y'][0],corrected['z'][0]],[corrected['x'][1],corrected['y'][1],corrected['z'][1]]
+        v= np.asarray(wrist_xyz)-np.asarray(elbow_xyz)
+        #res.right_elbow_xyz = elbow_xyz
+        res.x_r = wrist_xyz[0]
+        res.y_r = wrist_xyz[1]
+        res.z_r = wrist_xyz[2]
+        
+    #     #print("ELBOW RIGHT",elbow_xyz)
+    #     #print("WRIST RIGHT",wrist_xyz)
+    #     vd = [-(wrist_xyz[0] - elbow_xyz[0]), -(wrist_xyz[1]-elbow_xyz[1]),-1-(wrist_xyz[2]-elbow_xyz[2])]
+        
+    #     vectD = [wrist_xyz[0]-elbow_xyz[0],wrist_xyz[1]-elbow_xyz[1],wrist_xyz[2]-elbow_xyz[2]]
+    #     alfa = -wrist_xyz[2]/vectD[2]
+    #     y=wrist_xyz[1]+alfa*vectD[1]
+    #     x=wrist_xyz[0]+alfa*vectD[0]
+        
+    #     #t= elbow_xyz[2]-   v[2]
+    #     #x= elbow_xyz[0]+ t*v[0]
+    #     #y= elbow_xyz[1]+ t*v[1]
+    #     print(x,y,'x,y')
+    #     t=write_tf((x,y,0),(0,0,0,1),'pointing_right')
+    #     b_st.sendTransform(t)
+    #     res.x_r=x
+    #     res.y_r=y
+    #     res.z_r=0
+    #     #
+    # else:
+    #     res.x_r=0.0
+    #     res.y_r=0.0
+    #     res.z_r=0.0
+    #     t=write_tf((0,0,0),(0,0,0,1),'pointing_right')
+    #     b_st.sendTransform(t)
+
+    # vi=[0,0,0]
+    if 'left_wrist'  in found_joints.keys() and 'left_elbow'  in found_joints.keys():
+        pc_np_array = np.array([(found_joints['left_elbow'][0], found_joints['left_elbow'][1], found_joints['left_elbow'][2]),(found_joints['left_wrist'][0],found_joints['left_wrist'][1],found_joints['left_wrist'][2])]
+         , dtype=[('x', 'f4'), ('y', 'f4'), ('z', 'f4')])
+        #pc_np_array = np.array([found_joints['right_elbow'], found_joints['right_wrist'], (0.0, 0.0, 0.0)], dtype=[('x', 'f4'), ('y', 'f4'), ('z', 'f4')])
+        points_msg=ros_numpy.msgify(PointCloud2,pc_np_array,rospy.Time.now(),'head_rgbd_sensor_rgb_frame')
+        cloud_out = do_transform_cloud(points_msg, tt)
+        np_corrected=ros_numpy.numpify(cloud_out)
+        corrected=np_corrected.reshape(pc_np_array.shape)
+        print(corrected,'###########################Right', found_joints)
+        #t=write_tf((corrected['x'][0],corrected['y'][0],corrected['z'][0]),(0,0,0,1),'right_elbow')
+        #print (t)
+        #b_st.sendTransform(t)
+        #t=write_tf((corrected['x'][1],corrected['y'][1],corrected['z'][1]),(0,0,0,1),'right_wrist')
+        #print (t)
+        #b_st.sendTransform(t)
+        elbow_xyz,wrist_xyz=[corrected['x'][0],corrected['y'][0],corrected['z'][0]],[corrected['x'][1],corrected['y'][1],corrected['z'][1]]
+        #res.left_elbow_xyz = elbow_xyz
+        res.x_l = wrist_xyz[0]
+        res.y_l = wrist_xyz[1]
+        res.z_l = wrist_xyz[2]
+        
+    #     #print("ELBOW LEFT",elbow_xyz)
+    #     #print("WRIST LEFT",wrist_xyz)
+    #     v= np.asarray(wrist_xyz)-np.asarray(elbow_xyz)
+    #     vi = [-(wrist_xyz[0] - elbow_xyz[0]), -(wrist_xyz[1]-elbow_xyz[1]),-1-(wrist_xyz[2]-elbow_xyz[2])]
+    #     vectD = [wrist_xyz[0]-elbow_xyz[0],wrist_xyz[1]-elbow_xyz[1],wrist_xyz[2]-elbow_xyz[2]]
+    #     alfa = -wrist_xyz[2]/vectD[2]
+    #     y=wrist_xyz[1]+alfa*vectD[1]
+    #     x=wrist_xyz[0]+alfa*vectD[0]
+        
+    #     #t= elbow_xyz[2]-   v[2]
+    #     #x= elbow_xyz[0]+ t*v[0]
+    #     #y= elbow_xyz[1]+ t*v[1]
+    #     print(x,y, v,'x,y')
+    #     t=write_tf((x,y,0),(0,0,0,1),'pointing_left')
+    #     b_st.sendTransform(t)
+    #     res.x_l=x
+    #     res.y_l=y
+    #     res.z_l=0
+        
+    # else:
+
+    #     res.x_l=0.0
+    #     res.y_l=0.0
+    #     res.z_l=0.0
+    #     t=write_tf((0,0,0),(0,0,0,1),'pointing_left')
+    #     b_st.sendTransform(t)
+
+    
+    # # if np.linalg.norm(vd)>np.linalg.norm(vi):
+    # #     print("Mano DERECHA levantada")
+    # #     res.x_l = -1.0
+    # #     res.y_l = -1.0
+    # #     res.z_l = -1.0
+
+    # # else:
+    # #     print("Mano IZQUIERDA levantada")
+    # #     res.x_r = -1.0
+    # #     res.y_r = -1.0
+    # #     res.z_r = -1.0
+        
+    
+    return res
+#-----------------------------------------------------------------
 def get_keypoints(points_msg,dist = 20,remove_bkg= False):
     #tf_man = TF_MANAGER()
     #res=Point_detectorResponse()
