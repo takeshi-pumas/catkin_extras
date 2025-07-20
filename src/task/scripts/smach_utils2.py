@@ -246,7 +246,11 @@ def get_keypoints(points_msg = points_msg,dist = 20,remove_bkg= False):
 
 
 #keypoints = get_keypoints(points_msg)
-
+def match_speech(speech, to_match):
+    for element in to_match:
+        if element in speech:
+            return True
+    return False
 def recognize_action(keypoints):
     if keypoints is None: #or len(keypoints.shape) != 3:
         return "No person detected"

@@ -1,3 +1,11 @@
+bedroom:
+- x: 5.635
+- y: 4.951
+- theta: 0.835
+- qx: 0.0
+- qy: 0.0
+- qz: 0.405
+- qw: 0.913
 bedroom_1:
 - x: 5.2
 - y: 4.499
@@ -78,14 +86,14 @@ cabinet_right_door:
 - qy: 0.0
 - qz: 0.999
 - qw: 0.015
-entrance_door:
-- x: 1.561
-- y: 0.456
-- theta: 3.05
+dining_room:
+- x: 4.462
+- y: 3.051
+- theta: -0.807
 - qx: 0.0
 - qy: 0.0
-- qz: 0.998
-- qw: 0.045
+- qz: -0.393
+- qw: 0.919
 dining_room_1:
 - x: 4.543
 - y: 2.667
@@ -142,6 +150,22 @@ dining_room_7:
 - qy: 0.0
 - qz: 0.536
 - qw: 0.844
+entrance_door:
+- x: 1.561
+- y: 0.456
+- theta: 3.05
+- qx: 0.0
+- qy: 0.0
+- qz: 0.998
+- qw: 0.045
+kitchen:
+- x: 3.615
+- y: 5.114
+- theta: 1.713
+- qx: 0.0
+- qy: 0.0
+- qz: 0.755
+- qw: 0.654
 kitchen_1:
 - x: 4.042
 - y: 4.758
@@ -222,6 +246,14 @@ kitchen_9:
 - qy: 0.0
 - qz: 0.752
 - qw: -0.658
+living_room:
+- x: 1.787
+- y: 2.287
+- theta: -0.953
+- qx: 0.0
+- qy: 0.0
+- qz: -0.458
+- qw: 0.888
 living_room_1:
 - x: 1.32
 - y: -0.031

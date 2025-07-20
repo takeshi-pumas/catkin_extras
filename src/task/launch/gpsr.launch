@@ -15,8 +15,9 @@
   <node pkg="smach_viewer"  name="smach_viewer" type="smach_viewer.py"  />    
   <node pkg="point_cloud"  name="point_cloud_filter_node" type="passthrough_filter"/>  
   <node pkg="face_recog"  name="face_recog" type="face_recog_server.py"/>
-  <include file="$(find speech_recog)/launch/ros_vosk.launch"/>
+  <!--include file="$(find speech_recog)/launch/ros_vosk.launch"/-->
   <node pkg="head" name="mic_enable" type="mic_node"/>
+  <node name="vosk_keywords" pkg="ros_whisper_vosk" type="vosk_node.py" respawn="true" output="screen" />
   <!-- ##############################################################################-->
   <node pkg="action_server"  name="grasp_action_server"  type="ACT_SRVR_grasp_mio.py"/>  
   <node pkg="action_server"  name="place_action_server"  type="ACT_SRVR_pickplace.py"/>   
