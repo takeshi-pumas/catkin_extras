@@ -54,6 +54,14 @@ dishwasher:
 - qy: 0.0
 - qz: -0.734
 - qw: 0.678
+instrstruction_point_2:
+- x: 1.605
+- y: 8.104
+- theta: -0.581
+- qx: 0.0
+- qy: 0.0
+- qz: -0.286
+- qw: 0.958
 instruction_point:
 - x: 2.8
 - y: 5.5

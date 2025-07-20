@@ -106,14 +106,23 @@ class Go_to_instruction_room(smach.State):
     def execute(self, userdata):
         rospy.loginfo('STATE : navigate to instruction area')
         print('Try', self.tries, 'of 3 attempts')
-
-        res = omni_base.move_base(known_location='instruction_point')
-        if res:
-            self.tries = 0
-            return 'succ'
-        else:
-            talk('Navigation Failed, retrying')
-            return 'failed'
+        if  self.tries >=1:
+            res = omni_base.move_base(known_location_2='instruction_point')
+            res = omni_base.move_base(known_location='instruction_point')
+            if res:
+                self.tries=0
+                return 'succ'
+            else:
+                talk('Navigation Failed, retrying')
+                return 'failed'
+        if self.tries==0:
+            res = omni_base.move_base(known_location='instruction_point')
+            if res:
+                self.tries += 1
+                return 'succ'
+            else:
+                talk('Navigation Failed, retrying')
+                return 'failed'
         
 # find operator to interact withs
 #class Wait_for_waving(smach.State):
