@@ -4,14 +4,12 @@
  <remap from="/laser_2d_pose" to= "/global_pose"/>
   <remap from="/cmd_vel" to="/hsrb/command_velocity"/>
  <remap from="/initialpose" to="/laser_2d_correct_pose"/>  
-  <arg name="static_map_file"  default="$(find config_files)/prohibition_maps/rc25/map.yaml"/>
+  <!--arg name="static_map_file"  default="$(find config_files)/maps/map.yaml"/-->
   <!-- MAP IS STORED IN ROBOT-->
   
- <node name="killer_node" pkg="killer_node" type="killer_node.py" output="screen"/>
- <node name="fake_global" pkg="killer_node" type="fake_global_pose.py" output="screen"/>
 
-  <!--arg name="prohibition_map_file"  default="$(find config_files)/maps/map.yaml"/-->
-  <arg name="prohibition_map_file"  default="$(find config_files)/prohibition_maps/rc25/map.yaml"/>
+  <arg name="prohibition_map_file"  default="$(find config_files)/prohibition_maps/map_lab_2024/map.yaml"/>
+  <!--arg name="prohibition_map_file"  default="$(find config_files)/prohibition_maps/blank/map.yaml"/-->
 
   <arg name="initial_pose_x" default="-5.7"/>
   <arg name="initial_pose_y" default="-6.0"/>
@@ -23,7 +21,7 @@
   <arg name="use_lidar" default="True"/>
   <arg name="use_sonars" default="False"/>
   <arg name="use_point_cloud" default="False"/>
-  <arg name="use_point_cloud2" value="True"/>
+  <arg name="use_point_cloud2" value="False"/>
   <arg name="use_bumper" default="False"/>
   <arg name="cloud_downsampling" default="5"/>
   <arg name="lidar_downsampling" default="1"/>
@@ -46,8 +44,6 @@
   <!--node name="harware_mng" pkg="nav_pumas" type="hardware_mng" output="screen"/-->
  </group>
  
-
-
   <node name="path_planner" pkg="path_planner" type="path_planner_node" output="screen">
     <param name="diagonal_paths" value="True"/>
   </node>
@@ -121,9 +117,9 @@
     <remap from="/map" to="/prohibition_layer_map"/>
   </node>
  
-  <node name="map_server" pkg="map_server" type="map_server" output="screen" args="$(arg static_map_file)"/>
+  <!--node name="map_server" pkg="map_server" type="map_server" output="screen" args="$(arg static_map_file)"/-->
 
-    <node name="amcl" pkg="amcl" type="amcl" output="screen" args="scan:=$(arg laser_scan_topic) static_map:=/get_distance_map">
+    <!--node name="amcl" pkg="amcl" type="amcl" output="screen" args="scan:=$(arg laser_scan_topic) static_map:=/get_distance_map">
     <param name="initial_pose_x" value="$(arg initial_pose_x)"/>
     <param name="initial_pose_y" value="$(arg initial_pose_y)"/>
     <param name="initial_pose_a" value="$(arg initial_pose_a)"/>
@@ -135,7 +131,7 @@
     <param name="update_min_a" value="0.1"/>
     <param name="laser_min_range" value="0.3"/>
     <param name="odom_model_type" value="omni-corrected"/>
-    </node>
+    </node-->
   
   
   <!--node pkg="hmm_navigation"  name="pumas_nav_actionserver" type="pumas_nav_actionserver.py"/-->
