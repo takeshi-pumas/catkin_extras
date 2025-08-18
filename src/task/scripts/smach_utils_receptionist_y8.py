@@ -229,14 +229,14 @@ def analyze_face_background(img, name=" "):
 #------------------------------------------------------
 def get_favorite_drink_location_yolo(favorite_drink):
     bridge = CvBridge()
-    # Convert image to ROS format
+     #convert image to ros format
     pointcloud_msg = rospy.wait_for_message("/hsrb/head_rgbd_sensor/depth_registered/rectified_points", PointCloud2)
     img_msg = rospy.wait_for_message('/hsrb/head_rgbd_sensor/rgb/image_raw', Image, timeout=5)
     img = bridge.imgmsg_to_cv2(img_msg,"bgr8")
     if pointcloud_msg is None:
-        rospy.logerr("No se recibió la nube de puntos.")
+        rospy.logerr("the points cloud was not received")
         return
-    rospy.loginfo("Nube de puntos recibida. Enviando solicitud de segmentación...")
+    rospy.loginfo("point cloud received. sending segmentation...")
     # Nombre de la región a segmentar (ajustar según el YAML)
     region_name = "beverage_area"
     rospy.wait_for_service("segment_region")
@@ -247,10 +247,10 @@ def get_favorite_drink_location_yolo(favorite_drink):
         if response.success:
             bridge = CvBridge()
             mask = bridge.imgmsg_to_cv2(response.mask, "mono8")
-            # **Aplicar operaciones morfológicas para reducir ruido**
-            kernel = np.ones((13, 13), np.uint8)  # Define un kernel de 5x5 (ajustable)
-            mask = cv2.dilate(mask, kernel, iterations=4)  # **Rellena huecos**
-            #mask = cv2.erode(mask, kernel, iterations=1)  # **Reduce pequeños artefactos**
+            
+            kernel = np.ones((13, 13), np.uint8)  
+            mask = cv2.dilate(mask, kernel, iterations=4)  
+           #mask = cv2.erode(mask, kernel, iterations=1)  
             segment_img = cv2.bitwise_and(img, img, mask=mask)
             cv2.imwrite("img_debug.png",segment_img)
         else:

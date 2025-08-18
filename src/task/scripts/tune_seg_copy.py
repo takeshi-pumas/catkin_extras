@@ -180,7 +180,7 @@ def callback(points_msg):
 
             rospy.loginfo(f"YOLOv8 model loaded on {device}")
 
-            CONFIDENCE_THRESHOLD = 0.3  
+            CONFIDENCE_THRESHOLD = 0.5  
 
             img_msg = bridge.cv2_to_imgmsg(image, encoding="bgr8")
             req = Classify_yolo_receptionistRequest()

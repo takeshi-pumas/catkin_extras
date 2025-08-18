@@ -7,7 +7,7 @@
   <node pkg="face_recog"  name="face_recog_deep" type="face_recog_server_deep.py"/>
   <node pkg="object_classification"  name="yolo_classification" type="classification_server_receptionist_yoleado.py"/>
   <node pkg="segmentation"  name="segment_region" type="segment_region_server.py"/>
-  <param name="map_yaml" value="$(find config_files)/prohibition_maps/map_lab_2024/map.yaml"/>
+  <param name="map_yaml" value="/home/angel/catkin_extras/src/navigation_pumas/config_files/prohibition_maps/map_lab_2024/map.yaml"/>
   <node pkg="face_recog"  name="analyze_face_backgnd" type="analyze_face_backgnd_node"/>
   <node pkg="head"  name="mic_node" type="mic_node"/>
   <node name="vosk_keywords" pkg="ros_whisper_vosk" type="vosk_node.py" respawn="true" output="screen" />
