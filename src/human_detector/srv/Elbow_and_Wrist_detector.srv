@@ -1,0 +1,7 @@
+float64 dist
+bool removeBKG
+---
+float64 x		#World coords w.r.t. map  highest wrist
+float64 y
+float64 z
+sensor_msgs/Image[] debug_image

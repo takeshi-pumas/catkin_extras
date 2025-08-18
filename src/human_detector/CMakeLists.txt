@@ -59,6 +59,7 @@ find_package(catkin REQUIRED COMPONENTS
   FILES
     Human_detector.srv
     Point_detector.srv
+    Wrist_detector.srv
  )
 
 ## Generate actions in the 'action' folder

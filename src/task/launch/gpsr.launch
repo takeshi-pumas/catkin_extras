@@ -2,7 +2,9 @@
   <include file="$(find hsrb_moveit_config)/launch/hsrb_demo_with_controller.launch"> 
   <arg name="use_gui" value="true"/> 
   </include>
-  <param name="image_topic" value="/usb_cam/image_raw"/>
+  <!--param name="image_topic" value="/usb_cam/image_raw"/-->
+  <node pkg="hmm_act_recog"  name="recognize_act" type="hmm_AR_server.py"/>
+
   <node pkg="action_planner"  name="action_planner" type="action_planner_server.py"/> 
   <param name="file_name" value="/known_locations_gpsr.yaml"/>
   <node pkg="hmm_navigation"  name="pumas_nav" type="pumas_nav.py" output="screen" />
@@ -13,8 +15,9 @@
   <node pkg="smach_viewer"  name="smach_viewer" type="smach_viewer.py"  />    
   <node pkg="point_cloud"  name="point_cloud_filter_node" type="passthrough_filter"/>  
   <node pkg="face_recog"  name="face_recog" type="face_recog_server.py"/>
-  <include file="$(find speech_recog)/launch/ros_vosk.launch"/>
+  <!--include file="$(find speech_recog)/launch/ros_vosk.launch"/-->
   <node pkg="head" name="mic_enable" type="mic_node"/>
+  <node name="vosk_keywords" pkg="ros_whisper_vosk" type="vosk_node.py" respawn="true" output="screen" />
   <!-- ##############################################################################-->
   <node pkg="action_server"  name="grasp_action_server"  type="ACT_SRVR_grasp_mio.py"/>  
   <node pkg="action_server"  name="place_action_server"  type="ACT_SRVR_pickplace.py"/>   

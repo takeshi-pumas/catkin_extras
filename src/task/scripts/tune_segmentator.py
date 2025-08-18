@@ -1,6 +1,5 @@
-# -*- coding: utf-8 -*-
-#!/usr/bin/env python
-    
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-    
 import numpy as np
 import rospy
 import ros_numpy
@@ -319,6 +318,23 @@ def callback(points_msg):
             except rospy.ServiceException as e:
                 print(f"Service call failed: {e}")
 
+        elif key == 'b':        # Usar Dino para object classification by prompt
+            favorite_drink = "kuat"     #put here favorite drink
+            print("obtaining dino drink location")
+            res,position = get_favorite_drink_location(favorite_drink)
+            # res = True
+            # position = "center"
+            print("location ready")
+            if res:
+                print(f"I found a {favorite_drink} on the {position}, take it please.")
+                #return 'succ'
+            elif position == "not found":
+                print(f'There is no {favorite_drink}, if you want to, take another one.')
+                print("succ")
+                #return 'succ'
+            else:
+                print('failed')
+                #return 'failed'
 
 
         elif key=='q':

@@ -34,11 +34,11 @@ class Initial(smach.State):
         #drinks=['coke','juice','beer', 'water', 'soda', 'wine', 'i want a', 'i would like a']
         #drinks = ['coke','juice','milk', 'water', 'soda', 'wine', 
         #          'i want a', 'i would like a', 'tea', 'icedtea', 'cola', 'redwine', 'orangejuice', 'tropicaljuice']
-        drinks = ['water', 'soda', 'coke', 'juice', 'tea', 'i want a', 'i would like a', 'lipton', 'fresca', 'fanta', 'milk']
+        drinks = ['kuat', 'coffee', 'coke', 'orange juice', 'fanta', 'milk']
         interest = ['movies','music','food','cooking','programming','going out','sports','football', 'baseball', 'dancing', 'partying', 'poetry']
 
-        names = [' my name is' , 'i am','adel', 'angel', 'axel', 
-                 'charlie', 'jane', 'john', 'jules', 'morgan', 'paris', 'robin', 'simone', 'jack']
+        names = [' my name is' , 'i am','maria', 'ana', 'francisca', 
+                 'antonia', 'adriana', 'juliana', 'marcia', 'fernanda', 'patricia', 'aline', 'jose', 'joao','antonio','francisco','carlos','yoao']
         #names = ['my name is', 'i am','john', 'jack', 'paris', 'charlie', 'simone', 'robin', 'jane', 'jules']
         confirmation = ['yes','no', 'robot yes', 'robot no','not','now','nope','yeah']                     
         gram = drinks + names + confirmation + interest  
@@ -405,16 +405,19 @@ class Find_drink(smach.State):
             voice.talk("This table has available drinks, please take whatever you want")
             return 'succ'
 
-        voice.talk('Scanning table')
+        #voice.talk('Scanning table')
         # av = arm.get_current_joint_values()
         # av[0]=0.16
         # arm.go(av)
-        # brazo.set_joint_values([0.160 , 0.0, -1.57,-1.57, 0.0])
+        brazo.set_joint_values([0.49 , -0.688, -1.566,-1.57, 0.0])
         # head.set_joint_values([0.0, -0.5])
-        head.set_joint_values([0.0, -0.22])
-        rospy.sleep(3)
+        head.set_joint_values([1.56, -0.20])
+        rospy.sleep(1)
+        voice.talk('Scanning table')
 
         res,position = get_favorite_drink_location(favorite_drink)
+        #res = True
+        #position = "center"
         if res:
             self.tries = 0
             voice.talk(f"I found a {favorite_drink} on the {position}, take it please.")
@@ -439,6 +442,9 @@ class Lead_to_living_room(smach.State):
 
         voice.talk(f"{party.get_active_guest_name()}... Follow me to living room")
         # voice.talk('Navigating to ,living room')
+        head.set_joint_values([0, 0])
+        brazo.set_named_target('neutral')
+        rospy.sleep(0.5)
         res = omni_base.move_base(known_location='living_room')
         if res:
             self.tries = 0
@@ -652,9 +658,9 @@ if __name__ == '__main__':
         # Initial states routine
         smach.StateMachine.add("INITIAL", Initial(),              
                                transitions={'failed': 'INITIAL', 'succ': 'WAIT_PUSH_HAND'})
-                               # 'succ': 'WAIT_PUSH_HAND'})
+                                #'succ': 'SCAN_FACE'})
         smach.StateMachine.add("WAIT_PUSH_HAND", Wait_push_hand(),       
-                               transitions={'failed': 'WAIT_PUSH_HAND'   #, 'succ':'FIND_SITTING_PLACE'
+                               transitions={'failed': 'WAIT_PUSH_HAND'   #, 'succ':'SCAN_FACE'
                                ,'succ':'GOTO_DOOR'
                                })
         smach.StateMachine.add("WAIT_DOOR_OPENED", Wait_door_opened(),     

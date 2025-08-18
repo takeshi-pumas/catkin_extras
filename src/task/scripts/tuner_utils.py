@@ -81,7 +81,8 @@ train_new_face = rospy.ServiceProxy('new_face', RecognizeFace)                  
 analyze_face = rospy.ServiceProxy('analyze_face', RecognizeFace)    ###DEEP FACE ONLY
 recognize_action = rospy.ServiceProxy('recognize_act', Recognize) 
 classify_client = rospy.ServiceProxy('/classify', Classify)
-classify_client_dino = rospy.ServiceProxy('grounding_dino_detect', Classify_dino)
+#classify_client_dino = rospy.ServiceProxy('grounding_dino_detect', Classify_dino)
+classify_client_dino = rospy.ServiceProxy('grounding_dino_detect', Classify_dino_receptionist) #beverage recognition
 segment_service = rospy.ServiceProxy("segment_region", SegmentRegion)
 
 
@@ -412,6 +413,59 @@ def gaze_to_face():
 
     return False
 
+#------------------------------------------------------
+def get_favorite_drink_location(favorite_drink):
+    bridge = CvBridge()
+    # Convert image to ROS format
+    #pointcloud_msg = rospy.wait_for_message("/hsrb/head_rgbd_sensor/depth_registered/rectified_points", PointCloud2)
+    #pointcloud_msg = rgbd.get_points()
+    print("mensaje nube de puntos")
+    img_msg = rospy.wait_for_message('/hsrb/head_rgbd_sensor/rgb/image_raw', Image, timeout=5)
+    print("mensaje image")
+    img = bridge.imgmsg_to_cv2(img_msg,"bgr8")
+    print(img.shape)
+    #if pointcloud_msg is None:
+    #    rospy.logerr("No se recibió la nube de puntos.")
+    #    return
+    #rospy.loginfo("Nube de puntos recibida.")
+    # # Nombre de la región a segmentar (ajustar según el YAML)
+    # region_name = "beverage_area"
+    # rospy.wait_for_service("segment_region")
+    # try:
+    #     request = SegmentRegionRequest(pointcloud=pointcloud_msg, region_name=region_name)
+    #     response = segment_service(request)
+
+    #     if response.success:
+    #         bridge = CvBridge()
+    #         mask = bridge.imgmsg_to_cv2(response.mask, "mono8")
+    #         # **Aplicar operaciones morfológicas para reducir ruido**
+    #         kernel = np.ones((13, 13), np.uint8)  # Define un kernel de 5x5 (ajustable)
+    #         mask = cv2.dilate(mask, kernel, iterations=4)  # **Rellena huecos**
+    #         #mask = cv2.erode(mask, kernel, iterations=1)  # **Reduce pequeños artefactos**
+    #         segment_img = cv2.bitwise_and(img, img, mask=mask)
+    #         cv2.imwrite("img_debug.png",segment_img)
+    #     else:
+    #         rospy.logwarn("Error en segmentación: " + response.message)
+    # except rospy.ServiceException as e:
+    #     rospy.logerr("Error llamando al servicio: %s" % e)
+    # print("Message Received")
+    #ros_image=bridge.cv2_to_imgmsg(segment_img,encoding="bgr8")
+    prompt_msg = String()
+    prompt_msg.data = favorite_drink
+
+    rospy.wait_for_service('grounding_dino_detect')
+    try:
+        response = classify_client_dino(img_msg, prompt_msg)
+        print("Result:", response.result.data,"for drink:",favorite_drink)
+        if response.result.data == "not found":
+            res = False
+        else: 
+            res = True
+        return res,response.result.data
+
+    except rospy.ServiceException as e:
+        print(f"Service call failed: {e}")
+        return False,e
 #------------------------------------------------------
 def detect_human_to_tf():
     humanpose=human_detect_server.call()

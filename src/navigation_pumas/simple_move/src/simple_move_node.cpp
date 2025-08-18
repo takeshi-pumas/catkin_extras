@@ -263,8 +263,8 @@ int main(int argc, char** argv)
     float linear_acceleration = 0.1;
     float fine_dist_tolerance = 0.03;
     float coarse_dist_tolerance = 0.2;
-    std::string  cmd_vel_name="/cmd_vel";
-
+    std::string  cmd_vel_name="/hsrb/command_velocity";
+    //std::string  cmd_vel_name="/cmd_vel";
 
     float angle_tolerance = 0.05;
     bool  move_head = true;

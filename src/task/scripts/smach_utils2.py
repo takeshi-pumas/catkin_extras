@@ -17,6 +17,8 @@ import tf2_ros
 import logging 
 import re
 from os import path
+import os
+from collections import Counter
 from glob import glob
 from pyzbar import pyzbar
 import ros_numpy
@@ -119,7 +121,237 @@ brazo = ARM()
 line_detector = LineDetector()
 # arm =  moveit_commander.MoveGroupCommander('arm')
 
+
+
+
+# FUNCIONES PARA DETECTAR TODOS ACCIONES CON POINTING
+#--------------------------------------
+usr_url=os.path.expanduser( '~' )
+protoFile = usr_url+"/openpose/models/pose/body_25/pose_deploy.prototxt"
+weightsFile = usr_url+"/openpose/models/pose/body_25/pose_iter_584000.caffemodel"
+net = cv2.dnn.readNetFromCaffe(protoFile, weightsFile)
+
+
+def getKeypoints(output,inWidth, inHeight,numKeys=8):
+    # se obtiene primero los keypoints, no deberia dar problemas
+    keypoints=[]
+    for i in range (numKeys):
+        probMap = output[0, i, :, :]
+        probMap = cv2.resize(probMap, (inWidth, inHeight))
+        mapSmooth = cv2.GaussianBlur(probMap,(3,3),0,0)
+        thresh =-256 if mapSmooth.max() < 0.1 else 256
+        minthresh = mapSmooth.max()*thresh/2 if thresh == 256 else mapSmooth.min()*thresh/2
+        if minthresh >15:
+            _,mapMask = cv2.threshold(mapSmooth*thresh,minthresh-12,255,cv2.THRESH_BINARY)
+        else:
+            _,mapMask = cv2.threshold(mapSmooth*thresh,minthresh-1,255,cv2.THRESH_BINARY)
+        contours,_ = cv2.findContours(np.uint8(mapMask), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        for cnt in contours:
+            blobMask = np.zeros(mapMask.shape)
+            blobMask = cv2.fillConvexPoly(blobMask, cnt, 1)
+            maskedProbMap = mapSmooth * blobMask
+            _, maxVal, _, maxLoc = cv2.minMaxLoc(maskedProbMap)
+            keypoints.append(maxLoc + (probMap[maxLoc[1], maxLoc[0]],) +(i,))
+    return keypoints
+
+def getGroups(output,conections,inHeight,inWidth):
+    
+    fullMAP=np.zeros((inHeight,inWidth),np.float32)
+    for con in conections:
+        probMap = output[0, con, :, :]
+        probMap = cv2.resize(probMap, (inWidth, inHeight))
+        mapSmooth = cv2.GaussianBlur(probMap,(3,3),0,0)
+        thresh =-256 if mapSmooth.max() < 0.1 else 256
+        minthresh = mapSmooth.max()*thresh/2 if thresh == 256 else mapSmooth.min()*thresh/2
+        if minthresh >15:
+            _,mapMask = cv2.threshold(mapSmooth*thresh,minthresh-12,255,cv2.THRESH_BINARY)
+        else:
+            _,mapMask = cv2.threshold(mapSmooth*thresh,minthresh-1,255,cv2.THRESH_BINARY)
+
+        fullMAP += mapMask
+    contours,_ = cv2.findContours(np.uint8(fullMAP), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    
+    listOfGroups=[]
+    for i in range(len(contours)):
+        tmpo=np.zeros((inHeight,inWidth),np.float32)
+        cv2.drawContours(tmpo, [contours[i]], -1, (255,255,0), thickness=cv2.FILLED)
+        listOfGroups.append(np.transpose(np.nonzero(tmpo == 255)))
+    return listOfGroups
+
+
+def getconectionJoints(output,inHeight,inWidth,numKeyPoints = 8 ):
+    conections = [57,40,43,45,48,51,53] #,27,32,34,37]   # SOLO se utilzan 7 conexiones por simplicidad
+    # se obtiene primero los keypoints 
+    
+    keypoints = getKeypoints(output,inWidth, inHeight,numKeys = numKeyPoints)
+    # cuento max personas encontradas
+    conteo=Counter([i[-1] for i in keypoints])
+    maxPeople = max(list(conteo.values()))
+    avgPeople = round(sum(list(conteo.values()))/len(list(conteo.values())))
+    if maxPeople > avgPeople :
+        maxPeople = avgPeople
+    
+    groups = getGroups(output,conections,inHeight,inWidth)
+    sk = np.zeros([len(groups),numKeyPoints,2])
+
+    #print(maxPeople,len(groups))
+    if maxPeople != len(groups):
+        raise Exception("Distinto numero de KP que esqueletos detectados ")
+    
+    for k in keypoints:
+        for i, group in enumerate(groups):
+            if [True for item in group if (item == [k[1],k[0]]).all()]:     
+                sk[i,k[3],0] = k[0]
+                sk[i,k[3],1] = k[1]
+    return sk
+points_msg = rospy.wait_for_message("/hsrb/head_rgbd_sensor/depth_registered/rectified_points", PointCloud2)
+
+def get_keypoints(points_msg = points_msg,dist = 20,remove_bkg= False):
+    #tf_man = TF_MANAGER()
+    #res=Point_detectorResponse()
+    points_data = ros_numpy.numpify(points_msg)
+    if remove_bkg:
+        image, masked_image = removeBackground(points_msg,distance = dist)
+        save_image(masked_image,name="maskedImage")
+    else:
+        image = rgbd.get_image()
+        image_data = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]   
+        frame=cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
+        save_image(frame,name="noMaskedImage")
+    #image_data = points_data['rgb'].view((np.uint8, 4))[..., [2, 1, 0]]   
+    #image=cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
+    #pts= points_data
+    
+    inHeight = image.shape[0]
+    print(inHeight)
+    inWidth = image.shape[1]
+    print(inWidth)
+    # Prepare the frame to be fed to the network
+    inpBlob = cv2.dnn.blobFromImage(image, 1.0 / 255, (inWidth, inHeight), (0, 0, 0), swapRB=False, crop=False)
+    # Set the prepared object as the input blob of the network
+    net.setInput(inpBlob)
+    output = net.forward()
+    print(output)
+    try:
+        # Logica para separar esqueletos en una imagen
+        poses = getconectionJoints(output,inHeight,inWidth)
+        #imageDraw = drawSkeletons(image,poses,plot=False)
+        #save_image(imageDraw,name="maskedImageWithOPinOpenCV")
+        return poses
+    
+    except Exception as e:
+        print("Ocurrio un error al construir el esqueleto",e,type(e).__name__)
+        raise Exception("Ocurrio un error al construir el esqueleto ")
+
+
+
+#keypoints = get_keypoints(points_msg)
+def match_speech(speech, to_match):
+    for element in to_match:
+        if element in speech:
+            return True
+    return False
+def recognize_action(keypoints):
+    if keypoints is None: #or len(keypoints.shape) != 3:
+        return "No person detected"
+    
+    left_wrist = keypoints[7, :2]  # Left wrist
+    right_wrist = keypoints[4, :2]  # Right wrist
+    left_elbow = keypoints[6, :2]  # Left elbow
+    right_elbow = keypoints[3, :2]  # Right elbow
+    left_shoulder = keypoints[5, :2]  # Left shoulder
+    right_shoulder = keypoints[2, :2]  # Right shoulder
+
+    actions = []
+    
+    if left_wrist[0] != 0 or left_wrist[1] != 0 or left_elbow[0] != 0 or left_elbow[1] != 0 or left_shoulder[0] != 0 or left_shoulder[1] != 0:
+        # Check for waving (left arm)
+        # TODO: We need to look at waiving over time
+        # if left_wrist[1] < left_elbow[1] and left_elbow[1] < left_shoulder[1]:
+        #     return "Waving")
+
+        # Check for raising left arm
+        if left_wrist[1] < left_elbow[1] and left_elbow[1] < left_shoulder[1]:
+            return "Raising left arm"
+        
+        # Check for pointing to the left
+        if left_wrist[0] < left_shoulder[0] and abs(left_wrist[1] - left_shoulder[1]) < 50:
+            return "Pointing to the left"
+
+
+    elif right_wrist[0] != 0 or right_wrist[1]!= 0 or right_elbow[0] != 0 or right_elbow[1] != 0 or right_shoulder[0] != 0 or right_shoulder[1] != 0:
+        # Check for waving (right arm)
+        # if right_wrist[1] < right_elbow[1] and right_elbow[1] < right_shoulder[1]:
+        #     return "Waving")
+
+        # Check for raising right arm
+        if right_wrist[1] < right_elbow[1] and right_elbow[1] < right_shoulder[1]:
+            return "Raising right arm"
+
+        # Check for pointing to the right
+        if right_wrist[0] > right_shoulder[0] and abs(right_wrist[1] - right_shoulder[1]) < 50:
+            return "Pointing to the right"
+
+def angle(shoulder, hip, knee):
+    a = np.array([shoulder[0], shoulder[1]])
+    b = np.array([hip[0], hip[1]])
+    c = np.array([knee[0], knee[1]])
+
+    ba = a - b
+    bc = c - b
+
+    cosine_angle = np.dot(ba, bc) / (np.linalg.norm(ba) * np.linalg.norm(bc))
+    angle = np.arccos(cosine_angle)
+
+    print(np.degrees(angle))
+    return np.degrees(angle)
+
+def recognize_posture(keypoints):
+    if keypoints is None: #or len(keypoints.shape) != 3:
+        return "No person detected"
+    
+    left_hip = keypoints[12, :2]  # Left hip
+    right_hip = keypoints[9, :2]  # Right hip
+    left_knee = keypoints[13, :2]  # Left knee
+    right_knee = keypoints[10, :2]  # Right knee
+    left_shoulder = keypoints[5, :2]  # Left shoulder
+    right_shoulder = keypoints[2, :2]  # Right shoulder
+    left_ankle = keypoints[14, :2]
+    right_ankle = keypoints[11, :2]
+
+    if left_hip[0] == 0 or right_hip[0] == 0 or left_knee[0] == 0 or right_knee[0] == 0 or left_shoulder[0] == 0 or right_shoulder[0] == 0:
+        return False
+    elif left_hip[1] == 0 or right_hip[1] == 0 or left_knee[1] == 0 or right_knee[1] == 0 or left_shoulder[1] == 0 or right_shoulder[1] == 0:
+        return False
+
+    actions = []
+
+    posture_angle_left = angle(left_shoulder, left_hip, left_knee)
+    posture_angle_right = angle(right_shoulder, right_hip, right_knee)
+
+
+    if (posture_angle_left > 40 and posture_angle_right > 40) and (posture_angle_left < 110 and posture_angle_right < 110):
+        return "Sitting person"
+
+    if (posture_angle_left < 30 and posture_angle_right < 30) or (posture_angle_left > 130 and posture_angle_right > 130):
+
+        # Check for vertical vs horizontal
+
+        if((left_hip[1] < left_knee[1]) and (right_hip[1] < right_knee[1])):
+            return "Standing person"
+        if abs(left_hip[1] - right_hip[1]) < 30 and abs(left_knee[1] - right_knee[1]) < 30:
+            if abs(left_hip[1] - left_knee[1]) < 50:
+                return "Lying person"
+
+
+    return False
+
 #------------------------------------------------------
+
+#-----------------------------------------------------------------
+
+
+
 def camel_to_snake(name):
     # Converts camelCase or PascalCase to snake_case
     return re.sub('([a-z0-9])([A-Z])', r'\1_\2', name).lower()

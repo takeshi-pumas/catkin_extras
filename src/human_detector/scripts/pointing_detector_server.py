@@ -10,8 +10,8 @@ def trigger_response(request):
     points_msg=rospy.wait_for_message("/hsrb/head_rgbd_sensor/depth_registered/rectified_points",PointCloud2,timeout=25)
     
     dist = 6 if request.dist == 0 else request.dist
-    res= detect_pointing(points_msg, dist, request.removeBKG)
-    
+    #res= detect_pointing(points_msg, dist, request.removeBKG)
+    res= detect_wrist(points_msg, dist, request.removeBKG)
     return res
     
 def callback(request):

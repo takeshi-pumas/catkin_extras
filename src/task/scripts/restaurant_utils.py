@@ -6,6 +6,7 @@ import smach
 import smach_ros
 import rospkg
 import actionlib
+from smach_utils2 import *
 import tf
 import math
 from glob import glob

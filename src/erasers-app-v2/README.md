@@ -31,6 +31,7 @@ Fill the below command in "Command(M)".
 $ pip install pyinstaller
 $ git clone https://github.com/trcp/erasers-app.git
 $ cd erasers-app/erasers-server/ && ./build.sh
+$ docker run -p 3000:3000 erasers:gui
 ```
 ## How to use
 If connected to the same network as the robot, you can access it by hitting the following URL from web browser.  
